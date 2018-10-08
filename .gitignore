@@ -1,6 +1,7 @@
 /docs
 /build*
 /.idea
+/tool_config
 
 *.pl
 *.dot
