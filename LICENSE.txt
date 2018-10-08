@@ -1,5 +1,4 @@
-Mg Engine
-Copyright (c) 2015 Magnus Bergsten
+Copyright (c) 2018 Magnus Bergsten
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
