@@ -1,0 +1,9 @@
+#!/bin/bash
+find ../include ../src -name '*.cpp' -exec clang-tidy-6.0 {} \
+-checks=clang-analyzer-*,cppcoreguidelines-*,modernize-*,misc-*,performance-*,readability-*,\
+-performance-unnecessary-value-param,\
+-cppcoreguidelines-pro-type-union-access,\
+-cppcoreguidelines-pro-bounds-constant-array-index,\
+-clang-analyzer-deadcode.DeadStores \
+-p='./' \
+-format-style='file' \;
