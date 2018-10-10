@@ -112,7 +112,7 @@ public:
 private:
     friend class ResourceCache;
 
-    // Only ResourceCache may create non-null ResourceAccessGuard
+    // Only ResourceCache may create ResourceAccessGuard
     ResourceAccessGuard(ResourceEntryBase& resource_entry) : m_entry(&resource_entry)
     {
         ++m_entry->ref_count;
