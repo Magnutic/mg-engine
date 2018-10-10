@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include <utility>
+
 #include <mg/utils/mg_assert.h>
 
 namespace Mg {
