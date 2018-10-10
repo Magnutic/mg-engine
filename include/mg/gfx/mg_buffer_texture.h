@@ -28,6 +28,7 @@
 #pragma once
 
 #include <mg/utils/mg_gsl.h>
+#include <mg/utils/mg_macros.h>
 #include <mg/utils/mg_object_id.h>
 
 // TODO: automagic double-buffering?
@@ -52,6 +53,9 @@ public:
     {
         set_data(data);
     }
+
+    MG_MAKE_DEFAULT_MOVABLE(BufferTexture);
+    MG_MAKE_NON_COPYABLE(BufferTexture);
 
     ~BufferTexture();
 

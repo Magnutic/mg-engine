@@ -33,6 +33,7 @@
 #include <memory>
 
 #include <mg/gfx/mg_camera.h>
+#include <mg/utils/mg_macros.h>
 
 namespace Mg {
 class Rotation;
@@ -46,6 +47,8 @@ namespace Mg::gfx {
 class DebugRenderer {
 public:
     DebugRenderer();
+    MG_MAKE_NON_COPYABLE(DebugRenderer);
+    MG_MAKE_NON_MOVABLE(DebugRenderer);
     ~DebugRenderer();
 
     struct PrimitiveDrawParams {
@@ -56,8 +59,7 @@ public:
         bool      wireframe = false;
     };
 
-    struct BoxDrawParams : PrimitiveDrawParams {
-    };
+    struct BoxDrawParams : PrimitiveDrawParams {};
 
     struct EllipsoidDrawParams : PrimitiveDrawParams {
         size_t steps = 24;
