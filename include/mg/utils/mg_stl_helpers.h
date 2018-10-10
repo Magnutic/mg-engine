@@ -30,7 +30,6 @@
 #pragma once
 
 #include <algorithm>
-#include <optional>
 
 namespace Mg {
 
