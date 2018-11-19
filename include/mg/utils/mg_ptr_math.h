@@ -30,8 +30,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace Mg {
-namespace ptr_math {
+namespace Mg::ptr_math {
 
 /** Get the pointer value as integer */
 inline intptr_t as_int(void* ptr)
@@ -101,5 +100,5 @@ inline bool is_aligned(void* ptr, size_t alignment)
 {
     return (as_uint(ptr) & ~(alignment - 1)) == as_uint(ptr);
 }
-} // namespace ptr_math
-} // namespace Mg
+
+} // namespace Mg::ptr_math
