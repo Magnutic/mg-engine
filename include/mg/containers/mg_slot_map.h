@@ -1,7 +1,7 @@
 //**************************************************************************************************
 // Mg Engine
 //--------------------------------------------------------------------------------------------------
-// Copyright (c) 2018 Magnus Bergsten
+// Copyright (c) 2019 Magnus Bergsten
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -28,8 +28,7 @@
 // TODO: split into storage (no handles) and Slot_map using the storage type? I.e. storage type
 // (name pending) acts as Slot_map without handles (the -map part of Slot_map), hence no Key.
 
-#ifndef MG_SLOT_MAP_H
-#define MG_SLOT_MAP_H
+#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -654,4 +653,3 @@ template<typename T> void swap(Slot_map<T>& lhs, Slot_map<T>& rhs) noexcept
 
 } // namespace Mg
 
-#endif // MG_SLOT_MAP_H
