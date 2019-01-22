@@ -41,14 +41,6 @@
 #include "mg/containers/mg_array.h"
 #include "mg/utils/mg_assert.h"
 
-#ifndef MG_SLOT_MAP_SIZE_T
-#define MG_SLOT_MAP_SIZE_T uint32_t // Defaulting to 32-bit keeps Slot_map_handle small
-#endif
-
-#ifndef MG_SLOT_MAP_COUNTER_T
-#define MG_SLOT_MAP_COUNTER_T uint32_t
-#endif
-
 #ifndef MG_SLOT_MAP_GROWTH_FACTOR
 #define MG_SLOT_MAP_GROWTH_FACTOR 2 // < 1 means no automatic resize
 #endif
@@ -63,7 +55,7 @@ namespace Mg {
 
 namespace detail {
 // Reserved index for uninitialised handles, Slot_map size is limited to this - 1.
-static constexpr auto k_invalid_index = std::numeric_limits<MG_SLOT_MAP_SIZE_T>::max();
+static constexpr auto k_invalid_index = std::numeric_limits<uint32_t>::max();
 } // namespace detail
 
 /** Slot_map_handle offers safe indexing to elements in a Slot_map. Handles are are only invalidated
@@ -71,8 +63,8 @@ static constexpr auto k_invalid_index = std::numeric_limits<MG_SLOT_MAP_SIZE_T>:
  */
 class Slot_map_handle {
 public:
-    using size_type    = MG_SLOT_MAP_SIZE_T;
-    using counter_type = MG_SLOT_MAP_COUNTER_T;
+    using size_type    = uint32_t;
+    using counter_type = uint32_t;
 
     Slot_map_handle() = default;
 
@@ -122,7 +114,7 @@ private:
 template<typename T> class Slot_map {
 public:
     using value_type = T;
-    using size_type  = MG_SLOT_MAP_SIZE_T;
+    using size_type  = uint32_t;
 
     using difference_type = ptrdiff_t;
 
@@ -249,7 +241,7 @@ public:
     const_reverse_iterator crend() const { return const_reverse_iterator{ begin() }; }
 
 private:
-    using counter_type = MG_SLOT_MAP_COUNTER_T;
+    using counter_type = uint32_t;
 
     /** Key is used in an auxiliary array to support element look-ups. There is one key element per
      * slot in the Slot_map. Slot_map_handles are actually indices into the key, which holds the
