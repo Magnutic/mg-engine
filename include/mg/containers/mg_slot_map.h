@@ -41,10 +41,6 @@
 #include "mg/containers/mg_array.h"
 #include "mg/utils/mg_assert.h"
 
-#ifndef MG_SLOT_MAP_GROWTH_FACTOR
-#define MG_SLOT_MAP_GROWTH_FACTOR 2 // < 1 means no automatic resize
-#endif
-
 #if __cplusplus >= 201703L
 #define HAVE_OVERALIGNED_NEW 1
 #else
@@ -56,6 +52,8 @@ namespace Mg {
 namespace detail {
 // Reserved index for uninitialised handles, Slot_map size is limited to this - 1.
 static constexpr auto k_invalid_index = std::numeric_limits<uint32_t>::max();
+
+static constexpr auto k_slot_map_growth_factor = 1.5f;
 } // namespace detail
 
 /** Slot_map_handle offers safe indexing to elements in a Slot_map. Handles are are only invalidated
@@ -571,12 +569,7 @@ template<typename T> auto Slot_map<T>::insert_helper() -> std::pair<size_type, S
     auto pos = m_num_elems;
 
     if (pos == m_max_elems) {
-        if constexpr ((MG_SLOT_MAP_GROWTH_FACTOR) > 1) {
-            resize(std::max(2u, size() * MG_SLOT_MAP_GROWTH_FACTOR));
-        }
-        else {
-            throw std::runtime_error("Mg::Slot_map: attempting to insert beyond capacity.");
-        }
+        resize(std::max(2u, static_cast<uint32_t>(size() * detail::k_slot_map_growth_factor)));
     }
 
     ++m_num_elems;
