@@ -32,6 +32,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <type_traits>
 
 #include <mg/utils/mg_gsl.h>
@@ -210,9 +211,7 @@ private:
 
     void find_match()
     {
-        while (m_it != m_collection.m_entity_data.end() && !match()) {
-            ++m_it;
-        }
+        while (m_it != m_collection.m_entity_data.end() && !match()) { ++m_it; }
     }
 
     EntityCollection&              m_collection;
