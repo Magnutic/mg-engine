@@ -31,7 +31,6 @@
 #ifndef MG_SLOT_MAP_H
 #define MG_SLOT_MAP_H
 
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
@@ -40,6 +39,7 @@
 
 #include "mg/containers/mg_array.h"
 #include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_max.h"
 
 #if __cplusplus >= 201703L
 #define HAVE_OVERALIGNED_NEW 1
@@ -569,7 +569,7 @@ template<typename T> auto Slot_map<T>::insert_helper() -> std::pair<size_type, S
     auto pos = m_num_elems;
 
     if (pos == m_max_elems) {
-        resize(std::max(2u, static_cast<uint32_t>(size() * detail::k_slot_map_growth_factor)));
+        resize(max(2u, static_cast<uint32_t>(size() * detail::k_slot_map_growth_factor)));
     }
 
     ++m_num_elems;
