@@ -32,13 +32,13 @@
 #pragma once
 
 #include <cstdint>
-#include <memory>
 #include <type_traits>
 
-#include <mg/utils/mg_gsl.h>
+#include "mg/utils/mg_gsl.h"
 
-#include <mg/containers/mg_slot_map.h>
-#include <mg/ecs/mg_component.h>
+#include "mg/containers/mg_slot_map.h"
+#include "mg/ecs/mg_component.h"
+#include "mg/utils/mg_pointer.h"
 
 namespace Mg {
 
@@ -136,8 +136,7 @@ private:
     using ComponentList = std::array<Slot_map_handle, k_max_component_types>;
 
     // Array of owning pointers to component collections.
-    using ComponentCollectionList =
-        std::array<std::unique_ptr<IComponentCollection>, k_max_component_types>;
+    using ComponentCollectionList = std::array<Ptr<IComponentCollection>, k_max_component_types>;
 
     // Meta-data associated with each entity
     struct EntityData {
@@ -294,7 +293,7 @@ template<typename C> ComponentCollection<C>& EntityCollection::component_collect
 
     // Lazy construction of ComponentCollections
     if (p_collection == nullptr) {
-        p_collection = std::make_unique<ComponentCollection<C>>(m_entity_data.capacity());
+        p_collection = Ptr<ComponentCollection<C>>::make(m_entity_data.capacity());
     }
 
     // Cast to actual type and return
