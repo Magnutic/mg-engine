@@ -101,6 +101,9 @@ set(ZLIB_SRCS
 
 add_library(zlib_mg ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
 
+# Enable -fPIC to allow linking into libzip shared library
+set_property(TARGET zlib_mg PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 target_include_directories(zlib_mg
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
