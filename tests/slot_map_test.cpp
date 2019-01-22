@@ -12,7 +12,7 @@
 
 using namespace Mg;
 
-// TODO: test swap (both member and free); test comparison operators; test SlotMapInserter; test
+// TODO: test swap (both member and free); test SlotMapInserter; test
 // growing; test that handles are valid after resize, move, and copy; test exception safety; test
 // range-erase
 
@@ -47,21 +47,27 @@ std::ostream& operator<<(std::ostream& os, const Type& t)
     return os << t.value;
 }
 
-// Make Slot_map printable for error messages
 namespace Mg {
+
+// Make Slot_map printable for error messages
 template<typename T> std::ostream& operator<<(std::ostream& os, const Slot_map<T>& smap)
 {
     os << "Slot_map{ ";
     if (!smap.empty()) {
         auto last = smap.end();
         --last;
-        for (auto it = smap.begin(); it != last; ++it) {
-            os << *it << ", ";
-        }
+        for (auto it = smap.begin(); it != last; ++it) { os << *it << ", "; }
         os << *last;
     }
     return os << " }\n";
 }
+
+// Make Slot_map comparable for testing
+template<typename T> bool operator==(const Slot_map<T>& l, const Slot_map<T>& r)
+{
+    return l.size() == r.size() && std::equal(l.begin(), l.end(), r.begin());
+}
+
 } // namespace Mg
 
 TEST_CASE("Slot_map test")
@@ -154,9 +160,7 @@ TEST_CASE("Prefilled Slot_map test")
         smap.erase(handles[15]);
 
         for (auto& h : handles) {
-            if (h != handles[15]) {
-                REQUIRE(smap.is_handle_valid(h));
-            }
+            if (h != handles[15]) { REQUIRE(smap.is_handle_valid(h)); }
             else {
                 REQUIRE(!smap.is_handle_valid(h));
             }
@@ -180,13 +184,9 @@ TEST_CASE("Prefilled Slot_map test")
 
         std::set<value_type> set;
 
-        for (auto& it : smap) {
-            set.insert(it);
-        }
+        for (auto& it : smap) { set.insert(it); }
 
-        for (value_type i = 0; i < smap_size; ++i) {
-            REQUIRE(set.find(i) != set.end());
-        }
+        for (value_type i = 0; i < smap_size; ++i) { REQUIRE(set.find(i) != set.end()); }
     }
 
 
@@ -198,13 +198,9 @@ TEST_CASE("Prefilled Slot_map test")
         const auto&          csmap = smap;
         std::set<value_type> set;
 
-        for (auto& it : csmap) {
-            set.insert(it);
-        }
+        for (auto& it : csmap) { set.insert(it); }
 
-        for (value_type i = 0; i < smap_size; ++i) {
-            REQUIRE(set.find(i) != set.end());
-        }
+        for (value_type i = 0; i < smap_size; ++i) { REQUIRE(set.find(i) != set.end()); }
     }
 
 
@@ -218,9 +214,7 @@ TEST_CASE("Prefilled Slot_map test")
         const size_t num_elems = smap.size();
         size_t       i         = 0u;
 
-        for (; rit != smap.rend(); ++rit, --it, ++i) {
-            REQUIRE(*rit == *it);
-        }
+        for (; rit != smap.rend(); ++rit, --it, ++i) { REQUIRE(*rit == *it); }
 
         REQUIRE(i == num_elems);
     }
@@ -236,9 +230,7 @@ TEST_CASE("Prefilled Slot_map test")
         const size_t num_elems = smap.size();
         size_t       i         = 0u;
 
-        for (; crit != smap.crend(); ++crit, --cit, ++i) {
-            REQUIRE(*crit == *cit);
-        }
+        for (; crit != smap.crend(); ++crit, --cit, ++i) { REQUIRE(*crit == *cit); }
 
         REQUIRE(i == num_elems);
     }
@@ -300,9 +292,7 @@ TEST_CASE("Counting Slot_map test")
         {
             std::array<Type, 5> counters;
             REQUIRE(InstanceCounter<Type>::get_counter() == 5);
-            for (auto& elem : counters) {
-                smap.insert(elem);
-            }
+            for (auto& elem : counters) { smap.insert(elem); }
 
             REQUIRE(InstanceCounter<Type>::get_counter() == 10);
         }
@@ -321,9 +311,7 @@ TEST_CASE("Counting Slot_map test")
             REQUIRE(InstanceCounter<Type>::get_counter() == 10);
             REQUIRE(InstanceCounter<Type>::get_counter_move() == 10);
 
-            for (auto& elem : counters) {
-                smap.insert(std::move(elem));
-            }
+            for (auto& elem : counters) { smap.insert(std::move(elem)); }
 
             REQUIRE(InstanceCounter<Type>::get_counter() == 10);
             REQUIRE(InstanceCounter<Type>::get_counter_move() == 17);
@@ -339,17 +327,13 @@ TEST_CASE("Counting Slot_map test")
         REQUIRE(InstanceCounter<Type>::get_counter_move() == 10);
         REQUIRE(smap.size() == 10);
 
-        while (!smap.empty()) {
-            smap.erase(smap.begin());
-        }
+        while (!smap.empty()) { smap.erase(smap.begin()); }
         REQUIRE(InstanceCounter<Type>::get_counter() == 0);
         REQUIRE(InstanceCounter<Type>::get_counter_move() == 0);
         REQUIRE(smap.size() == 0);
 
         // Refill Slot_map to make sure new size is fully usable
-        for (size_t i = 0; i < 2 * initial_size; ++i) {
-            smap.emplace();
-        }
+        for (size_t i = 0; i < 2 * initial_size; ++i) { smap.emplace(); }
 
         REQUIRE(InstanceCounter<Type>::get_counter() == 2 * initial_size);
         REQUIRE(InstanceCounter<Type>::get_counter_move() == 2 * initial_size);
@@ -367,9 +351,7 @@ TEST_CASE("Counting Slot_map test")
     {
         REQUIRE(InstanceCounter<Type>::get_counter() == 0);
 
-        for (size_t i = 0; i < initial_size; ++i) {
-            smap.emplace();
-        }
+        for (size_t i = 0; i < initial_size; ++i) { smap.emplace(); }
 
         REQUIRE(InstanceCounter<Type>::get_counter() == initial_size);
 
@@ -395,9 +377,7 @@ TEST_CASE("Counting Slot_map test")
 
         Slot_map_handle handle;
 
-        for (size_t i = 0; i < initial_size; ++i) {
-            handle = smap.emplace();
-        }
+        for (size_t i = 0; i < initial_size; ++i) { handle = smap.emplace(); }
 
         REQUIRE(InstanceCounter<Type>::get_counter() == initial_size);
 
@@ -432,9 +412,7 @@ TEST_CASE("Counting Slot_map test")
     {
         Slot_map_handle handle;
 
-        for (size_t i = 0; i < initial_size; ++i) {
-            handle = smap.emplace();
-        }
+        for (size_t i = 0; i < initial_size; ++i) { handle = smap.emplace(); }
 
         smap.erase(handle);
     }
@@ -442,18 +420,12 @@ TEST_CASE("Counting Slot_map test")
     // Make sure STL algorithms and patterns work
     SECTION("algorithms")
     {
-        for (size_t i = 0; i < initial_size; ++i) {
-            smap.emplace(i);
-        }
+        for (size_t i = 0; i < initial_size; ++i) { smap.emplace(i); }
 
         std::array<Type*, initial_size> ptrs{};
         size_t                          i = 0;
-        for (auto& elem : smap) {
-            ptrs[i++] = &elem;
-        }
-        for (Type* p : ptrs) {
-            REQUIRE(p != nullptr);
-        }
+        for (auto& elem : smap) { ptrs[i++] = &elem; }
+        for (Type* p : ptrs) { REQUIRE(p != nullptr); }
 
         std::mt19937 g{ 75571296 };
         std::shuffle(smap.begin(), smap.end(), g);
@@ -487,13 +459,9 @@ TEST_CASE("Large Slot_map")
 {
     Slot_map<std::string> smap(10000);
 
-    for (uint32_t i = 0; i < 5000; ++i) {
-        smap.insert(" Insert string");
-    }
+    for (uint32_t i = 0; i < 5000; ++i) { smap.insert(" Insert string"); }
 
-    for (uint32_t i = 5000; i < 10000; ++i) {
-        smap.emplace("Emplace string");
-    }
+    for (uint32_t i = 5000; i < 10000; ++i) { smap.emplace("Emplace string"); }
 
     REQUIRE(*smap.begin() == " Insert string");
     REQUIRE(*(smap.begin() + 5000) == "Emplace string");
@@ -508,9 +476,7 @@ TEST_CASE("Slot_map: check element destruction")
 
     {
         Slot_map<Type> smap{ smap_size };
-        for (size_t i = 0; i < smap_size; ++i) {
-            smap.emplace();
-        }
+        for (size_t i = 0; i < smap_size; ++i) { smap.emplace(); }
 
         REQUIRE(InstanceCounter<Type>::get_counter() == smap_size);
     }

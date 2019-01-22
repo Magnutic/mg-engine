@@ -32,14 +32,14 @@
 #define MG_SLOT_MAP_H
 
 #include <algorithm>
-#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <limits>
-#include <memory>
-#include <stdexcept>
 #include <utility>
+
+#include "mg/containers/mg_array.h"
+#include "mg/utils/mg_assert.h"
 
 #ifndef MG_SLOT_MAP_SIZE_T
 #define MG_SLOT_MAP_SIZE_T uint32_t // Defaulting to 32-bit keeps Slot_map_handle small
@@ -57,10 +57,6 @@
 #define HAVE_OVERALIGNED_NEW 1
 #else
 #define HAVE_OVERALIGNED_NEW 0
-#endif
-
-#ifndef MG_SLOT_MAP_ASSERT
-#define MG_SLOT_MAP_ASSERT(expr) assert(expr)
 #endif
 
 namespace Mg {
@@ -196,9 +192,7 @@ public:
     /** Clear the Slot_map, destroying all elements. */
     void clear()
     {
-        for (size_type i = 0; i < size(); ++i) {
-            destroy_element_at(i);
-        }
+        for (size_type i = 0; i < size(); ++i) { destroy_element_at(i); }
         m_num_elems = 0;
     }
 
@@ -292,18 +286,24 @@ private:
     std::pair<size_type, Slot_map_handle> insert_helper();
 
     // Find element corresponding to handle; or nullptr, if handle is invalid.
-    pointer find_element(const Slot_map_handle& handle) const;
+    pointer       find_element(const Slot_map_handle& handle);
+    const_pointer find_element(const Slot_map_handle& handle) const;
 
     // Get reference to data element
-    reference element_at(size_type position) const
+    reference element_at(size_type position)
     {
-        MG_SLOT_MAP_ASSERT(position < size());
+        MG_ASSERT(position < size());
         return *reinterpret_cast<pointer>(&m_data[position]);
+    }
+    const_reference element_at(size_type position) const
+    {
+        MG_ASSERT(position < size());
+        return *reinterpret_cast<const_pointer>(&m_data[position]);
     }
 
     template<typename... Ts> void construct_element_at(size_type position, Ts&&... args)
     {
-        MG_SLOT_MAP_ASSERT(position < capacity());
+        MG_ASSERT(position < capacity());
         new (&m_data[position]) T(std::forward<Ts>(args)...);
     }
 
@@ -319,9 +319,9 @@ private:
     };
 
     /** Data buffer, stores both elements. */
-    std::unique_ptr<Elem_data[]> m_data;
+    ArrayUnknownSize<Elem_data> m_data;
 
-    std::unique_ptr<Key[]> m_key;
+    ArrayUnknownSize<Key> m_key;
 
     size_type m_max_elems = 0;
     size_type m_num_elems = 0;
@@ -381,8 +381,8 @@ template<typename T> Slot_map_insert_iterator<T> slot_map_inserter(Slot_map<T>& 
 
 template<typename T> void Slot_map<T>::allocate_arrays(size_type num_elems)
 {
-    std::unique_ptr<Elem_data[]> data(nullptr);
-    std::unique_ptr<Key[]>       key(nullptr);
+    ArrayUnknownSize<Elem_data> data(nullptr);
+    ArrayUnknownSize<Key>       key(nullptr);
 
 #if !HAVE_OVERALIGNED_NEW
     static_assert(alignof(T) <= alignof(std::max_align_t),
@@ -390,8 +390,8 @@ template<typename T> void Slot_map<T>::allocate_arrays(size_type num_elems)
 #endif
 
     if (num_elems > 0) {
-        data = std::unique_ptr<Elem_data[]>(new Elem_data[num_elems]);
-        key  = std::unique_ptr<Key[]>(new Key[num_elems]);
+        data = ArrayUnknownSize<Elem_data>::make(num_elems);
+        key  = ArrayUnknownSize<Key>::make(num_elems);
     }
 
     // Allocate first, assign later, for exception safety.
@@ -443,7 +443,7 @@ template<typename T> Slot_map<T>::Slot_map(const Slot_map& rhs)
 // Resize Slot_map
 template<typename T> void Slot_map<T>::resize(size_type new_size)
 {
-    MG_SLOT_MAP_ASSERT(size() <= new_size);
+    MG_ASSERT(size() <= new_size);
     Slot_map<T> tmp(new_size);
 
     // Move elements and copy key
@@ -473,9 +473,7 @@ template<typename T> Slot_map<T>::Slot_map(Slot_map&& rhs) noexcept
 // Copy insert
 template<typename T> auto Slot_map<T>::insert(const T& rhs) -> Slot_map_handle
 {
-    size_type       pos;
-    Slot_map_handle handle;
-    std::tie(pos, handle) = insert_helper();
+    auto [pos, handle] = insert_helper();
     construct_element_at(pos, rhs);
     return handle;
 }
@@ -483,9 +481,7 @@ template<typename T> auto Slot_map<T>::insert(const T& rhs) -> Slot_map_handle
 // Move insert
 template<typename T> auto Slot_map<T>::insert(T&& rhs) -> Slot_map_handle
 {
-    size_type       pos;
-    Slot_map_handle handle;
-    std::tie(pos, handle) = insert_helper();
+    auto [pos, handle] = insert_helper();
     construct_element_at(pos, std::move_if_noexcept(rhs));
     return handle;
 }
@@ -495,9 +491,7 @@ template<typename T>
 template<typename... Ts>
 auto Slot_map<T>::emplace(Ts&&... args) -> Slot_map_handle
 {
-    size_type       pos;
-    Slot_map_handle handle;
-    std::tie(pos, handle) = insert_helper();
+    auto [pos, handle] = insert_helper();
     construct_element_at(pos, std::forward<Ts>(args)...);
     return handle;
 }
@@ -538,8 +532,8 @@ template<typename T> void Slot_map<T>::erase(Slot_map_handle handle)
 {
     Key& k = m_key[handle.index()];
 
-    MG_SLOT_MAP_ASSERT(k.counter == handle.counter() && k.position < m_num_elems &&
-                       "Slot_map::erase() called with invalid handle.");
+    MG_ASSERT(k.counter == handle.counter() && k.position < m_num_elems &&
+              "Slot_map::erase() called with invalid handle.");
 
     erase_at(k.position);
 }
@@ -550,9 +544,7 @@ template<typename T> auto Slot_map<T>::erase(iterator it) -> iterator
     const ptrdiff_t position_signed = std::distance(begin(), it);
     const auto      position        = static_cast<size_type>(position_signed);
 
-    if (position_signed < 0 || position >= size()) {
-        return end();
-    }
+    if (position_signed < 0 || position >= size()) { return end(); }
 
     erase_at(position);
     return iterator{ begin() + position };
@@ -561,7 +553,7 @@ template<typename T> auto Slot_map<T>::erase(iterator it) -> iterator
 // Erase range
 template<typename T> auto Slot_map<T>::erase(iterator first, iterator last) -> iterator
 {
-    MG_SLOT_MAP_ASSERT((first - begin()) >= 0 && first < last);
+    MG_ASSERT((first - begin()) >= 0 && first < last);
 
     const ptrdiff_t index_first          = std::distance(begin(), first);
     const auto      erase_count          = last - first;
@@ -569,9 +561,7 @@ template<typename T> auto Slot_map<T>::erase(iterator first, iterator last) -> i
     const auto      num_subsequent_elems = std::distance(end(), last);
 
     // Erase elements in range
-    for (auto i = index_first; i < index_last; ++i) {
-        destroy_element_at(i);
-    }
+    for (auto i = index_first; i < index_last; ++i) { destroy_element_at(i); }
 
     // Move subsequent elements to start of erased range
     for (auto i = index_last; i < index_last + num_subsequent_elems; ++i) {
@@ -589,7 +579,7 @@ template<typename T> auto Slot_map<T>::insert_helper() -> std::pair<size_type, S
     auto pos = m_num_elems;
 
     if (pos == m_max_elems) {
-        if ((MG_SLOT_MAP_GROWTH_FACTOR) > 1) {
+        if constexpr ((MG_SLOT_MAP_GROWTH_FACTOR) > 1) {
             resize(std::max(2u, size() * MG_SLOT_MAP_GROWTH_FACTOR));
         }
         else {
@@ -610,14 +600,18 @@ template<typename T> auto Slot_map<T>::insert_helper() -> std::pair<size_type, S
 }
 
 // Element finding helper
-template<typename T> auto Slot_map<T>::find_element(const Slot_map_handle& handle) const -> pointer
+template<typename T> auto Slot_map<T>::find_element(const Slot_map_handle& handle) -> pointer
 {
-    MG_SLOT_MAP_ASSERT(handle.index() < m_max_elems);
-    Key& k = m_key[handle.index()];
+    return const_cast<pointer>(static_cast<const Slot_map<T>&>(*this).find_element(handle));
+}
 
-    if (k.position >= m_num_elems || k.counter != handle.counter()) {
-        return nullptr;
-    }
+template<typename T>
+auto Slot_map<T>::find_element(const Slot_map_handle& handle) const -> const_pointer
+{
+    MG_ASSERT(handle.index() < m_max_elems);
+    const Key& k = m_key[handle.index()];
+
+    if (k.position >= m_num_elems || k.counter != handle.counter()) { return nullptr; }
 
     return &element_at(k.position);
 }
@@ -625,14 +619,14 @@ template<typename T> auto Slot_map<T>::find_element(const Slot_map_handle& handl
 // Get element by handle
 template<typename T> auto Slot_map<T>::operator[](Slot_map_handle handle) -> reference
 {
-    MG_SLOT_MAP_ASSERT(is_handle_valid(handle));
+    MG_ASSERT(is_handle_valid(handle));
     return *(find_element(handle));
 }
 
 // Get element by handle, const
 template<typename T> auto Slot_map<T>::operator[](Slot_map_handle handle) const -> const_reference
 {
-    MG_SLOT_MAP_ASSERT(is_handle_valid(handle));
+    MG_ASSERT(is_handle_valid(handle));
     return *(find_element(handle));
 }
 
@@ -647,19 +641,15 @@ template<typename T> Slot_map_handle Slot_map<T>::make_handle(const_iterator it)
 {
     auto position = std::distance(begin(), it);
 
-    if (position < 0 || size_type(position) >= size()) {
-        return Slot_map_handle();
-    }
+    if (position < 0 || size_type(position) >= size()) { return Slot_map_handle(); }
 
-    Key& k = m_key[m_key[size_type(position)].inverse_index];
+    const Key& k = m_key[m_key[size_type(position)].inverse_index];
     return Slot_map_handle(k.position, k.counter);
 };
 
 template<typename T> void Slot_map<T>::move_element_to(size_type from, size_type to)
 {
-    if (from == to) {
-        return;
-    }
+    if (from == to) { return; }
     construct_element_at(to, std::move_if_noexcept(element_at(from)));
     destroy_element_at(from);
 
@@ -675,18 +665,6 @@ template<typename T> void Slot_map<T>::move_element_to(size_type from, size_type
 template<typename T> void swap(Slot_map<T>& lhs, Slot_map<T>& rhs) noexcept
 {
     lhs.swap(rhs);
-}
-
-template<typename T> bool operator==(const Slot_map<T>& lhs, const Slot_map<T>& rhs)
-{
-    return (lhs.size() == rhs.size()) && std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
-}
-
-template<typename T> bool operator!=(const Slot_map<T>& lhs, const Slot_map<T>& rhs)
-{
-    return (lhs.size() != rhs.size()) ||
-           std::equal(
-               lhs.begin(), lhs.end(), rhs.begin(), rhs.end(), [](T& a, T& b) { return a != b; });
 }
 
 } // namespace Mg
