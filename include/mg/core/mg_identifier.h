@@ -76,9 +76,8 @@ MG_INLINE MG_USES_UNSIGNED_OVERFLOW constexpr uint32_t hash_fnv1a(std::string_vi
 }
 
 /** Identifier class that is more efficient than using strings for certain purposes (e.g. hashmap
- * key). Identifier objects contain only a 32-bit hash of the string from which they were created.
- * This hash may be used as a look-up into a global hash-to-full-string map, recovering the original
- * string.
+ * key). Identifier objects contain only a 32-bit hash of the string from which they were created
+ * and a char pointer to the original string.
  *
  * N.B. the string hashing does not guarantee the absence of collisions.
  */
@@ -158,7 +157,7 @@ namespace std {
 // We need to specialise std::hash in order to use Mg::Identifier in e.g.
 // std::unordered_map. This just returns the pre-calculated hash value.
 template<> struct hash<Mg::Identifier> {
-    std::size_t operator()(const Mg::Identifier& rhs) const { return rhs.hash(); }
+    std::size_t operator()(const Mg::Identifier& rhs) const noexcept { return rhs.hash(); }
 };
 
 } // namespace std
