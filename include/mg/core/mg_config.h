@@ -31,6 +31,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <type_traits>
 
 #include <mg/core/mg_identifier.h>
 #include <mg/utils/mg_assert.h>
