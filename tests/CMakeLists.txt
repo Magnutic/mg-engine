@@ -55,8 +55,6 @@ add_mg_test(resource_cache_test)
 
 add_mg_test(thread_pool_test)
 
-add_mg_test(format_string_test)
-
 add_mg_test(gsl_test)
 
 add_mg_test(observer_test)
