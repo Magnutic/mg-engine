@@ -194,6 +194,7 @@ target_link_libraries(mg_engine
     PUBLIC
         Threads::Threads
         glm
+        fmt::fmt
     PRIVATE
         glad
         glfw

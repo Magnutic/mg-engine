@@ -7,3 +7,6 @@
 [submodule "external/libzip"]
 	path = external/libzip
 	url = https://github.com/nih-at/libzip
+[submodule "external/fmt"]
+	path = external/fmt
+	url = https://github.com/fmtlib/fmt

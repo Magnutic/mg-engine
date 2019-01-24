@@ -23,7 +23,7 @@ endfunction()
 # Use a bundled CMake library. LIBRARY: library subdirectory containing CMakeLists.txt.
 function(use_bundled_library LIBRARY)
     message("-- NOTE: Falling back to bundled version of ${LIBRARY}...")
-    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/${LIBRARY})
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/${LIBRARY} EXCLUDE_FROM_ALL)
 endfunction()
 
 # Include a header-only library.
@@ -124,6 +124,18 @@ else()
         FILES "${CMAKE_CURRENT_LIST_DIR}/../cmake/Findlibzip.cmake"
         DESTINATION ${LIBZIP_INSTALL_CONFIGDIR}
     )
+endif()
+
+####################################################################################################
+# fmt
+# Text formatting
+
+find_package(fmt QUIET)
+
+if (NOT FMT_FOUND)
+    init_library_submodule(fmt)
+    option(FMT_INSTALL "" ON)
+    use_bundled_library(fmt)
 endif()
 
 ####################################################################################################
