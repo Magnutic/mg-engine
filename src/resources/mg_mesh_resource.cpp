@@ -114,7 +114,7 @@ void MeshResource::load_resource(const ResourceDataLoader& data_loader)
 bool MeshResource::validate() const
 {
     auto mesh_error = [&](std::string_view what) {
-        g_log.write_warning("Mesh::validate() for %p: %s", this, what);
+        g_log.write_warning("Mesh::validate() for %p: %s", static_cast<const void*>(this), what);
     };
 
     // Check data
@@ -123,9 +123,7 @@ bool MeshResource::validate() const
     const auto n_indices    = narrow<size_t>(indices().size());
 
     // Check submeshes
-    if (n_sub_meshes == 0) {
-        mesh_error("No submeshes present.");
-    }
+    if (n_sub_meshes == 0) { mesh_error("No submeshes present."); }
 
     for (size_t i = 0; i < n_sub_meshes; ++i) {
         const SubMesh& sm = sub_meshes()[i];
@@ -161,9 +159,7 @@ void MeshResource::calculate_bounds()
     // Calculate centre position
     m_centre = {};
 
-    for (Vertex& v : m_vertices) {
-        m_centre += v.position;
-    }
+    for (Vertex& v : m_vertices) { m_centre += v.position; }
 
     m_centre /= m_vertices.size();
 

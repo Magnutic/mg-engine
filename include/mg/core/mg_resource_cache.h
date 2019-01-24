@@ -79,8 +79,8 @@ public:
 
     time_point file_time_stamp() const noexcept { return m_entry->time_stamp; }
 
-    const ResT& operator*() const & noexcept { return *get(); }
-    const ResT* operator->() const & noexcept { return get(); }
+    const ResT& operator*() const& noexcept { return *get(); }
+    const ResT* operator->() const& noexcept { return get(); }
 
     ResT& operator*() & noexcept { return *get(); }
     ResT* operator->() & noexcept { return get(); }
@@ -91,7 +91,7 @@ public:
         return &entry.resource;
     }
 
-    const ResT* get() const & noexcept
+    const ResT* get() const& noexcept
     {
         auto& entry = static_cast<ResourceEntry<ResT>&>(*m_entry);
         return &entry.resource;
@@ -100,14 +100,14 @@ public:
     // Disallow dereferencing rvalue ResourceAccessGuard.
     // ResourceAccessGuard is intended to remain on the stack for the duration of the resource use,
     // this prevents simple mistakes violating that intention.
-    const ResT& operator*() const &&  = delete;
-    const ResT* operator->() const && = delete;
+    const ResT& operator*() const&&  = delete;
+    const ResT* operator->() const&& = delete;
 
     ResT& operator*() &&  = delete;
     ResT* operator->() && = delete;
 
-    ResT*       get() &&       = delete;
-    const ResT* get() const && = delete;
+    ResT*       get() &&      = delete;
+    const ResT* get() const&& = delete;
 
 private:
     friend class ResourceCache;
@@ -339,7 +339,9 @@ private:
 template<typename ResT>
 ResourceAccessGuard<ResT> ResourceCache::access_resource(Identifier filename)
 {
-    g_log.write_verbose("ResourceCache[%p]::get_resource(): getting file '%s'.", this, filename);
+    g_log.write_verbose("ResourceCache[%p]::get_resource(): getting file '%s'.",
+                        static_cast<void*>(this),
+                        filename);
 
     const auto access_time = std::chrono::system_clock::now();
 
@@ -351,12 +353,11 @@ ResourceAccessGuard<ResT> ResourceCache::access_resource(Identifier filename)
 
     const auto p_file_info = file_info(filename);
 
-    if (p_file_info == nullptr) {
-        throw make_not_found_exception(filename);
-    }
+    if (p_file_info == nullptr) { throw make_not_found_exception(filename); }
 
-    g_log.write_verbose(
-        "ResourceCache[%p]::access_resource(): '%s' was not in cache.", this, filename);
+    g_log.write_verbose("ResourceCache[%p]::access_resource(): '%s' was not in cache.",
+                        static_cast<void*>(this),
+                        filename);
 
     auto load_resource = [&] {
         auto               p_entry = make_resource_entry<ResT>(filename, p_file_info->time_stamp);
@@ -393,7 +394,7 @@ template<typename F> auto ResourceCache::try_or_unload_unused(F f) -> decltype(f
             g_log.write_error(
                 "ResourceCache[%p]::try_or_unload_unused(): "
                 "Action failed while there are no more unused resources to unload.",
-                this);
+                static_cast<void*>(this));
             throw;
         }
 

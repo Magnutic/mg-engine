@@ -59,7 +59,7 @@ void UniformBuffer::set_data(span<const std::byte> data)
         g_log.write_warning(
             "UniformBuffer at %p: set_data(): could not fit data in buffer (data size %d, "
             "available size %d)",
-            this,
+            static_cast<void*>(this),
             data.size_bytes(),
             m_size);
     }

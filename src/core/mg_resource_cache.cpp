@@ -65,17 +65,13 @@ void ResourceCache::refresh()
 
     // Reload & notify for any changed files
     for (ResEntryOwningPtr& p_entry : m_resources) {
-        if (!p_entry->get_resource().should_reload_on_file_change()) {
-            continue;
-        }
+        if (!p_entry->get_resource().should_reload_on_file_change()) { continue; }
 
         Identifier      filename    = p_entry->get_resource().resource_id();
         const FileInfo* p_file_info = file_info(filename);
 
         // If file does not exist in the data source (any more), move on to next resource.
-        if (p_file_info == nullptr) {
-            continue;
-        }
+        if (p_file_info == nullptr) { continue; }
 
         auto new_time_stamp = p_file_info->time_stamp;
 
@@ -83,9 +79,7 @@ void ResourceCache::refresh()
         bool should_update = false;
 
         // First, check whether resource file has been updated.
-        if (new_time_stamp > p_entry->time_stamp) {
-            should_update = true;
-        }
+        if (new_time_stamp > p_entry->time_stamp) { should_update = true; }
 
         // Then, check whether dependencies have been updated.
         for (auto&& dep : p_entry->dependencies) {
@@ -93,14 +87,10 @@ void ResourceCache::refresh()
                 break; // Do not iterate more than necessary.
             }
 
-            if (file_info(dep.dependency_id)->time_stamp > dep.time_stamp) {
-                should_update = true;
-            }
+            if (file_info(dep.dependency_id)->time_stamp > dep.time_stamp) { should_update = true; }
         }
 
-        if (!should_update) {
-            continue;
-        }
+        if (!should_update) { continue; }
 
         // Reload resource and notify observers.
         g_log.write_message("Resource '%s' was modified, loading...", filename);
@@ -121,17 +111,15 @@ void ResourceCache::refresh()
 
 const ResourceCache::FileInfo* ResourceCache::file_info(Identifier file) const
 {
-    auto[found, index] = index_where(m_file_list, [&](auto&& af) { return af.filename == file; });
-    if (!found) {
-        return nullptr;
-    }
+    auto [found, index] = index_where(m_file_list, [&](auto&& af) { return af.filename == file; });
+    if (!found) { return nullptr; }
     return &m_file_list[index];
 }
 
 // Rebuilds available-file list data structure.
 void ResourceCache::rebuild_file_index()
 {
-    g_log.write_verbose("ResourceCache[%p]: building file index...", this);
+    g_log.write_verbose("ResourceCache[%p]: building file index...", static_cast<void*>(this));
 
     for (auto&& p_loader : file_loaders()) {
         MG_ASSERT(p_loader != nullptr);
@@ -158,12 +146,11 @@ void ResourceCache::rebuild_file_index()
 
 std::runtime_error ResourceCache::make_not_found_exception(Identifier filename)
 {
-    std::string msg = format_string("ResourceCache[%p]: No such file '%s'.", this, filename);
+    std::string msg =
+        format_string("ResourceCache[%p]: No such file '%s'.", static_cast<void*>(this), filename);
 
     msg += " [ searched in ";
-    for (auto&& p_loader : file_loaders()) {
-        msg += format_string("'%s' ", p_loader->name());
-    }
+    for (auto&& p_loader : file_loaders()) { msg += format_string("'%s' ", p_loader->name()); }
     msg += ']';
 
     return std::runtime_error(msg);
@@ -172,12 +159,10 @@ std::runtime_error ResourceCache::make_not_found_exception(Identifier filename)
 // Get iterator to entry corresponding to the given Identifier if the entry is in cache.
 auto ResourceCache::get_if_loaded(Identifier file) const -> ResEntryPtr
 {
-    auto[found, index] =
+    auto [found, index] =
         index_where(m_resources, [&](auto&& e) { return e->get_resource().resource_id() == file; });
 
-    if (!found) {
-        return nullptr;
-    }
+    if (!found) { return nullptr; }
     return m_resources[index];
 }
 
@@ -187,7 +172,8 @@ bool ResourceCache::unload_unused(bool unload_all_unused)
     auto is_unused = [](auto&& e) { return e->ref_count == 0; };
 
     if (unload_all_unused) {
-        g_log.write_verbose("ResourceCache[%p]: unloading all unused resources.", this);
+        g_log.write_verbose("ResourceCache[%p]: unloading all unused resources.",
+                            static_cast<void*>(this));
         return find_and_erase_if(m_resources, is_unused);
     }
 
@@ -196,11 +182,12 @@ bool ResourceCache::unload_unused(bool unload_all_unused)
     // likely be almost sorted in the next call of this function.
     sort(m_resources, [&](auto& e1, auto& e2) { return e1->last_access < e2->last_access; });
 
-    auto[found, index] = index_where(m_resources, is_unused);
+    auto [found, index] = index_where(m_resources, is_unused);
 
     if (found) {
         auto resource_id = m_resources[index]->get_resource().resource_id();
-        g_log.write_verbose("ResourceCache[%p]: unloading '%s'.", this, resource_id);
+        g_log.write_verbose(
+            "ResourceCache[%p]: unloading '%s'.", static_cast<void*>(this), resource_id);
         m_resources.erase(m_resources.begin() + ptrdiff_t(index));
     }
 

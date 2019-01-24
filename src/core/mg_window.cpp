@@ -207,7 +207,7 @@ Window::Window(ConstructKey /*unused*/, GLFWwindow* handle, WindowSettings setti
 
 Window::~Window()
 {
-    g_log.write_message("Closing window at %p", this);
+    g_log.write_message("Closing window at %p", static_cast<void*>(this));
     glfwDestroyWindow(m_window);
 }
 
@@ -293,7 +293,7 @@ static void glfw_error_callback(int error, const char* msg)
 
 void Window::lock_cursor_to_window()
 {
-    g_log.write_verbose("Window %p caught cursor.", this);
+    g_log.write_verbose("Window %p caught cursor.", static_cast<void*>(this));
 
     glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     m_is_cursor_locked = true;
@@ -301,7 +301,7 @@ void Window::lock_cursor_to_window()
 
 void Window::release_cursor()
 {
-    g_log.write_verbose("Window %p let go of cursor.", this);
+    g_log.write_verbose("Window %p let go of cursor.", static_cast<void*>(this));
 
     glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     m_is_cursor_locked = false;
@@ -321,7 +321,7 @@ void Window::mouse_button_callback(int button, bool pressed)
 
 void Window::focus_callback(bool focused)
 {
-    g_log.write_verbose("Window %p %s focus.", this, focused ? "received" : "lost");
+    g_log.write_verbose("Window %p %s focus.", static_cast<void*>(this), focused ? "received" : "lost");
 
     // Release cursor if it was locked to this window
     if (is_cursor_locked_to_window() && !focused) {
