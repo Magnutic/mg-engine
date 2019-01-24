@@ -43,6 +43,11 @@ endif()
 
 add_subdirectory(src)
 
+configure_file(
+    cmake/mg_engine-config-version.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/mg_engine-config-version.cmake @ONLY
+)
+
 install(EXPORT mg_engine DESTINATION ${MG_LIB_INSTALL_PATH})
 
 install(
