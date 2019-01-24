@@ -376,7 +376,7 @@ void main_loop()
         ++n_frames;
 
         if (g_scene.time - last_fps_write > 1.0) {
-            g_log.write_verbose("%f FPS", n_frames);
+            g_log.write_verbose("%d FPS", n_frames);
             last_fps_write = g_scene.time;
             n_frames       = 0;
         }
