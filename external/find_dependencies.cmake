@@ -130,7 +130,7 @@ endif()
 # fmt
 # Text formatting
 
-find_package(fmt QUIET)
+find_package(fmt 5.3 QUIET)
 
 if (NOT FMT_FOUND)
     init_library_submodule(fmt)

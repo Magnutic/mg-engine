@@ -69,6 +69,11 @@ void Log::flush()
     }
 }
 
+std::string_view Log::file_path() const
+{
+    return data().file_path;
+}
+
 void Log::output(Prio prio, const std::string& str)
 {
     // Prepend message type

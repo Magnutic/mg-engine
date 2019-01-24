@@ -104,6 +104,7 @@ public:
 
     void flush();
 
+    /** Get path to log output file. */
     std::string_view file_path() const { return m_file_path; }
 
 private:
