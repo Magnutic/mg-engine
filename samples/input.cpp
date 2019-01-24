@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include <mg/core/mg_log.h>
 #include <mg/core/mg_root.h>
 #include <mg/core/mg_window.h>
@@ -27,9 +29,7 @@ void inputTest()
         kb_map.bind(command, kb.key(key));
     };
 
-    for (size_t i = 0; i < input::Keyboard::k_num_keys; ++i) {
-        bindId(i);
-    }
+    for (size_t i = 0; i < input::Keyboard::k_num_keys; ++i) { bindId(i); }
 
     kb_map.bind("quit", kb.key(input::Keyboard::Key::Esc));
 
