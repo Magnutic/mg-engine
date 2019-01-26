@@ -1,7 +1,7 @@
 #------------------------------------------------------------------------------
 # Mg Engine: from https://github.com/facebook/hhvm
 # Modifications: formatting, add IMPORTED target for convenience.
-# ZEND/PHP license (see above repo.
+# ZEND/PHP license (see above repo).
 #------------------------------------------------------------------------------
 
 # Finds libzip.
@@ -32,7 +32,7 @@ find_library (LIBZIP_LIBRARY NAMES zip)
 
 include (FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS (
-    LIBZIP DEFAULT_MSG
+    libzip DEFAULT_MSG
     LIBZIP_LIBRARY LIBZIP_INCLUDE_DIR_ZIP LIBZIP_INCLUDE_DIR_ZIPCONF
 )
 

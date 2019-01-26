@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-set(MG_HEADER_DIR ${MG_ENGINE_SOURCE_DIR}/include/)
+set(MG_HEADER_DIR "${MG_ENGINE_SOURCE_DIR}/include/")
 
 # Public headers
 set(MG_HEADERS
@@ -206,5 +206,5 @@ target_link_libraries(mg_engine
 # Allows simultaneous installation of debug and release builds.
 set_target_properties(mg_engine PROPERTIES DEBUG_POSTFIX _d)
 
-install(TARGETS mg_engine EXPORT mg_engine DESTINATION ${MG_LIB_INSTALL_PATH})
-install(DIRECTORY ${MG_HEADER_DIR} DESTINATION ${MG_HEADER_INSTALL_PATH})
+install(TARGETS mg_engine EXPORT mg_engine_targets DESTINATION "${MG_LIB_INSTALL_PATH}")
+install(DIRECTORY "${MG_HEADER_DIR}" DESTINATION "${MG_HEADER_INSTALL_PATH}")

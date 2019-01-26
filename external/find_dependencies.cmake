@@ -25,7 +25,7 @@ function(use_bundled_library LIBRARY)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/${LIBRARY})
 endfunction()
 
-# Include a header only library.
+# Include a header-only library.
 # Params: LIBRARY: name of target to generate
 # INCLUDE_DIR: include directory for target
 # SUB_DIR_TO_INSTALL: subdirectory under INCLUDE_DIR to be installed. May be empty.
@@ -34,24 +34,14 @@ function(add_header_only_library LIBRARY INCLUDE_DIR SUB_DIR_TO_INSTALL)
 
     target_include_directories(${LIBRARY} INTERFACE
         $<BUILD_INTERFACE:${INCLUDE_DIR}>
-        $<INSTALL_INTERFACE:${MG_HEADER_INSTALL_PATH}/external>
+        $<INSTALL_INTERFACE:include>
     )
 
     install(
         DIRECTORY ${INCLUDE_DIR}/${SUB_DIR_TO_INSTALL}
-        DESTINATION ${MG_HEADER_INSTALL_PATH}/external
+        DESTINATION "include/"
     )
 endfunction()
-
-####################################################################################################
-# Zlib
-# Compression / decompression library, dependency of libzip.
-
-find_package(ZLIB 1.1.2 QUIET)
-
-if (NOT ZLIB_FOUND)
-    use_bundled_library(zlib)
-endif()
 
 ####################################################################################################
 # Libzip
@@ -60,7 +50,57 @@ endif()
 find_package(libzip 1.2 QUIET)
 
 if (NOT LIBZIP_FOUND)
+    # Require CMake >= 3.13
+    # The bundled libzip version does not create an export set for its 'zip' target, which makes
+    # CMake throw an error when I try to export mg_engine which has a dependency on libzip.
+    # This can be fixed by using `install(TARGET zip EXPORT ...)` here, but before CMake 3.13 it was
+    # not possible to use `install(TARGET)` with targets defined in a different directory.
+    if(${CMAKE_VERSION} VERSION_LESS "3.13.0")
+        message(FATAL_ERROR
+"Libzip not found and CMake version is below 3.13 -- for convoluted
+reasons, using the bundled copy of libzip does not work with earlier versions of CMake.
+Please either provide an installed copy of libzip under CMAKE_PREFIX_PATH, or use a newer
+version of CMake.")
+    endif()
+
+    # libzip depends on zlib
+    find_package(ZLIB 1.1.2 QUIET)
+
+    if (NOT ZLIB_FOUND)
+        use_bundled_library(zlib)
+    endif()
+
+    init_library_submodule(libzip)
+
+    # Mg Engine does not require support for encrypted zip-files.
+    option(ENABLE_COMMONCRYPTO "" OFF)
+    option(ENABLE_GNUTLS "" OFF)
+    option(ENABLE_MBEDTLS "" OFF)
+    option(ENABLE_OPENSSL "" OFF)
+    option(ENABLE_WINDOWS_CRYPTO "" OFF)
+    option(ENABLE_BZIP2 "" OFF)
+
+    option(BUILD_TOOLS "" OFF)
+    option(BUILD_REGRESS "" OFF)
+    option(BUILD_EXAMPLES "" OFF)
+    option(BUILD_DOC "" OFF)
+
     use_bundled_library(libzip)
+
+    # Set up zip target to export properly
+    include(CMakePackageConfigHelpers)
+    write_basic_package_version_file(
+        libzip-config-version.cmake
+        VERSION "1.3" # This is bound to end up wrong but I see no convenient way to automate.
+        COMPATIBILITY AnyNewerVersion
+    )
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libzip-config-version.cmake DESTINATION "lib/cmake/libzip/")
+
+    install(TARGETS zip EXPORT zip_targets DESTINATION "lib/") # Only works on CMake >= 3.13
+    install(EXPORT zip_targets FILE libzip-config.cmake DESTINATION "lib/cmake/libzip/")
+else()
+    # Install the Findlibzip module so that dependents can use it.
+    install(FILES ${CMAKE_CURRENT_LIST_DIR}/../cmake/Findlibzip.cmake DESTINATION "lib/cmake/libzip/")
 endif()
 
 ####################################################################################################
@@ -70,24 +110,26 @@ endif()
 # No attempt to find installed version -- GLAD is generated for each project, see
 # http://glad.dav1d.de/
 
-add_library(glad ${CMAKE_CURRENT_LIST_DIR}/glad/src/glad.c)
+add_library(glad STATIC ${CMAKE_CURRENT_LIST_DIR}/glad/src/glad.c)
 
 target_include_directories(glad PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/glad/include>
     $<INSTALL_INTERFACE:${MG_HEADER_INSTALL_PATH}/glad/include>
 )
 
-install(TARGETS glad EXPORT mg_engine DESTINATION ${MG_LIB_INSTALL_PATH})
+install(TARGETS glad EXPORT mg_engine_targets DESTINATION "${MG_LIB_INSTALL_PATH}")
 
 ####################################################################################################
 # GLFW
 # Window and input library.
-# GLFW provides an excellent CMakeLists.txt - just include and use, as it should be.
 
 find_package(glfw3 3.2)
 
 if (NOT glfw3_FOUND)
     init_library_submodule(glfw)
+    option(GLFW_BUILD_EXAMPLES "" OFF)
+    option(GLFW_BUILD_TESTS "" OFF)
+    option(GLFW_BUILD_DOCS "" OFF)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/glfw)
 endif()
 
@@ -97,13 +139,13 @@ endif()
 
 find_path(GLM_INCLUDE_DIR glm/glm.hpp)
 
-if ((NOT GLM_INCLUDE_DIR) OR (NOT EXISTS ${GLM_INCLUDE_DIR}))
+if ((NOT GLM_INCLUDE_DIR) OR (NOT EXISTS "${GLM_INCLUDE_DIR}"))
     init_library_submodule(glm)
-    set(GLM_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/glm)
-    add_header_only_library(glm ${GLM_INCLUDE_DIR} glm)
+    set(GLM_INCLUDE_DIR "${CMAKE_CURRENT_LIST_DIR}/glm")
+    add_header_only_library(glm "${GLM_INCLUDE_DIR}" glm)
 else()
     add_library(glm INTERFACE IMPORTED)
-    set_target_properties(glm PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${GLM_INCLUDE_DIR})
+    set_target_properties(glm PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${GLM_INCLUDE_DIR}")
 endif()
 
-install(TARGETS glm EXPORT mg_engine DESTINATION ${MG_LIB_INSTALL_PATH})
+install(TARGETS glm EXPORT mg_engine_targets DESTINATION "${MG_LIB_INSTALL_PATH}")

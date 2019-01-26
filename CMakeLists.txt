@@ -49,7 +49,7 @@ configure_file(
     "${CMAKE_CURRENT_BINARY_DIR}/mg_engine-config-version.cmake" @ONLY
 )
 
-install(EXPORT mg_engine DESTINATION "${MG_CONFIG_INSTALL_PATH}")
+install(EXPORT mg_engine_targets DESTINATION "${MG_CONFIG_INSTALL_PATH}")
 
 install(
     FILES

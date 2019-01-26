@@ -1,5 +1,10 @@
-get_filename_component(SELF_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-include(${SELF_DIR}/mg_engine.cmake)
+include(CMakeFindDependencyMacro)
 
-find_package(Threads REQUIRED)
-find_package(glfw3 3.2 REQUIRED)
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${CMAKE_PREFIX_PATH}/lib/cmake/libzip")
+
+find_dependency(Threads)
+find_dependency(libzip 1.2)
+find_dependency(fmt 5.3)
+find_dependency(glfw3 3.2)
+
+include("${CMAKE_CURRENT_LIST_DIR}/mg_engine_targets.cmake")
