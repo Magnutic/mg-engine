@@ -10,7 +10,10 @@ set(MG_CONFIG_INSTALL_PATH "lib/cmake/mg_engine/")
 
 option(MG_BUILD_TESTS "Build Mg Engine's test suite" ON)
 option(MG_BUILD_SAMPLES "Build Mg Engine sample applications" ON)
-option(MG_DEBUG_SANITISERS "Enable sanitisers for debug builds." ON)
+
+# Sanitisers disabled by default to avoid compiler compatibility issues.
+# (e.g. building the library with GCC then linking to an application built with Clang).
+option(MG_DEBUG_SANITISERS "Enable sanitisers (ASan, UBSan) for debug builds." OFF)
 
 # We want all executables in one, predictable location,
 # since they use relative paths to find resources.
