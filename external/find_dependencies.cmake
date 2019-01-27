@@ -4,7 +4,8 @@ cmake_minimum_required(VERSION 3.1)
 
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_LIST_DIR})
 
-find_package(Threads REQUIRED)
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 
 ####################################################################################################
 # Helper functions
@@ -39,15 +40,21 @@ function(add_header_only_library LIBRARY INCLUDE_DIR SUB_DIR_TO_INSTALL)
 
     install(
         DIRECTORY ${INCLUDE_DIR}/${SUB_DIR_TO_INSTALL}
-        DESTINATION "include/"
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 endfunction()
+
+####################################################################################################
+
+find_package(Threads REQUIRED)
 
 ####################################################################################################
 # Libzip
 # Zip-file handling library.
 
 find_package(libzip 1.2 QUIET)
+
+set(LIBZIP_INSTALL_CONFIGDIR "${CMAKE_INSTALL_LIBDIR}/cmake/libzip/")
 
 if (NOT LIBZIP_FOUND)
     # Require CMake >= 3.13
@@ -88,19 +95,35 @@ version of CMake.")
     use_bundled_library(libzip)
 
     # Set up zip target to export properly
-    include(CMakePackageConfigHelpers)
-    write_basic_package_version_file(
-        libzip-config-version.cmake
-        VERSION "1.3" # This is bound to end up wrong but I see no convenient way to automate.
+    # Hack to extract version from subdirectory's CMakeLists.txt
+    get_directory_property(LIBZIP_VERSION
+        DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/libzip
+        DEFINITION LIBZIP_VERSION
+    )
+
+    write_basic_package_version_file(libzip-config-version.cmake
+        VERSION ${LIBZIP_VERSION}
         COMPATIBILITY AnyNewerVersion
     )
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libzip-config-version.cmake DESTINATION "lib/cmake/libzip/")
 
-    install(TARGETS zip EXPORT zip_targets DESTINATION "lib/") # Only works on CMake >= 3.13
-    install(EXPORT zip_targets FILE libzip-config.cmake DESTINATION "lib/cmake/libzip/")
+    install(
+        FILES "${CMAKE_CURRENT_BINARY_DIR}/libzip-config-version.cmake"
+        DESTINATION ${LIBZIP_INSTALL_CONFIGDIR}
+    )
+
+    # Only works on CMake >= 3.13
+    install(TARGETS zip EXPORT zip_targets DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+    install(EXPORT zip_targets
+        FILE libzip-config.cmake
+        DESTINATION ${LIBZIP_INSTALL_CONFIGDIR}
+    )
 else()
     # Install the Findlibzip module so that dependents can use it.
-    install(FILES ${CMAKE_CURRENT_LIST_DIR}/../cmake/Findlibzip.cmake DESTINATION "lib/cmake/libzip/")
+    install(
+        FILES "${CMAKE_CURRENT_LIST_DIR}/../cmake/Findlibzip.cmake"
+        DESTINATION ${LIBZIP_INSTALL_CONFIGDIR}
+    )
 endif()
 
 ####################################################################################################
