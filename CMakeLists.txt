@@ -5,7 +5,8 @@ include(CMakePackageConfigHelpers)
 
 project(MG_ENGINE VERSION 0.1 LANGUAGES C CXX)
 
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
+# Add bundled CMake modules.
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 set(MG_HEADER_INSTALL_PATH "${CMAKE_INSTALL_INCLUDEDIR}/mg_engine-${MG_ENGINE_VERSION}")
 set(MG_LIB_INSTALL_PATH "${CMAKE_INSTALL_LIBDIR}")
@@ -27,7 +28,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIRECTORY}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG "${OUTPUT_DIRECTORY}/../libs/")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIRECTORY}../libs/")
 
-# Include external dependencies
+# Include external dependencies.
 include(external/find_dependencies.cmake)
 
 if(MG_BUILD_TESTS)
@@ -41,7 +42,7 @@ endif()
 
 add_subdirectory(src)
 
-# Installation
+# Installation.
 write_basic_package_version_file(mg_engine-config-version.cmake
     VERSION ${MG_ENGINE_VERSION}
     COMPATIBILITY AnyNewerVersion
