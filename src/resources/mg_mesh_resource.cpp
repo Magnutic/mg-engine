@@ -26,9 +26,12 @@
 #include <algorithm>
 #include <cstring>
 #include <stdexcept>
+#include <type_traits>
 
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
+
+#include <fmt/core.h>
 
 #include <mg/core/mg_log.h>
 #include <mg/core/mg_resource_cache.h>
@@ -66,8 +69,8 @@ void MeshResource::load_resource(const ResourceDataLoader& data_loader)
     std::memcpy(&header, data, sizeof(header));
 
     if (header.four_cc != mesh_4cc) {
-        throw std::runtime_error{ format_string("Mesh '%s': invalid data (4CC mismatch).",
-                                                resource_id()) };
+        throw std::runtime_error{ fmt::format("Mesh '{}': invalid data (4CC mismatch).",
+                                              resource_id()) };
     }
 
     // Check file format version
@@ -128,7 +131,7 @@ bool MeshResource::validate() const
     for (size_t i = 0; i < n_sub_meshes; ++i) {
         const SubMesh& sm = sub_meshes()[i];
         if (sm.begin >= n_indices || sm.begin + sm.amount > n_indices) {
-            mesh_error(format_string("Invalid submesh at index %d", i));
+            mesh_error(fmt::format("Invalid submesh at index {}", i));
             return false;
         }
     }
@@ -137,15 +140,15 @@ bool MeshResource::validate() const
     for (size_t i = 0; i < n_indices; ++i) {
         const uint_vertex_index& vi = indices()[i];
         if (vi >= n_vertices) {
-            mesh_error(format_string("Index data out of bounds at index %d, was %d.", i, vi));
+            mesh_error(fmt::format("Index data out of bounds at index {}, was {}.", i, vi));
             return false;
         }
     }
 
     // Check vertices
     if (n_vertices > k_max_vertices_per_mesh) {
-        mesh_error(format_string(
-            "Too many vertices. Max is '%s', was '%s'", k_max_vertices_per_mesh, n_vertices));
+        mesh_error(fmt::format(
+            "Too many vertices. Max is '{}', was '{}'", k_max_vertices_per_mesh, n_vertices));
 
         return false;
     }

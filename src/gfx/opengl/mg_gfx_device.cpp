@@ -42,6 +42,7 @@
 #include "mg_glad.h"
 
 #include <GLFW/glfw3.h>
+#include <fmt/core.h>
 
 namespace Mg::gfx {
 
@@ -91,7 +92,7 @@ GfxDevice::GfxDevice(::Mg::Window& window) : m_impl(std::make_unique<Data>())
     // Check for errors.
     if (uint32_t error = glGetError(); error) {
         throw std::runtime_error(
-            format_string("OpenGL initialisation: %s", gfx::gl_error_string(error)));
+            fmt::format("OpenGL initialisation: {}", gfx::gl_error_string(error)));
     }
 
 #ifndef NDEBUG

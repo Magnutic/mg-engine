@@ -30,6 +30,7 @@
 #include <GLFW/glfw3.h>
 #undef GLFW_INCLUDE_NONE
 
+#include <fmt/core.h>
 
 #include <mg/core/mg_log.h>
 #include <mg/core/mg_root.h>
@@ -62,9 +63,7 @@ std::vector<VideoMode> find_available_resolutions()
     // Iterate through modes and add relevant ones (24bpp) to list
     for (const auto& mode : vid_modes()) {
         // Ignore resolutions with weird bit-depths
-        if (mode.redBits != 8 || mode.blueBits != 8 || mode.greenBits != 8) {
-            continue;
-        }
+        if (mode.redBits != 8 || mode.blueBits != 8 || mode.greenBits != 8) { continue; }
 
         VideoMode vm;
         vm.width  = mode.width;
@@ -118,16 +117,12 @@ static void set_vsync(GLFWwindow* window, bool enable)
     // Update vsync settings, which is part of OpenGL context
     // Make context current for this thread and then switch back
     GLFWwindow* context = glfwGetCurrentContext();
-    if (context != window) {
-        glfwMakeContextCurrent(window);
-    }
+    if (context != window) { glfwMakeContextCurrent(window); }
 
     g_log.write_message("%s vsync.", enable ? "Enabling" : "Disabling");
     glfwSwapInterval(enable ? 1 : 0);
 
-    if (context != window) {
-        glfwMakeContextCurrent(context);
-    }
+    if (context != window) { glfwMakeContextCurrent(context); }
 }
 
 // Make sure settings are reasonable (fall back to defaults for invalid settings).
@@ -166,9 +161,7 @@ std::optional<Window::Handle> Window::make(WindowSettings settings, const std::s
 
     GLFWwindow* window = create_window();
 
-    if (window == nullptr) {
-        return {};
-    }
+    if (window == nullptr) { return {}; }
 
     set_vsync(window, settings.vsync);
 
@@ -281,14 +274,14 @@ static void glfw_error_callback(int error, const char* msg)
 {
     if (error == GLFW_VERSION_UNAVAILABLE || error == GLFW_API_UNAVAILABLE) {
         throw std::runtime_error(
-            format_string("Failed to create OpenGL context.\n"
+            fmt::format("Failed to create OpenGL context.\n"
                           "This application requires an OpenGL 3.3 capable system. "
                           "Please make sure your system has an up-to-date graphics driver.\n"
-                          "Error message: '%s'",
+                          "Error message: '{}'",
                           msg));
     }
 
-    throw std::runtime_error(format_string("GLFW error %i:\n%s", error, msg));
+    throw std::runtime_error(fmt::format("GLFW error {}:\n%s", error, msg));
 }
 
 void Window::lock_cursor_to_window()
@@ -310,9 +303,7 @@ void Window::release_cursor()
 // Mark window as focused when user clicks within window
 void Window::mouse_button_callback(int button, bool pressed)
 {
-    if (button != GLFW_MOUSE_BUTTON_LEFT || !pressed) {
-        return;
-    }
+    if (button != GLFW_MOUSE_BUTTON_LEFT || !pressed) { return; }
 
     if (!is_cursor_locked_to_window() && get_cursor_lock_mode() == CursorLockMode::LOCKED) {
         lock_cursor_to_window();
@@ -321,17 +312,14 @@ void Window::mouse_button_callback(int button, bool pressed)
 
 void Window::focus_callback(bool focused)
 {
-    g_log.write_verbose("Window %p %s focus.", static_cast<void*>(this), focused ? "received" : "lost");
+    g_log.write_verbose(
+        "Window %p %s focus.", static_cast<void*>(this), focused ? "received" : "lost");
 
     // Release cursor if it was locked to this window
-    if (is_cursor_locked_to_window() && !focused) {
-        release_cursor();
-    }
+    if (is_cursor_locked_to_window() && !focused) { release_cursor(); }
 
     // Forward to user-specified focus callback function.
-    if (m_focus_callback) {
-        m_focus_callback(focused);
-    }
+    if (m_focus_callback) { m_focus_callback(focused); }
 }
 
 // Keep render target's size equal to framebuffer size.

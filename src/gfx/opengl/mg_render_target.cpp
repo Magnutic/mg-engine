@@ -25,6 +25,7 @@
 
 #include <stdexcept>
 
+#include <fmt/core.h>
 
 #include <mg/core/mg_log.h>
 #include <mg/core/mg_window.h>
@@ -78,7 +79,7 @@ static void check_framebuffer()
 
     if (status != GL_FRAMEBUFFER_COMPLETE) {
         g_log.write_error(
-            format_string("TextureRenderTarget incomplete with status code 0x%X", status));
+            fmt::format("TextureRenderTarget incomplete with status code {:#x}", status));
         throw std::logic_error{ "Created invalid TextureRenderTarget (framebuffer incomplete)." };
     }
 }
@@ -142,13 +143,13 @@ TextureRenderTarget TextureRenderTarget::with_colour_and_depth_targets(TextureHa
             "TextureRenderTarget::with_colour_and_depth_targets(): colour_target and depth_target "
             "have different image sizes.");
         g_log.write_verbose(
-            format_string("\n\tColour target '%s': %dx%d\n\tDepth target '%s': %dx%d.",
-                          colour_tex.id(),
-                          colour_tex.image_size().width,
-                          colour_tex.image_size().height,
-                          depth_tex.id(),
-                          depth_tex.image_size().width,
-                          depth_tex.image_size().height));
+            fmt::format("\n\tColour target '{}': {}x{}\n\tDepth target '{}': {}x{}.",
+                        colour_tex.id(),
+                        colour_tex.image_size().width,
+                        colour_tex.image_size().height,
+                        depth_tex.id(),
+                        depth_tex.image_size().width,
+                        depth_tex.image_size().height));
     }
 
     TextureRenderTarget trt;

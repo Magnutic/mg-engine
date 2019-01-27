@@ -1,5 +1,7 @@
 #include "test_scene.h"
 
+#include <fmt/core.h>
+
 #include <mg/core/mg_config.h>
 #include <mg/core/mg_log.h>
 #include <mg/gfx/mg_material_repository.h>
@@ -31,7 +33,7 @@ inline Mg::gfx::MeshHandle load_mesh(Identifier file)
 
 inline Mg::gfx::TextureHandle load_texture(std::string_view file)
 {
-    auto file_name = Identifier::from_runtime_string(format_string("textures/%s.dds", file));
+    auto file_name = Identifier::from_runtime_string(fmt::format("textures/{}.dds", file));
     auto access    = g_scene.resource_cache.access_resource<TextureResource>(file_name);
     return g_scene.root.gfx_context().texture_repository().create(*access);
 }
@@ -44,9 +46,9 @@ inline Mg::gfx::Material* load_material(Identifier file, std::initializer_list<I
 
     for (auto o : options) { m->set_option(o, true); }
 
-    m->set_sampler("sampler_diffuse", load_texture(format_string("%s_da", file)));
-    m->set_sampler("sampler_normal", load_texture(format_string("%s_n", file)));
-    m->set_sampler("sampler_specular", load_texture(format_string("%s_s", file)));
+    m->set_sampler("sampler_diffuse", load_texture(fmt::format("{}_da", file)));
+    m->set_sampler("sampler_normal", load_texture(fmt::format("{}_n", file)));
+    m->set_sampler("sampler_specular", load_texture(fmt::format("{}_s", file)));
 
     return m;
 }
