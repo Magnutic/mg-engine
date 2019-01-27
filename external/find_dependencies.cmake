@@ -123,7 +123,7 @@ install(TARGETS glad EXPORT mg_engine_targets DESTINATION "${MG_LIB_INSTALL_PATH
 # GLFW
 # Window and input library.
 
-find_package(glfw3 3.2)
+find_package(glfw3 3.2 QUIET)
 
 if (NOT glfw3_FOUND)
     init_library_submodule(glfw)
@@ -137,15 +137,10 @@ endif()
 # GLM
 # GL Mathematics library.
 
-find_path(GLM_INCLUDE_DIR glm/glm.hpp)
+find_package(glm 0.9.9 QUIET)
 
-if ((NOT GLM_INCLUDE_DIR) OR (NOT EXISTS "${GLM_INCLUDE_DIR}"))
+if (NOT glm_FOUND)
     init_library_submodule(glm)
-    set(GLM_INCLUDE_DIR "${CMAKE_CURRENT_LIST_DIR}/glm")
-    add_header_only_library(glm "${GLM_INCLUDE_DIR}" glm)
-else()
-    add_library(glm INTERFACE IMPORTED)
-    set_target_properties(glm PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${GLM_INCLUDE_DIR}")
+    option(GLM_TEST_ENABLE "" OFF)
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/glm)
 endif()
-
-install(TARGETS glm EXPORT mg_engine_targets DESTINATION "${MG_LIB_INSTALL_PATH}")

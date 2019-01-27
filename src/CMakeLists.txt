@@ -171,7 +171,7 @@ if((${CMAKE_COMPILER_IS_GNUCXX}) OR (${CMAKE_CXX_COMPILER_ID} MATCHES Clang))
     if(CMAKE_BUILD_TYPE STREQUAL Debug)
         set(SANITISERS "-fsanitize=address,undefined")
 
-        if (${CMAKE_CXX_COMPILER_ID} MATCHES Clang)
+        if(${CMAKE_CXX_COMPILER_ID} MATCHES Clang)
             # Clang also has instrumentation to detect unsigned overflow, which is not necessarily
             # incorrect code, but often indicative of bugs.
             set(SANITISERS "${SANITISERS},unsigned-integer-overflow")
