@@ -1,5 +1,5 @@
 # Unit tests
-cmake_minimum_required(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.8.2)
 
 # Find / download Catch 2
 set(CATCH_HEADER "${CMAKE_CURRENT_LIST_DIR}/catch.hpp")

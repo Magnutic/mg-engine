@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8.2)
 
 set(MG_HEADER_DIR "${MG_ENGINE_SOURCE_DIR}/include/")
 
@@ -119,6 +119,10 @@ add_library(mg_engine
     utils/mg_text_file_io.cpp
 )
 
+# Compile using standard C++17
+target_compile_features(mg_engine PUBLIC cxx_std_17)
+set_target_properties(mg_engine PROPERTIES CXX_EXTENSIONS OFF)
+
 # Set up compiler options for MSVC
 if(MSVC)
     if (${MSVC_VERSION} LESS 1914)
@@ -126,7 +130,7 @@ if(MSVC)
     endif()
 
     # Use c++17
-    target_compile_options(mg_engine PUBLIC /std:c++17 /permissive-)
+    target_compile_options(mg_engine PUBLIC /permissive-)
 
     # Enable multi-core compilation and high warning level with MSVC
     # Ignore warnings about nameless struct/union (ubiquitous in GLM)
@@ -137,14 +141,8 @@ if(MSVC)
 
     # Ignore warnings about <codecvt>, deprecated functionality for which the standard library has
     # no substitute
-target_compile_definitions(mg_engine PRIVATE _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
-else()
-    # TODO check that flag is available and show error immediately
-    target_compile_options(mg_engine PUBLIC -std=c++1z)
+    target_compile_definitions(mg_engine PRIVATE _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
 endif()
-
-# Replace C++ version flags with this, when recent enough CMake lands in common distros:
-# target_compile_features(mg_engine PUBLIC cxx_std_17)
 
 # Configuration defines for dependencies
 target_compile_definitions(mg_engine PUBLIC
