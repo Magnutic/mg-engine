@@ -28,16 +28,18 @@
 
 #pragma once
 
-#include <fstream>
-#include <optional>
-#include <string>
+#include <string_view>
 
-#include <mg/utils/mg_format_string.h>
+#include <fmt/printf.h>
+
+#include "mg/utils/mg_simple_pimpl.h"
 
 namespace Mg {
 
+struct LogData;
+
 /** Outputs messages with different priorities to console and file. */
-class Log {
+class Log : PimplMixin<LogData> {
 public:
     /** Message priorities, decides which messages should be included in file
      * and console output.
@@ -48,11 +50,21 @@ public:
                  Prio             console_verbosity  = Prio::Verbose,
                  Prio             log_file_verbosity = Prio::Verbose);
 
+    Log(const Log& other) = delete;
+    Log& operator=(const Log& other) = delete;
+
     /** Set verbosity for console output */
-    void set_console_verbosity(Prio prio) { m_console_verbosity = prio; }
+    void set_console_verbosity(Prio prio);
 
     /** Set verbosity for log file output */
-    void set_file_verbosity(Prio prio) { m_log_file_verbosity = prio; }
+    void set_file_verbosity(Prio prio);
+
+    struct GetVerbosityReturn {
+        Prio console_verbosity;
+        Prio log_file_verbosity;
+    };
+    /** Get verbosity levels. */
+    GetVerbosityReturn get_verbosity() const;
 
     /** Writes (type safe) printf-formatted message with priority prio */
     template<size_t N, typename... Args>
@@ -105,30 +117,20 @@ public:
     void flush();
 
     /** Get path to log output file. */
-    std::string_view file_path() const { return m_file_path; }
+    std::string_view file_path() const;
 
 private:
-    Log(const Log& other) = delete;
-    Log& operator=(const Log& other) = delete;
-
     void output(Prio prio, const std::string& str);
-
-    Prio m_console_verbosity  = Prio::Verbose;
-    Prio m_log_file_verbosity = Prio::Verbose;
-
-    std::string                  m_file_path;
-    std::optional<std::ofstream> m_writer;
 };
 
 template<size_t N, typename... Args>
 void Log::write(Prio prio, const char (&msg)[N], const Args&... args)
 {
     // Ignore messages with lower priority than current setting
-    if (prio > m_console_verbosity && prio > m_log_file_verbosity) {
-        return;
-    }
+    auto [console_verbosity, log_file_verbosity] = get_verbosity();
+    if (prio > console_verbosity && prio > log_file_verbosity) { return; }
 
-    auto formatted_str = format_string(msg, args...);
+    auto formatted_str = fmt::sprintf(msg, args...);
     output(prio, formatted_str);
 }
 
