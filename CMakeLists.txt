@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 
 include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 
 project(MG_ENGINE VERSION 0.1 LANGUAGES C CXX)
 
@@ -40,9 +41,10 @@ endif()
 
 add_subdirectory(src)
 
-configure_file(
-    cmake/mg_engine-config-version.cmake.in
-    "${CMAKE_CURRENT_BINARY_DIR}/mg_engine-config-version.cmake" @ONLY
+# Installation
+write_basic_package_version_file(mg_engine-config-version.cmake
+    VERSION ${MG_ENGINE_VERSION}
+    COMPATIBILITY AnyNewerVersion
 )
 
 install(EXPORT mg_engine_targets DESTINATION "${MG_CONFIG_INSTALL_PATH}")
