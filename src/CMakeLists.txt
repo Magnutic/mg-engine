@@ -57,7 +57,6 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/resources/mg_texture_resource.h
     ${MG_HEADER_DIR}/mg/utils/mg_assert.h
     ${MG_HEADER_DIR}/mg/utils/mg_binary_io.h
-    ${MG_HEADER_DIR}/mg/utils/mg_format_string.h
     ${MG_HEADER_DIR}/mg/utils/mg_gsl.h
     ${MG_HEADER_DIR}/mg/utils/mg_hash_combine.h
     ${MG_HEADER_DIR}/mg/utils/mg_instance_counter.h
