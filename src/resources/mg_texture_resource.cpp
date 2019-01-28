@@ -123,13 +123,9 @@ static TextureResource::PixelFormat dds_pf_to_pixel_format(const DDS_PIXELFORMAT
 
     bool alpha = ((pf.dwFlags & DDPF_ALPHAPIXELS) != 0) && (pf.dwABitMask == 0xff000000u);
 
-    if (rgb && alpha && pf.dwRGBBitCount == 32) {
-        return TextureResource::PixelFormat::BGRA;
-    }
+    if (rgb && alpha && pf.dwRGBBitCount == 32) { return TextureResource::PixelFormat::BGRA; }
 
-    if (rgb && !alpha && pf.dwRGBBitCount == 24) {
-        return TextureResource::PixelFormat::BGR;
-    }
+    if (rgb && !alpha && pf.dwRGBBitCount == 24) { return TextureResource::PixelFormat::BGR; }
 
     throw std::runtime_error{
         "Unsupported DDS format. Supported formats: "
@@ -201,9 +197,7 @@ void TextureResource::init(span<const std::byte> dds_data, memory::CompactingHea
     uint32_t four_cc;
     std::memcpy(&four_cc, dds_data.data(), 4);
 
-    if (four_cc != DDS) {
-        throw std::runtime_error{ "Not a DDS texture." };
-    }
+    if (four_cc != DDS) { throw std::runtime_error{ "Not a DDS texture." }; }
 
     // Read header
     DDS_HEADER header{};
@@ -237,15 +231,14 @@ void TextureResource::init(span<const std::byte> dds_data, memory::CompactingHea
 
     const auto sane_size = num_blocks * block_size_by_format(pixel_format);
 
-    if (size < sane_size) {
-        throw std::runtime_error{ "DDS file corrupt, missing data." };
-    }
+    if (size < sane_size) { throw std::runtime_error{ "DDS file corrupt, missing data." }; }
 
     if (size > sane_size) {
+        const auto fname = resource_id().c_str();
         g_log.write_warning(
-            "TextureResource '%s': file has different length than "
-            "specified by format and is possibly corrupt.",
-            resource_id());
+            fmt::format("TextureResource '{}': file has different length than "
+                        "specified by format and is possibly corrupt.",
+                        fname));
     }
 
     // Set up texture format info struct
@@ -256,9 +249,7 @@ void TextureResource::init(span<const std::byte> dds_data, memory::CompactingHea
 
     // DDS files without mipmapping (sometimes?) claim to have 0 mipmaps,
     // but for consistency we always count the base image as a mipmap.
-    if (m_format.mip_levels == 0) {
-        m_format.mip_levels = 1;
-    }
+    if (m_format.mip_levels == 0) { m_format.mip_levels = 1; }
 
     // Copy pixel data
     span<const std::byte> data(&dds_data[pixel_data_offset], sane_size);

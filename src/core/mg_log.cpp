@@ -28,6 +28,9 @@
 #include <iostream>
 #include <new>
 
+#include <fmt/format.h>
+#include <fmt/time.h>
+
 #include "mg/mg_defs.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_text_file_io.h"
@@ -64,13 +67,7 @@ Log::Log(std::string_view file_path, Prio console_verbosity, Prio log_file_verbo
     time_t log_open_time = time(nullptr);
     tm&    t             = *localtime(&log_open_time);
 
-    *data().writer << fmt::sprintf("Log started at %02d:%02d:%02d, %02d-%02d-%02d\n",
-                                   t.tm_hour,
-                                   t.tm_min,
-                                   t.tm_sec,
-                                   t.tm_year + 1900,
-                                   t.tm_mon + 1,
-                                   t.tm_mday);
+    *data().writer << fmt::format("Log started at {0:F}, {0:T}\n", t);
 }
 
 /** Set verbosity for console output */
@@ -113,7 +110,7 @@ void Log::output(Prio prio, const std::string& str)
     default: MG_ASSERT_DEBUG(false); prefix = "";
     }
 
-    std::string message = fmt::sprintf("%s %s", prefix, str.c_str());
+    std::string message = fmt::format("{} {}", prefix, str);
 
     if (prio <= data().console_verbosity) {
         // MSVC has terrible iostream performance on cout, so use puts()
@@ -127,8 +124,7 @@ void Log::output(Prio prio, const std::string& str)
         time_t msg_time = time(nullptr);
         tm&    t        = *localtime(&msg_time);
 
-        *data().writer << fmt::sprintf(
-            "%02d:%02d:%02d: %s\n", t.tm_hour, t.tm_min, t.tm_sec, message);
+        data().writer.value() << fmt::format("{:T}: {}\n", t, message);
 
         // If message was a warning or error, make sure it's written to file
         // immediately (perhaps a crash is imminent!)
@@ -171,13 +167,7 @@ void write_crash_log(Log& log)
     time_t crash_time = time(nullptr);
     tm&    t          = *localtime(&crash_time);
 
-    auto out_directory_name = fmt::sprintf("crashlog_%02d-%02d-%02d_%02d-%02d-%02d",
-                                           t.tm_year + 1900,
-                                           t.tm_mon + 1,
-                                           t.tm_mday,
-                                           t.tm_hour,
-                                           t.tm_min,
-                                           t.tm_sec);
+    auto out_directory_name = fmt::format("crashlog_{:F}_{:T}", t);
 
     auto fp            = log.file_path();
     auto log_path      = fs::u8path(fp.begin(), fp.end());
@@ -189,7 +179,7 @@ void write_crash_log(Log& log)
 
     auto outpath = out_directory /= log_filename;
 
-    log.write_message("Saving crash log '%s'", fs::absolute(outpath).u8string());
+    log.write_message(fmt::format("Saving crash log '{}'", fs::absolute(outpath).u8string()));
     log.flush();
 
     fs::copy(log_path, outpath);

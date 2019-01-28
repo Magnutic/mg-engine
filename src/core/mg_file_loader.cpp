@@ -28,6 +28,8 @@
 
 #include <zip.h>
 
+#include <fmt/core.h>
+
 #include <mg/core/mg_log.h>
 #include <mg/utils/mg_binary_io.h>
 #include <mg/utils/mg_format_string.h>
@@ -48,9 +50,7 @@ std::vector<FileRecord> BasicFileLoader::available_files()
     auto     search_options = fs::directory_options::follow_directory_symlink;
 
     for (auto& file : fs::recursive_directory_iterator{ root_dir, search_options }) {
-        if (fs::is_directory(file)) {
-            continue;
-        }
+        if (fs::is_directory(file)) { continue; }
 
         time_point last_write_time = fs::last_write_time(file.path());
 
@@ -96,7 +96,7 @@ void BasicFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
 {
     MG_ASSERT(target_buffer.size() >= file_size(file));
 
-    g_log.write_verbose("BasicFileLoader::load_file(): loading '%s'...", file);
+    g_log.write_verbose(fmt::format("BasicFileLoader::load_file(): loading '{}'...", file));
 
     auto fname = file.str_view();
     auto path  = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
@@ -125,9 +125,7 @@ void ZipFileLoader::open_zip_archive()
 {
     if (m_archive_file != nullptr) {
         auto error = zip_get_error(m_archive_file);
-        if (error->sys_err == 0 && error->zip_err == 0) {
-            return;
-        }
+        if (error->sys_err == 0 && error->zip_err == 0) { return; }
 
         // If something is wrong, try to close and re-open archive
         close_zip_archive();
@@ -186,21 +184,17 @@ std::vector<FileRecord> ZipFileLoader::available_files()
 bool ZipFileLoader::file_exists(Identifier file)
 {
     open_zip_archive();
-    struct zip_stat sb {
-    };
-    int result = zip_stat(m_archive_file, file.c_str(), 0, &sb);
+    struct zip_stat sb {};
+    int             result = zip_stat(m_archive_file, file.c_str(), 0, &sb);
 
     return (result != -1);
 }
 
 struct zip_stat zip_stat_helper(zip_t* archive, Identifier file_path)
 {
-    struct zip_stat sb {
-    };
+    struct zip_stat sb {};
 
-    if (zip_stat(archive, file_path.c_str(), 0, &sb) != -1) {
-        return sb;
-    }
+    if (zip_stat(archive, file_path.c_str(), 0, &sb) != -1) { return sb; }
 
     throw std::runtime_error(
         format_string("ZipFileLoader::file_size(): Could not find file '%s'", file_path));
@@ -265,9 +259,7 @@ void ZipFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
             "Could not read file '%s' from archive '%s': %s", file, m_archive_name, reason));
     };
 
-    if (index == -1) {
-        error_throw("could not find file in archive");
-    }
+    if (index == -1) { error_throw("could not find file in archive"); }
 
     auto uindex = narrow<uint64_t>(index);
 
@@ -276,9 +268,7 @@ void ZipFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
     zip_stat_index(m_archive_file, uindex, 0, &file_info);
 
     // Check for errors
-    if ((file_info.valid & ZIP_STAT_SIZE) == 0) {
-        error_throw("could not read file size");
-    }
+    if ((file_info.valid & ZIP_STAT_SIZE) == 0) { error_throw("could not read file size"); }
 
     // Open file within archive
     auto zip_file = make_zip_handle(zip_fopen_index(m_archive_file, uindex, 0));
@@ -296,9 +286,7 @@ void ZipFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
     // Read data from file
     auto bytes_read = zip_fread(zip_file.get(), target_buffer.data(), file_info.size);
 
-    if (bytes_read == -1) {
-        error_throw("could not read data");
-    }
+    if (bytes_read == -1) { error_throw("could not read data"); }
 
     MG_ASSERT(size_t(bytes_read) <= target_buffer.size());
 }

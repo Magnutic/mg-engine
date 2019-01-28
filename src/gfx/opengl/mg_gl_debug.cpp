@@ -23,8 +23,10 @@
 
 #include "mg_gl_debug.h"
 
-#include <mg/core/mg_log.h>
-#include <mg/utils/mg_format_string.h>
+#include <fmt/core.h>
+
+#include "mg/core/mg_log.h"
+#include "mg/utils/mg_format_string.h"
 
 #include "mg_glad.h"
 
@@ -50,13 +52,9 @@ void check_gl_error(std::string_view file, std::string_view function, size_t lin
     uint32_t error_enum = glGetError();
 
     while (error_enum != GL_NO_ERROR) {
-        g_log.write_error(
-            "OpenGL error detected in file: %s, "
-            "function: %s, line: %d: %s",
-            file,
-            function,
-            line,
-            gl_error_string(error_enum));
+        constexpr char msg[] =
+            "OpenGL error detected in file: {:s}, function: {:s}, line: {:d}: {:s}";
+        g_log.write_error(fmt::format(msg, file, function, line, gl_error_string(error_enum)));
 
         error_enum = glGetError();
     }
@@ -127,10 +125,9 @@ void ogl_error_callback(uint32_t source,
     }
 
     constexpr char msg_str[] =
-        "OpenGL debug message: [source: %s] [type: %s] "
-        "[severity: %s] [id: %d] %s";
+        "OpenGL debug message: [source: {:s}] [type: {:s}] [severity: {:s}] [id: {:d}] {:s}";
 
-    g_log.write(prio, msg_str, src_str, type_str, severity_str, id, msg);
+    g_log.write(prio, fmt::format(msg_str, src_str, type_str, severity_str, id, msg));
 }
 
 } // namespace Mg::gfx

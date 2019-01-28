@@ -25,6 +25,8 @@
 
 #include <sstream>
 
+#include <fmt/core.h>
+
 #include <mg/core/mg_log.h>
 #include <mg/gfx/mg_material.h>
 #include <mg/resources/mg_shader_resource.h>
@@ -64,9 +66,10 @@ inline ShaderProgram make_shader_program(const IShaderProvider& shader_provider,
         return ShaderProgram::make(ovs.value(), ofs.value()).value();
     }
     catch (const std::bad_optional_access&) {
-        g_log.write_error("Failed to compile shader '%s'.", material.shader().resource_id());
-        g_log.write_message("Vertex code:\n%s", error_dump_code(code.vertex_code));
-        g_log.write_message("Fragment code:\n%s", error_dump_code(code.fragment_code));
+        const auto* shader_name = material.shader().resource_id().c_str();
+        g_log.write_error(fmt::format("Failed to compile shader '{}'.", shader_name));
+        g_log.write_message(fmt::format("Vertex code:\n{}", error_dump_code(code.vertex_code)));
+        g_log.write_message(fmt::format("Fragment code:\n{}", error_dump_code(code.fragment_code)));
 
         throw;
     }
@@ -74,8 +77,9 @@ inline ShaderProgram make_shader_program(const IShaderProvider& shader_provider,
 
 ShaderFactory::ShaderHandle ShaderFactory::make_shader(const Material& material)
 {
-    g_log.write_message("ShaderFactory: compiling variant of shader '%s'.",
-                        material.shader().resource_id());
+    const auto* shader_name = material.shader().resource_id().c_str();
+    g_log.write_message(
+        fmt::format("ShaderFactory: compiling variant of shader '{}'.", shader_name));
 
     m_shader_nodes.push_back({ material.shader_hash(),
                                material.shader(),

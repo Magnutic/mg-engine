@@ -58,6 +58,8 @@ constexpr uint32_t k_mesh_format_version = 1;
 
 void MeshResource::load_resource(const ResourceDataLoader& data_loader)
 {
+    const auto fname = resource_id().c_str();
+
     std::vector<std::byte> bytestream(data_loader.file_size());
     data_loader.load_file(bytestream);
 
@@ -69,18 +71,17 @@ void MeshResource::load_resource(const ResourceDataLoader& data_loader)
     std::memcpy(&header, data, sizeof(header));
 
     if (header.four_cc != mesh_4cc) {
-        throw std::runtime_error{ fmt::format("Mesh '{}': invalid data (4CC mismatch).",
-                                              resource_id()) };
+        throw std::runtime_error{ fmt::format("Mesh '{}': invalid data (4CC mismatch).", fname) };
     }
 
     // Check file format version
     if (header.version > k_mesh_format_version) {
         g_log.write_warning(
-            "Mesh '%s': Unknown mesh format: version %d. "
-            "This version of Mg Engine expects version %d",
-            resource_id(),
-            header.version,
-            k_mesh_format_version);
+            fmt::format("Mesh '{}': Unknown mesh format: version {:d}. "
+                        "This version of Mg Engine expects version {:d}",
+                        fname,
+                        header.version,
+                        k_mesh_format_version));
     }
 
     m_sub_meshes = data_loader.allocator().alloc<SubMesh[]>(header.n_sub_meshes);
@@ -117,7 +118,8 @@ void MeshResource::load_resource(const ResourceDataLoader& data_loader)
 bool MeshResource::validate() const
 {
     auto mesh_error = [&](std::string_view what) {
-        g_log.write_warning("Mesh::validate() for %p: %s", static_cast<const void*>(this), what);
+        g_log.write_warning(
+            fmt::format("Mesh::validate() for {}: {}", static_cast<const void*>(this), what));
     };
 
     // Check data

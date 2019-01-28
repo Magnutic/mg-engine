@@ -26,6 +26,8 @@
 #include <algorithm> // std::min
 #include <cstring>   // memcpy
 
+#include <fmt/core.h>
+
 #include <mg/core/mg_log.h>
 #include <mg/utils/mg_assert.h>
 
@@ -56,12 +58,12 @@ void UniformBuffer::set_data(span<const std::byte> data)
     auto size = std::min(m_size, data.size_bytes());
 
     if (size < data.size_bytes()) {
-        g_log.write_warning(
-            "UniformBuffer at %p: set_data(): could not fit data in buffer (data size %d, "
-            "available size %d)",
+        g_log.write_warning(fmt::format(
+            "UniformBuffer at {}: set_data(): could not fit data in buffer (data size {}, "
+            "available size {})",
             static_cast<void*>(this),
             data.size_bytes(),
-            m_size);
+            m_size));
     }
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_gl_ubo_id.value);
@@ -86,7 +88,7 @@ size_t UniformBuffer::max_size()
 
     if (result == 0) {
         glGetInteger64v(GL_MAX_UNIFORM_BLOCK_SIZE, &result);
-        g_log.write_verbose("GL_MAX_UNIFORM_BLOCK_SIZE: %d", result);
+        g_log.write_verbose(fmt::format("GL_MAX_UNIFORM_BLOCK_SIZE: {}", result));
     }
 
     return narrow<size_t>(result);

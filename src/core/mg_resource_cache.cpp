@@ -21,12 +21,11 @@
 //
 //**************************************************************************************************
 
-#include <mg/core/mg_resource_cache.h>
+#include "mg/core/mg_resource_cache.h"
 
 #include <stdexcept>
 
-#include <mg/utils/mg_format_string.h>
-#include <mg/utils/mg_stl_helpers.h>
+#include "mg/utils/mg_stl_helpers.h"
 
 namespace Mg {
 
@@ -93,7 +92,8 @@ void ResourceCache::refresh()
         if (!should_update) { continue; }
 
         // Reload resource and notify observers.
-        g_log.write_message("Resource '%s' was modified, loading...", filename);
+        g_log.write_message(
+            fmt::format("Resource '{}' was modified, loading...", filename.c_str()));
 
         try {
             ResourceDataLoader loader{ *this, *p_file_info->loader, *p_entry };
@@ -101,7 +101,8 @@ void ResourceCache::refresh()
             p_entry->get_resource().load_resource(loader);
         }
         catch (std::exception& e) {
-            g_log.write_error("Failed to load resource '%s':\n\t'%s'", filename, e.what());
+            g_log.write_error(
+                fmt::format("Failed to load resource '{}':\n\t'{}'", filename.c_str(), e.what()));
             continue;
         }
 
@@ -119,11 +120,12 @@ const ResourceCache::FileInfo* ResourceCache::file_info(Identifier file) const
 // Rebuilds available-file list data structure.
 void ResourceCache::rebuild_file_index()
 {
-    g_log.write_verbose("ResourceCache[%p]: building file index...", static_cast<void*>(this));
+    g_log.write_verbose(
+        fmt::format("ResourceCache[{}]: building file index...", static_cast<void*>(this)));
 
     for (auto&& p_loader : file_loaders()) {
         MG_ASSERT(p_loader != nullptr);
-        g_log.write_verbose("Refreshing file index for '%s'", p_loader->name());
+        g_log.write_verbose(fmt::format("Refreshing file index for '{}'", p_loader->name()));
         std::vector<FileRecord> files = p_loader->available_files();
 
         for (auto&& fr : files) {
@@ -146,11 +148,11 @@ void ResourceCache::rebuild_file_index()
 
 std::runtime_error ResourceCache::make_not_found_exception(Identifier filename)
 {
-    std::string msg =
-        format_string("ResourceCache[%p]: No such file '%s'.", static_cast<void*>(this), filename);
+    std::string msg = fmt::format(
+        "ResourceCache[{}]: No such file '{}'.", static_cast<void*>(this), filename.c_str());
 
     msg += " [ searched in ";
-    for (auto&& p_loader : file_loaders()) { msg += format_string("'%s' ", p_loader->name()); }
+    for (auto&& p_loader : file_loaders()) { msg += fmt::format("'{}' ", p_loader->name()); }
     msg += ']';
 
     return std::runtime_error(msg);
@@ -172,8 +174,8 @@ bool ResourceCache::unload_unused(bool unload_all_unused)
     auto is_unused = [](auto&& e) { return e->ref_count == 0; };
 
     if (unload_all_unused) {
-        g_log.write_verbose("ResourceCache[%p]: unloading all unused resources.",
-                            static_cast<void*>(this));
+        g_log.write_verbose(fmt::format("ResourceCache[{}]: unloading all unused resources.",
+                                        static_cast<void*>(this)));
         return find_and_erase_if(m_resources, is_unused);
     }
 
@@ -186,8 +188,8 @@ bool ResourceCache::unload_unused(bool unload_all_unused)
 
     if (found) {
         auto resource_id = m_resources[index]->get_resource().resource_id();
-        g_log.write_verbose(
-            "ResourceCache[%p]: unloading '%s'.", static_cast<void*>(this), resource_id);
+        g_log.write_verbose(fmt::format(
+            "ResourceCache[{}]: unloading '{}'.", static_cast<void*>(this), resource_id.c_str()));
         m_resources.erase(m_resources.begin() + ptrdiff_t(index));
     }
 

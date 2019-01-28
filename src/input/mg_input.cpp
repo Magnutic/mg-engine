@@ -25,7 +25,9 @@
 
 #include <cmath>
 
-#include <mg/core/mg_log.h>
+#include <fmt/core.h>
+
+#include "mg/core/mg_log.h"
 
 namespace Mg::input {
 
@@ -53,10 +55,9 @@ void InputMap::unbind(Identifier command)
     }
 
     g_log.write_warning(
-        "InputMap::unbind(): "
-        "Attempting to clear binding "
-        "for non-existing command '%s'",
-        command);
+        fmt::format("InputMap::unbind(): "
+                    "Attempting to clear binding for non-existing command '{}'",
+                    command.c_str()));
 }
 
 InputSource InputMap::binding(Identifier command) const
@@ -69,9 +70,7 @@ std::vector<Identifier> InputMap::commands() const
     std::vector<Identifier> ret_val;
     ret_val.reserve(m_commands.size());
 
-    for (auto&& p : m_commands) {
-        ret_val.push_back(p.first);
-    }
+    for (auto&& p : m_commands) { ret_val.push_back(p.first); }
 
     return ret_val;
 }

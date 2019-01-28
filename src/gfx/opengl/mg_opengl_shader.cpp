@@ -25,6 +25,8 @@
 
 #include <optional>
 
+#include <fmt/core.h>
+
 #include <glm/mat2x2.hpp>
 #include <glm/mat2x3.hpp>
 #include <glm/mat2x4.hpp>
@@ -76,9 +78,9 @@ bool set_uniform_block_binding(const ShaderProgram& program,
     auto slot_index  = static_cast<GLuint>(slot);
 
     if (!block_index.has_value()) {
-        g_log.write_warning(
-            "set_uniform_block_binding(\"%s\"): no such active uniform block in shader.",
-            block_name);
+        g_log.write_warning(fmt::format(
+            "set_uniform_block_binding(\"{}\"): no such active uniform block in shader.",
+            block_name));
 
         return false;
     }

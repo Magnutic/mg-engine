@@ -119,7 +119,7 @@ static void set_vsync(GLFWwindow* window, bool enable)
     GLFWwindow* context = glfwGetCurrentContext();
     if (context != window) { glfwMakeContextCurrent(window); }
 
-    g_log.write_message("%s vsync.", enable ? "Enabling" : "Disabling");
+    g_log.write_message(fmt::format("{} vsync.", enable ? "Enabling" : "Disabling"));
     glfwSwapInterval(enable ? 1 : 0);
 
     if (context != window) { glfwMakeContextCurrent(context); }
@@ -200,7 +200,7 @@ Window::Window(ConstructKey /*unused*/, GLFWwindow* handle, WindowSettings setti
 
 Window::~Window()
 {
-    g_log.write_message("Closing window at %p", static_cast<void*>(this));
+    g_log.write_message(fmt::format("Closing window at {}", static_cast<void*>(this)));
     glfwDestroyWindow(m_window);
 }
 
@@ -233,10 +233,10 @@ void Window::apply_settings(WindowSettings s)
 // Reset window, applying new settings
 void Window::reset()
 {
-    g_log.write_message("Setting video mode: %dx%d, %s",
-                        m_settings.video_mode.width,
-                        m_settings.video_mode.height,
-                        m_settings.fullscreen ? "fullscreen" : "windowed");
+    g_log.write_message(fmt::format("Setting video mode: {}x{}, {}",
+                                    m_settings.video_mode.width,
+                                    m_settings.video_mode.height,
+                                    m_settings.fullscreen ? "fullscreen" : "windowed"));
 
     GLFWmonitor* monitor = m_settings.fullscreen ? glfwGetPrimaryMonitor() : nullptr;
 
@@ -275,10 +275,10 @@ static void glfw_error_callback(int error, const char* msg)
     if (error == GLFW_VERSION_UNAVAILABLE || error == GLFW_API_UNAVAILABLE) {
         throw std::runtime_error(
             fmt::format("Failed to create OpenGL context.\n"
-                          "This application requires an OpenGL 3.3 capable system. "
-                          "Please make sure your system has an up-to-date graphics driver.\n"
-                          "Error message: '{}'",
-                          msg));
+                        "This application requires an OpenGL 3.3 capable system. "
+                        "Please make sure your system has an up-to-date graphics driver.\n"
+                        "Error message: '{}'",
+                        msg));
     }
 
     throw std::runtime_error(fmt::format("GLFW error {}:\n%s", error, msg));
@@ -286,7 +286,7 @@ static void glfw_error_callback(int error, const char* msg)
 
 void Window::lock_cursor_to_window()
 {
-    g_log.write_verbose("Window %p caught cursor.", static_cast<void*>(this));
+    g_log.write_verbose(fmt::format("Window {} caught cursor.", static_cast<void*>(this)));
 
     glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     m_is_cursor_locked = true;
@@ -294,7 +294,7 @@ void Window::lock_cursor_to_window()
 
 void Window::release_cursor()
 {
-    g_log.write_verbose("Window %p let go of cursor.", static_cast<void*>(this));
+    g_log.write_verbose(fmt::format("Window {} let go of cursor.", static_cast<void*>(this)));
 
     glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     m_is_cursor_locked = false;
@@ -312,8 +312,8 @@ void Window::mouse_button_callback(int button, bool pressed)
 
 void Window::focus_callback(bool focused)
 {
-    g_log.write_verbose(
-        "Window %p %s focus.", static_cast<void*>(this), focused ? "received" : "lost");
+    g_log.write_verbose(fmt::format(
+        "Window {} {} focus.", static_cast<void*>(this), focused ? "received" : "lost"));
 
     // Release cursor if it was locked to this window
     if (is_cursor_locked_to_window() && !focused) { release_cursor(); }
@@ -327,7 +327,8 @@ void Window::focus_callback(bool focused)
 // until _after_ video mode switch, which could, depending on system, execute asynchronously.
 void Window::frame_buffer_size_callback(int width, int height)
 {
-    g_log.write_verbose("Setting window render target framebuffer size to: %dx%d", width, height);
+    g_log.write_verbose(
+        fmt::format("Setting window render target framebuffer size to: {}x{}", width, height));
     render_target.set_size(width, height);
     render_target.update_viewport();
 }
@@ -338,17 +339,18 @@ void Window::window_size_callback(int width, int height)
     VideoMode& conf = m_settings.video_mode;
 
     if (width != conf.width || height != conf.height) {
-        g_log.write_warning("Failed to set requested video mode: %dx%d. Actual video mode: %dx%d.",
-                            conf.width,
-                            conf.height,
-                            width,
-                            height);
+        g_log.write_warning(
+            fmt::format("Failed to set requested video mode: {}x{}. Actual video mode: {}x{}.",
+                        conf.width,
+                        conf.height,
+                        width,
+                        height));
 
         conf.width  = width;
         conf.height = height;
     }
     else {
-        g_log.write_verbose("Video mode successfully set to: %dx%d", width, height);
+        g_log.write_verbose(fmt::format("Video mode successfully set to: {}x{}", width, height));
     }
 }
 

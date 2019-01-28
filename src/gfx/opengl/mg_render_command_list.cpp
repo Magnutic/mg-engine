@@ -25,6 +25,8 @@
 
 #include <cstring>
 
+#include <fmt/core.h>
+
 #include <mg/core/mg_log.h>
 #include <mg/gfx/mg_camera.h>
 #include <mg/gfx/mg_frustum.h>
@@ -43,13 +45,9 @@ inline Material* material_for_submesh(span<const MaterialBinding> material_bindi
         return mb.sub_mesh_index == sub_mesh_index;
     });
 
-    if (it != material_bindings.end()) {
-        return it->material;
-    }
+    if (it != material_bindings.end()) { return it->material; }
 
-    if (sub_mesh_index == 0) {
-        return nullptr;
-    }
+    if (sub_mesh_index == 0) { return nullptr; }
 
     return material_for_submesh(material_bindings, 0);
 }
@@ -69,7 +67,9 @@ void RenderCommandList::add_mesh(MeshHandle                  mesh,
 
         if (material == nullptr) {
             g_log.write_warning(
-                "No material specified for mesh '%s', submesh %d. Skipping.", md.mesh_id, i);
+                fmt::format("No material specified for mesh '{}', submesh {}. Skipping.",
+                            md.mesh_id.c_str(),
+                            i));
             continue;
         }
 

@@ -46,9 +46,9 @@ inline Mg::gfx::Material* load_material(Identifier file, std::initializer_list<I
 
     for (auto o : options) { m->set_option(o, true); }
 
-    m->set_sampler("sampler_diffuse", load_texture(fmt::format("{}_da", file)));
-    m->set_sampler("sampler_normal", load_texture(fmt::format("{}_n", file)));
-    m->set_sampler("sampler_specular", load_texture(fmt::format("{}_s", file)));
+    m->set_sampler("sampler_diffuse", load_texture(fmt::format("{}_da", file.c_str())));
+    m->set_sampler("sampler_normal", load_texture(fmt::format("{}_n", file.c_str())));
+    m->set_sampler("sampler_specular", load_texture(fmt::format("{}_s", file.c_str())));
 
     return m;
 }
@@ -378,7 +378,7 @@ void main_loop()
         ++n_frames;
 
         if (g_scene.time - last_fps_write > 1.0) {
-            g_log.write_verbose("%d FPS", n_frames);
+            g_log.write_verbose(fmt::format("{} FPS", n_frames));
             last_fps_write = g_scene.time;
             n_frames       = 0;
         }

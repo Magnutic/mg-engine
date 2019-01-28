@@ -27,6 +27,8 @@
 #include <stdexcept>
 #include <string>
 
+#include <fmt/core.h>
+
 #include <mg/core/mg_log.h>
 #include <mg/utils/mg_gsl.h>
 #include <mg/utils/mg_macros.h>
@@ -79,7 +81,7 @@ uint32_t create_shader(ShaderStage type, std::string_view code)
         glGetShaderInfoLog(id, log_length, nullptr, msg.get());
 
         auto msg_type = result != 0 ? Log::Prio::Message : Log::Prio::Error;
-        g_log.write(msg_type, "Shader compilation message: %s", msg.get());
+        g_log.write(msg_type, fmt::format("Shader compilation message: {}", msg.get()));
     }
 
     // Check whether shader compiled successfully
@@ -121,7 +123,7 @@ static bool link_program(uint32_t program_id)
         glGetProgramInfoLog(program_id, log_length, nullptr, error_msg.get());
 
         auto msg_type = result != 0 ? Log::Prio::Message : Log::Prio::Error;
-        g_log.write(msg_type, "Shader linking message: %s", error_msg.get());
+        g_log.write(msg_type, fmt::format("Shader linking message: {}", error_msg.get()));
     }
 
     // Check whether shaders linked successfully

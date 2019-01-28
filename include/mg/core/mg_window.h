@@ -62,8 +62,7 @@ enum class CursorLockMode { UNLOCKED, LOCKED };
 
 /** Window handling class. Presently, there is no support for multiple windows. */
 class Window {
-    struct ConstructKey {
-    }; // Limits access to Window constructor
+    struct ConstructKey {}; // Limits access to Window constructor
 
 public:
     /** unique_ptr handle for Window. */

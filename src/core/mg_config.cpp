@@ -36,17 +36,13 @@ namespace Mg {
 
 static double numeric_from_string(std::string_view string)
 {
-    auto[success, value] = string_to<double>(string);
+    auto [success, value] = string_to<double>(string);
 
-    if (success) {
-        return value;
-    }
+    if (success) { return value; }
 
     auto low_str = to_lower(string);
 
-    if (low_str == "true") {
-        return 1.0;
-    }
+    if (low_str == "true") { return 1.0; }
 
     return 0.0;
 }
@@ -73,13 +69,9 @@ template<typename T> T Config::as(std::string_view key) const
     const auto& v = at(key);
     MG_ASSERT(v != nullptr);
 
-    if constexpr (std::is_integral_v<T>) {
-        return round<T>(v->value().numeric);
-    }
+    if constexpr (std::is_integral_v<T>) { return round<T>(v->value().numeric); }
 
-    if constexpr (std::is_floating_point_v<T>) {
-        return static_cast<T>(v->value().numeric);
-    }
+    if constexpr (std::is_floating_point_v<T>) { return static_cast<T>(v->value().numeric); }
 }
 
 // Explicit instantiations for numeric types
@@ -116,21 +108,19 @@ std::string Config::assignment_line(std::string_view key) const
 bool Config::evaluate_line(std::string_view input)
 {
     auto error = [&](std::string_view reason) {
-        g_log.write_message("Failed to parse config assignment:\n\t'%s'\n\t%s\n\t%s",
-                            input,
-                            reason,
-                            "Assignments must be of the form 'key = value'");
+        g_log.write_message(fmt::format("Failed to parse config assignment:\n\t'{}'\n\t{}\n\t{}",
+                                        input,
+                                        reason,
+                                        "Assignments must be of the form 'key = value'"));
     };
 
     // Ignore comment
     auto size = size_t(find(input, '#') - input.begin());
     input     = trim(input.substr(0, size));
 
-    if (input.empty()) {
-        return true;
-    }
+    if (input.empty()) { return true; }
 
-    auto[key, rhs] = split_string_on_char(input, '=');
+    auto [key, rhs] = split_string_on_char(input, '=');
 
     key = trim(key);
     rhs = trim(rhs);
@@ -150,9 +140,7 @@ bool Config::evaluate_line(std::string_view input)
                 escape = true;
                 continue;
             }
-            if (c == '"' && !escape) {
-                return false;
-            }
+            if (c == '"' && !escape) { return false; }
 
             value += c;
             escape = false;
@@ -174,12 +162,12 @@ bool Config::evaluate_line(std::string_view input)
 
 void Config::read_from_file(std::string_view filepath)
 {
-    g_log.write_verbose("Reading config file '%s'", filepath);
+    g_log.write_verbose(fmt::format("Reading config file '{}'", filepath));
 
     std::optional<std::ifstream> reader = io::make_input_filestream(filepath);
 
     if (!reader) {
-        g_log.write_warning("Could not read config file '%s'.", filepath);
+        g_log.write_warning(fmt::format("Could not read config file '{}'.", filepath));
         return;
     }
 
@@ -219,7 +207,7 @@ bool operator<(const Line& l, const Line& r)
 
 void Config::write_to_file(std::string_view filepath) const
 {
-    g_log.write_verbose("Writing config file '%s'", filepath);
+    g_log.write_verbose(fmt::format("Writing config file '{}'", filepath));
 
     std::vector<Line> lines;
 
@@ -227,22 +215,16 @@ void Config::write_to_file(std::string_view filepath) const
         // Read in old lines from config file if it exists
         std::optional<std::ifstream> reader = io::make_input_filestream(filepath);
 
-        while (reader && reader->good()) {
-            lines.emplace_back(io::get_line(*reader));
-        }
+        while (reader && reader->good()) { lines.emplace_back(io::get_line(*reader)); }
     }
 
     // Remove blank lines at end of file
-    while (!lines.empty() && lines.back().text.empty()) {
-        lines.erase(lines.end() - 1);
-    }
+    while (!lines.empty() && lines.back().text.empty()) { lines.erase(lines.end() - 1); }
 
     std::vector<Line> new_lines;
 
     // Format new config lines
-    for (auto& cvar : m_values) {
-        new_lines.emplace_back(assignment_line(cvar.key()));
-    }
+    for (auto& cvar : m_values) { new_lines.emplace_back(assignment_line(cvar.key())); }
 
     std::sort(new_lines.begin(), new_lines.end());
 
@@ -270,13 +252,11 @@ void Config::write_to_file(std::string_view filepath) const
     std::optional<std::ofstream> writer = io::make_output_filestream(filepath, true);
 
     if (!writer) {
-        g_log.write_error("Error writing config file %s", filepath);
+        g_log.write_error(fmt::format("Error writing config file {}", filepath));
         return;
     }
 
-    for (auto& l : lines) {
-        io::write_line(*writer, l.text);
-    }
+    for (auto& l : lines) { io::write_line(*writer, l.text); }
 }
 
 // Shared const and non-const implementation of Config::at.
@@ -289,9 +269,7 @@ auto at_impl(std::string_view key, CVarVector& values) -> decltype(values.data()
         return cvar.key_hash() == key_hash && cvar.key() == key;
     });
 
-    if (it == values.end()) {
-        return nullptr;
-    }
+    if (it == values.end()) { return nullptr; }
 
     return std::addressof(*it);
 }

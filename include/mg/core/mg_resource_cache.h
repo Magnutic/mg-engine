@@ -34,17 +34,19 @@
 #include <cstdint>
 #include <memory>
 
-#include <mg/core/mg_file_loader.h>
-#include <mg/core/mg_identifier.h>
-#include <mg/core/mg_log.h>
-#include <mg/core/mg_resource_entry.h>
-#include <mg/memory/mg_compacting_heap.h>
-#include <mg/resources/mg_base_resource.h>
-#include <mg/resources/mg_file_changed_event.h>
-#include <mg/utils/mg_macros.h>
-#include <mg/utils/mg_observer.h>
+#include <fmt/core.h>
 
-#include <mg/core/mg_resource_handle_fwd.h>
+#include "mg/core/mg_file_loader.h"
+#include "mg/core/mg_identifier.h"
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_resource_entry.h"
+#include "mg/memory/mg_compacting_heap.h"
+#include "mg/resources/mg_base_resource.h"
+#include "mg/resources/mg_file_changed_event.h"
+#include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_observer.h"
+
+#include "mg/core/mg_resource_handle_fwd.h"
 
 namespace Mg {
 
@@ -339,9 +341,9 @@ private:
 template<typename ResT>
 ResourceAccessGuard<ResT> ResourceCache::access_resource(Identifier filename)
 {
-    g_log.write_verbose("ResourceCache[%p]::get_resource(): getting file '%s'.",
-                        static_cast<void*>(this),
-                        filename);
+    g_log.write_verbose(fmt::format("ResourceCache[{}]::get_resource()): getting file '{}'.",
+                                    static_cast<void*>(this),
+                                    filename.c_str()));
 
     const auto access_time = std::chrono::system_clock::now();
 
@@ -355,9 +357,9 @@ ResourceAccessGuard<ResT> ResourceCache::access_resource(Identifier filename)
 
     if (p_file_info == nullptr) { throw make_not_found_exception(filename); }
 
-    g_log.write_verbose("ResourceCache[%p]::access_resource(): '%s' was not in cache.",
-                        static_cast<void*>(this),
-                        filename);
+    g_log.write_verbose(fmt::format("ResourceCache[{}]::access_resource(): '{}' was not in cache.",
+                                    static_cast<void*>(this),
+                                    filename.c_str()));
 
     auto load_resource = [&] {
         auto               p_entry = make_resource_entry<ResT>(filename, p_file_info->time_stamp);
@@ -392,9 +394,9 @@ template<typename F> auto ResourceCache::try_or_unload_unused(F f) -> decltype(f
         g_log.write_message("Failed to load resource, retrying...");
         if (!unload_unused()) {
             g_log.write_error(
-                "ResourceCache[%p]::try_or_unload_unused(): "
-                "Action failed while there are no more unused resources to unload.",
-                static_cast<void*>(this));
+                fmt::format("ResourceCache[{}]::try_or_unload_unused(): "
+                            "Action failed while there are no more unused resources to unload.",
+                            static_cast<void*>(this)));
             throw;
         }
 

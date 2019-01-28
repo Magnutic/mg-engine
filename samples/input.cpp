@@ -1,5 +1,7 @@
 #include <sstream>
 
+#include <fmt/core.h>
+
 #include <mg/core/mg_log.h>
 #include <mg/core/mg_root.h>
 #include <mg/core/mg_window.h>
@@ -76,16 +78,18 @@ void inputTest()
         bool mouseMoved = (xMoved || yMoved) && !isMoving;
 
         if (mouseMoved) {
-            g_log.write_message(
-                "Mouse pos: (%f, %f)", mouse_map.state("xPos"), mouse_map.state("yPos"));
+            g_log.write_message(fmt::format(
+                "Mouse pos: ({}, {})", mouse_map.state("xPos"), mouse_map.state("yPos")));
         }
 
         for (Identifier& command : kb_map.commands()) {
             if (kb_map.was_pressed(command)) {
-                g_log.write_message("Pressed: %s", kb_map.binding(command).description());
+                g_log.write_message(
+                    fmt::format("Pressed: {}", kb_map.binding(command).description()));
             }
             else if (kb_map.was_released(command)) {
-                g_log.write_message("Released: %s", kb_map.binding(command).description());
+                g_log.write_message(
+                    fmt::format("Released: {}", kb_map.binding(command).description()));
             }
         }
 

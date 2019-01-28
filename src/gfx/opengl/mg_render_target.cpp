@@ -144,10 +144,10 @@ TextureRenderTarget TextureRenderTarget::with_colour_and_depth_targets(TextureHa
             "have different image sizes.");
         g_log.write_verbose(
             fmt::format("\n\tColour target '{}': {}x{}\n\tDepth target '{}': {}x{}.",
-                        colour_tex.id(),
+                        colour_tex.id().c_str(),
                         colour_tex.image_size().width,
                         colour_tex.image_size().height,
-                        depth_tex.id(),
+                        depth_tex.id().c_str(),
                         depth_tex.image_size().width,
                         depth_tex.image_size().height));
     }
