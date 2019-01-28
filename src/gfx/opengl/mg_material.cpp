@@ -26,10 +26,11 @@
 #include <cstring> // memcpy
 #include <sstream>
 
+#include <fmt/core.h>
+
 #include <mg/core/mg_log.h>
 #include <mg/core/mg_resource_cache.h>
 #include <mg/resources/mg_shader_resource.h>
-#include <mg/utils/mg_format_string.h>
 #include <mg/utils/mg_hash_combine.h>
 #include <mg/utils/mg_stl_helpers.h>
 
@@ -70,22 +71,24 @@ void Material::set_sampler(Identifier name, TextureHandle texture)
     }
     else {
         throw std::runtime_error(
-            format_string("Material '%s': set_sampler(\"%s\", ...): no such sampler.", m_id, name));
+            fmt::format("Material '{}': set_sampler(\"{}\", ...): no such sampler.",
+                        m_id.c_str(),
+                        name.c_str()));
     }
 }
 
 void Material::set_option(Identifier option, bool enabled)
 {
-    auto[found, index] = index_of(m_options, option);
+    auto [found, index] = index_of(m_options, option);
 
     if (!found) {
         throw std::runtime_error(
-            format_string("Material '%s': set_option(\"%s\", ...): no such option.", m_id, option));
+            fmt::format("Material '{}': set_option(\"{}\", ...): no such option.",
+                        m_id.c_str(),
+                        option.c_str()));
     }
 
-    if (enabled) {
-        m_option_flags |= (1u << index);
-    }
+    if (enabled) { m_option_flags |= (1u << index); }
     else {
         m_option_flags &= ~(1u << index);
     }
@@ -93,11 +96,11 @@ void Material::set_option(Identifier option, bool enabled)
 
 bool Material::get_option(Identifier option) const
 {
-    auto[found, index] = index_of(m_options, option);
+    auto [found, index] = index_of(m_options, option);
 
     if (!found) {
-        throw std::runtime_error(
-            format_string("Material '%s': get_option(\"%s\"): no such option.", m_id, option));
+        throw std::runtime_error(fmt::format(
+            "Material '{}': get_option(\"{}\"): no such option.", m_id.c_str(), option.c_str()));
     }
 
     return (m_option_flags & (1u << index)) != 0;
@@ -107,9 +110,7 @@ std::optional<size_t> Material::sampler_index(Identifier name)
 {
     for (size_t i = 0; i < m_samplers.size(); ++i) {
         auto&& sampler = m_samplers[i];
-        if (sampler.name == name) {
-            return i;
-        }
+        if (sampler.name == name) { return i; }
     }
     return std::nullopt;
 }
@@ -155,11 +156,11 @@ static void wrong_type_error(Identifier          material_id,
                              ShaderParameterType actual)
 {
     auto error_msg =
-        format_string("Material '%s': set_parameter(\"%s\", ...): wrong type, expected %s, got %s.",
-                      material_id,
-                      param_id,
-                      shader_parameter_type_to_string(expected),
-                      shader_parameter_type_to_string(actual));
+        fmt::format("Material '{}': set_parameter(\"{}\", ...): wrong type, expected {}, got {}.",
+                    material_id.c_str(),
+                    param_id.c_str(),
+                    shader_parameter_type_to_string(expected),
+                    shader_parameter_type_to_string(actual));
 
     g_log.write_error(error_msg);
 }
@@ -183,7 +184,9 @@ void Material::_set_parameter_impl(Identifier name, glm::vec4 param, ShaderParam
     }
 
     if (p_param == nullptr) {
-        format_string("Material '%s': set_parameter(\"%s\", ...): no such parameter.", id(), name);
+        fmt::format("Material '{}': set_parameter(\"{}\", ...): no such parameter.",
+                    id().c_str(),
+                    name.c_str());
         return;
     }
 
@@ -213,9 +216,7 @@ std::string Material::debug_print() const
 
     oss << "\n\tOptions: {";
 
-    for (const Option& o : options()) {
-        oss << "\n\t\t" << o << " = " << get_option(o);
-    };
+    for (const Option& o : options()) { oss << "\n\t\t" << o << " = " << get_option(o); };
 
     oss << (options().empty() ? "}" : "\n\t}");
 
@@ -268,7 +269,7 @@ std::string shader_interface_code(const Material& material)
 
     // Include pre-processor #defines for each enabled option
     for (const Material::Option& o : material.options()) {
-        snippet += format_string("#define %s %d\n", o, material.get_option(o));
+        snippet += fmt::format("#define {} {}\n", o.c_str(), material.get_option(o));
     }
 
     return snippet;

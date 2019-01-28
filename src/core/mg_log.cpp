@@ -97,7 +97,7 @@ std::string_view Log::file_path() const
     return data().file_path;
 }
 
-void Log::output(Prio prio, const std::string& str)
+void Log::output(Prio prio, std::string_view str)
 {
     // Prepend message type
     const char* prefix;

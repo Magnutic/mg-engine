@@ -25,8 +25,9 @@
 
 #include <sstream>
 
+#include <fmt/core.h>
+
 #include <mg/core/mg_log.h>
-#include <mg/utils/mg_format_string.h>
 #include <mg/utils/mg_math_utils.h>
 #include <mg/utils/mg_stl_helpers.h>
 #include <mg/utils/mg_string_utils.h>
@@ -102,7 +103,7 @@ std::string Config::assignment_line(std::string_view key) const
     }
 
     // Format output line
-    return format_string("%s = %s", key, value);
+    return fmt::format("{} = {}", key, value);
 }
 
 bool Config::evaluate_line(std::string_view input)

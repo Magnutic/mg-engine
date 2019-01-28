@@ -6,8 +6,9 @@
 #include <set>
 #include <string>
 
+#include <fmt/core.h>
+
 #include <mg/containers/mg_slot_map.h>
-#include <mg/utils/mg_format_string.h>
 #include <mg/utils/mg_instance_counter.h>
 
 using namespace Mg;
@@ -81,7 +82,7 @@ TEST_CASE("Slot_map test")
     SECTION("can_insert")
     {
         for (uint32_t i = 0; i < smap_size; ++i) {
-            std::string s = format_string("Elem %d", i);
+            std::string s = fmt::format("Elem {}", i);
             smap.insert(s);
         }
 
@@ -92,7 +93,7 @@ TEST_CASE("Slot_map test")
     SECTION("can_move_insert")
     {
         for (uint32_t i = 0; i < smap_size; ++i) {
-            std::string s = format_string("Elem %d", i);
+            std::string s = fmt::format("Elem {}", i);
             smap.insert(std::move(s));
         }
     }
@@ -101,7 +102,7 @@ TEST_CASE("Slot_map test")
     SECTION("can_emplace")
     {
         for (uint32_t i = 0; i < smap_size; ++i) {
-            std::string s = format_string("Elem %d", i);
+            std::string s = fmt::format("Elem {}", i);
             smap.emplace(s.c_str());
         }
 
@@ -112,7 +113,7 @@ TEST_CASE("Slot_map test")
     SECTION("can_erase")
     {
         for (uint32_t i = 0; i < smap_size; ++i) {
-            std::string s = format_string("Elem %d", i);
+            std::string s = fmt::format("Elem {}", i);
             smap.insert(s);
         }
 

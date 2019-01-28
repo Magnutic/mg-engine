@@ -34,7 +34,6 @@
 #include <mg/core/mg_file_loader.h>
 #include <mg/core/mg_resource_cache.h>
 #include <mg/resources/mg_text_resource.h>
-#include <mg/utils/mg_format_string.h>
 #include <mg/utils/mg_stl_helpers.h>
 #include <mg/utils/mg_string_utils.h>
 
@@ -156,10 +155,8 @@ constexpr std::array<std::pair<std::string_view, TokenType>, 18> keywords{ {
 
 inline std::optional<TokenType> get_keyword_type(std::string_view lexeme)
 {
-    for (auto && [ str, token_type ] : keywords) {
-        if (str == lexeme) {
-            return token_type;
-        }
+    for (auto&& [str, token_type] : keywords) {
+        if (str == lexeme) { return token_type; }
     }
     return std::nullopt;
 }
@@ -193,7 +190,7 @@ struct LexerState {
 
 inline void lex_error(LexerState& lex, std::string_view reason)
 {
-    throw std::runtime_error(format_string("Error parsing at line %d: %s", lex.line, reason));
+    throw std::runtime_error(fmt::format("Error parsing at line {}: {}", lex.line, reason));
 }
 
 inline size_t lexeme_length(LexerState& lex)
@@ -236,28 +233,22 @@ inline bool is_alphanumeric(char c)
 
 inline void numeric_literal(LexerState& lex)
 {
-    while (is_digit(lex.stream.peek()) || lex.stream.peek() == '.') {
-        lex.stream.advance();
-    }
+    while (is_digit(lex.stream.peek()) || lex.stream.peek() == '.') { lex.stream.advance(); }
 
-    auto number_str      = lex.stream.data.substr(lex.token_start, lexeme_length(lex));
-    auto[success, value] = string_to<float>(number_str);
+    auto number_str       = lex.stream.data.substr(lex.token_start, lexeme_length(lex));
+    auto [success, value] = string_to<float>(number_str);
     MG_ASSERT(success);
     add_token(lex, TokenType::NUMERIC_LITERAL, value);
 }
 
 inline void identifier(LexerState& lex)
 {
-    while (is_alphanumeric(lex.stream.peek())) {
-        lex.stream.advance();
-    }
+    while (is_alphanumeric(lex.stream.peek())) { lex.stream.advance(); }
 
     auto lexeme         = lex.stream.data.substr(lex.token_start, lexeme_length(lex));
     auto opt_token_type = get_keyword_type(lexeme);
 
-    if (opt_token_type.has_value()) {
-        add_token(lex, *opt_token_type);
-    }
+    if (opt_token_type.has_value()) { add_token(lex, *opt_token_type); }
     else {
         add_token(lex, TokenType::IDENTIFIER, lexeme);
     }
@@ -282,8 +273,7 @@ inline void next_token(LexerState& lex)
     case '"': string_literal(lex); break;
     case '/':
         if (lex.stream.peek() == '/') {
-            while (lex.stream.advance() != '\n' && !lex.stream.is_at_end()) {
-            }
+            while (lex.stream.advance() != '\n' && !lex.stream.is_at_end()) {}
             break;
         }
         [[fallthrough]];
@@ -296,7 +286,7 @@ inline void next_token(LexerState& lex)
             identifier(lex);
             break;
         }
-        lex_error(lex, format_string("Unexpected character: %c", c));
+        lex_error(lex, fmt::format("Unexpected character: {}", c));
     }
 }
 
@@ -343,7 +333,7 @@ public:
     void parse_error(std::string_view reason, const Token& t)
     {
         throw std::runtime_error(
-            format_string("Parse error at line %d: %s [parsing '%s']", t.line, reason, t.lexeme));
+            fmt::format("Parse error at line {}: {} [parsing '{}']", t.line, reason, t.lexeme));
     }
 
     float parse_numeric()
@@ -368,9 +358,7 @@ public:
     {
         expect_next(TokenType::CURLY_LEFT);
 
-        while (peek_token().type != TokenType::CURLY_RIGHT) {
-            statement_parser();
-        }
+        while (peek_token().type != TokenType::CURLY_RIGHT) { statement_parser(); }
 
         expect_next(TokenType::CURLY_RIGHT);
     }
@@ -548,12 +536,12 @@ public:
         auto& t = next_token();
         if (t.type != expected_type) {
             if (additional_message.has_value()) {
-                parse_error(format_string("Expected %s (%s)",
-                                          token_type_to_str(expected_type),
-                                          *additional_message),
+                parse_error(fmt::format("Expected {} ({})",
+                                        token_type_to_str(expected_type),
+                                        *additional_message),
                             t);
             }
-            parse_error(format_string("Expected %s.", token_type_to_str(expected_type)), t);
+            parse_error(fmt::format("Expected {}.", token_type_to_str(expected_type)), t);
         }
 
         return t;
@@ -641,9 +629,7 @@ std::string ShaderResource::debug_print() const
     oss << "ShaderResource '" << resource_id() << "'\n";
 
     oss << "Options:\n";
-    for (auto&& o : options()) {
-        oss << "\t" << o.name << "\n";
-    }
+    for (auto&& o : options()) { oss << "\t" << o.name << "\n"; }
 
     oss << "Parameters:\n";
     for (auto&& p : parameters()) {

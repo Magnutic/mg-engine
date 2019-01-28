@@ -29,8 +29,7 @@
 #pragma once
 
 #include <string_view>
-
-#include <fmt/printf.h>
+#include <utility>
 
 #include "mg/utils/mg_simple_pimpl.h"
 
@@ -66,50 +65,19 @@ public:
     /** Get verbosity levels. */
     GetVerbosityReturn get_verbosity() const;
 
-    /** Writes (type safe) printf-formatted message with priority prio */
-    template<size_t N, typename... Args>
-    void write(Prio prio, const char (&msg)[N], const Args&... args);
-
     /** Writes message with priority prio. */
-    void write(Prio prio, std::string_view msg) { output(prio, std::string(msg)); }
+    void write(Prio prio, std::string_view msg) { output(prio, msg); }
 
     // Convenience functions:
-
-    /** Writes a message with priority Error */
-    template<size_t N, typename... Args> void write_error(const char (&msg)[N], const Args&... args)
-    {
-        write(Prio::Error, msg, args...);
-    }
 
     /** Writes a message with priority Error */
     void write_error(std::string_view msg) { write(Prio::Error, msg); }
 
     /** Writes a message with priority Warning */
-    template<size_t N, typename... Args>
-    void write_warning(const char (&msg)[N], const Args&... args)
-    {
-        write(Prio::Warning, msg, args...);
-    }
-
-    /** Writes a message with priority Warning */
     void write_warning(std::string_view msg) { write(Prio::Warning, msg); }
 
     /** Writes a message with priority Message */
-    template<size_t N, typename... Args>
-    void write_message(const char (&msg)[N], const Args&... args)
-    {
-        write(Prio::Message, msg, args...);
-    }
-
-    /** Writes a message with priority Message */
     void write_message(std::string_view msg) { write(Prio::Message, msg); }
-
-    /** Writes a message with priority Verbose */
-    template<size_t N, typename... Args>
-    void write_verbose(const char (&msg)[N], const Args&... args)
-    {
-        write(Prio::Verbose, msg, args...);
-    }
 
     /** Writes a message with priority Verbose */
     void write_verbose(std::string_view msg) { write(Prio::Verbose, msg); }
@@ -120,19 +88,8 @@ public:
     std::string_view file_path() const;
 
 private:
-    void output(Prio prio, const std::string& str);
+    void output(Prio prio, std::string_view str);
 };
-
-template<size_t N, typename... Args>
-void Log::write(Prio prio, const char (&msg)[N], const Args&... args)
-{
-    // Ignore messages with lower priority than current setting
-    auto [console_verbosity, log_file_verbosity] = get_verbosity();
-    if (prio > console_verbosity && prio > log_file_verbosity) { return; }
-
-    auto formatted_str = fmt::sprintf(msg, args...);
-    output(prio, formatted_str);
-}
 
 //--------------------------------------------------------------------------------------------------
 

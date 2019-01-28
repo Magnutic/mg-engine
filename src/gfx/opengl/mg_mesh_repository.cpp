@@ -23,11 +23,12 @@
 
 #include <mg/gfx/mg_mesh_repository.h>
 
+#include <fmt/core.h>
+
 #include <mg/containers/mg_pooling_vector.h>
 #include <mg/core/mg_log.h>
 #include <mg/resources/mg_mesh_resource.h>
 #include <mg/utils/mg_assert.h>
-#include <mg/utils/mg_format_string.h>
 
 #include "mg_mesh_info.h"
 #include "mg_glad.h"
@@ -55,8 +56,8 @@ public:
     // Destruction of MeshNode should destroy assocated VAO.
     ~MeshNode()
     {
-        g_log.write_verbose(
-            format_string("Deleting VAO %d (Mesh '%s')", mesh_info.vao_id, mesh_info.mesh_id));
+        const auto meshname = mesh_info.mesh_id.c_str();
+        g_log.write_verbose(fmt::format("Deleting VAO {} (Mesh '{}')", mesh_info.vao_id, meshname));
         glDeleteVertexArrays(1, &mesh_info.vao_id);
     }
 };
@@ -82,7 +83,7 @@ struct BufferObject {
     BufferObject() = default;
     ~BufferObject()
     {
-        g_log.write_verbose(format_string("Deleting buffer object %d", gfx_api_id));
+        g_log.write_verbose(fmt::format("Deleting buffer object {}", gfx_api_id));
         glDeleteBuffers(1, &gfx_api_id);
     }
 
@@ -141,22 +142,18 @@ void MeshRepository::Impl::destroy(MeshHandle handle)
     MeshNode& node      = m_mesh_data[index];
 
     BufferObject& vbo = m_buffer_objects[node.vertex_buffer_index];
-    if (--vbo.num_users == 0) {
-        m_buffer_objects.destroy(node.vertex_buffer_index);
-    }
+    if (--vbo.num_users == 0) { m_buffer_objects.destroy(node.vertex_buffer_index); }
 
     BufferObject& ibo = m_buffer_objects[node.index_buffer_index];
-    if (--ibo.num_users == 0) {
-        m_buffer_objects.destroy(node.index_buffer_index);
-    }
+    if (--ibo.num_users == 0) { m_buffer_objects.destroy(node.index_buffer_index); }
 
     m_mesh_data.destroy(index);
 }
 
 VboIndex MeshRepository::Impl::_make_vertex_buffer(size_t size)
 {
-    auto[vbo_index, p_vbo] = m_buffer_objects.construct();
-    p_vbo->type            = BufferObject::Type::Vertex;
+    auto [vbo_index, p_vbo] = m_buffer_objects.construct();
+    p_vbo->type             = BufferObject::Type::Vertex;
 
     glGenBuffers(1, &p_vbo->gfx_api_id);
     glBindBuffer(GL_ARRAY_BUFFER, p_vbo->gfx_api_id);
@@ -167,8 +164,8 @@ VboIndex MeshRepository::Impl::_make_vertex_buffer(size_t size)
 
 IboIndex MeshRepository::Impl::_make_index_buffer(size_t size)
 {
-    auto[ibo_index, p_ibo] = m_buffer_objects.construct();
-    p_ibo->type            = BufferObject::Type::Index;
+    auto [ibo_index, p_ibo] = m_buffer_objects.construct();
+    p_ibo->type             = BufferObject::Type::Index;
 
     glGenBuffers(1, &p_ibo->gfx_api_id);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, p_ibo->gfx_api_id);
@@ -184,7 +181,7 @@ MeshHandle MeshRepository::Impl::_make_mesh(const MeshResource& mesh_res,
                                             IboIndex            ibo_index,
                                             size_t              ibo_data_offset)
 {
-    auto[index, p_mesh_node]      = m_mesh_data.construct();
+    auto [index, p_mesh_node]     = m_mesh_data.construct();
     internal::MeshInfo& mesh_info = p_mesh_node->mesh_info;
 
     mesh_info.self_index = index;
@@ -230,9 +227,7 @@ MeshHandle MeshRepository::Impl::_make_mesh(const MeshResource& mesh_res,
     uintptr_t offset   = 0;
     uint32_t  stride   = 0;
 
-    for (const VertexAttribute& a : g_attrib_array) {
-        stride += a.size;
-    }
+    for (const VertexAttribute& a : g_attrib_array) { stride += a.size; }
 
     for (const VertexAttribute& a : g_attrib_array) {
         glVertexAttribPointer(attrib_i,

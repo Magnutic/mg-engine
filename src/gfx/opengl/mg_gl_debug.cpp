@@ -26,7 +26,6 @@
 #include <fmt/core.h>
 
 #include "mg/core/mg_log.h"
-#include "mg/utils/mg_format_string.h"
 
 #include "mg_glad.h"
 

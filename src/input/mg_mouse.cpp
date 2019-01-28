@@ -25,9 +25,10 @@
 
 #include <GLFW/glfw3.h>
 
+#include <fmt/core.h>
+
 #include <mg/core/mg_log.h>
 #include <mg/core/mg_window.h>
-#include <mg/utils/mg_format_string.h>
 
 namespace Mg::input {
 
@@ -87,7 +88,7 @@ InputSource Mouse::axis(Axis axis) const
 
 static std::string button_description(Mouse::Button button)
 {
-    return format_string("Mouse button %d", int(button) + 1);
+    return fmt::format("Mouse button {}", int(button) + 1);
 }
 
 static std::string axis_description(Mouse::Axis axis)
