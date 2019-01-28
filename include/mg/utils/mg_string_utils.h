@@ -170,9 +170,7 @@ template<typename T> std::pair<bool, T> string_to(std::string_view str)
 
     std::stringstream ss{ std::string(str) };
 
-    if (ss >> value) {
-        success = ss.eof();
-    }
+    if (ss >> value) { success = ss.eof(); }
 
     return { success, value };
 };

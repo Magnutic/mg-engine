@@ -652,4 +652,3 @@ template<typename T> void swap(Slot_map<T>& lhs, Slot_map<T>& rhs) noexcept
 }
 
 } // namespace Mg
-

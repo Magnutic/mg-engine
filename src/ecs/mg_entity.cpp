@@ -32,9 +32,7 @@ size_t ComponentTag::n_component_types = 0;
 // Reset EntityCollection, destroying all entities and components
 void EntityCollection::reset()
 {
-    for (auto& ptr : m_component_collections) {
-        ptr.release();
-    }
+    for (auto& ptr : m_component_collections) { ptr.release(); }
     m_entity_data.clear();
     m_component_lists.clear();
 }

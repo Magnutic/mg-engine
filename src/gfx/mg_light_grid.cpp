@@ -37,9 +37,7 @@ namespace Mg::gfx {
 void LightGrid::calculate_delim_planes(glm::mat4 P)
 {
     // If projection has not changed, we can re-use the previous planes
-    if (P == m_prev_projection) {
-        return;
-    }
+    if (P == m_prev_projection) { return; }
     m_prev_projection = P;
 
     glm::vec2 scale = glm::vec2{ MG_LIGHT_GRID_WIDTH, MG_LIGHT_GRID_HEIGHT } / 2.0f;
@@ -84,12 +82,8 @@ LightGrid::extents(const glm::vec3& pos_view, float radius_sqr, bool horizontal,
     size_t min = 0;
     size_t max = horizontal ? MG_LIGHT_GRID_HEIGHT : MG_LIGHT_GRID_WIDTH;
 
-    if (signed_sqr_distance(planes[min], offset, depth) < cmp_sign * radius_sqr) {
-        return 0;
-    }
-    if (signed_sqr_distance(planes[max], offset, depth) > cmp_sign * radius_sqr) {
-        return max;
-    }
+    if (signed_sqr_distance(planes[min], offset, depth) < cmp_sign * radius_sqr) { return 0; }
+    if (signed_sqr_distance(planes[max], offset, depth) > cmp_sign * radius_sqr) { return max; }
 
     while (max - min > 1u) {
         const size_t      pivot       = min + (max - min) / 2;
@@ -98,9 +92,7 @@ LightGrid::extents(const glm::vec3& pos_view, float radius_sqr, bool horizontal,
         const float dist_sqr_signed = signed_sqr_distance(pivot_plane, offset, depth);
 
         // Is light completely over delimiter
-        if (dist_sqr_signed > cmp_sign * radius_sqr) {
-            min = pivot;
-        }
+        if (dist_sqr_signed > cmp_sign * radius_sqr) { min = pivot; }
         else {
             max = pivot;
         }

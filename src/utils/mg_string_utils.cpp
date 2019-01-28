@@ -58,9 +58,7 @@ std::string iso_8859_1_to_utf8(std::string_view str)
         unsigned char uc;
         std::memcpy(&uc, &c, 1);
 
-        if (uc < 0x80) {
-            out.push_back(c);
-        }
+        if (uc < 0x80) { out.push_back(c); }
         else {
             auto out_uchar0 = narrow<unsigned char>(0xc0 | uc >> 6);
             auto out_uchar1 = narrow<unsigned char>(0x80 | (uc & 0x3f));
@@ -147,14 +145,10 @@ std::pair<std::string_view, std::string_view> split_string_on_char(std::string_v
 {
     size_t index;
     for (index = 0; index < s.length(); ++index) {
-        if (s[index] == c) {
-            break;
-        }
+        if (s[index] == c) { break; }
     }
 
-    if (index < s.length()) {
-        return std::make_pair(s.substr(0, index), s.substr(index + 1));
-    }
+    if (index < s.length()) { return std::make_pair(s.substr(0, index), s.substr(index + 1)); }
 
     return std::make_pair(s, std::string_view{});
 }
@@ -190,15 +184,11 @@ size_t find_any_of(std::string_view str, std::string_view chars)
 
     for (char c : str) {
         auto it = std::find(chars.begin(), chars.end(), c);
-        if (it != chars.end()) {
-            break;
-        }
+        if (it != chars.end()) { break; }
         ret_val++;
     }
 
-    if (ret_val == str.length()) {
-        ret_val = std::string::npos;
-    }
+    if (ret_val == str.length()) { ret_val = std::string::npos; }
 
     return ret_val;
 }
@@ -208,9 +198,7 @@ std::string to_lower(std::string_view str)
 {
     std::string ret_val;
     ret_val.reserve(str.length());
-    for (char c : str) {
-        ret_val += static_cast<char>(tolower(c));
-    }
+    for (char c : str) { ret_val += static_cast<char>(tolower(c)); }
     return ret_val;
 }
 
@@ -219,9 +207,7 @@ std::string to_upper(std::string_view str)
 {
     std::string ret_val;
     ret_val.reserve(str.length());
-    for (char c : str) {
-        ret_val += static_cast<char>(toupper(c));
-    }
+    for (char c : str) { ret_val += static_cast<char>(toupper(c)); }
     return ret_val;
 }
 
@@ -234,17 +220,13 @@ std::string clean_path(std::string_view path)
 
     for (;;) {
         auto duplicate = std::search_n(ret_val.begin(), ret_val.end(), 2, '/');
-        if (duplicate == ret_val.end()) {
-            break;
-        }
+        if (duplicate == ret_val.end()) { break; }
         ret_val.erase(duplicate);
     }
 
     auto last_index = ret_val.find_last_not_of('/');
 
-    if (last_index != std::string::npos) {
-        ret_val = ret_val.substr(0, last_index + 1);
-    }
+    if (last_index != std::string::npos) { ret_val = ret_val.substr(0, last_index + 1); }
 
     return ret_val;
 }

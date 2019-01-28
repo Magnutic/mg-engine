@@ -121,9 +121,7 @@ ThreadPool::~ThreadPool()
 
     // Join all threads
     for (auto& thread : m_threads) {
-        if (thread.joinable()) {
-            thread.join();
-        }
+        if (thread.joinable()) { thread.join(); }
     }
 }
 
@@ -173,9 +171,7 @@ void ThreadPool::execute_job_loop()
             // Wait until a job is available (or the pool is being destroyed)
             m_job_available_var.wait(lock, [this] { return m_queue.size() > 0 || m_exiting; });
 
-            if (m_exiting) {
-                return;
-            }
+            if (m_exiting) { return; }
 
             current_job = m_queue.front();
             m_queue.pop();

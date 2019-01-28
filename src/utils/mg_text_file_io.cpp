@@ -40,9 +40,7 @@ std::optional<std::ofstream> make_output_filestream(std::string_view filepath, b
 
     auto writer = std::make_optional<std::ofstream>(widen_if_msvc(filepath), mode);
 
-    if (!writer->good()) {
-        return {};
-    }
+    if (!writer->good()) { return {}; }
 
     return writer;
 }
@@ -51,9 +49,7 @@ std::optional<std::ifstream> make_input_filestream(std::string_view filepath)
 {
     auto writer = std::make_optional<std::ifstream>(widen_if_msvc(filepath));
 
-    if (!writer->good()) {
-        return {};
-    }
+    if (!writer->good()) { return {}; }
 
     return writer;
 }
@@ -63,9 +59,7 @@ std::string all_text(std::istream& stream)
     std::string file_text;
     file_text.reserve(512);
 
-    while (!stream.eof()) {
-        file_text += get_line(stream) + "\n";
-    }
+    while (!stream.eof()) { file_text += get_line(stream) + "\n"; }
 
     return file_text;
 }
@@ -77,9 +71,7 @@ std::string get_line(std::istream& stream)
 
     while (peek_char(stream) != 0) {
         auto c = get_char(stream);
-        if (c == '\n') {
-            break;
-        }
+        if (c == '\n') { break; }
         line += c;
     }
 
@@ -88,23 +80,17 @@ std::string get_line(std::istream& stream)
 
 std::string get_token(std::istream& stream, std::string_view delims)
 {
-    if (!stream.good()) {
-        return {};
-    }
+    if (!stream.good()) { return {}; }
 
     auto is_delim = [&](char c) { return find(delims, c) != delims.end(); };
 
     std::string token;
 
     // Discard preceding delimiters
-    while (is_delim(peek_char(stream)) && !stream.eof()) {
-        get_char(stream);
-    }
+    while (is_delim(peek_char(stream)) && !stream.eof()) { get_char(stream); }
 
     // Read token until we hit a delimiter
-    while (is_delim(peek_char(stream)) && !stream.eof()) {
-        token += get_char(stream);
-    }
+    while (is_delim(peek_char(stream)) && !stream.eof()) { token += get_char(stream); }
 
     return token;
 }
@@ -113,9 +99,7 @@ char peek_char(std::istream& stream)
 {
     int value = stream.peek();
 
-    if (value == std::char_traits<char>::eof()) {
-        return '\0';
-    }
+    if (value == std::char_traits<char>::eof()) { return '\0'; }
 
     return static_cast<char>(value);
 }
@@ -131,9 +115,7 @@ void write_line(std::ostream& stream, std::string_view string)
 {
     stream << string;
 
-    if (string.empty() || string[string.size() - 1] != '\n') {
-        stream << "\n";
-    }
+    if (string.empty() || string[string.size() - 1] != '\n') { stream << "\n"; }
 }
 
 } // namespace Mg::io

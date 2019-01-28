@@ -90,17 +90,13 @@ public:
     small_vector(const small_vector& rhs) : small_vector()
     {
         reserve(rhs.size());
-        for (const T& elem : rhs) {
-            push_back(elem);
-        }
+        for (const T& elem : rhs) { push_back(elem); }
     }
 
     small_vector(small_vector&& rhs) noexcept : small_vector()
     {
         if (rhs.uses_local_storage()) {
-            for (T& elem : rhs) {
-                push_back(std::move_if_noexcept(elem));
-            }
+            for (T& elem : rhs) { push_back(std::move_if_noexcept(elem)); }
         }
         else {
             _switch_to_external_storage(std::move(rhs.m_external_buffer), rhs.capacity());
@@ -112,9 +108,7 @@ public:
     /** Construct small_vector with `count` number of copies of `value`. */
     explicit small_vector(size_type count, const T& value) : small_vector()
     {
-        while (count--) {
-            push_back(value);
-        }
+        while (count--) { push_back(value); }
     }
 
     /** Construct small_vector with `count` number of default-constructed elements.
@@ -129,9 +123,7 @@ public:
              std::enable_if_t<is_input_it<InputIt> && !is_forward_it<InputIt>, int> = 0>
     small_vector(InputIt first, InputIt last) : small_vector()
     {
-        for (InputIt it = first; it != last; ++it) {
-            push_back(*it);
-        }
+        for (InputIt it = first; it != last; ++it) { push_back(*it); }
     }
 
     /** Construct by copying from ForwardIterator range.
@@ -141,18 +133,14 @@ public:
     small_vector(ForwardIt first, ForwardIt last) : small_vector()
     {
         reserve(size_type(std::distance(first, last)));
-        for (ForwardIt it = first; it != last; ++it) {
-            push_back(*it);
-        }
+        for (ForwardIt it = first; it != last; ++it) { push_back(*it); }
     }
 
     /** Construct by copying elements from initializer-list. */
     small_vector(std::initializer_list<T> init) : small_vector()
     {
         reserve(init.size());
-        for (const T& elem : init) {
-            push_back(elem);
-        }
+        for (const T& elem : init) { push_back(elem); }
     }
 
     // Assignment
@@ -196,18 +184,14 @@ public:
     /** Bounds-checked element access. Throws std::out_of_range if `index` is out of range. */
     reference at(size_type index)
     {
-        if (index >= size()) {
-            throw std::out_of_range("small_vector::at(): index out of range.");
-        }
+        if (index >= size()) { throw std::out_of_range("small_vector::at(): index out of range."); }
         return data()[index];
     }
 
     /** Bounds-checked element access. Throws std::out_of_range if `index` is out of range. */
     const_reference at(size_type index) const
     {
-        if (index >= size()) {
-            throw std::out_of_range("small_vector::at(): index out of range.");
-        }
+        if (index >= size()) { throw std::out_of_range("small_vector::at(): index out of range."); }
         return data()[index];
     }
 
@@ -275,9 +259,7 @@ public:
      */
     void reserve(size_type new_capacity)
     {
-        if (new_capacity <= capacity()) {
-            return;
-        }
+        if (new_capacity <= capacity()) { return; }
 
         if (new_capacity >= max_size()) {
             throw std::length_error("Mg::small_vector::reserve(): requested capacity too large.");
@@ -288,9 +270,7 @@ public:
 
     void shrink_to_fit()
     {
-        if (uses_local_storage()) {
-            return;
-        }
+        if (uses_local_storage()) { return; }
 
         ExternalBufferPtr buf = _alloc_external_buffer(size());
         _move_elems_between_buffers(m_external_buffer.get(), buf.get(), size());
@@ -323,13 +303,9 @@ public:
     void clear() noexcept
     {
         size_type index = size();
-        while (index != 0) {
-            _destroy_at(--index);
-        }
+        while (index != 0) { _destroy_at(--index); }
 
-        if (!uses_local_storage()) {
-            _switch_to_local_storage(0);
-        }
+        if (!uses_local_storage()) { _switch_to_local_storage(0); }
 
         m_size = 0;
     }
@@ -342,9 +318,7 @@ public:
     {
         auto index = std::distance(cbegin(), pos);
         reserve(size() + count);
-        while (count--) {
-            emplace_back(value);
-        }
+        while (count--) { emplace_back(value); }
         _move_last_n_to_pos(index, 1);
         return begin() + index;
     }
@@ -400,9 +374,7 @@ public:
         size_type index = std::distance(cbegin(), pos);
         reserve(size() + init.size());
 
-        for (const T& value : init) {
-            emplace_back(value);
-        }
+        for (const T& value : init) { emplace_back(value); }
 
         _move_last_n_to_pos(index, init.size());
         return begin() + index;
@@ -550,9 +522,7 @@ private:
         assert(uses_local_storage());
         assert(rhs.uses_local_storage());
 
-        if (trivial_copy) {
-            _swap_local_trivial(rhs);
-        }
+        if (trivial_copy) { _swap_local_trivial(rhs); }
         else {
             _swap_local_non_trivial(rhs);
         }
@@ -597,9 +567,7 @@ private:
         }
 
         // Swap those elements which exist at the same index in both vectors
-        for (size_type i = 0; i < small_size; ++i) {
-            swap((*this)[i], rhs[i]);
-        }
+        for (size_type i = 0; i < small_size; ++i) { swap((*this)[i], rhs[i]); }
 
         // Remove the (moved-from) values at the end of the larger vector
         large_vec._shrink_to(small_size);
@@ -658,9 +626,7 @@ private:
             T tmp(std::forward<Args>(args)...);
             reserve(count);
 
-            while (size() < count) {
-                _construct_at(m_size++, tmp);
-            }
+            while (size() < count) { _construct_at(m_size++, tmp); }
         }
 
         _shrink_to(count);
@@ -707,9 +673,7 @@ private:
         }
 
         // If successful, destroy original elements
-        for (i = 0; i < num; ++i) {
-            reinterpret_cast<pointer>(&src[num - 1 - i])->~T();
-        }
+        for (i = 0; i < num; ++i) { reinterpret_cast<pointer>(&src[num - 1 - i])->~T(); }
     }
 
     // Switch to local buffer for element storage. (noexcept commented due to warnings).

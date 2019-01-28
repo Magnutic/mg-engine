@@ -28,15 +28,11 @@ struct O : public Mg::Observer<E> {
     {
         ++num_notifications_received;
 
-        if (e.index != index) {
-            return;
-        }
+        if (e.index != index) { return; }
 
         ++num_notifications_for_this;
 
-        if (e.value != expected) {
-            throw - 1;
-        }
+        if (e.value != expected) { throw - 1; }
     }
 };
 
@@ -127,9 +123,7 @@ TEST_CASE("Obsever: Remove during notification")
         {
             ++num_notifications_received;
 
-            if (i != id) {
-                return;
-            }
+            if (i != id) { return; }
 
             ++num_notifications_for_this;
             detach();

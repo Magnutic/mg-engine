@@ -645,4 +645,3 @@ std::string ShaderResource::debug_print() const
 }
 
 } // namespace Mg
-

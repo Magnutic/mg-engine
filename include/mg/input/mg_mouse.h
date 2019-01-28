@@ -46,11 +46,11 @@ public:
     static constexpr size_t k_num_buttons = 8;
 
     enum class Axis {
-        pos_x, /* X-coordinate in absolute position. */
-        pos_y, /* Y-coordinate in absolute position. */
+        pos_x,   /* X-coordinate in absolute position. */
+        pos_y,   /* Y-coordinate in absolute position. */
         delta_x, /* Difference in X-coordinate since last refresh. */
         delta_y, /* Difference in Y-coordinate since last refresh. */
-	};
+    };
     static constexpr size_t k_num_axes = 4;
 
     static constexpr size_t k_max_mouse_input_id = k_num_buttons + k_num_axes;

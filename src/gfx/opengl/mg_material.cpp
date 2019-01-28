@@ -276,4 +276,3 @@ std::string shader_interface_code(const Material& material)
 }
 
 } // namespace Mg::gfx
-

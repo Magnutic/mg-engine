@@ -104,4 +104,3 @@ ShaderFactory::ShaderHandle ShaderFactory::get_shader(const Material& material)
 }
 
 } // namespace Mg::gfx
-

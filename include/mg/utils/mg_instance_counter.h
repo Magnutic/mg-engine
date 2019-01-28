@@ -76,9 +76,7 @@ public:
         m_initialised = true;
         m_moved_from  = rhs.m_moved_from;
 
-        if (!rhs.is_moved_from()) {
-            ++detail::CounterValues<T>::s_counter;
-        }
+        if (!rhs.is_moved_from()) { ++detail::CounterValues<T>::s_counter; }
 
         ++detail::CounterValues<T>::s_counter_move;
     }
@@ -98,26 +96,18 @@ public:
         m_initialised = false;
         m_destroyed   = true;
         --detail::CounterValues<T>::s_counter_move;
-        if (!is_moved_from()) {
-            --detail::CounterValues<T>::s_counter;
-        }
+        if (!is_moved_from()) { --detail::CounterValues<T>::s_counter; }
     }
 
     InstanceCounter& operator=(const InstanceCounter& rhs)
     {
         check_rhs("Copy assigning", rhs);
 
-        if (allow_self_assignment && this == &rhs) {
-            return *this;
-        }
+        if (allow_self_assignment && this == &rhs) { return *this; }
 
-        if (!is_moved_from() && rhs.is_moved_from()) {
-            --detail::CounterValues<T>::s_counter;
-        }
+        if (!is_moved_from() && rhs.is_moved_from()) { --detail::CounterValues<T>::s_counter; }
 
-        if (is_moved_from() && !rhs.is_moved_from()) {
-            ++detail::CounterValues<T>::s_counter;
-        }
+        if (is_moved_from() && !rhs.is_moved_from()) { ++detail::CounterValues<T>::s_counter; }
 
         m_moved_from = rhs.m_moved_from;
         return *this;
@@ -127,13 +117,9 @@ public:
     {
         check_rhs("Move assigning", rhs);
 
-        if (allow_self_assignment && this == &rhs) {
-            return *this;
-        }
+        if (allow_self_assignment && this == &rhs) { return *this; }
 
-        if (!is_moved_from()) {
-            --detail::CounterValues<T>::s_counter;
-        }
+        if (!is_moved_from()) { --detail::CounterValues<T>::s_counter; }
 
         m_moved_from     = rhs.m_moved_from;
         rhs.m_moved_from = true;
@@ -164,21 +150,13 @@ private:
             error = true;
         };
 
-        if (!allow_self_assignment && this == &rhs) {
-            notify_error("self-assignment");
-        }
+        if (!allow_self_assignment && this == &rhs) { notify_error("self-assignment"); }
 
-        if (!rhs.is_initialised()) {
-            notify_error("rhs is unitialised");
-        }
+        if (!rhs.is_initialised()) { notify_error("rhs is unitialised"); }
 
-        if (!allow_copy_from_moved && rhs.is_moved_from()) {
-            notify_error("rhs is moved-from");
-        }
+        if (!allow_copy_from_moved && rhs.is_moved_from()) { notify_error("rhs is moved-from"); }
 
-        if (rhs.is_destroyed()) {
-            notify_error("rhs is destroyed");
-        }
+        if (rhs.is_destroyed()) { notify_error("rhs is destroyed"); }
 
         if (error) {
             ss << "(this: " << this << ", rhs: " << &rhs << ")";
@@ -193,4 +171,3 @@ private:
 };
 
 } // namespace Mg
-

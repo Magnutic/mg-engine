@@ -30,8 +30,8 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
-#include <vector>
 #include <type_traits>
+#include <vector>
 
 #include <mg/core/mg_identifier.h>
 #include <mg/utils/mg_assert.h>
@@ -157,9 +157,7 @@ private:
     template<typename T> void _set_value(std::string_view key, const T& value)
     {
         auto p_cvar = at(key);
-        if (p_cvar != nullptr) {
-            p_cvar->set(value);
-        }
+        if (p_cvar != nullptr) { p_cvar->set(value); }
         else {
             m_values.emplace_back(key, value);
         }

@@ -45,9 +45,7 @@ public:
     BinaryFileHandler() = default;
     ~BinaryFileHandler()
     {
-        if (m_file) {
-            std::fclose(m_file);
-        }
+        if (m_file) { std::fclose(m_file); }
     }
 
     /** Get whether we have reached the end of the file stream. */
@@ -175,9 +173,7 @@ inline size_t BinaryFileReader::size() const
 
 inline bool BinaryFileWriter::open(std::string_view filepath, bool overwrite)
 {
-    if (overwrite) {
-        return _open(filepath, "wb");
-    }
+    if (overwrite) { return _open(filepath, "wb"); }
     return _open(filepath, "wb+");
 }
 

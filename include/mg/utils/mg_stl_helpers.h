@@ -58,9 +58,7 @@ ElemT* find_in_map(MapT& map, const KeyT& key)
 {
     auto it = map.find(key);
 
-    if (it == map.end()) {
-        return nullptr;
-    }
+    if (it == map.end()) { return nullptr; }
 
     return std::addressof(it->second);
 }
@@ -94,9 +92,7 @@ index_where_result index_where(ContT&& container, F&& predicate)
     size_t index = 0;
 
     for (auto&& elem : container) {
-        if (predicate(elem)) {
-            break;
-        }
+        if (predicate(elem)) { break; }
         ++index;
     }
 

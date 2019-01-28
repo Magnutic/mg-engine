@@ -108,9 +108,7 @@ void update_light_data(LightBuffers&     light_data_out,
     for (size_t light_index = 0; light_index < lights.size(); ++light_index) {
         const Light& l = lights[light_index];
 
-        if (l.vector.w == 0.0) {
-            continue;
-        }
+        if (l.vector.w == 0.0) { continue; }
 
         const glm::vec3 light_pos_world = glm::vec3(l.vector);
         const glm::vec3 light_pos_view  = V * glm::vec4(light_pos_world, 1.0f);
@@ -125,7 +123,7 @@ void update_light_data(LightBuffers&     light_data_out,
         const size_t min_y = grid.extents(light_pos_view, l.range_sqr, true, false);
         const size_t max_y = grid.extents(light_pos_view, l.range_sqr, true, true);
 
-        const auto[min_z, max_z] =
+        const auto [min_z, max_z] =
             LightGrid::depth_extents(-light_pos_view.z, glm::fastSqrt(l.range_sqr));
 
         for (auto z = min_z; z < max_z; ++z) {

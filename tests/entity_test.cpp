@@ -51,13 +51,9 @@ TEST_CASE("Entity")
     {
         std::vector<Mg::ecs::Entity> handles;
 
-        for (size_t i = 0; i < 1024; ++i) {
-            handles.push_back(ent_col.create_entity());
-        }
+        for (size_t i = 0; i < 1024; ++i) { handles.push_back(ent_col.create_entity()); }
 
-        for (auto& h : handles) {
-            ent_col.delete_entity(h);
-        }
+        for (auto& h : handles) { ent_col.delete_entity(h); }
 
         REQUIRE(ent_col.num_entities() == 0);
     }
@@ -127,7 +123,7 @@ TEST_CASE("Entity")
         ent_col.add_component<Position>(handle3, 5.0f, 5.0f);
         ent_col.add_component<TestComponent>(handle3, 2u, "handle3");
 
-        for (auto[entity, test_component, position] :
+        for (auto [entity, test_component, position] :
              ent_col.get_with_components<TestComponent, Position>()) {
             CHECK(ent_col.has_component<TestComponent>(entity));
             CHECK(ent_col.has_component<Position>(entity));

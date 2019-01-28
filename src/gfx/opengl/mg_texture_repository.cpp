@@ -46,15 +46,15 @@ TextureRepository::~TextureRepository() = default;
 
 TextureHandle TextureRepository::create(const TextureResource& resource)
 {
-    auto[index, ptr] = m_impl->m_nodes.construct(Texture2D::from_texture_resource(resource));
-    ptr->self_index  = index;
+    auto [index, ptr] = m_impl->m_nodes.construct(Texture2D::from_texture_resource(resource));
+    ptr->self_index   = index;
     return make_texture_handle(ptr);
 }
 
 TextureHandle TextureRepository::create_render_target(const RenderTargetParams& params)
 {
-    auto[index, ptr] = m_impl->m_nodes.construct(Texture2D::render_target(params));
-    ptr->self_index  = index;
+    auto [index, ptr] = m_impl->m_nodes.construct(Texture2D::render_target(params));
+    ptr->self_index   = index;
     return make_texture_handle(ptr);
 }
 

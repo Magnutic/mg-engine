@@ -21,9 +21,7 @@ TEST_CASE("CompactingHeap: basic test")
     Mg::memory::CompactingHeap ch(32 * sizeof(S));
 
     Mg::memory::CHHandle<S[]> sh = ch.alloc<S[]>(2);
-    for (S& s : sh) {
-        REQUIRE(std::string_view(s.char_buf) == "Hello");
-    }
+    for (S& s : sh) { REQUIRE(std::string_view(s.char_buf) == "Hello"); }
 
     Mg::memory::CHHandle<char[]> string_h;
 
@@ -68,9 +66,7 @@ TEST_CASE("CompactingHeap: randomised test")
 
     auto verify_data = [&refs] {
         for (auto& elem : refs) {
-            for (auto& i : elem.handle) {
-                REQUIRE(elem.value == i);
-            }
+            for (auto& i : elem.handle) { REQUIRE(elem.value == i); }
         }
     };
 
@@ -95,9 +91,7 @@ TEST_CASE("CompactingHeap: randomised test")
 
         // Delete handle
         [&](uint32_t arg) {
-            if (refs.empty()) {
-                return;
-            }
+            if (refs.empty()) { return; }
             std::cout << "Delete handle\n";
             refs.erase(refs.begin() + (arg % refs.size()));
         },
@@ -114,7 +108,6 @@ TEST_CASE("CompactingHeap: randomised test")
                 std::cout << "Compact\n";
                 ch.compact();
             }
-
         } } };
 
     for (size_t i = 0; i < k_iterations; ++i) {

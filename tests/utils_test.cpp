@@ -114,4 +114,3 @@ TEST_CASE("PointNormalPlane")
     REQUIRE(sgn_dist == Approx(-1.0f / sqrt(2.0f)));
     REQUIRE(dist == Approx(1.0f / sqrt(2.0f)));
 }
-

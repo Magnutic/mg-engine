@@ -402,9 +402,7 @@ public:
 
     ~CHHandle()
     {
-        if (this->m_owning_heap != nullptr) {
-            this->m_owning_heap->_dealloc(this->m_alloc_index);
-        }
+        if (this->m_owning_heap != nullptr) { this->m_owning_heap->_dealloc(this->m_alloc_index); }
     }
 
     CHHandle& operator=(CHHandle rhs) noexcept
@@ -484,4 +482,3 @@ template<typename T> void swap(CHPtr<T>& lhs, CHPtr<T>& rhs)
 }
 
 } // namespace Mg::memory
-

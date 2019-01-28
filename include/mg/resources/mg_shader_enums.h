@@ -27,8 +27,8 @@
 
 #pragma once
 
-#include <string_view>
 #include <optional>
+#include <string_view>
 
 namespace Mg {
 

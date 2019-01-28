@@ -42,9 +42,7 @@ static MouseType type(InputSource::Id id)
 {
     MG_ASSERT(id < Mouse::k_max_mouse_input_id);
 
-    if (id < Mouse::k_num_buttons) {
-        return MouseType::Button;
-    }
+    if (id < Mouse::k_num_buttons) { return MouseType::Button; }
 
     return MouseType::Axis;
 }

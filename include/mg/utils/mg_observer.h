@@ -59,12 +59,8 @@ public:
         rhs.m_prevs_next = nullptr;
         rhs.m_next       = nullptr;
 
-        if (m_prevs_next) {
-            *m_prevs_next = this;
-        }
-        if (m_next) {
-            m_next->m_prevs_next = &m_next;
-        }
+        if (m_prevs_next) { *m_prevs_next = this; }
+        if (m_next) { m_next->m_prevs_next = &m_next; }
 
         sanity_check_assert();
     }
@@ -90,13 +86,9 @@ public:
     /** Detach observer from Subject. */
     void detach()
     {
-        if (m_next) {
-            m_next->m_prevs_next = m_prevs_next;
-        }
+        if (m_next) { m_next->m_prevs_next = m_prevs_next; }
 
-        if (m_prevs_next) {
-            *m_prevs_next = m_next;
-        }
+        if (m_prevs_next) { *m_prevs_next = m_next; }
 
         m_prevs_next = nullptr;
         m_next       = nullptr;
@@ -140,9 +132,7 @@ public:
         m_head     = rhs.m_head;
         rhs.m_head = nullptr;
 
-        if (m_head) {
-            m_head->m_prevs_next = &m_head;
-        }
+        if (m_head) { m_head->m_prevs_next = &m_head; }
     }
 
     // Remove all Observers from list at destruction
@@ -179,9 +169,7 @@ public:
         observer.m_prevs_next = &m_head;
         observer.m_next       = m_head;
 
-        if (m_head) {
-            m_head->m_prevs_next = &(observer.m_next);
-        }
+        if (m_head) { m_head->m_prevs_next = &(observer.m_next); }
 
         m_head = &observer;
     }

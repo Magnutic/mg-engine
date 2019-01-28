@@ -59,9 +59,7 @@ public:
      */
     template<typename... Args> ConstructReturn construct(Args&&... args)
     {
-        if (m_free_indices.empty()) {
-            _grow();
-        }
+        if (m_free_indices.empty()) { _grow(); }
 
         uint32_t index = m_free_indices.back();
         m_free_indices.pop_back();
