@@ -145,7 +145,6 @@ endif()
 
 # Configuration defines for dependencies
 target_compile_definitions(mg_engine PUBLIC
-    gsl_CONFIG_ALLOWS_UNCONSTRAINED_SPAN_CONTAINER_CTOR=0
     GLM_ENABLE_EXPERIMENTAL # Use experimental (GTX) features in GLM (required for GLM > v0.9.9.0)
 )
 
