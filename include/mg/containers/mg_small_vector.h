@@ -1,48 +1,108 @@
 #pragma once
 
-#include <algorithm>
-#include <cassert>
+// Only include smaller stdlib headers -- keeps preprocessed code size fairly small.
 #include <cstddef>
-#include <iterator>
-#include <memory>
 #include <new>
-#include <stdexcept>
 #include <type_traits>
 #include <utility>
 
-// Prefer local buffer: whether Mg::small_vector tries to fit its data into its local buffer
-// whenever possible.
-// If enabled, it automatically moves the elements into the local buffer whenever size is small
-// enough, for example after calls to erase() or resize().
-// This option is disabled by default -- for compatibility with std::vector -- since it may result
-// in iterator invalidation of all elements when erasing.
-#ifndef MG_ALWAYS_PREFER_LOCAL_BUFFER
-#define MG_ALWAYS_PREFER_LOCAL_BUFFER false
-#endif
-
-// Growth factor: how much the capacity shall multiply whenever the present capacity is exceeded.
-#ifndef MG_SMALL_VECTOR_GROWTH_FACTOR
-#define MG_SMALL_VECTOR_GROWTH_FACTOR 2
-#endif
-
-// Whether to check for out of bounds access in operator[].
-#ifndef MG_CHECK_ELEMENT_ACCESS
-#define MG_CHECK_ELEMENT_ACCESS true
+// What assertion function or macro to use.
+#ifndef MG_SMALL_VECTOR_ASSERT
+#include <cassert>
+#define MG_SMALL_VECTOR_ASSERT(exp) assert(exp)
 #endif
 
 namespace Mg {
 
-template<typename It, typename Tag>
-static constexpr bool is_iterator_category =
-    std::is_base_of<Tag, typename std::iterator_traits<It>::iterator_category>::value;
+namespace detail {
 
-// True when `It` is an input iterator.
-template<typename It>
-static constexpr bool is_input_it = is_iterator_category<It, std::input_iterator_tag>;
+// RAII-type for managing external vector-data buffers (i.e. the vector data when it does not fit
+// inside the internal buffer).
+// This could also be done using std::unique_ptr, but this type is slightly more convenient to use
+// and -- more importantly -- avoids the #include-dependency on <memory>, which is suprisingly
+// heavy.
+template<typename T> class ExternalBuffer {
+public:
+    ExternalBuffer() = default;
+    ~ExternalBuffer() { delete[] m_p_data; }
 
-// True when `It` is a forward iterator.
-template<typename It>
-static constexpr bool is_forward_it = is_iterator_category<It, std::forward_iterator_tag>;
+    ExternalBuffer(const ExternalBuffer&) = delete;
+    const ExternalBuffer& operator=(const ExternalBuffer& rhs) = delete;
+
+    ExternalBuffer(ExternalBuffer&& rhs) noexcept : m_p_data(rhs.m_p_data) { rhs.m_p_data = {}; }
+
+    ExternalBuffer& operator=(ExternalBuffer&& rhs) noexcept
+    {
+        ExternalBuffer tmp(std::move(rhs));
+        swap(tmp);
+        return *this;
+    }
+
+    static ExternalBuffer allocate(std::size_t num)
+    {
+        ExternalBuffer eb;
+        eb.m_p_data = new T[num];
+        return eb;
+    }
+
+    void swap(ExternalBuffer& rhs) noexcept { std::swap(m_p_data, rhs.m_p_data); }
+
+    T* get() const noexcept { return m_p_data; }
+    T& operator[](std::size_t i) const noexcept { return m_p_data[i]; }
+
+private:
+    T* m_p_data = nullptr;
+};
+
+// Equivalent to std::rotate, implemented here to avoid dependency on the <algorithm> header.
+// Implementation adapted from cppreference.com, license:
+// https://creativecommons.org/licenses/by-sa/3.0/
+template<class ForwardIt> ForwardIt rotate(ForwardIt first, ForwardIt n_first, ForwardIt last)
+{
+    if (first == n_first) { return last; }
+    if (n_first == last) { return first; }
+
+    ForwardIt read      = n_first;
+    ForwardIt write     = first;
+    ForwardIt next_read = first; // Read position for when "read" hits "last".
+
+    while (read != last) {
+        if (write == next_read) {
+            next_read = read; // Track where "first" went.
+        }
+        std::swap(*(write++), *(read++));
+    }
+
+    // Rotate the remaining sequence into place.
+    rotate(write, next_read, last);
+    return write;
+}
+
+// Compare two ranges lexicographically; returns -1 if range1 is smaller, returns 1 if range1 is
+// larger, returns 0 if they are equal.
+template<class InputIt1, class InputIt2>
+int range_compare(InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2)
+{
+    for (; (first1 != last1) && (first2 != last2); ++first1, ++first2) {
+        if (*first1 < *first2) { return -1; }
+        if (*first2 < *first1) { return 1; }
+    }
+
+    if (first1 == last1 && first2 == last2) {
+        // Equal-length ranges.
+        return 0;
+    }
+
+    if (first1 == last1 && first2 != last2) {
+        // Range 2 is longer.
+        return -1;
+    }
+
+    // Range 1 is longer.
+    return 1;
+}
+
+} // namespace detail
 
 /** Mg::small_vector is a dynamically sized array, similar to std::vector, with the difference that
  * a certain space is reserved in the small_vector object for local storage of small vectors.
@@ -53,6 +113,10 @@ static constexpr bool is_forward_it = is_iterator_category<It, std::forward_iter
  * If the number of elements grows beyond the size of the local storage, the container falls back to
  * dynamic allocation, behaving like std::vector.
  *
+ * For simplicity and smaller code size, Mg::small_vector only implements a subset of std::vector's
+ * interface. Range-based construction and assignment are not supported, and neither are
+ * reverse-iterator getters (rbegin(), rend(), etc.).
+ *
  * @tparam T Element type
  * @tparam num_local_elems Number of elements for which local storage is reserved.
  */
@@ -61,6 +125,16 @@ template<typename T, std::size_t num_local_elems> class small_vector {
     static constexpr bool trivial_copy = std::is_trivially_copyable<T>::value;
     static constexpr bool nothrow_move = std::is_nothrow_move_constructible<T>::value;
     static constexpr bool nothrow_swap = trivial_copy || nothrow_move;
+
+    struct alignas(T) elem_data_t {
+        unsigned char data[sizeof(T)];
+    };
+
+    using ExternalBuffer = detail::ExternalBuffer<elem_data_t>;
+
+    // According to the following source, 1.5 is a good choice for a vector's growth factor:
+    // https://github.com/facebook/folly/blob/master/folly/docs/FBVector.md
+    static constexpr float k_growth_factor = 1.5;
 
 public:
     using value_type = T;
@@ -73,10 +147,8 @@ public:
     using pointer         = T*;
     using const_pointer   = const T*;
 
-    using iterator               = pointer;
-    using const_iterator         = const_pointer;
-    using reverse_iterator       = std::reverse_iterator<iterator>;
-    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+    using iterator       = pointer;
+    using const_iterator = const_pointer;
 
 
     // Constructors
@@ -116,26 +188,6 @@ public:
      */
     explicit small_vector(size_type count) : small_vector(count, T()) {}
 
-    /** Construct by copying from InputIterator range.
-     * May allocate memory in the order of log(std::distance(first, last)) times.
-     */
-    template<typename InputIt,
-             std::enable_if_t<is_input_it<InputIt> && !is_forward_it<InputIt>, int> = 0>
-    small_vector(InputIt first, InputIt last) : small_vector()
-    {
-        for (InputIt it = first; it != last; ++it) { push_back(*it); }
-    }
-
-    /** Construct by copying from ForwardIterator range.
-     * Allocates memory at most once.
-     */
-    template<typename ForwardIt, std::enable_if_t<is_forward_it<ForwardIt>, int> = 0>
-    small_vector(ForwardIt first, ForwardIt last) : small_vector()
-    {
-        reserve(size_type(std::distance(first, last)));
-        for (ForwardIt it = first; it != last; ++it) { push_back(*it); }
-    }
-
     /** Construct by copying elements from initializer-list. */
     small_vector(std::initializer_list<T> init) : small_vector()
     {
@@ -165,13 +217,6 @@ public:
         swap(tmp);
     }
 
-    template<typename InputIt, std::enable_if_t<is_input_it<InputIt>, int> = 0>
-    void assign(InputIt first, InputIt last)
-    {
-        small_vector tmp(first, last);
-        swap(tmp);
-    }
-
     void assign(std::initializer_list<T> init)
     {
         small_vector tmp(init);
@@ -181,27 +226,22 @@ public:
     // Element access
     // ---------------------------------------------------------------------------------------------
 
-    /** Bounds-checked element access. Throws std::out_of_range if `index` is out of range. */
+    /** Bounds-checked element access. */
     reference at(size_type index)
     {
-        if (index >= size()) { throw std::out_of_range("small_vector::at(): index out of range."); }
+        MG_SMALL_VECTOR_ASSERT(index < size());
         return data()[index];
     }
 
-    /** Bounds-checked element access. Throws std::out_of_range if `index` is out of range. */
+    /** Bounds-checked element access. */
     const_reference at(size_type index) const
     {
-        if (index >= size()) { throw std::out_of_range("small_vector::at(): index out of range."); }
+        MG_SMALL_VECTOR_ASSERT(index < size());
         return data()[index];
     }
 
-#if MG_CHECK_ELEMENT_ACCESS
     reference       operator[](size_type index) noexcept { return at(index); }
     const_reference operator[](size_type index) const noexcept { return at(index); };
-#else
-    reference       operator[](size_type index) noexcept { return data()[index]; }
-    const_reference operator[](size_type index) const noexcept { return data()[index]; };
-#endif
 
     reference       front() { return at(0); }
     const_reference front() const { return at(0); }
@@ -223,13 +263,6 @@ public:
     iterator       end() noexcept { return data() + size(); }
     const_iterator end() const noexcept { return data() + size(); }
     const_iterator cend() const noexcept { return data() + size(); }
-
-    reverse_iterator       rbegin() noexcept { return reverse_iterator(end()); }
-    const_reverse_iterator rbegin() const noexcept { return const_reverse_iterator(end()); }
-    const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(end()); }
-
-    reverse_iterator       rend() noexcept { return reverse_iterator(begin()); }
-    const_reverse_iterator crend() const noexcept { return const_reverse_iterator(begin()); }
 
     // Capacity
     // ---------------------------------------------------------------------------------------------
@@ -261,18 +294,15 @@ public:
     {
         if (new_capacity <= capacity()) { return; }
 
-        if (new_capacity >= max_size()) {
-            throw std::length_error("Mg::small_vector::reserve(): requested capacity too large.");
-        }
-
-        _switch_to_external_storage(_alloc_external_buffer(new_capacity), new_capacity);
+        MG_SMALL_VECTOR_ASSERT(new_capacity < max_size());
+        _switch_to_external_storage(ExternalBuffer::allocate(new_capacity), new_capacity);
     }
 
     void shrink_to_fit()
     {
         if (uses_local_storage()) { return; }
 
-        ExternalBufferPtr buf = _alloc_external_buffer(size());
+        auto buf = ExternalBuffer::allocate(size());
         _move_elems_between_buffers(m_external_buffer.get(), buf.get(), size());
         m_external_buffer = std::move(buf);
         m_capacity        = size();
@@ -316,7 +346,7 @@ public:
 
     iterator insert(const_iterator pos, size_type count, const T& value)
     {
-        auto index = std::distance(cbegin(), pos);
+        auto index = _distance(cbegin(), pos);
         reserve(size() + count);
         while (count--) { emplace_back(value); }
         _move_last_n_to_pos(index, 1);
@@ -325,7 +355,7 @@ public:
 
     template<typename... Args> iterator emplace(const_iterator pos, Args&&... args)
     {
-        size_type index = std::distance(cbegin(), pos);
+        size_type index = _distance(cbegin(), pos);
         emplace_back(std::forward<Args>(args)...);
         _move_last_n_to_pos(index, 1);
         return begin() + index;
@@ -340,38 +370,17 @@ public:
      * @note The iterator range [first, last) may not be iterators into this container.
      * @remark This function provides weak exception safety.
      */
-    template<typename InputIt,
-             std::enable_if_t<is_input_it<InputIt> && !is_forward_it<InputIt>, int> = 0>
-    iterator insert(const_iterator pos, InputIt first, InputIt last)
-    {
-        size_type index = std::distance(cbegin(), pos);
-        return _insert_range(index, first, last);
-    }
-
-    /** Insert a range of elements at a specified position.
-     *
-     * @param pos Iterator indicating the position in which the range is to be inserted.
-     * @param first Start iterator of the range of elements to insert.
-     * @param last End iterator of the range of elements to insert.
-     *
-     * @note The iterator range [first, last) may not be iterators into this container.
-     * @remark This function provides weak exception safety.
-     */
-    template<typename ForwardIt, std::enable_if_t<is_forward_it<ForwardIt>, int> = 1>
-    iterator insert(const_iterator pos, ForwardIt first, ForwardIt last)
+    template<typename InputIt> iterator insert(const_iterator pos, InputIt first, InputIt last)
     {
         // Order is important here: call to reserve() might invalidate pos.
-        size_type index     = std::distance(cbegin(), pos);
-        size_type num_elems = std::distance(first, last);
-
-        reserve(size() + num_elems);
+        size_type index = _distance(cbegin(), pos);
         return _insert_range(index, first, last);
     }
 
     iterator insert(const_iterator pos, std::initializer_list<T> init)
     {
         insert(pos, init.begin(), init.end());
-        size_type index = std::distance(cbegin(), pos);
+        size_type index = _distance(cbegin(), pos);
         reserve(size() + init.size());
 
         for (const T& value : init) { emplace_back(value); }
@@ -383,22 +392,22 @@ public:
     /** Erase the element indicated by the given iterator. */
     iterator erase(const_iterator pos)
     {
-        iterator ret = begin() + std::distance(cbegin(), pos);
+        iterator ret = begin() + _distance(cbegin(), pos);
         _move_to_end(pos, 1);
         _destroy_at(size() - 1);
-        _decrement_size();
+        --m_size;
         return ret;
     }
 
     /** Erase a range of elements. */
     iterator erase(const_iterator first, const_iterator last)
     {
-        iterator ret     = begin() + std::distance(cbegin(), first);
-        auto     new_end = _move_to_end(first, size_t(std::distance(first, last)));
+        iterator ret     = begin() + _distance(cbegin(), first);
+        auto     new_end = _move_to_end(first, _distance(first, last));
         auto     it      = end();
         while (it-- != new_end) {
             it->~T();
-            _decrement_size();
+            --m_size;
         }
 
         return ret;
@@ -422,8 +431,8 @@ public:
             // Make sure to allocate new buffer and construct new element there _before_ moving old
             // elements. This prevents dangling reference errors when args depend on an element in
             // this vector (e.g. v.emplace_back(v[0]); )
-            size_type         new_capacity = capacity() * MG_SMALL_VECTOR_GROWTH_FACTOR;
-            ExternalBufferPtr new_buffer   = _alloc_external_buffer(new_capacity);
+            size_type new_capacity = capacity() * k_growth_factor;
+            auto      new_buffer   = ExternalBuffer::allocate(new_capacity);
 
             // Construct new elem at end-position in newly allocated buffer.
             new (&new_buffer[size()]) T(std::forward<Args>(args)...);
@@ -438,7 +447,7 @@ public:
     void pop_back()
     {
         _destroy_at(size() - 1);
-        _decrement_size();
+        --m_size;
     }
 
     void resize(size_type count)
@@ -473,18 +482,12 @@ public:
     }
 
 private:
-    using elem_data_t = struct alignas(value_type) {
-        unsigned char data[sizeof(value_type)];
-    };
-
-    using ExternalBufferPtr = std::unique_ptr<elem_data_t[]>;
-
-    // Element handling helpers
-
-    ExternalBufferPtr _alloc_external_buffer(size_type size)
+    static size_type _distance(const_iterator begin, const_iterator end)
     {
-        return std::make_unique<elem_data_t[]>(size);
+        MG_SMALL_VECTOR_ASSERT(begin <= end);
+        return static_cast<size_type>(end - begin);
     }
+    // Element handling helpers
 
     elem_data_t* _storage_ptr() noexcept
     {
@@ -519,8 +522,8 @@ private:
     // Swap for the case where both operands use local storage.
     void _swap_local(small_vector& rhs) noexcept(nothrow_swap)
     {
-        assert(uses_local_storage());
-        assert(rhs.uses_local_storage());
+        MG_SMALL_VECTOR_ASSERT(uses_local_storage());
+        MG_SMALL_VECTOR_ASSERT(rhs.uses_local_storage());
 
         if (trivial_copy) { _swap_local_trivial(rhs); }
         else {
@@ -576,8 +579,8 @@ private:
     // Swap for the case where both operands use external storage.
     void _swap_external(small_vector& rhs) noexcept
     {
-        assert(!uses_local_storage());
-        assert(!rhs.uses_local_storage());
+        MG_SMALL_VECTOR_ASSERT(!uses_local_storage());
+        MG_SMALL_VECTOR_ASSERT(!rhs.uses_local_storage());
 
         using std::swap;
         swap(m_external_buffer, rhs.m_external_buffer);
@@ -593,8 +596,8 @@ private:
     // noexcept commented out due to warning.
     void _swap_this_local_rhs_external(small_vector& rhs) /* noexcept(nothrow_swap) */
     {
-        assert(uses_local_storage());
-        assert(!rhs.uses_local_storage());
+        MG_SMALL_VECTOR_ASSERT(uses_local_storage());
+        MG_SMALL_VECTOR_ASSERT(!rhs.uses_local_storage());
 
         // tmp_vec gets rhs' data; rhs becomes empty.
         auto tmp_vec(std::move(rhs));
@@ -611,7 +614,7 @@ private:
 
         // This puts the vector in an invalid state, but it is going to be swapped with tmp_vec
         // which will be immediately destroyed.
-        _switch_to_external_storage(nullptr, 0);
+        _switch_to_external_storage(ExternalBuffer{}, 0);
 
         // Now this gets rhs' data.
         _swap_external(tmp_vec);
@@ -634,7 +637,7 @@ private:
 
     void _shrink_to(size_type count)
     {
-        assert(count <= size());
+        MG_SMALL_VECTOR_ASSERT(count <= size());
 
         if (!uses_local_storage() && count <= num_local_elems) {
             _switch_to_local_storage(count);
@@ -643,7 +646,7 @@ private:
 
         while (size() > count) {
             _destroy_at(size() - 1);
-            _decrement_size();
+            --m_size;
         }
     }
 
@@ -665,7 +668,7 @@ private:
             // If copying failed, destroy the copies that were made.
             for (size_type u = 0; u < i; ++u) {
                 // Destroy copies in new buffer.
-                void* addr = &dst[i - 1 - u];
+                elem_data_t* addr = &dst[i - 1 - u];
                 reinterpret_cast<pointer>(addr)->~T();
             }
 
@@ -679,23 +682,23 @@ private:
     // Switch to local buffer for element storage. (noexcept commented due to warnings).
     void _switch_to_local_storage(size_type elems_to_move) /* noexcept(nothrow_move) */
     {
-        assert(!uses_local_storage());
-        assert(elems_to_move <= num_local_elems);
+        MG_SMALL_VECTOR_ASSERT(!uses_local_storage());
+        MG_SMALL_VECTOR_ASSERT(elems_to_move <= num_local_elems);
 
         // Since m_capacity is in union with local buffer, we need to copy it before writing to
         // local buffer.
-        size_type         tmp_capacity = m_capacity;
-        ExternalBufferPtr tmp_buffer   = std::move(m_external_buffer);
+        size_type      tmp_capacity = m_capacity;
+        ExternalBuffer tmp_buffer   = std::move(m_external_buffer);
 
         // Try to move -- with strong exception guarantee.
         try {
-            m_external_buffer.~unique_ptr();
+            m_external_buffer.~ExternalBuffer();
             _move_elems_between_buffers(tmp_buffer.get(), m_buffer, elems_to_move);
         }
         catch (...) {
             // Restore external storage on failure
             m_capacity = tmp_capacity;
-            new (&m_external_buffer) ExternalBufferPtr(std::move(tmp_buffer));
+            new (&m_external_buffer) ExternalBuffer(std::move(tmp_buffer));
             throw;
         }
 
@@ -704,16 +707,16 @@ private:
     }
 
     // Switch to new external buffer for element storage.
-    void _switch_to_external_storage(ExternalBufferPtr&& new_buffer,
-                                     size_type           new_capacity) noexcept(nothrow_move)
+    void _switch_to_external_storage(ExternalBuffer&& new_buffer,
+                                     size_type        new_capacity) noexcept(nothrow_move)
     {
-        assert(new_capacity >= size());
+        MG_SMALL_VECTOR_ASSERT(new_capacity >= size());
 
         _move_elems_between_buffers(_storage_ptr(), new_buffer.get(), size());
 
         if (uses_local_storage()) {
             // Initialise external-buffer-owning pointer
-            new (&m_external_buffer) ExternalBufferPtr();
+            new (&m_external_buffer) ExternalBuffer();
         }
 
         m_external_buffer       = std::move(new_buffer);
@@ -721,27 +724,19 @@ private:
         m_uses_external_storage = 1;
     }
 
-    // Decrements m_size variable and switches to local storage, if possible.
-    void _decrement_size() noexcept(nothrow_move)
-    {
-        if (--m_size == num_local_elems && MG_ALWAYS_PREFER_LOCAL_BUFFER) {
-            _switch_to_local_storage(m_size);
-        }
-    }
-
     // Rotates the last num elems to start at pos (invoked by position insert/emplace)
     void _move_last_n_to_pos(size_type index, size_type num)
     {
-        assert(size() - num >= index);
-        std::rotate(begin() + index, end() - num, end());
+        MG_SMALL_VECTOR_ASSERT(size() - num >= index);
+        detail::rotate(begin() + index, end() - num, end());
     }
 
     // Moves num elements at pos to end. Returns new position iterator.
     iterator _move_to_end(const_iterator pos, size_type num)
     {
-        const auto mut_pos = begin() + std::distance(cbegin(), pos);
-        assert(mut_pos + num <= end());
-        return std::rotate(mut_pos, mut_pos + num, end());
+        const auto mut_pos = begin() + _distance(cbegin(), pos);
+        MG_SMALL_VECTOR_ASSERT(mut_pos + num <= end());
+        return detail::rotate(mut_pos, mut_pos + num, end());
     }
 
     // Implementation for range-insert overloads.
@@ -762,8 +757,8 @@ private:
     union {
         elem_data_t m_buffer[num_local_elems];
         struct {
-            size_type         m_capacity;
-            ExternalBufferPtr m_external_buffer;
+            size_type      m_capacity;
+            ExternalBuffer m_external_buffer;
         };
     };
 
@@ -778,43 +773,44 @@ template<typename T, std::size_t num_local_elems_a, std::size_t num_local_elems_
 bool operator==(const small_vector<T, num_local_elems_a>& a,
                 const small_vector<T, num_local_elems_b>& b)
 {
-    return a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin(), b.end());
+    return a.size() == b.size() &&
+           detail::range_compare(a.begin(), a.end(), b.begin(), b.end()) == 0;
 }
 
 template<typename T, std::size_t num_local_elems_a, std::size_t num_local_elems_b>
 bool operator!=(const small_vector<T, num_local_elems_a>& a,
                 const small_vector<T, num_local_elems_b>& b)
 {
-    return a.size() != b.size() || !std::equal(a.begin(), a.end(), b.begin(), b.end());
+    return a.size() != b.size() ||
+           detail::range_compare(a.begin(), a.end(), b.begin(), b.end()) != 0;
 }
 
 template<typename T, std::size_t num_local_elems_a, std::size_t num_local_elems_b>
 bool operator<(const small_vector<T, num_local_elems_a>& a,
                const small_vector<T, num_local_elems_b>& b)
 {
-    return std::lexicographical_compare(a.begin(), a.end(), b.begin(), b.end());
+    return detail::range_compare(a.begin(), a.end(), b.begin(), b.end()) < 0;
+}
+
+template<typename T, std::size_t num_local_elems_a, std::size_t num_local_elems_b>
+bool operator<=(const small_vector<T, num_local_elems_a>& a,
+                const small_vector<T, num_local_elems_b>& b)
+{
+    return detail::range_compare(a.begin(), a.end(), b.begin(), b.end()) <= 0;
 }
 
 template<typename T, std::size_t num_local_elems_a, std::size_t num_local_elems_b>
 bool operator>(const small_vector<T, num_local_elems_a>& a,
                const small_vector<T, num_local_elems_b>& b)
 {
-    return std::lexicographical_compare(b.begin(), b.end(), a.begin(), a.end());
+    return detail::range_compare(a.begin(), a.end(), b.begin(), b.end()) > 0;
 }
 
 template<typename T, std::size_t num_local_elems_a, std::size_t num_local_elems_b>
 bool operator>=(const small_vector<T, num_local_elems_a>& a,
                 const small_vector<T, num_local_elems_b>& b)
 {
-    return !(a < b);
-}
-
-
-template<typename T, std::size_t num_local_elems_a, std::size_t num_local_elems_b>
-bool operator<=(const small_vector<T, num_local_elems_a>& a,
-                const small_vector<T, num_local_elems_b>& b)
-{
-    return !(b < a);
+    return detail::range_compare(a.begin(), a.end(), b.begin(), b.end()) >= 0;
 }
 
 // Swap
