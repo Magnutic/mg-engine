@@ -21,15 +21,15 @@
 //
 //**************************************************************************************************
 
-#include <mg/gfx/mg_uniform_buffer.h>
+#include "mg/gfx/mg_uniform_buffer.h"
 
 #include <algorithm> // std::min
 #include <cstring>   // memcpy
 
 #include <fmt/core.h>
 
-#include <mg/core/mg_log.h>
-#include <mg/utils/mg_assert.h>
+#include "mg/core/mg_log.h"
+#include "mg/utils/mg_assert.h"
 
 #include "mg_glad.h"
 

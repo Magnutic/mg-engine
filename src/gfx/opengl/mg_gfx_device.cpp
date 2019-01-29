@@ -21,22 +21,22 @@
 //
 //**************************************************************************************************
 
-#include <mg/gfx/mg_gfx_device.h>
+#include "mg/gfx/mg_gfx_device.h"
 
 #include <cstdint>
-#include <mg/utils/mg_stl_helpers.h>
+#include "mg/utils/mg_stl_helpers.h"
 #include <stdexcept>
 
-#include <mg/core/mg_config.h>
-#include <mg/core/mg_log.h>
-#include <mg/core/mg_root.h>
-#include <mg/core/mg_window.h>
-#include <mg/gfx/mg_material_repository.h>
-#include <mg/gfx/mg_mesh_repository.h>
-#include <mg/gfx/mg_texture_repository.h>
-#include <mg/resources/mg_mesh_resource.h>
-#include <mg/resources/mg_shader_resource.h>
-#include <mg/resources/mg_texture_resource.h>
+#include "mg/core/mg_config.h"
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_root.h"
+#include "mg/core/mg_window.h"
+#include "mg/gfx/mg_material_repository.h"
+#include "mg/gfx/mg_mesh_repository.h"
+#include "mg/gfx/mg_texture_repository.h"
+#include "mg/resources/mg_mesh_resource.h"
+#include "mg/resources/mg_shader_resource.h"
+#include "mg/resources/mg_texture_resource.h"
 
 #include "mg_gl_debug.h"
 #include "mg_glad.h"

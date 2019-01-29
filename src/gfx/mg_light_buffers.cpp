@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-#include <mg/gfx/mg_light_buffers.h>
+#include "mg/gfx/mg_light_buffers.h"
 
 #include <cstdint>
 #include <cstring> // memset, memcpy
@@ -32,9 +32,9 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
-#include <mg/core/mg_log.h>
-#include <mg/gfx/mg_camera.h>
-#include <mg/gfx/mg_light_grid.h>
+#include "mg/core/mg_log.h"
+#include "mg/gfx/mg_camera.h"
+#include "mg/gfx/mg_light_grid.h"
 
 namespace Mg::gfx {
 

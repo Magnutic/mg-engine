@@ -21,10 +21,10 @@
 //
 //**************************************************************************************************
 
-#include <mg/gfx/mg_material_repository.h>
+#include "mg/gfx/mg_material_repository.h"
 
-#include <mg/containers/mg_pooling_vector.h>
-#include <mg/gfx/mg_material.h>
+#include "mg/containers/mg_pooling_vector.h"
+#include "mg/gfx/mg_material.h"
 
 namespace Mg::gfx {
 

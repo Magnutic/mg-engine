@@ -32,7 +32,7 @@
 #include <cstddef>
 #include <type_traits>
 
-#include <mg/utils/mg_assert.h>
+#include "mg/utils/mg_assert.h"
 
 #ifndef MG_CHECK_SPAN_ACCESS
 /** Whether to do bounds check when accessing span elements. */

@@ -31,7 +31,7 @@
 
 #include <glm/mat4x4.hpp>
 
-#include <mg/gfx/mg_uniform_buffer.h>
+#include "mg/gfx/mg_uniform_buffer.h"
 
 namespace Mg::gfx {
 

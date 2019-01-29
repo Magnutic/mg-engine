@@ -32,9 +32,9 @@
 
 #include <glm/vec3.hpp>
 
-#include <mg/containers/mg_small_vector.h>
-#include <mg/core/mg_identifier.h>
-#include <mg/gfx/mg_mesh_handle.h>
+#include "mg/containers/mg_small_vector.h"
+#include "mg/core/mg_identifier.h"
+#include "mg/gfx/mg_mesh_handle.h"
 
 namespace Mg::gfx::internal {
 

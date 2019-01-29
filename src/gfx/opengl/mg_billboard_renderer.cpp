@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-#include <mg/gfx/mg_billboard_renderer.h>
+#include "mg/gfx/mg_billboard_renderer.h"
 
 #include <cstddef>
 #include <sstream>
@@ -31,13 +31,13 @@
 #include <glm/gtx/norm.hpp>
 #include <glm/mat4x4.hpp>
 
-#include <mg/containers/mg_small_vector.h>
-#include <mg/core/mg_log.h>
-#include <mg/gfx/mg_camera.h>
-#include <mg/gfx/mg_gfx_device.h>
-#include <mg/gfx/mg_uniform_buffer.h>
-#include <mg/utils/mg_object_id.h>
-#include <mg/utils/mg_stl_helpers.h>
+#include "mg/containers/mg_small_vector.h"
+#include "mg/core/mg_log.h"
+#include "mg/gfx/mg_camera.h"
+#include "mg/gfx/mg_gfx_device.h"
+#include "mg/gfx/mg_uniform_buffer.h"
+#include "mg/utils/mg_object_id.h"
+#include "mg/utils/mg_stl_helpers.h"
 
 #include "mg_opengl_shader.h"
 #include "mg_texture_node.h"

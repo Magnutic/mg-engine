@@ -21,9 +21,9 @@
 //
 //**************************************************************************************************
 
-#include <mg/ecs/mg_entity.h>
+#include "mg/ecs/mg_entity.h"
 
-#include <mg/utils/mg_gsl.h>
+#include "mg/utils/mg_gsl.h"
 
 namespace Mg::ecs {
 

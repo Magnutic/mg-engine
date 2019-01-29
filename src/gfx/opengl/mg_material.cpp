@@ -21,18 +21,18 @@
 //
 //**************************************************************************************************
 
-#include <mg/gfx/mg_material.h>
+#include "mg/gfx/mg_material.h"
 
 #include <cstring> // memcpy
 #include <sstream>
 
 #include <fmt/core.h>
 
-#include <mg/core/mg_log.h>
-#include <mg/core/mg_resource_cache.h>
-#include <mg/resources/mg_shader_resource.h>
-#include <mg/utils/mg_hash_combine.h>
-#include <mg/utils/mg_stl_helpers.h>
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_resource_cache.h"
+#include "mg/resources/mg_shader_resource.h"
+#include "mg/utils/mg_hash_combine.h"
+#include "mg/utils/mg_stl_helpers.h"
 
 namespace Mg::gfx {
 

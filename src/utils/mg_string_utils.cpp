@@ -21,13 +21,13 @@
 //
 //**************************************************************************************************
 
-#include <mg/utils/mg_string_utils.h>
+#include "mg/utils/mg_string_utils.h"
 
 #include <codecvt>
 #include <cstring> // memcpy
 #include <locale>
 
-#include <mg/utils/mg_gsl.h>
+#include "mg/utils/mg_gsl.h"
 
 namespace Mg {
 

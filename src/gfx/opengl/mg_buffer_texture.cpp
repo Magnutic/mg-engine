@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-#include <mg/gfx/mg_buffer_texture.h>
+#include "mg/gfx/mg_buffer_texture.h"
 
 #include <stdexcept>
 

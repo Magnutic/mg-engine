@@ -40,8 +40,8 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
-#include <mg/core/mg_log.h>
-#include <mg/utils/mg_assert.h>
+#include "mg/core/mg_log.h"
+#include "mg/utils/mg_assert.h"
 
 #include "mg_glad.h"
 

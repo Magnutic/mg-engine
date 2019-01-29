@@ -31,8 +31,8 @@
 #include <chrono>
 #include <vector>
 
-#include <mg/core/mg_identifier.h>
-#include <mg/utils/mg_macros.h>
+#include "mg/core/mg_identifier.h"
+#include "mg/utils/mg_macros.h"
 
 namespace Mg {
 

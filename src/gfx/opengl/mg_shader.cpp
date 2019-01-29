@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-#include <mg/gfx/mg_shader.h>
+#include "mg/gfx/mg_shader.h"
 
 #include <memory>
 #include <stdexcept>
@@ -29,9 +29,9 @@
 
 #include <fmt/core.h>
 
-#include <mg/core/mg_log.h>
-#include <mg/utils/mg_gsl.h>
-#include <mg/utils/mg_macros.h>
+#include "mg/core/mg_log.h"
+#include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_macros.h"
 
 #include "mg_gl_debug.h"
 #include "mg_glad.h"

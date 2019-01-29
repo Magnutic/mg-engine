@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-#include <mg/core/mg_window.h>
+#include "mg/core/mg_window.h"
 
 #include <mutex>
 #include <stdexcept>
@@ -32,11 +32,11 @@
 
 #include <fmt/core.h>
 
-#include <mg/core/mg_log.h>
-#include <mg/core/mg_root.h>
-#include <mg/gfx/mg_render_target.h>
-#include <mg/mg_defs.h>
-#include <mg/utils/mg_gsl.h>
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_root.h"
+#include "mg/gfx/mg_render_target.h"
+#include "mg/mg_defs.h"
+#include "mg/utils/mg_gsl.h"
 
 namespace Mg {
 

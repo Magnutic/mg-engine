@@ -23,12 +23,12 @@
 
 #include "mg_lit_mesh_shader_factory.h"
 
-#include <mg/core/mg_resource_cache.h>
-#include <mg/core/mg_root.h>
-#include <mg/gfx/mg_camera.h>
-#include <mg/gfx/mg_light_grid.h>
-#include <mg/gfx/mg_material.h>
-#include <mg/resources/mg_shader_resource.h>
+#include "mg/core/mg_resource_cache.h"
+#include "mg/core/mg_root.h"
+#include "mg/gfx/mg_camera.h"
+#include "mg/gfx/mg_light_grid.h"
+#include "mg/gfx/mg_material.h"
+#include "mg/resources/mg_shader_resource.h"
 
 #include "../mg_opengl_shader.h"
 #include "../mg_glad.h"

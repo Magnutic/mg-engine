@@ -34,8 +34,8 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
-#include <mg/gfx/mg_vertex_attribute.h>
-#include <mg/utils/mg_vector_normalised.h>
+#include "mg/gfx/mg_vertex_attribute.h"
+#include "mg/utils/mg_vector_normalised.h"
 
 namespace Mg {
 

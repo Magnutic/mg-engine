@@ -21,10 +21,10 @@
 //
 //**************************************************************************************************
 
-#include <mg/utils/mg_text_file_io.h>
+#include "mg/utils/mg_text_file_io.h"
 
-#include <mg/utils/mg_stl_helpers.h>
-#include <mg/utils/mg_string_utils.h>
+#include "mg/utils/mg_stl_helpers.h"
+#include "mg/utils/mg_string_utils.h"
 
 namespace Mg::io {
 

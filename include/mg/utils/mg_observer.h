@@ -29,7 +29,7 @@
 
 #include <utility>
 
-#include <mg/utils/mg_assert.h>
+#include "mg/utils/mg_assert.h"
 
 namespace Mg {
 

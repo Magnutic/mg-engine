@@ -34,10 +34,10 @@
 #include <string>
 #include <vector>
 
-#include <mg/core/mg_window_settings.h>
-#include <mg/gfx/mg_render_target.h>
-#include <mg/input/mg_keyboard.h>
-#include <mg/input/mg_mouse.h>
+#include "mg/core/mg_window_settings.h"
+#include "mg/gfx/mg_render_target.h"
+#include "mg/input/mg_keyboard.h"
+#include "mg/input/mg_mouse.h"
 
 struct GLFWwindow;
 

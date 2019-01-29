@@ -31,12 +31,12 @@
 #include <memory>
 #include <vector>
 
-#include <mg/core/mg_transform.h>
-#include <mg/gfx/mg_mesh_handle.h>
-#include <mg/gfx/mg_render_command_data_handle.h>
-#include <mg/utils/mg_gsl.h>
+#include "mg/core/mg_transform.h"
+#include "mg/gfx/mg_mesh_handle.h"
+#include "mg/gfx/mg_render_command_data_handle.h"
+#include "mg/utils/mg_gsl.h"
 
-#include <mg/mg_defs.h>
+#include "mg/mg_defs.h"
 
 namespace Mg::gfx {
 

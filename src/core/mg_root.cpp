@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-#include <mg/core/mg_root.h>
+#include "mg/core/mg_root.h"
 
 #include <cstdlib>
 #include <exception>
@@ -41,11 +41,11 @@
 #include <GLFW/glfw3.h>
 #undef GLFW_INCLUDE_NONE
 
-#include <mg/core/mg_config.h>
-#include <mg/core/mg_log.h>
-#include <mg/core/mg_window.h>
-#include <mg/gfx/mg_gfx_device.h>
-#include <mg/mg_defs.h>
+#include "mg/core/mg_config.h"
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_window.h"
+#include "mg/gfx/mg_gfx_device.h"
+#include "mg/mg_defs.h"
 
 namespace Mg {
 

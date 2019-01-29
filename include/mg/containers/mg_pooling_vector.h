@@ -33,8 +33,8 @@
 #include <optional>
 #include <vector>
 
-#include <mg/containers/mg_small_vector.h>
-#include <mg/utils/mg_assert.h>
+#include "mg/containers/mg_small_vector.h"
+#include "mg/utils/mg_assert.h"
 
 namespace Mg {
 

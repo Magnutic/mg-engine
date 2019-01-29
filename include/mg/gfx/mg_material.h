@@ -34,14 +34,14 @@
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
 
-#include <mg/containers/mg_small_vector.h>
-#include <mg/core/mg_identifier.h>
-#include <mg/core/mg_resource_handle_fwd.h>
-#include <mg/gfx/mg_texture_handle.h>
-#include <mg/resources/mg_shader_enums.h>
-#include <mg/utils/mg_gsl.h>
+#include "mg/containers/mg_small_vector.h"
+#include "mg/core/mg_identifier.h"
+#include "mg/core/mg_resource_handle_fwd.h"
+#include "mg/gfx/mg_texture_handle.h"
+#include "mg/resources/mg_shader_enums.h"
+#include "mg/utils/mg_gsl.h"
 
-#include <mg/mg_defs.h>
+#include "mg/mg_defs.h"
 
 namespace Mg {
 class ShaderResource;

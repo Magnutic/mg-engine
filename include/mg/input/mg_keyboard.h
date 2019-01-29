@@ -29,7 +29,7 @@
 
 #include <bitset>
 
-#include <mg/input/mg_input.h>
+#include "mg/input/mg_input.h"
 
 namespace Mg {
 class Window;

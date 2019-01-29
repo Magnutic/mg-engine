@@ -21,13 +21,13 @@
 //
 //**************************************************************************************************
 
-#include <mg/gfx/mg_post_process.h>
+#include "mg/gfx/mg_post_process.h"
 
-#include <mg/containers/mg_small_vector.h>
-#include <mg/gfx/mg_material.h>
-#include <mg/gfx/mg_uniform_buffer.h>
-#include <mg/mg_defs.h>
-#include <mg/utils/mg_object_id.h>
+#include "mg/containers/mg_small_vector.h"
+#include "mg/gfx/mg_material.h"
+#include "mg/gfx/mg_uniform_buffer.h"
+#include "mg/mg_defs.h"
+#include "mg/utils/mg_object_id.h"
 
 #include "mg_texture_node.h"
 #include "shader_factories/mg_post_process_shader_factory.h"

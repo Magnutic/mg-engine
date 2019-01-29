@@ -28,8 +28,8 @@
 #include <cstring>
 #include <utility>
 
-#include <mg/gfx/mg_texture2d.h>
-#include <mg/gfx/mg_texture_handle.h>
+#include "mg/gfx/mg_texture2d.h"
+#include "mg/gfx/mg_texture_handle.h"
 
 namespace Mg::gfx::internal {
 

@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-#include <mg/core/mg_identifier.h>
+#include "mg/core/mg_identifier.h"
 
 #include <iostream>
 #include <mutex>
@@ -29,7 +29,7 @@
 #include <type_traits>
 #include <unordered_map>
 
-#include <mg/utils/mg_assert.h>
+#include "mg/utils/mg_assert.h"
 
 namespace Mg {
 //--------------------------------------------------------------------------------------------------

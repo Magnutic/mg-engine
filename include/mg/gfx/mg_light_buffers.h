@@ -29,10 +29,10 @@
 
 #include <array>
 
-#include <mg/gfx/mg_buffer_texture.h>
-#include <mg/gfx/mg_light.h>
-#include <mg/gfx/mg_uniform_buffer.h>
-#include <mg/mg_defs.h>
+#include "mg/gfx/mg_buffer_texture.h"
+#include "mg/gfx/mg_light.h"
+#include "mg/gfx/mg_uniform_buffer.h"
+#include "mg/mg_defs.h"
 
 namespace Mg::gfx {
 

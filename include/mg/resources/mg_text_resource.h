@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include <mg/resources/mg_raw_resource.h>
+#include "mg/resources/mg_raw_resource.h"
 
 namespace Mg {
 

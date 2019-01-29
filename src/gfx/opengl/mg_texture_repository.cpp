@@ -21,11 +21,11 @@
 //
 //**************************************************************************************************
 
-#include <mg/gfx/mg_texture_repository.h>
+#include "mg/gfx/mg_texture_repository.h"
 
-#include <mg/containers/mg_pooling_vector.h>
-#include <mg/gfx/mg_texture2d.h>
-#include <mg/gfx/mg_texture_related_types.h>
+#include "mg/containers/mg_pooling_vector.h"
+#include "mg/gfx/mg_texture2d.h"
+#include "mg/gfx/mg_texture_related_types.h"
 
 #include "mg_texture_node.h"
 

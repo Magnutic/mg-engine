@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-#include <mg/resources/mg_shader_resource.h>
+#include "mg/resources/mg_shader_resource.h"
 
 #include <functional>
 #include <string>
@@ -30,12 +30,12 @@
 
 #include <filesystem>
 
-#include <mg/containers/mg_small_vector.h>
-#include <mg/core/mg_file_loader.h>
-#include <mg/core/mg_resource_cache.h>
-#include <mg/resources/mg_text_resource.h>
-#include <mg/utils/mg_stl_helpers.h>
-#include <mg/utils/mg_string_utils.h>
+#include "mg/containers/mg_small_vector.h"
+#include "mg/core/mg_file_loader.h"
+#include "mg/core/mg_resource_cache.h"
+#include "mg/resources/mg_text_resource.h"
+#include "mg/utils/mg_stl_helpers.h"
+#include "mg/utils/mg_string_utils.h"
 
 namespace fs = std::filesystem;
 

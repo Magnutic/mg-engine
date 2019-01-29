@@ -21,14 +21,14 @@
 //
 //**************************************************************************************************
 
-#include <mg/input/mg_mouse.h>
+#include "mg/input/mg_mouse.h"
 
 #include <GLFW/glfw3.h>
 
 #include <fmt/core.h>
 
-#include <mg/core/mg_log.h>
-#include <mg/core/mg_window.h>
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_window.h"
 
 namespace Mg::input {
 

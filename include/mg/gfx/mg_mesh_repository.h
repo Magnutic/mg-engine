@@ -31,8 +31,8 @@
 #include <memory>
 #include <optional>
 
-#include <mg/gfx/mg_mesh_handle.h>
-#include <mg/utils/mg_macros.h>
+#include "mg/gfx/mg_mesh_handle.h"
+#include "mg/utils/mg_macros.h"
 
 namespace Mg {
 class MeshResource;

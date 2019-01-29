@@ -34,10 +34,10 @@
 #include <glm/trigonometric.hpp>
 #include <glm/vec3.hpp>
 
-#include <mg/core/mg_transform.h>
-#include <mg/utils/mg_gsl.h>
-#include <mg/utils/mg_macros.h>
-#include <mg/utils/mg_math_utils.h>
+#include "mg/core/mg_transform.h"
+#include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_math_utils.h"
 
 namespace Mg::gfx {
 

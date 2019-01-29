@@ -1,6 +1,6 @@
-#include <mg/core/mg_window_settings.h>
+#include "mg/core/mg_window_settings.h"
 
-#include <mg/core/mg_config.h>
+#include "mg/core/mg_config.h"
 
 namespace Mg {
 

@@ -21,15 +21,15 @@
 //
 //**************************************************************************************************
 
-#include <mg/resources/mg_texture_resource.h>
+#include "mg/resources/mg_texture_resource.h"
 
 #include <cstring> // memcpy
 #include <stdexcept>
 #include <vector>
 
-#include <mg/core/mg_file_loader.h>
-#include <mg/core/mg_log.h>
-#include <mg/core/mg_resource_cache.h>
+#include "mg/core/mg_file_loader.h"
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_resource_cache.h"
 
 namespace Mg {
 

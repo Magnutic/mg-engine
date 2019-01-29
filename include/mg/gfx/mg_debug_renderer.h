@@ -32,8 +32,8 @@
 
 #include <memory>
 
-#include <mg/gfx/mg_camera.h>
-#include <mg/utils/mg_macros.h>
+#include "mg/gfx/mg_camera.h"
+#include "mg/utils/mg_macros.h"
 
 namespace Mg {
 class Rotation;

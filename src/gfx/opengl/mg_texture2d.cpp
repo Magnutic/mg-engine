@@ -21,9 +21,9 @@
 //
 //**************************************************************************************************
 
-#include <mg/gfx/mg_texture2d.h>
+#include "mg/gfx/mg_texture2d.h"
 
-#include <mg/resources/mg_texture_resource.h>
+#include "mg/resources/mg_texture_resource.h"
 
 #include "mg_gl_debug.h"
 #include "mg_glad.h"

@@ -21,14 +21,14 @@
 //
 //**************************************************************************************************
 
-#include <mg/gfx/mg_mesh_repository.h>
+#include "mg/gfx/mg_mesh_repository.h"
 
 #include <fmt/core.h>
 
-#include <mg/containers/mg_pooling_vector.h>
-#include <mg/core/mg_log.h>
-#include <mg/resources/mg_mesh_resource.h>
-#include <mg/utils/mg_assert.h>
+#include "mg/containers/mg_pooling_vector.h"
+#include "mg/core/mg_log.h"
+#include "mg/resources/mg_mesh_resource.h"
+#include "mg/utils/mg_assert.h"
 
 #include "mg_mesh_info.h"
 #include "mg_glad.h"

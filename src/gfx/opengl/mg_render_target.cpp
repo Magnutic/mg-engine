@@ -21,16 +21,16 @@
 //
 //**************************************************************************************************
 
-#include <mg/gfx/mg_render_target.h>
+#include "mg/gfx/mg_render_target.h"
 
 #include <stdexcept>
 
 #include <fmt/core.h>
 
-#include <mg/core/mg_log.h>
-#include <mg/core/mg_window.h>
-#include <mg/utils/mg_assert.h>
-#include <mg/utils/mg_gsl.h>
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_window.h"
+#include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_gsl.h"
 
 #include "mg_texture_node.h"
 

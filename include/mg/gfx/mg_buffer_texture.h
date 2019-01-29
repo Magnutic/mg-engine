@@ -27,9 +27,9 @@
 
 #pragma once
 
-#include <mg/utils/mg_gsl.h>
-#include <mg/utils/mg_macros.h>
-#include <mg/utils/mg_object_id.h>
+#include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_object_id.h"
 
 // TODO: automagic double-buffering?
 

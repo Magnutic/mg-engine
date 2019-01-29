@@ -25,7 +25,7 @@
 // Parts of this code was adapted from:
 // http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-17-quaternions/
 
-#include <mg/core/mg_rotation.h>
+#include "mg/core/mg_rotation.h"
 
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>

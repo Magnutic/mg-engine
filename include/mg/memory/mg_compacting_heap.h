@@ -33,8 +33,8 @@
 #include <type_traits>
 #include <vector>
 
-#include <mg/utils/mg_assert.h>
-#include <mg/utils/mg_ptr_math.h>
+#include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_ptr_math.h"
 
 namespace Mg::memory {
 

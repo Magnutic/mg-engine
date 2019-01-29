@@ -21,14 +21,14 @@
 //
 //**************************************************************************************************
 
-#include <mg/gfx/mg_light_grid.h>
+#include "mg/gfx/mg_light_grid.h"
 
 #include <glm/geometric.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
 
-#include <mg/utils/mg_math_utils.h>
+#include "mg/utils/mg_math_utils.h"
 
 #include <iostream>
 

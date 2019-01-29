@@ -29,8 +29,8 @@
 
 #include <cstdint>
 
-#include <mg/core/mg_identifier.h>
-#include <mg/utils/mg_assert.h>
+#include "mg/core/mg_identifier.h"
+#include "mg/utils/mg_assert.h"
 
 namespace Mg::gfx {
 

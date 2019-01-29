@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-#include <mg/gfx/mg_debug_renderer.h>
+#include "mg/gfx/mg_debug_renderer.h"
 
 #include <cstdint>
 #include <map>
@@ -33,10 +33,10 @@
 #include <glm/mat4x4.hpp>
 #include <glm/trigonometric.hpp>
 
-#include <mg/core/mg_rotation.h>
-#include <mg/gfx/mg_shader.h>
-#include <mg/utils/mg_assert.h>
-#include <mg/utils/mg_object_id.h>
+#include "mg/core/mg_rotation.h"
+#include "mg/gfx/mg_shader.h"
+#include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_object_id.h"
 
 #include "mg_gl_debug.h"
 #include "mg_opengl_shader.h"

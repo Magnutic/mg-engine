@@ -27,8 +27,8 @@
 
 #pragma once
 
-#include <mg/utils/mg_macros.h>
-#include <mg/utils/mg_simple_pimpl.h>
+#include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_simple_pimpl.h"
 
 namespace Mg::gfx {
 

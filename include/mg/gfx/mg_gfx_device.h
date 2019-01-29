@@ -29,8 +29,8 @@
 
 #include <memory>
 
-#include <mg/gfx/mg_blend_modes.h>
-#include <mg/utils/mg_macros.h>
+#include "mg/gfx/mg_blend_modes.h"
+#include "mg/utils/mg_macros.h"
 
 namespace Mg {
 class Window;

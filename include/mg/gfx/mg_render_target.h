@@ -32,11 +32,11 @@
 #include <memory>
 #include <optional>
 
-#include <mg/gfx/mg_texture2d.h>
-#include <mg/gfx/mg_texture_handle.h>
-#include <mg/gfx/mg_texture_related_types.h>
-#include <mg/utils/mg_macros.h>
-#include <mg/utils/mg_object_id.h>
+#include "mg/gfx/mg_texture2d.h"
+#include "mg/gfx/mg_texture_handle.h"
+#include "mg/gfx/mg_texture_related_types.h"
+#include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_object_id.h"
 
 namespace Mg {
 class Window;

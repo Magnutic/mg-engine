@@ -30,7 +30,7 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 
-#include <mg/gfx/mg_render_command_data_handle.h>
+#include "mg/gfx/mg_render_command_data_handle.h"
 
 namespace Mg::gfx {
 class Material;

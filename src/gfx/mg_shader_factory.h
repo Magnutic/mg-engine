@@ -31,10 +31,10 @@
 #include <memory>
 #include <string>
 
-#include <mg/containers/mg_small_vector.h>
-#include <mg/core/mg_resource_handle_fwd.h>
-#include <mg/gfx/mg_shader.h>
-#include <mg/utils/mg_macros.h>
+#include "mg/containers/mg_small_vector.h"
+#include "mg/core/mg_resource_handle_fwd.h"
+#include "mg/gfx/mg_shader.h"
+#include "mg/utils/mg_macros.h"
 
 namespace Mg {
 struct FileChangedEvent;

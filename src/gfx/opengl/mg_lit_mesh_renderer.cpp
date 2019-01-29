@@ -21,17 +21,17 @@
 //
 //**************************************************************************************************
 
-#include <mg/gfx/mg_lit_mesh_renderer.h>
+#include "mg/gfx/mg_lit_mesh_renderer.h"
 
 #include <algorithm>
 #include <cmath>
 
-#include <mg/gfx/mg_light_buffers.h>
-#include <mg/gfx/mg_light_grid.h>
-#include <mg/gfx/mg_material.h>
-#include <mg/gfx/mg_matrix_ubo.h>
-#include <mg/gfx/mg_render_command_list.h>
-#include <mg/gfx/mg_vertex.h>
+#include "mg/gfx/mg_light_buffers.h"
+#include "mg/gfx/mg_light_grid.h"
+#include "mg/gfx/mg_material.h"
+#include "mg/gfx/mg_matrix_ubo.h"
+#include "mg/gfx/mg_render_command_list.h"
+#include "mg/gfx/mg_vertex.h"
 
 #include "mg_render_command_data.h"
 #include "mg_texture_node.h"

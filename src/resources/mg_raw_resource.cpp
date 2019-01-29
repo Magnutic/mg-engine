@@ -21,9 +21,9 @@
 //
 //**************************************************************************************************
 
-#include <mg/resources/mg_raw_resource.h>
+#include "mg/resources/mg_raw_resource.h"
 
-#include <mg/core/mg_resource_cache.h>
+#include "mg/core/mg_resource_cache.h"
 
 namespace Mg {
 

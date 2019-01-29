@@ -30,7 +30,7 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 
-#include <mg/core/mg_rotation.h>
+#include "mg/core/mg_rotation.h"
 
 namespace Mg {
 

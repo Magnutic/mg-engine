@@ -29,8 +29,8 @@
 
 #include <memory>
 
-#include <mg/gfx/mg_texture_handle.h>
-#include <mg/utils/mg_macros.h>
+#include "mg/gfx/mg_texture_handle.h"
+#include "mg/utils/mg_macros.h"
 
 namespace Mg {
 class TextureResource;

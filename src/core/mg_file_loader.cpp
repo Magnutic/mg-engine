@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-#include <mg/core/mg_file_loader.h>
+#include "mg/core/mg_file_loader.h"
 
 #include <experimental/filesystem>
 #include <stdexcept>
@@ -30,8 +30,8 @@
 
 #include <fmt/core.h>
 
-#include <mg/core/mg_log.h>
-#include <mg/utils/mg_binary_io.h>
+#include "mg/core/mg_log.h"
+#include "mg/utils/mg_binary_io.h"
 
 namespace Mg {
 

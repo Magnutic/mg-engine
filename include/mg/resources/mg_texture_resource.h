@@ -29,9 +29,9 @@
 
 #include <cstdint>
 
-#include <mg/memory/mg_compacting_heap.h>
-#include <mg/resources/mg_base_resource.h>
-#include <mg/utils/mg_gsl.h>
+#include "mg/memory/mg_compacting_heap.h"
+#include "mg/resources/mg_base_resource.h"
+#include "mg/utils/mg_gsl.h"
 
 namespace Mg {
 

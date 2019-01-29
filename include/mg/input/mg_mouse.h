@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include <mg/input/mg_input.h>
+#include "mg/input/mg_input.h"
 
 #include <bitset>
 

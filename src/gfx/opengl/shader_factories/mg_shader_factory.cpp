@@ -27,10 +27,10 @@
 
 #include <fmt/core.h>
 
-#include <mg/core/mg_log.h>
-#include <mg/gfx/mg_material.h>
-#include <mg/resources/mg_shader_resource.h>
-#include <mg/utils/mg_stl_helpers.h>
+#include "mg/core/mg_log.h"
+#include "mg/gfx/mg_material.h"
+#include "mg/resources/mg_shader_resource.h"
+#include "mg/utils/mg_stl_helpers.h"
 
 #include "../mg_opengl_shader.h"
 

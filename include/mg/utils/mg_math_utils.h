@@ -35,7 +35,7 @@
 #include <glm/geometric.hpp>
 #include <glm/vec3.hpp>
 
-#include <mg/utils/mg_gsl.h>
+#include "mg/utils/mg_gsl.h"
 
 namespace Mg {
 

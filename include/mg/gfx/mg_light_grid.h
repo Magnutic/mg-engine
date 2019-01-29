@@ -33,7 +33,7 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 
-#include <mg/mg_defs.h>
+#include "mg/mg_defs.h"
 
 namespace Mg::gfx {
 

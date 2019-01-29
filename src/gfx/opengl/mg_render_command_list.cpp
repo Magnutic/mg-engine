@@ -21,16 +21,16 @@
 //
 //**************************************************************************************************
 
-#include <mg/gfx/mg_render_command_list.h>
+#include "mg/gfx/mg_render_command_list.h"
 
 #include <cstring>
 
 #include <fmt/core.h>
 
-#include <mg/core/mg_log.h>
-#include <mg/gfx/mg_camera.h>
-#include <mg/gfx/mg_frustum.h>
-#include <mg/utils/mg_stl_helpers.h>
+#include "mg/core/mg_log.h"
+#include "mg/gfx/mg_camera.h"
+#include "mg/gfx/mg_frustum.h"
+#include "mg/utils/mg_stl_helpers.h"
 
 #include "mg_mesh_info.h"
 #include "mg_render_command_data.h"

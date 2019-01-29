@@ -30,11 +30,11 @@
 #include <cstddef>
 #include <cstdint>
 
-#include <mg/core/mg_identifier.h>
-#include <mg/gfx/mg_texture_related_types.h>
-#include <mg/utils/mg_assert.h>
-#include <mg/utils/mg_macros.h>
-#include <mg/utils/mg_object_id.h>
+#include "mg/core/mg_identifier.h"
+#include "mg/gfx/mg_texture_related_types.h"
+#include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_object_id.h"
 
 namespace Mg {
 class TextureResource;

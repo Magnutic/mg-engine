@@ -30,8 +30,8 @@
 #include <cstdint>
 #include <string_view>
 
-#include <mg/gfx/mg_shader.h>
-#include <mg/gfx/mg_uniform_buffer.h>
+#include "mg/gfx/mg_shader.h"
+#include "mg/gfx/mg_uniform_buffer.h"
 
 /** OpenGL-backend-specific functionality. */
 namespace Mg::gfx::opengl {
