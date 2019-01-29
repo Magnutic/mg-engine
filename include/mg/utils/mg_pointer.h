@@ -27,6 +27,7 @@
 
 #pragma once
 
+#include <type_traits>
 #include <utility>
 
 namespace Mg {
@@ -43,6 +44,8 @@ public:
  *   - Does not support stateful deleters
  */
 template<typename T, typename DeleterT = DefaultDelete<T>> class Ptr {
+    static_assert(!std::is_array_v<T>, "Mg::Ptr<T>: T may not be an array (use Mg::Array instead)");
+
 public:
     using pointer      = T*;
     using element_type = T;
