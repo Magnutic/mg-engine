@@ -52,7 +52,7 @@ public:
     span<const std::byte> bytes() const { return span{ m_buffer.begin(), m_buffer.end() }; }
 
 protected:
-    memory::CHHandle<std::byte[]> m_buffer;
+    memory::CH_UniquePtr<std::byte[]> m_buffer;
 };
 
 } // namespace Mg

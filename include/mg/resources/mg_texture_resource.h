@@ -141,7 +141,7 @@ private:
 
     Format                        m_format;
     Settings                      m_settings;
-    memory::CHHandle<std::byte[]> m_pixel_data;
+    memory::CH_UniquePtr<std::byte[]> m_pixel_data;
 };
 
 } // namespace Mg

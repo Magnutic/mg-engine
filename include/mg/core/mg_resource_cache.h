@@ -282,8 +282,8 @@ private:
      */
     Subject<FileChangedEvent> m_file_changed_subject;
 
-    using ResEntryPtr       = memory::CHPtr<ResourceEntryBase>;
-    using ResEntryOwningPtr = memory::CHHandle<ResourceEntryBase>;
+    using ResEntryPtr       = memory::CH_Ptr<ResourceEntryBase>;
+    using ResEntryOwningPtr = memory::CH_UniquePtr<ResourceEntryBase>;
 
     struct FileInfo {
         Identifier   filename;

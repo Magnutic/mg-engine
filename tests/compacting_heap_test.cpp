@@ -20,25 +20,25 @@ TEST_CASE("CompactingHeap: basic test")
 {
     Mg::memory::CompactingHeap ch(32 * sizeof(S));
 
-    Mg::memory::CHHandle<S[]> sh = ch.alloc<S[]>(2);
+    Mg::memory::CH_UniquePtr<S[]> sh = ch.alloc<S[]>(2);
     for (S& s : sh) { REQUIRE(std::string_view(s.char_buf) == "Hello"); }
 
-    Mg::memory::CHHandle<char[]> string_h;
+    Mg::memory::CH_UniquePtr<char[]> string_h;
 
     const char* alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-    Mg::memory::CHPtr<char[]> string_p;
+    Mg::memory::CH_Ptr<char[]> string_p;
 
     {
-        Mg::memory::CHHandle<S[]> tmp = ch.alloc<S[]>(10);
+        Mg::memory::CH_UniquePtr<S[]> tmp = ch.alloc<S[]>(10);
         string_h                      = ch.alloc<char[]>(50);
         string_p                      = string_h;
         std::strncpy(string_h.get(), alphabet, 50);
         REQUIRE(std::string_view(string_h.get()) == alphabet);
 
-        Mg::memory::CHHandle<bool> bool_handle = ch.alloc<bool>(true);
+        Mg::memory::CH_UniquePtr<bool> bool_handle = ch.alloc<bool>(true);
         REQUIRE(*bool_handle == true);
-        REQUIRE(*Mg::memory::CHPtr<const bool>(bool_handle) == true);
+        REQUIRE(*Mg::memory::CH_Ptr<const bool>(bool_handle) == true);
     }
 
     ch.compact();
@@ -47,7 +47,7 @@ TEST_CASE("CompactingHeap: basic test")
 }
 
 struct Elem {
-    Mg::memory::CHHandle<uint32_t[]> handle;
+    Mg::memory::CH_UniquePtr<uint32_t[]> handle;
     uint32_t                         value;
 };
 

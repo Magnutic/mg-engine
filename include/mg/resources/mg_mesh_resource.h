@@ -65,9 +65,9 @@ public:
 
 private:
     // Owning pointers to mesh data
-    memory::CHHandle<SubMesh[]>           m_sub_meshes;
-    memory::CHHandle<Vertex[]>            m_vertices;
-    memory::CHHandle<uint_vertex_index[]> m_indices;
+    memory::CH_UniquePtr<SubMesh[]>           m_sub_meshes;
+    memory::CH_UniquePtr<Vertex[]>            m_vertices;
+    memory::CH_UniquePtr<uint_vertex_index[]> m_indices;
 
     glm::vec3 m_centre{};
     float     m_radius = 0.0f;

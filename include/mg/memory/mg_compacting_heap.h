@@ -99,24 +99,24 @@ public:
     }
 };
 
-template<typename T> class CHHandleBase;
+template<typename T> class CH_PtrBase;
 
 } // namespace detail
 
-template<typename T> class CHHandle;
+template<typename T> class CH_UniquePtr;
 
 //--------------------------------------------------------------------------------------------------
 // CompactingHeap
 //--------------------------------------------------------------------------------------------------
 
 /** Allocator which may defragment by compacting allocated memory, moving objects to close gaps.
- * All objects allocated from a compacting heap must be referenced using CHHandle or CHPtr, since
- * the pointee data may move around in memory.
+ * All objects allocated from a compacting heap must be referenced using CH_UniquePtr or CH_Ptr,
+ * since the pointee data may move around in memory.
  */
 class CompactingHeap {
 public:
-    template<typename T> friend class detail::CHHandleBase;
-    template<typename T> friend class CHHandle;
+    template<typename T> friend class detail::CH_PtrBase;
+    template<typename T> friend class CH_UniquePtr;
 
     explicit CompactingHeap(size_t size_in_bytes)
         : m_data(std::make_unique<unsigned char[]>(size_in_bytes)), m_data_size(size_in_bytes)
@@ -143,12 +143,12 @@ public:
      * @param args Constructor arguments.
      */
     template<typename T, typename... Args, typename = std::enable_if_t<!std::is_array_v<T>>>
-    CHHandle<T> alloc(Args&&... args)
+    CH_UniquePtr<T> alloc(Args&&... args)
     {
         size_t alloc_index = _alloc_impl(sizeof(T), 1);
         new (_alloc_info_at(alloc_index).start) T(std::forward<Args>(args)...);
         _alloc_info_at(alloc_index).mover = std::make_unique<detail::CHMoverImpl<T>>();
-        return CHHandle<T>(this, alloc_index);
+        return CH_UniquePtr<T>(this, alloc_index);
     }
 
     /** Allocate array.
@@ -160,13 +160,13 @@ public:
      * @param num Extent of array to allocate
      */
     template<typename T, typename = std::enable_if_t<std::is_array_v<T> && std::extent_v<T> == 0>>
-    CHHandle<T> alloc(size_t num)
+    CH_UniquePtr<T> alloc(size_t num)
     {
         using ElemT        = std::remove_extent_t<T>;
         size_t alloc_index = _alloc_impl(sizeof(ElemT), num);
         new (_alloc_info_at(alloc_index).start) ElemT[num]();
         _alloc_info_at(alloc_index).mover = std::make_unique<detail::CHMoverImpl<ElemT>>();
-        return CHHandle<ElemT[]>(this, alloc_index);
+        return CH_UniquePtr<ElemT[]>(this, alloc_index);
     }
 
     /** Allocate an array of copies of the values in the supplied iterator range.
@@ -175,7 +175,7 @@ public:
      * reference would not.
      */
     template<typename It, typename T = typename std::iterator_traits<It>::value_type>
-    CHHandle<T[]> alloc_copy(It first, It last)
+    CH_UniquePtr<T[]> alloc_copy(It first, It last)
     {
         auto num_elems = std::distance(first, last);
         MG_ASSERT(num_elems >= 0);
@@ -189,7 +189,7 @@ public:
             elem_ptr += sizeof(T); // NOLINT
         }
 
-        return CHHandle<T[]>(this, alloc_index);
+        return CH_UniquePtr<T[]>(this, alloc_index);
     }
 
     /** Compact (defragment) the heap by moving contained data. */
@@ -276,8 +276,8 @@ private:
 
 namespace detail {
 
-// Base of handle types: implements shared functionality of CHHandle and CHPtr.
-template<typename T> class CHHandleBase {
+// Base of handle types: implements shared functionality of CH_UniquePtr and CH_Ptr.
+template<typename T> class CH_PtrBase {
 public:
     using element_type = std::remove_cv_t<std::remove_extent_t<T>>;
 
@@ -288,9 +288,9 @@ public:
 
     static constexpr bool is_array = std::is_array_v<T>;
 
-    CHHandleBase() = default;
+    CH_PtrBase() = default;
 
-    void swap(CHHandleBase& rhs)
+    void swap(CH_PtrBase& rhs)
     {
         std::swap(m_owning_heap, rhs.m_owning_heap);
         std::swap(m_alloc_index, rhs.m_alloc_index);
@@ -310,17 +310,19 @@ public:
     /** Alias for get(), mainly for compatibility with gsl::span constructor. */
     pointer data() const noexcept { return get(); }
 
-    // Index array CHHandle ------------------------------------------------------------------------
+    // Index array CH_UniquePtr
+    // ------------------------------------------------------------------------
 
     reference operator[](size_t index) const noexcept
     {
-        static_assert(is_array, "Cannot []-index non-array CHHandle");
+        static_assert(is_array, "Cannot []-index non-array CH_UniquePtr");
         MG_ASSERT(!is_null());
         MG_ASSERT(index < size());
         return get()[index];
     }
 
-    // Dereferencing non-array CHHandle ------------------------------------------------------------
+    // Dereferencing non-array CH_UniquePtr
+    // ------------------------------------------------------------
     // clang-format off
     pointer   operator->() const noexcept { static_assert(!is_array); return  get(); }
     reference operator*()  const noexcept { static_assert(!is_array); return *get(); }
@@ -337,7 +339,7 @@ public:
     // clang-format on
 
 protected:
-    explicit CHHandleBase(CompactingHeap* owning_heap, size_t alloc_index) noexcept
+    explicit CH_PtrBase(CompactingHeap* owning_heap, size_t alloc_index) noexcept
         : m_owning_heap{ owning_heap }, m_alloc_index{ alloc_index }
     {}
 
@@ -356,7 +358,7 @@ protected:
     }
 
     // Helper to shorten implementation of operator== for subtypes.
-    template<typename U> bool equals(const CHHandleBase<U>& rhs) const noexcept
+    template<typename U> bool equals(const CH_PtrBase<U>& rhs) const noexcept
     {
         return m_owning_heap == rhs.m_owning_heap && m_alloc_index == rhs.m_alloc_index;
     }
@@ -365,7 +367,7 @@ protected:
     size_t m_alloc_index = 0; // Index of allocation info in CompactingHeap internal data structure
 };
 
-// Identifies well-formed conversions between CHHandle/CHPtr types: true when pointer types are
+// Identifies well-formed conversions between CH_UniquePtr/CH_Ptr types: true when pointer types are
 // compatible, and the slicing problem is not invoked.
 template<typename T, typename U>
 static constexpr bool ch_handle_conversion_is_valid =
@@ -378,34 +380,37 @@ static constexpr bool ch_handle_conversion_is_valid =
 /** Handle to element or array stored in a CompactingHeap, with unique-ownership semantics (like
  * std::unique_ptr).
  * Elements stored in a CompactingHeap may move around, and this handle deals with that. As such, do
- * not store a pointer or reference to the pointed-to element(s), always use CHHandle or CHPtr.
+ * not store a pointer or reference to the pointed-to element(s), always use CH_UniquePtr or CH_Ptr.
  */
-template<typename T> class CHHandle : public detail::CHHandleBase<T> {
-    using Base = detail::CHHandleBase<T>;
+template<typename T> class CH_UniquePtr : public detail::CH_PtrBase<T> {
+    using Base = detail::CH_PtrBase<T>;
 
 public:
-    CHHandle() = default;
+    CH_UniquePtr() = default;
 
-    CHHandle(std::nullptr_t) {}
+    CH_UniquePtr(std::nullptr_t) {}
 
     // Not copyable (unique-ownership semantics)
-    CHHandle(const CHHandle&) = delete;
+    CH_UniquePtr(const CH_UniquePtr&) = delete;
 
-    CHHandle(CHHandle&& rhs) noexcept : Base(rhs.m_owning_heap, rhs.m_alloc_index) { rhs.clear(); }
-
-    // Allow pointer conversions (add CV; derived-to-base for non-array CHHandle)
-    template<typename U, typename = std::enable_if_t<detail::ch_handle_conversion_is_valid<T, U>>>
-    CHHandle(CHHandle<U>&& rhs) : Base(rhs.m_owning_heap, rhs.m_alloc_index)
+    CH_UniquePtr(CH_UniquePtr&& rhs) noexcept : Base(rhs.m_owning_heap, rhs.m_alloc_index)
     {
         rhs.clear();
     }
 
-    ~CHHandle()
+    // Allow pointer conversions (add CV; derived-to-base for non-array CH_UniquePtr)
+    template<typename U, typename = std::enable_if_t<detail::ch_handle_conversion_is_valid<T, U>>>
+    CH_UniquePtr(CH_UniquePtr<U>&& rhs) : Base(rhs.m_owning_heap, rhs.m_alloc_index)
+    {
+        rhs.clear();
+    }
+
+    ~CH_UniquePtr()
     {
         if (this->m_owning_heap != nullptr) { this->m_owning_heap->_dealloc(this->m_alloc_index); }
     }
 
-    CHHandle& operator=(CHHandle rhs) noexcept
+    CH_UniquePtr& operator=(CH_UniquePtr rhs) noexcept
     {
         this->swap(rhs);
         return *this;
@@ -413,70 +418,73 @@ public:
 
     void reset()
     {
-        CHHandle tmp{};
+        CH_UniquePtr tmp{};
         this->swap(tmp);
     }
 
     // Comparison operators ------------------------------------------------------------------------
-    friend bool operator==(const CHHandle<T>& l, const CHHandle<T>& r) { return l.equals(r); }
-    friend bool operator!=(const CHHandle<T>& l, const CHHandle<T>& r) { return !(l == r); }
+    friend bool operator==(const CH_UniquePtr<T>& l, const CH_UniquePtr<T>& r)
+    {
+        return l.equals(r);
+    }
+    friend bool operator!=(const CH_UniquePtr<T>& l, const CH_UniquePtr<T>& r) { return !(l == r); }
 
 private:
-    template<typename> friend class CHHandle;
-    template<typename> friend class CHPtr;
+    template<typename> friend class CH_UniquePtr;
+    template<typename> friend class CH_Ptr;
     friend class CompactingHeap;
 
-    // Constructor, only CompactingHeap may construct non-null CHHandle.
-    explicit CHHandle(CompactingHeap* owning_heap, size_t alloc_index) noexcept
+    // Constructor, only CompactingHeap may construct non-null CH_UniquePtr.
+    explicit CH_UniquePtr(CompactingHeap* owning_heap, size_t alloc_index) noexcept
         : Base{ owning_heap, alloc_index }
     {}
 };
 
-template<typename T> void swap(CHHandle<T>& lhs, CHHandle<T>& rhs)
+template<typename T> void swap(CH_UniquePtr<T>& lhs, CH_UniquePtr<T>& rhs)
 {
     lhs.swap(rhs);
 }
 
 /** Non-owning handle to element or array stored in a CompactingHeap.
  * Elements stored in a CompactingHeap may move around, and this handle deals with that. As such, do
- * not store a pointer or reference to the pointed-to element(s), always use CHHandle or CHPtr.
+ * not store a pointer or reference to the pointed-to element(s), always use CH_UniquePtr or CH_Ptr.
  */
-template<typename T> class CHPtr : public detail::CHHandleBase<T> {
-    using Base = detail::CHHandleBase<T>;
+template<typename T> class CH_Ptr : public detail::CH_PtrBase<T> {
+    using Base = detail::CH_PtrBase<T>;
 
 public:
-    CHPtr() = default;
+    CH_Ptr() = default;
 
-    CHPtr(std::nullptr_t) {}
+    CH_Ptr(std::nullptr_t) {}
 
-    CHPtr(const CHPtr&) = default;
+    CH_Ptr(const CH_Ptr&) = default;
 
-    // Allow pointer conversions (add CV; derived-to-base for non-array CHPtr)
+    // Allow pointer conversions (add CV; derived-to-base for non-array CH_Ptr)
     template<typename U, typename = std::enable_if_t<detail::ch_handle_conversion_is_valid<T, U>>>
-    CHPtr(const CHPtr<U>& rhs) : Base(rhs.m_owning_heap, rhs.m_alloc_index)
+    CH_Ptr(const CH_Ptr<U>& rhs) : Base(rhs.m_owning_heap, rhs.m_alloc_index)
     {}
 
-    // Allow pointer-converting conversion from CHHandle (e.g. CHHandle<T> -> CHPtr<const TBase>
-    // where TBase is a base class of T)
+    // Allow pointer-converting conversion from CH_UniquePtr (e.g. CH_UniquePtr<T> -> CH_Ptr<const
+    // TBase> where TBase is a base class of T)
     template<typename U, typename = std::enable_if_t<detail::ch_handle_conversion_is_valid<T, U>>>
-    CHPtr(const CHHandle<U>& rhs) : Base(rhs.m_owning_heap, rhs.m_alloc_index)
+    CH_Ptr(const CH_UniquePtr<U>& rhs) : Base(rhs.m_owning_heap, rhs.m_alloc_index)
     {}
 
-    CHPtr& operator=(CHPtr rhs) noexcept
+    CH_Ptr& operator=(CH_Ptr rhs) noexcept
     {
         this->swap(rhs);
         return *this;
     }
 
     // Comparison operators ------------------------------------------------------------------------
-    friend bool operator==(const CHPtr<T>& l, const CHPtr<T>& r) { return l.equals(r); }
-    friend bool operator!=(const CHPtr<T>& l, const CHPtr<T>& r) { return !(l == r); }
+    friend bool operator==(const CH_Ptr<T>& l, const CH_Ptr<T>& r) { return l.equals(r); }
+    friend bool operator!=(const CH_Ptr<T>& l, const CH_Ptr<T>& r) { return !(l == r); }
 
 private:
-    template<typename> friend class CHPtr;
+    template<typename> friend class CH_Ptr;
 };
 
-template<typename T> void swap(CHPtr<T>& lhs, CHPtr<T>& rhs)
+template<typename T> void swap(CH_Ptr<T>& lhs, CH_Ptr<T>& rhs)
 {
     lhs.swap(rhs);
 }

@@ -44,7 +44,7 @@ class ResourceDataLoader;
  *
  * @remark
  * When a resource type allocates memory, it should use the Mg::memory::CompactingHeap that is
- * provided as a parameter to load_resource()), and store the resulting Mg::memory::CHHandle
+ * provided as a parameter to load_resource()), and store the resulting Mg::memory::CH_UniquePtr
  * buffer-handles. This keeps the resource's data stored within a dedicated memory buffer that can
  * be defragmented.
  *
