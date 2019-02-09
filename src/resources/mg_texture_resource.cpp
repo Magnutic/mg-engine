@@ -187,7 +187,7 @@ TextureResource::MipLevelData TextureResource::pixel_data(MipIndexT mip_index) c
 }
 
 // DDS loading
-void TextureResource::init(span<const std::byte> dds_data, memory::CompactingHeap& alloc)
+void TextureResource::init(span<const std::byte> dds_data, memory::DefragmentingAllocator& alloc)
 {
     if (dds_data.length() < sizeof(DDS_HEADER)) {
         throw std::runtime_error{ "DDS file corrupt, missing data." };

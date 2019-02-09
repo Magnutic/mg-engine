@@ -83,12 +83,12 @@ public:
     std::string debug_print() const;
 
 private:
-    memory::CH_UniquePtr<Parameter[]> m_parameters;
-    memory::CH_UniquePtr<Sampler[]>   m_samplers;
-    memory::CH_UniquePtr<Option[]>    m_options;
+    memory::DA_UniquePtr<Parameter[]> m_parameters;
+    memory::DA_UniquePtr<Sampler[]>   m_samplers;
+    memory::DA_UniquePtr<Option[]>    m_options;
 
-    memory::CH_UniquePtr<char[]> m_vertex_code;
-    memory::CH_UniquePtr<char[]> m_fragment_code;
+    memory::DA_UniquePtr<char[]> m_vertex_code;
+    memory::DA_UniquePtr<char[]> m_fragment_code;
 
     ShaderTag::Value m_tags = 0;
 };

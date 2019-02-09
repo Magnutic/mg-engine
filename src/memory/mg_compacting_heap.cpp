@@ -28,7 +28,7 @@
 
 namespace Mg::memory {
 
-void CompactingHeap::compact() noexcept
+void DefragmentingAllocator::compact() noexcept
 {
     std::vector<AllocInfo*> alloc_info;
     alloc_info.reserve(m_alloc_info.size());
@@ -41,8 +41,8 @@ void CompactingHeap::compact() noexcept
     });
 
     // Compact: move data toward lower address to cover any gaps.
-    // Note that alignment is guaranteed, as CompactingHeap::alloc() makes sure all allocation sizes
-    // end on aligned addresses.
+    // Note that alignment is guaranteed, as DefragmentingAllocator::alloc() makes sure all
+    // allocation sizes end on aligned addresses.
     size_t new_data_head = 0;
     for (AllocInfo* ai : alloc_info) {
         if (ai->start == nullptr) { continue; }
@@ -58,7 +58,7 @@ void CompactingHeap::compact() noexcept
     m_data_head = new_data_head;
 }
 
-size_t CompactingHeap::_alloc_impl(size_t elem_size, size_t num)
+size_t DefragmentingAllocator::_alloc_impl(size_t elem_size, size_t num)
 {
     // Perhaps allocations of size 0 should be prevented with an assert (as it likely represents a
     // bug somewhere in user code), but for consistency with new[] and std::make_unique, we allow

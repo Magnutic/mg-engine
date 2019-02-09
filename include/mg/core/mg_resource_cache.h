@@ -133,7 +133,7 @@ public:
 
     void load_file(span<std::byte> output_buffer) const;
 
-    memory::CompactingHeap& allocator() const noexcept;
+    memory::DefragmentingAllocator& allocator() const noexcept;
 
     /** Load a resource and mark this resource as dependent on the newly loaded resource. */
     template<typename ResT>
@@ -228,7 +228,7 @@ public:
     ResourceHandle<ResT> resource_handle(Identifier file, bool load_resource_immediately = true);
 
     /** Get the allocator used by this ResourceCache. */
-    memory::CompactingHeap& allocator() { return m_heap; }
+    memory::DefragmentingAllocator& allocator() { return m_heap; }
 
     /** Returns whether a file with the given path exists in the file index.
      * N.B. returns the state as of most recent call to `refresh()`
@@ -282,8 +282,8 @@ private:
      */
     Subject<FileChangedEvent> m_file_changed_subject;
 
-    using ResEntryPtr       = memory::CH_Ptr<ResourceEntryBase>;
-    using ResEntryOwningPtr = memory::CH_UniquePtr<ResourceEntryBase>;
+    using ResEntryPtr       = memory::DA_Ptr<ResourceEntryBase>;
+    using ResEntryOwningPtr = memory::DA_UniquePtr<ResourceEntryBase>;
 
     struct FileInfo {
         Identifier   filename;
@@ -324,7 +324,7 @@ private:
     std::vector<std::shared_ptr<IFileLoader>> m_file_loaders;
 
     // Allocator for resource data
-    memory::CompactingHeap m_heap;
+    memory::DefragmentingAllocator m_heap;
 
     // List of resource files available through the resource loaders.
     std::vector<FileInfo> m_file_list;
@@ -390,7 +390,7 @@ template<typename F> auto ResourceCache::try_or_unload_unused(F f) -> decltype(f
     try {
         return f();
     }
-    catch (...) { // TODO: use specific exception type for CompactingHeap out of memory
+    catch (...) { // TODO: use specific exception type for DefragmentingAllocator out of memory
         g_log.write_message("Failed to load resource, retrying...");
         if (!unload_unused()) {
             g_log.write_error(

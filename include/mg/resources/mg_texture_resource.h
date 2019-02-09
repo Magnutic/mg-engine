@@ -137,11 +137,11 @@ public:
     bool should_reload_on_file_change() const override { return true; }
 
 private:
-    void init(span<const std::byte> dds_data, memory::CompactingHeap& alloc);
+    void init(span<const std::byte> dds_data, memory::DefragmentingAllocator& alloc);
 
     Format                        m_format;
     Settings                      m_settings;
-    memory::CH_UniquePtr<std::byte[]> m_pixel_data;
+    memory::DA_UniquePtr<std::byte[]> m_pixel_data;
 };
 
 } // namespace Mg

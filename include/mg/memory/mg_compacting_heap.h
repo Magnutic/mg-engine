@@ -60,7 +60,7 @@ public:
     using type = std::decay_t<T>;
 
     static_assert(std::is_move_constructible_v<type>,
-                  "Types allocated in Mg::memory::CompactingHeap must be movable.");
+                  "Types allocated in Mg::memory::DefragmentingAllocator must be movable.");
 
     void move(void* dst, void* src, size_t num_elems) noexcept override
     {
@@ -99,36 +99,36 @@ public:
     }
 };
 
-template<typename T> class CH_PtrBase;
+template<typename T> class DA_PtrBase;
 
 } // namespace detail
 
-template<typename T> class CH_UniquePtr;
+template<typename T> class DA_UniquePtr;
 
 //--------------------------------------------------------------------------------------------------
-// CompactingHeap
+// DefragmentingAllocator
 //--------------------------------------------------------------------------------------------------
 
 /** Allocator which may defragment by compacting allocated memory, moving objects to close gaps.
- * All objects allocated from a compacting heap must be referenced using CH_UniquePtr or CH_Ptr,
+ * All objects allocated from a compacting heap must be referenced using DA_UniquePtr or DA_Ptr,
  * since the pointee data may move around in memory.
  */
-class CompactingHeap {
+class DefragmentingAllocator {
 public:
-    template<typename T> friend class detail::CH_PtrBase;
-    template<typename T> friend class CH_UniquePtr;
+    template<typename T> friend class detail::DA_PtrBase;
+    template<typename T> friend class DA_UniquePtr;
 
-    explicit CompactingHeap(size_t size_in_bytes)
+    explicit DefragmentingAllocator(size_t size_in_bytes)
         : m_data(std::make_unique<unsigned char[]>(size_in_bytes)), m_data_size(size_in_bytes)
     {
         m_alloc_info.reserve(k_initial_alloc_info_vector_size);
     }
 
     // Non-copyable, non-movable
-    CompactingHeap(const CompactingHeap&) = delete;
-    CompactingHeap(CompactingHeap&&)      = delete;
-    CompactingHeap& operator=(const CompactingHeap&) = delete;
-    CompactingHeap& operator=(CompactingHeap&&) = delete;
+    DefragmentingAllocator(const DefragmentingAllocator&) = delete;
+    DefragmentingAllocator(DefragmentingAllocator&&)      = delete;
+    DefragmentingAllocator& operator=(const DefragmentingAllocator&) = delete;
+    DefragmentingAllocator& operator=(DefragmentingAllocator&&) = delete;
 
     //----------------------------------------------------------------------------------------------
     // Member functions
@@ -143,12 +143,12 @@ public:
      * @param args Constructor arguments.
      */
     template<typename T, typename... Args, typename = std::enable_if_t<!std::is_array_v<T>>>
-    CH_UniquePtr<T> alloc(Args&&... args)
+    DA_UniquePtr<T> alloc(Args&&... args)
     {
         size_t alloc_index = _alloc_impl(sizeof(T), 1);
         new (_alloc_info_at(alloc_index).start) T(std::forward<Args>(args)...);
         _alloc_info_at(alloc_index).mover = std::make_unique<detail::CHMoverImpl<T>>();
-        return CH_UniquePtr<T>(this, alloc_index);
+        return DA_UniquePtr<T>(this, alloc_index);
     }
 
     /** Allocate array.
@@ -160,13 +160,13 @@ public:
      * @param num Extent of array to allocate
      */
     template<typename T, typename = std::enable_if_t<std::is_array_v<T> && std::extent_v<T> == 0>>
-    CH_UniquePtr<T> alloc(size_t num)
+    DA_UniquePtr<T> alloc(size_t num)
     {
         using ElemT        = std::remove_extent_t<T>;
         size_t alloc_index = _alloc_impl(sizeof(ElemT), num);
         new (_alloc_info_at(alloc_index).start) ElemT[num]();
         _alloc_info_at(alloc_index).mover = std::make_unique<detail::CHMoverImpl<ElemT>>();
-        return CH_UniquePtr<ElemT[]>(this, alloc_index);
+        return DA_UniquePtr<ElemT[]>(this, alloc_index);
     }
 
     /** Allocate an array of copies of the values in the supplied iterator range.
@@ -175,7 +175,7 @@ public:
      * reference would not.
      */
     template<typename It, typename T = typename std::iterator_traits<It>::value_type>
-    CH_UniquePtr<T[]> alloc_copy(It first, It last)
+    DA_UniquePtr<T[]> alloc_copy(It first, It last)
     {
         auto num_elems = std::distance(first, last);
         MG_ASSERT(num_elems >= 0);
@@ -189,7 +189,7 @@ public:
             elem_ptr += sizeof(T); // NOLINT
         }
 
-        return CH_UniquePtr<T[]>(this, alloc_index);
+        return DA_UniquePtr<T[]>(this, alloc_index);
     }
 
     /** Compact (defragment) the heap by moving contained data. */
@@ -276,8 +276,8 @@ private:
 
 namespace detail {
 
-// Base of handle types: implements shared functionality of CH_UniquePtr and CH_Ptr.
-template<typename T> class CH_PtrBase {
+// Base of handle types: implements shared functionality of DA_UniquePtr and DA_Ptr.
+template<typename T> class DA_PtrBase {
 public:
     using element_type = std::remove_cv_t<std::remove_extent_t<T>>;
 
@@ -288,9 +288,9 @@ public:
 
     static constexpr bool is_array = std::is_array_v<T>;
 
-    CH_PtrBase() = default;
+    DA_PtrBase() = default;
 
-    void swap(CH_PtrBase& rhs)
+    void swap(DA_PtrBase& rhs)
     {
         std::swap(m_owning_heap, rhs.m_owning_heap);
         std::swap(m_alloc_index, rhs.m_alloc_index);
@@ -310,18 +310,18 @@ public:
     /** Alias for get(), mainly for compatibility with gsl::span constructor. */
     pointer data() const noexcept { return get(); }
 
-    // Index array CH_UniquePtr
+    // Index array DA_UniquePtr
     // ------------------------------------------------------------------------
 
     reference operator[](size_t index) const noexcept
     {
-        static_assert(is_array, "Cannot []-index non-array CH_UniquePtr");
+        static_assert(is_array, "Cannot []-index non-array DA_UniquePtr");
         MG_ASSERT(!is_null());
         MG_ASSERT(index < size());
         return get()[index];
     }
 
-    // Dereferencing non-array CH_UniquePtr
+    // Dereferencing non-array DA_UniquePtr
     // ------------------------------------------------------------
     // clang-format off
     pointer   operator->() const noexcept { static_assert(!is_array); return  get(); }
@@ -339,12 +339,12 @@ public:
     // clang-format on
 
 protected:
-    explicit CH_PtrBase(CompactingHeap* owning_heap, size_t alloc_index) noexcept
+    explicit DA_PtrBase(DefragmentingAllocator* owning_heap, size_t alloc_index) noexcept
         : m_owning_heap{ owning_heap }, m_alloc_index{ alloc_index }
     {}
 
-    // Get allocation-info struct for the pointee in CompactingHeap.
-    CompactingHeap::AllocInfo& _alloc_info() const noexcept
+    // Get allocation-info struct for the pointee in DefragmentingAllocator.
+    DefragmentingAllocator::AllocInfo& _alloc_info() const noexcept
     {
         MG_ASSERT(m_owning_heap != nullptr);
         return m_owning_heap->_alloc_info_at(m_alloc_index);
@@ -358,16 +358,17 @@ protected:
     }
 
     // Helper to shorten implementation of operator== for subtypes.
-    template<typename U> bool equals(const CH_PtrBase<U>& rhs) const noexcept
+    template<typename U> bool equals(const DA_PtrBase<U>& rhs) const noexcept
     {
         return m_owning_heap == rhs.m_owning_heap && m_alloc_index == rhs.m_alloc_index;
     }
 
-    CompactingHeap* m_owning_heap{};
-    size_t m_alloc_index = 0; // Index of allocation info in CompactingHeap internal data structure
+    DefragmentingAllocator* m_owning_heap{};
+    size_t                  m_alloc_index =
+        0; // Index of allocation info in DefragmentingAllocator internal data structure
 };
 
-// Identifies well-formed conversions between CH_UniquePtr/CH_Ptr types: true when pointer types are
+// Identifies well-formed conversions between DA_UniquePtr/DA_Ptr types: true when pointer types are
 // compatible, and the slicing problem is not invoked.
 template<typename T, typename U>
 static constexpr bool ch_handle_conversion_is_valid =
@@ -377,40 +378,40 @@ static constexpr bool ch_handle_conversion_is_valid =
 
 } // namespace detail
 
-/** Handle to element or array stored in a CompactingHeap, with unique-ownership semantics (like
- * std::unique_ptr).
- * Elements stored in a CompactingHeap may move around, and this handle deals with that. As such, do
- * not store a pointer or reference to the pointed-to element(s), always use CH_UniquePtr or CH_Ptr.
+/** Handle to element or array stored in a DefragmentingAllocator, with unique-ownership semantics
+ * (like std::unique_ptr). Elements stored in a DefragmentingAllocator may move around, and this
+ * handle deals with that. As such, do not store a pointer or reference to the pointed-to
+ * element(s), always use DA_UniquePtr or DA_Ptr.
  */
-template<typename T> class CH_UniquePtr : public detail::CH_PtrBase<T> {
-    using Base = detail::CH_PtrBase<T>;
+template<typename T> class DA_UniquePtr : public detail::DA_PtrBase<T> {
+    using Base = detail::DA_PtrBase<T>;
 
 public:
-    CH_UniquePtr() = default;
+    DA_UniquePtr() = default;
 
-    CH_UniquePtr(std::nullptr_t) {}
+    DA_UniquePtr(std::nullptr_t) {}
 
     // Not copyable (unique-ownership semantics)
-    CH_UniquePtr(const CH_UniquePtr&) = delete;
+    DA_UniquePtr(const DA_UniquePtr&) = delete;
 
-    CH_UniquePtr(CH_UniquePtr&& rhs) noexcept : Base(rhs.m_owning_heap, rhs.m_alloc_index)
+    DA_UniquePtr(DA_UniquePtr&& rhs) noexcept : Base(rhs.m_owning_heap, rhs.m_alloc_index)
     {
         rhs.clear();
     }
 
-    // Allow pointer conversions (add CV; derived-to-base for non-array CH_UniquePtr)
+    // Allow pointer conversions (add CV; derived-to-base for non-array DA_UniquePtr)
     template<typename U, typename = std::enable_if_t<detail::ch_handle_conversion_is_valid<T, U>>>
-    CH_UniquePtr(CH_UniquePtr<U>&& rhs) : Base(rhs.m_owning_heap, rhs.m_alloc_index)
+    DA_UniquePtr(DA_UniquePtr<U>&& rhs) : Base(rhs.m_owning_heap, rhs.m_alloc_index)
     {
         rhs.clear();
     }
 
-    ~CH_UniquePtr()
+    ~DA_UniquePtr()
     {
         if (this->m_owning_heap != nullptr) { this->m_owning_heap->_dealloc(this->m_alloc_index); }
     }
 
-    CH_UniquePtr& operator=(CH_UniquePtr rhs) noexcept
+    DA_UniquePtr& operator=(DA_UniquePtr rhs) noexcept
     {
         this->swap(rhs);
         return *this;
@@ -418,73 +419,74 @@ public:
 
     void reset()
     {
-        CH_UniquePtr tmp{};
+        DA_UniquePtr tmp{};
         this->swap(tmp);
     }
 
     // Comparison operators ------------------------------------------------------------------------
-    friend bool operator==(const CH_UniquePtr<T>& l, const CH_UniquePtr<T>& r)
+    friend bool operator==(const DA_UniquePtr<T>& l, const DA_UniquePtr<T>& r)
     {
         return l.equals(r);
     }
-    friend bool operator!=(const CH_UniquePtr<T>& l, const CH_UniquePtr<T>& r) { return !(l == r); }
+    friend bool operator!=(const DA_UniquePtr<T>& l, const DA_UniquePtr<T>& r) { return !(l == r); }
 
 private:
-    template<typename> friend class CH_UniquePtr;
-    template<typename> friend class CH_Ptr;
-    friend class CompactingHeap;
+    template<typename> friend class DA_UniquePtr;
+    template<typename> friend class DA_Ptr;
+    friend class DefragmentingAllocator;
 
-    // Constructor, only CompactingHeap may construct non-null CH_UniquePtr.
-    explicit CH_UniquePtr(CompactingHeap* owning_heap, size_t alloc_index) noexcept
+    // Constructor, only DefragmentingAllocator may construct non-null DA_UniquePtr.
+    explicit DA_UniquePtr(DefragmentingAllocator* owning_heap, size_t alloc_index) noexcept
         : Base{ owning_heap, alloc_index }
     {}
 };
 
-template<typename T> void swap(CH_UniquePtr<T>& lhs, CH_UniquePtr<T>& rhs)
+template<typename T> void swap(DA_UniquePtr<T>& lhs, DA_UniquePtr<T>& rhs)
 {
     lhs.swap(rhs);
 }
 
-/** Non-owning handle to element or array stored in a CompactingHeap.
- * Elements stored in a CompactingHeap may move around, and this handle deals with that. As such, do
- * not store a pointer or reference to the pointed-to element(s), always use CH_UniquePtr or CH_Ptr.
+/** Non-owning handle to element or array stored in a DefragmentingAllocator.
+ * Elements stored in a DefragmentingAllocator may move around, and this handle deals with that. As
+ * such, do not store a pointer or reference to the pointed-to element(s), always use DA_UniquePtr
+ * or DA_Ptr.
  */
-template<typename T> class CH_Ptr : public detail::CH_PtrBase<T> {
-    using Base = detail::CH_PtrBase<T>;
+template<typename T> class DA_Ptr : public detail::DA_PtrBase<T> {
+    using Base = detail::DA_PtrBase<T>;
 
 public:
-    CH_Ptr() = default;
+    DA_Ptr() = default;
 
-    CH_Ptr(std::nullptr_t) {}
+    DA_Ptr(std::nullptr_t) {}
 
-    CH_Ptr(const CH_Ptr&) = default;
+    DA_Ptr(const DA_Ptr&) = default;
 
-    // Allow pointer conversions (add CV; derived-to-base for non-array CH_Ptr)
+    // Allow pointer conversions (add CV; derived-to-base for non-array DA_Ptr)
     template<typename U, typename = std::enable_if_t<detail::ch_handle_conversion_is_valid<T, U>>>
-    CH_Ptr(const CH_Ptr<U>& rhs) : Base(rhs.m_owning_heap, rhs.m_alloc_index)
+    DA_Ptr(const DA_Ptr<U>& rhs) : Base(rhs.m_owning_heap, rhs.m_alloc_index)
     {}
 
-    // Allow pointer-converting conversion from CH_UniquePtr (e.g. CH_UniquePtr<T> -> CH_Ptr<const
+    // Allow pointer-converting conversion from DA_UniquePtr (e.g. DA_UniquePtr<T> -> DA_Ptr<const
     // TBase> where TBase is a base class of T)
     template<typename U, typename = std::enable_if_t<detail::ch_handle_conversion_is_valid<T, U>>>
-    CH_Ptr(const CH_UniquePtr<U>& rhs) : Base(rhs.m_owning_heap, rhs.m_alloc_index)
+    DA_Ptr(const DA_UniquePtr<U>& rhs) : Base(rhs.m_owning_heap, rhs.m_alloc_index)
     {}
 
-    CH_Ptr& operator=(CH_Ptr rhs) noexcept
+    DA_Ptr& operator=(DA_Ptr rhs) noexcept
     {
         this->swap(rhs);
         return *this;
     }
 
     // Comparison operators ------------------------------------------------------------------------
-    friend bool operator==(const CH_Ptr<T>& l, const CH_Ptr<T>& r) { return l.equals(r); }
-    friend bool operator!=(const CH_Ptr<T>& l, const CH_Ptr<T>& r) { return !(l == r); }
+    friend bool operator==(const DA_Ptr<T>& l, const DA_Ptr<T>& r) { return l.equals(r); }
+    friend bool operator!=(const DA_Ptr<T>& l, const DA_Ptr<T>& r) { return !(l == r); }
 
 private:
-    template<typename> friend class CH_Ptr;
+    template<typename> friend class DA_Ptr;
 };
 
-template<typename T> void swap(CH_Ptr<T>& lhs, CH_Ptr<T>& rhs)
+template<typename T> void swap(DA_Ptr<T>& lhs, DA_Ptr<T>& rhs)
 {
     lhs.swap(rhs);
 }

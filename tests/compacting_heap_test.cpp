@@ -16,29 +16,29 @@ struct S {
     char    char_buf[32] = "Hello";
 };
 
-TEST_CASE("CompactingHeap: basic test")
+TEST_CASE("DefragmentingAllocator: basic test")
 {
-    Mg::memory::CompactingHeap ch(32 * sizeof(S));
+    Mg::memory::DefragmentingAllocator ch(32 * sizeof(S));
 
-    Mg::memory::CH_UniquePtr<S[]> sh = ch.alloc<S[]>(2);
+    Mg::memory::DA_UniquePtr<S[]> sh = ch.alloc<S[]>(2);
     for (S& s : sh) { REQUIRE(std::string_view(s.char_buf) == "Hello"); }
 
-    Mg::memory::CH_UniquePtr<char[]> string_h;
+    Mg::memory::DA_UniquePtr<char[]> string_h;
 
     const char* alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-    Mg::memory::CH_Ptr<char[]> string_p;
+    Mg::memory::DA_Ptr<char[]> string_p;
 
     {
-        Mg::memory::CH_UniquePtr<S[]> tmp = ch.alloc<S[]>(10);
+        Mg::memory::DA_UniquePtr<S[]> tmp = ch.alloc<S[]>(10);
         string_h                      = ch.alloc<char[]>(50);
         string_p                      = string_h;
         std::strncpy(string_h.get(), alphabet, 50);
         REQUIRE(std::string_view(string_h.get()) == alphabet);
 
-        Mg::memory::CH_UniquePtr<bool> bool_handle = ch.alloc<bool>(true);
+        Mg::memory::DA_UniquePtr<bool> bool_handle = ch.alloc<bool>(true);
         REQUIRE(*bool_handle == true);
-        REQUIRE(*Mg::memory::CH_Ptr<const bool>(bool_handle) == true);
+        REQUIRE(*Mg::memory::DA_Ptr<const bool>(bool_handle) == true);
     }
 
     ch.compact();
@@ -47,11 +47,11 @@ TEST_CASE("CompactingHeap: basic test")
 }
 
 struct Elem {
-    Mg::memory::CH_UniquePtr<uint32_t[]> handle;
+    Mg::memory::DA_UniquePtr<uint32_t[]> handle;
     uint32_t                         value;
 };
 
-TEST_CASE("CompactingHeap: randomised test")
+TEST_CASE("DefragmentingAllocator: randomised test")
 {
     const size_t k_iterations = 10000;
 
@@ -61,7 +61,7 @@ TEST_CASE("CompactingHeap: randomised test")
     std::default_random_engine              re(35872);
     std::uniform_int_distribution<uint32_t> dist;
 
-    Mg::memory::CompactingHeap ch(heap_size);
+    Mg::memory::DefragmentingAllocator ch(heap_size);
     std::vector<Elem>          refs;
 
     auto verify_data = [&refs] {

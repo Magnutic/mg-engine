@@ -43,7 +43,7 @@ void ResourceDataLoader::load_file(span<std::byte> output_buffer) const
     m_file_loader->load_file(resource_id(), output_buffer);
 }
 
-memory::CompactingHeap& ResourceDataLoader::allocator() const noexcept
+memory::DefragmentingAllocator& ResourceDataLoader::allocator() const noexcept
 {
     return m_owning_cache->allocator();
 }

@@ -31,7 +31,7 @@
 #include "mg/utils/mg_macros.h"
 
 namespace Mg::memory {
-class CompactingHeap;
+class DefragmentingAllocator;
 }
 
 namespace Mg {
@@ -43,8 +43,8 @@ class ResourceDataLoader;
  * the same signature).
  *
  * @remark
- * When a resource type allocates memory, it should use the Mg::memory::CompactingHeap that is
- * provided as a parameter to load_resource()), and store the resulting Mg::memory::CH_UniquePtr
+ * When a resource type allocates memory, it should use the Mg::memory::DefragmentingAllocator that
+ * is provided as a parameter to load_resource()), and store the resulting Mg::memory::DA_UniquePtr
  * buffer-handles. This keeps the resource's data stored within a dedicated memory buffer that can
  * be defragmented.
  *
