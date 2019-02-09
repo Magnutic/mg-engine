@@ -261,7 +261,7 @@ public:
     /** Moves stored resource-data to compact and to remove fragmentation, potentially resulting in
      * larger contiguous free space.
      */
-    void defragment_stored_data() { allocator().compact(); }
+    void defragment_stored_data() { allocator().defragment(); }
 
     span<const std::shared_ptr<IFileLoader>> file_loaders() const noexcept
     {

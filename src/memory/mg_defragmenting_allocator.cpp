@@ -28,7 +28,7 @@
 
 namespace Mg::memory {
 
-void DefragmentingAllocator::compact() noexcept
+void DefragmentingAllocator::defragment() noexcept
 {
     std::vector<AllocInfo*> alloc_info;
     alloc_info.reserve(m_alloc_info.size());

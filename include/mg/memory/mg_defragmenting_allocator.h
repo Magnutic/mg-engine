@@ -193,10 +193,10 @@ public:
     }
 
     /** Compact (defragment) the heap by moving contained data. */
-    void compact() noexcept;
+    void defragment() noexcept;
 
     /** Return whether the heap has enough free space for `num` copies of `T` at the end. If not,
-     * compacting the heap by calling `compact()` may free up enough space.
+     * compacting the heap by calling `defragment()` may free up enough space.
      */
     template<typename T> bool has_space_for(size_t num) const noexcept
     {
@@ -214,7 +214,7 @@ public:
     size_t buffer_size() const noexcept { return m_data_size; }
 
     /** The amount of free space (in bytes) in this heap. Note that this space may be fragmented,
-     * so calling compact() might be necessary before further allocations.
+     * so calling defragment() might be necessary before further allocations.
      */
     size_t free_space() const noexcept { return buffer_size() - num_used_bytes(); }
 

@@ -41,7 +41,7 @@ TEST_CASE("DefragmentingAllocator: basic test")
         REQUIRE(*Mg::memory::DA_Ptr<const bool>(bool_handle) == true);
     }
 
-    ch.compact();
+    ch.defragment();
     REQUIRE(std::string_view(string_h.get()) == "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
     REQUIRE(std::string_view(string_p.get()) == "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 }
@@ -106,7 +106,7 @@ TEST_CASE("DefragmentingAllocator: randomised test")
         [&](uint32_t arg) {
             if (arg % 10 == 0) { // Do one time in 10
                 std::cout << "Compact\n";
-                ch.compact();
+                ch.defragment();
             }
         } } };
 
