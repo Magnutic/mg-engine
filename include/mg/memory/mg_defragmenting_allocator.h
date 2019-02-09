@@ -251,9 +251,19 @@ private:
     void _dealloc(size_t alloc_index)
     {
         AllocInfo& ai = _alloc_info_at(alloc_index);
+
         ai.mover->destroy(ai.start, ai.num_elems);
         m_num_allocated_bytes -= static_cast<ptrdiff_t>(ai.raw_size);
         MG_ASSERT(m_num_allocated_bytes >= 0);
+
+        // If this allocation resides at the end of the used portion of the m_data buffer, then bump
+        // back the m_data_head offset so that the next allocation can take the place of the one we
+        // are now deallocating.
+        if (ptr_math::add(ai.start, ai.raw_size) == ptr_math::add(m_data.get(), m_data_head)) {
+            MG_ASSERT(m_data_head >= ai.raw_size);
+            m_data_head -= ai.raw_size;
+        }
+
         ai = AllocInfo{};
     }
 
