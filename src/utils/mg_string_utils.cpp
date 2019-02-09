@@ -103,9 +103,6 @@ std::FILE* fopen_utf8(const char* filepath_utf8, const char* mode)
 
 #endif // _MSC_VER
 
-#undef MG_WIDEN_IF_WINDOWS
-#undef MG_WIDEN_IF_WINDOWS_RETVAL
-
 //--------------------------------------------------------------------------------------------------
 
 /** Tokenise string by delimiter, returns tokens in vector. */
