@@ -44,8 +44,8 @@ namespace Mg::memory {
 
 namespace detail {
 
-/** Mover for compacting heap, implements moving of objects in a type-erased manner which does not
- * invoke UB.
+/** Mover for DefragmentingAllocator, implements moving of objects in a type-erased manner which
+ * does not invoke UB.
  */
 class CHMover {
 public:
@@ -110,8 +110,14 @@ template<typename T> class DA_UniquePtr;
 //--------------------------------------------------------------------------------------------------
 
 /** Allocator which may defragment by compacting allocated memory, moving objects to close gaps.
- * All objects allocated from a compacting heap must be referenced using DA_UniquePtr or DA_Ptr,
- * since the pointee data may move around in memory.
+ * All objects allocated from a DefragmentingAllocator must be referenced using DA_UniquePtr or
+ * DA_Ptr, since the pointee data may move around in memory.
+ *
+ * Allocation works like with a simple bump allocator, meaning it keeps a pre-allocated buffer and a
+ * offset to the end of the used portion of the buffer (m_data_head). It then serves allocation
+ * requests from the end of the buffer -- after the end offset -- and updates the end offset to
+ * the resulting new end. Deallocating can thus leave holes (fragmentation) in the buffer; recover
+ * this space by calling `defragment()`.
  */
 class DefragmentingAllocator {
 public:
@@ -371,7 +377,7 @@ protected:
 // Identifies well-formed conversions between DA_UniquePtr/DA_Ptr types: true when pointer types are
 // compatible, and the slicing problem is not invoked.
 template<typename T, typename U>
-static constexpr bool ch_handle_conversion_is_valid =
+static constexpr bool da_ptr_conversion_is_valid =
     std::is_convertible_v<std::remove_extent_t<U>*, std::remove_extent_t<T>*> &&
     ((!std::is_array_v<U> && !std::is_array_v<T>) ||
      std::is_same_v<std::remove_cv_t<U>, std::remove_cv_t<T>>);
@@ -400,7 +406,7 @@ public:
     }
 
     // Allow pointer conversions (add CV; derived-to-base for non-array DA_UniquePtr)
-    template<typename U, typename = std::enable_if_t<detail::ch_handle_conversion_is_valid<T, U>>>
+    template<typename U, typename = std::enable_if_t<detail::da_ptr_conversion_is_valid<T, U>>>
     DA_UniquePtr(DA_UniquePtr<U>&& rhs) : Base(rhs.m_owning_heap, rhs.m_alloc_index)
     {
         rhs.clear();
@@ -462,13 +468,13 @@ public:
     DA_Ptr(const DA_Ptr&) = default;
 
     // Allow pointer conversions (add CV; derived-to-base for non-array DA_Ptr)
-    template<typename U, typename = std::enable_if_t<detail::ch_handle_conversion_is_valid<T, U>>>
+    template<typename U, typename = std::enable_if_t<detail::da_ptr_conversion_is_valid<T, U>>>
     DA_Ptr(const DA_Ptr<U>& rhs) : Base(rhs.m_owning_heap, rhs.m_alloc_index)
     {}
 
     // Allow pointer-converting conversion from DA_UniquePtr (e.g. DA_UniquePtr<T> -> DA_Ptr<const
     // TBase> where TBase is a base class of T)
-    template<typename U, typename = std::enable_if_t<detail::ch_handle_conversion_is_valid<T, U>>>
+    template<typename U, typename = std::enable_if_t<detail::da_ptr_conversion_is_valid<T, U>>>
     DA_Ptr(const DA_UniquePtr<U>& rhs) : Base(rhs.m_owning_heap, rhs.m_alloc_index)
     {}
 
