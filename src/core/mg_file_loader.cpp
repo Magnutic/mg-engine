@@ -21,6 +21,29 @@
 //
 //**************************************************************************************************
 
+// A note on path formats:
+// On POSIX systems like Linux, paths are represented in UTF-8 with forward slash as path separator.
+// On Windows, paths are represented in UTF-16 with backslash as path separator.
+//
+// Mg Engine uses file paths as hashed identifiers for resource files. This means that the path
+// representation used internally must be strictly consistent. For this reason, Mg Engine uses paths
+// following the POSIX convention, what the C++ filesystem library calls 'generic format'.
+//
+// File paths found from directory using the standard filesystem library are converted to UTF-8
+// strings with the std::filesystem::path::generic_u8string() function, which should return the path
+// in 'generic' POSIX format regardless of platform.
+//
+// As for files loaded from zip archives, the zip standard states that path separators shall be
+// forward slashes and that file names should be encoded according to 'IBM Code Page 437' or UTF-8,
+// see: https://pkware.cachefly.net/webdocs/APPNOTE/APPNOTE-6.3.5.TXT
+//
+// From what I hear, though, it seems as though many programs insert filenames in whichever encoding
+// they wish into zip archives.
+// libzip's 'zip_get_name' function returns UTF-8 by default, converted from a guessed encoding.
+//
+// For the sake of predictability, try to ensure that the tools that create the zip archives store
+// the data in UTF-8.
+
 #include "mg/core/mg_file_loader.h"
 
 #include <experimental/filesystem>
@@ -53,12 +76,14 @@ std::vector<FileRecord> BasicFileLoader::available_files()
 
         time_point last_write_time = fs::last_write_time(file.path());
 
-        // Get path relative to this cache's root directory
-        std::string filepath = file.path().u8string();
-        filepath.erase(0, root_dir.u8string().length() + 1);
-
-        // Replace backslashes with forward slashes
-        std::replace_if(filepath.begin(), filepath.end(), [](char c) { return c == '\\'; }, '/');
+        // Get path relative to this loader's root directory.
+        // Using generic path format: this is to ensure that files are given string-identical
+        // identifiers on Windows, irrespective of whether they are read from zip-file or from
+        // directory.
+        // N.B. MSVC implementation of generic_u8string is documented as converting backslash path
+        // separators to forward slashes.
+        std::string filepath = file.path().generic_u8string();
+        filepath.erase(0, root_dir.generic_u8string().length() + 1);
 
         index.push_back({ Identifier::from_runtime_string(filepath), last_write_time });
     }
