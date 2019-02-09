@@ -53,15 +53,15 @@ namespace Mg {
 class ResourceCache;
 
 /** Reference-counting access to a resource within a ResourceCache.
- * Do not store this anywhere -- instead, store the resource's Identifier, and then get a
- * ResourceAccessGuard from the ResourceCache only when access is needed (i.e. within function
+ * Do not store this anywhere -- instead, store the resource's ResourceHandle, and then get a
+ * ResourceAccessGuard from the ResourceHandle only when access is needed (i.e. within function
  * bodies, on the stack).
  *
  * Usage example:
  *
- *     void some_function_that_uses_a_resource(Identifier resource_id) {
+ *     void some_function_that_uses_a_resource(ResourceHandle resource_handle) {
  *         ResourceCache& res_cache = ...
- *         ResourceAccessGuard<ResType> res_access = res_cache.access_resource(resource_id);
+ *         ResourceAccessGuard<ResType> res_access = res_cache.access_resource(resource_handle);
  *         auto something = res_access->something_in_the_resource;
  *         // etc. Resource can be safely accessed as long as `res_access` remains in scope.
  *     }
