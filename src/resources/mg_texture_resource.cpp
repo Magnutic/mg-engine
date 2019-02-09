@@ -157,14 +157,10 @@ inline size_t num_blocks_by_img_size(TextureResource::DimT width, TextureResourc
 // TextureResource implementation
 //--------------------------------------------------------------------------------------------------
 
-void TextureResource::load_resource(const ResourceDataLoader& loader)
+void TextureResource::load_resource(const LoadResourceParams& load_params)
 {
-    // Load raw data into temporary buffer
-    std::vector<std::byte> data(loader.file_size());
-    loader.load_file(data);
-
     // Init texture using raw data
-    init(data, loader.allocator());
+    init(load_params.resource_data(), load_params.allocator());
 }
 
 TextureResource::MipLevelData TextureResource::pixel_data(MipIndexT mip_index) const

@@ -36,7 +36,7 @@ class DefragmentingAllocator;
 
 namespace Mg {
 
-class ResourceDataLoader;
+class LoadResourceParams;
 
 /** Resource interface. All resources for use with ResourceCache should derive from this.
  * Additionally, all subtypes should inherit BaseResource constructor (or provide a constructor with
@@ -44,11 +44,12 @@ class ResourceDataLoader;
  *
  * @remark
  * When a resource type allocates memory, it should use the Mg::memory::DefragmentingAllocator that
- * is provided as a parameter to load_resource()), and store the resulting Mg::memory::DA_UniquePtr
+ * is provided as a parameter to load_resource(), and store the resulting Mg::memory::DA_UniquePtr
  * buffer-handles. This keeps the resource's data stored within a dedicated memory buffer that can
  * be defragmented.
  *
- * @see Mg::ResHandle
+ * @see Mg::memory::DefragmentingAllocator
+ * @see Mg::ResourceHandle
  * @see Mg::ResourceCache
  */
 class BaseResource {
@@ -60,7 +61,10 @@ public:
 
     virtual ~BaseResource() {}
 
-    virtual void load_resource(const ResourceDataLoader& data_loader) = 0;
+    /** Load resource from binary file data. This is the interface through which Mg::ResourceCache
+     * initialises resource types.
+     */
+    virtual void load_resource(const LoadResourceParams& params) = 0;
 
     virtual bool should_reload_on_file_change() const = 0;
 

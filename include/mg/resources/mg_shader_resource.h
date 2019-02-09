@@ -76,7 +76,7 @@ public:
 
     ShaderTag::Value tags() const { return m_tags; }
 
-    void load_resource(const ResourceDataLoader& loader) override;
+    void load_resource(const LoadResourceParams& load_params) override;
 
     bool should_reload_on_file_change() const override { return true; }
 

@@ -125,13 +125,14 @@ private:
 };
 
 /** Input to resource types' `load_resource()` member function. */
-class ResourceDataLoader {
+class LoadResourceParams {
 public:
-    size_t file_size() const;
+    span<const std::byte> resource_data() const noexcept { return m_data; }
 
-    Identifier resource_id() const noexcept;
-
-    void load_file(span<std::byte> output_buffer) const;
+    std::string_view resource_data_as_text() const noexcept
+    {
+        return { reinterpret_cast<const char*>(m_data.data()), m_data.size() }; // NOLINT
+    }
 
     memory::DefragmentingAllocator& allocator() const noexcept;
 
@@ -142,17 +143,15 @@ public:
 private:
     friend class ResourceCache;
 
-    explicit ResourceDataLoader(ResourceCache&     owning_cache,
-                                IFileLoader&       file_loader,
-                                ResourceEntryBase& resource_entry)
-        : m_owning_cache(&owning_cache)
-        , m_file_loader(&file_loader)
-        , m_resource_entry(&resource_entry)
+    explicit LoadResourceParams(std::vector<std::byte> data,
+                                ResourceCache&         owning_cache,
+                                ResourceEntryBase&     resource_entry)
+        : m_data(std::move(data)), m_owning_cache(&owning_cache), m_resource_entry(&resource_entry)
     {}
 
-    ResourceCache*     m_owning_cache;
-    IFileLoader*       m_file_loader;
-    ResourceEntryBase* m_resource_entry;
+    std::vector<std::byte> m_data;
+    ResourceCache*         m_owning_cache;
+    ResourceEntryBase*     m_resource_entry;
 };
 
 /** ResourceCache is an efficient and flexible way of loading and using resources.
@@ -305,6 +304,9 @@ private:
     // Get entry corresponding to the given Identifier if the entry is in cache.
     ResEntryPtr get_if_loaded(Identifier file) const;
 
+    // Load binary data for into memory
+    std::vector<std::byte> load_resource_data(const FileInfo& file_info);
+
     template<typename ResT>
     ResEntryOwningPtr make_resource_entry(Identifier resource_id, time_point time_stamp)
     {
@@ -362,10 +364,12 @@ ResourceAccessGuard<ResT> ResourceCache::access_resource(Identifier filename)
                                     filename.c_str()));
 
     auto load_resource = [&] {
-        auto               p_entry = make_resource_entry<ResT>(filename, p_file_info->time_stamp);
-        ResourceDataLoader loader{ *this, *p_file_info->loader, *p_entry };
-        p_entry->get_resource().load_resource(loader);
+        ResEntryOwningPtr  p_entry = make_resource_entry<ResT>(filename, p_file_info->time_stamp);
+        LoadResourceParams load_params{ load_resource_data(*p_file_info), *this, *p_entry };
+
+        p_entry->get_resource().load_resource(load_params);
         p_entry->last_access = access_time;
+
         return p_entry;
     };
 
@@ -409,11 +413,16 @@ template<typename F> auto ResourceCache::try_or_unload_unused(F f) -> decltype(f
 //--------------------------------------------------------------------------------------------------
 
 template<typename ResT>
-ResourceAccessGuard<ResT> ResourceDataLoader::load_dependency(Identifier dependency_file_id) const
+ResourceAccessGuard<ResT> LoadResourceParams::load_dependency(Identifier dependency_file_id) const
 {
     time_point file_time_stamp = m_owning_cache->file_time_stamp(dependency_file_id);
     m_resource_entry->dependencies.push_back({ dependency_file_id, file_time_stamp });
     return m_owning_cache->access_resource<ResT>(dependency_file_id);
+}
+
+inline memory::DefragmentingAllocator& LoadResourceParams::allocator() const noexcept
+{
+    return m_owning_cache->allocator();
 }
 
 //--------------------------------------------------------------------------------------------------

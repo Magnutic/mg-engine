@@ -27,10 +27,10 @@
 
 namespace Mg {
 
-void RawResource::load_resource(const ResourceDataLoader& loader)
+void RawResource::load_resource(const LoadResourceParams& load_params)
 {
-    m_buffer = loader.allocator().alloc<std::byte[]>(loader.file_size());
-    loader.load_file(bytes());
+    span<const std::byte> data = load_params.resource_data();
+    m_buffer                   = load_params.allocator().alloc_copy(data.begin(), data.end());
 }
 
 } // namespace Mg

@@ -30,30 +30,6 @@
 namespace Mg {
 
 //--------------------------------------------------------------------------------------------------
-// ResourceDataLoader implementation
-//--------------------------------------------------------------------------------------------------
-
-size_t ResourceDataLoader::file_size() const
-{
-    return m_file_loader->file_size(resource_id());
-}
-
-void ResourceDataLoader::load_file(span<std::byte> output_buffer) const
-{
-    m_file_loader->load_file(resource_id(), output_buffer);
-}
-
-memory::DefragmentingAllocator& ResourceDataLoader::allocator() const noexcept
-{
-    return m_owning_cache->allocator();
-}
-
-Identifier ResourceDataLoader::resource_id() const noexcept
-{
-    return m_resource_entry->get_resource().resource_id();
-}
-
-//--------------------------------------------------------------------------------------------------
 // ResourceCache implementation
 //--------------------------------------------------------------------------------------------------
 
@@ -96,9 +72,9 @@ void ResourceCache::refresh()
             fmt::format("Resource '{}' was modified, loading...", filename.c_str()));
 
         try {
-            ResourceDataLoader loader{ *this, *p_file_info->loader, *p_entry };
+            LoadResourceParams load_params{ load_resource_data(*p_file_info), *this, *p_entry };
             p_entry->dependencies.clear();
-            p_entry->get_resource().load_resource(loader);
+            p_entry->get_resource().load_resource(load_params);
         }
         catch (std::exception& e) {
             g_log.write_error(
@@ -194,6 +170,17 @@ bool ResourceCache::unload_unused(bool unload_all_unused)
     }
 
     return found;
+}
+
+// Load binary data for into memory
+std::vector<std::byte> ResourceCache::load_resource_data(const FileInfo& file_info) {
+    const Identifier fname = file_info.filename;
+
+    std::vector<std::byte> file_data;
+    file_data.resize(file_info.loader->file_size(fname));
+
+    file_info.loader->load_file(fname, file_data);
+    return file_data;
 }
 
 } // namespace Mg

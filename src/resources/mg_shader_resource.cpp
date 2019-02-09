@@ -502,10 +502,10 @@ public:
 
         switch (shader_type) {
         case ShaderBlockType::Vertex:
-            m_vertex_includes.push_back(std::string(include_filename));
+            vertex_includes.push_back(std::string(include_filename));
             break;
         case ShaderBlockType::Fragment:
-            m_fragment_includes.push_back(std::string(include_filename));
+            fragment_includes.push_back(std::string(include_filename));
             break;
         }
     }
@@ -549,8 +549,8 @@ public:
 
     ShaderTag::Value tags = {};
 
-    small_vector<std::string, 4> m_vertex_includes;
-    small_vector<std::string, 4> m_fragment_includes;
+    small_vector<std::string, 4> vertex_includes;
+    small_vector<std::string, 4> fragment_includes;
 
     small_vector<ShaderResource::Sampler, 4>   samplers;
     small_vector<ShaderResource::Parameter, 8> parameters;
@@ -565,61 +565,56 @@ static constexpr auto k_delimiter_line =
     "================================================================================";
 
 // Helper for ShaderResource::load_resource. Assemble shader code by loading included code files.
-inline std::string assemble_shader_code(span<std::string>         include_files,
-                                        const ResourceDataLoader& loader)
+inline std::string assemble_shader_code(const fs::path&           include_directory,
+                                        span<std::string>         include_files,
+                                        const LoadResourceParams& load_params)
 {
     std::string code;
     code.reserve(1024);
 
-    // Get path from resource root directory to directory holding the current ShaderResource.
-    // This is needed because #include-d shader code files should be found by relative path.
-    fs::path resource_path = fs::path(loader.resource_id().str_view()).parent_path();
-
     for (auto&& include_file : include_files) {
         // Get include file path relative to resource root directory
-        auto include_path = (resource_path / include_file).u8string();
+        auto include_path = (include_directory / include_file).u8string();
 
         // Add origin tracking comment (helps debugging shader)
         code += std::string("\n//") + k_delimiter_line + "\n// Origin: " + include_path + "\n//" +
                 k_delimiter_line + '\n';
 
         // Load include file as a dependency of this resource.
-        auto include_file_access =
-            loader.load_dependency<TextResource>(Identifier::from_runtime_string(include_path));
+        auto include_file_access = load_params.load_dependency<TextResource>(
+            Identifier::from_runtime_string(include_path));
         code += include_file_access->text();
     }
 
     return code;
 }
 
-void ShaderResource::load_resource(const ResourceDataLoader& loader)
+void ShaderResource::load_resource(const LoadResourceParams& load_params)
 {
-    std::vector<std::byte> temp_buffer(loader.file_size());
-    loader.load_file(temp_buffer);
+    auto&            allocator = load_params.allocator();
+    std::string_view input     = load_params.resource_data_as_text();
 
-    std::string_view input{ reinterpret_cast<const char*>(temp_buffer.data()),
-                            temp_buffer.size() }; // NOLINT
-    Parser           p(input);
+    Parser parser{ input };
 
-    auto& alloc  = loader.allocator();
-    m_samplers   = alloc.alloc_copy(p.samplers.begin(), p.samplers.end());
-    m_parameters = alloc.alloc_copy(p.parameters.begin(), p.parameters.end());
-    m_options    = alloc.alloc_copy(p.options.begin(), p.options.end());
+    m_samplers   = allocator.alloc_copy(parser.samplers.begin(), parser.samplers.end());
+    m_parameters = allocator.alloc_copy(parser.parameters.begin(), parser.parameters.end());
+    m_options    = allocator.alloc_copy(parser.options.begin(), parser.options.end());
 
-    {
-        auto vertex_code = assemble_shader_code(p.m_vertex_includes, loader);
-        m_vertex_code    = alloc.alloc_copy(vertex_code.begin(), vertex_code.end());
+    // Get directory of shader file so that #include directives search relative to that path.
+    fs::path include_path = fs::path{ resource_id().str_view() }.parent_path();
 
-        auto fragment_code = assemble_shader_code(p.m_fragment_includes, loader);
-        m_fragment_code    = alloc.alloc_copy(fragment_code.begin(), fragment_code.end());
-    }
+    auto vertex_code = assemble_shader_code(include_path, parser.vertex_includes, load_params);
+    m_vertex_code    = allocator.alloc_copy(vertex_code.begin(), vertex_code.end());
+
+    auto fragment_code = assemble_shader_code(include_path, parser.fragment_includes, load_params);
+    m_fragment_code    = allocator.alloc_copy(fragment_code.begin(), fragment_code.end());
 
     // Sort parameters so that larger types come first (for the sake of alignment)
     sort(m_parameters, [](const Parameter& l, const Parameter& r) {
         return static_cast<int>(l.type) > static_cast<int>(r.type);
     });
 
-    m_tags = p.tags;
+    m_tags = parser.tags;
 }
 
 std::string ShaderResource::debug_print() const

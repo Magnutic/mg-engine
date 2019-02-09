@@ -56,19 +56,18 @@ static_assert(std::is_trivially_copyable_v<MeshHeader>);
 constexpr uint32_t mesh_4cc              = 0x444D474Du; // = MGMD
 constexpr uint32_t k_mesh_format_version = 1;
 
-void MeshResource::load_resource(const ResourceDataLoader& data_loader)
+void MeshResource::load_resource(const LoadResourceParams& load_params)
 {
-    const auto fname = resource_id().c_str();
-
-    std::vector<std::byte> bytestream(data_loader.file_size());
-    data_loader.load_file(bytestream);
+    const auto                  fname      = resource_id().str_view();
+    const span<const std::byte> bytestream = load_params.resource_data();
 
     MeshHeader header;
-
-    // Cast here is redundant but GCC-8 warns otherwise (probably a bug?)
-    auto data = reinterpret_cast<const uint8_t*>(bytestream.data()); // NOLINT
-
-    std::memcpy(&header, data, sizeof(header));
+    {
+        MG_ASSERT(bytestream.size() >= sizeof(header));
+        // Cast here is redundant but GCC-8 warns otherwise (probably a bug?)
+        auto data = reinterpret_cast<const uint8_t*>(bytestream.data()); // NOLINT
+        std::memcpy(&header, data, sizeof(header));
+    }
 
     if (header.four_cc != mesh_4cc) {
         throw std::runtime_error{ fmt::format("Mesh '{}': invalid data (4CC mismatch).", fname) };
@@ -84,9 +83,13 @@ void MeshResource::load_resource(const ResourceDataLoader& data_loader)
                         k_mesh_format_version));
     }
 
-    m_sub_meshes = data_loader.allocator().alloc<SubMesh[]>(header.n_sub_meshes);
-    m_vertices   = data_loader.allocator().alloc<Vertex[]>(header.n_vertices);
-    m_indices    = data_loader.allocator().alloc<uint_vertex_index[]>(header.n_indices);
+    {
+        // Allocate memory for mesh data
+        auto& allocator = load_params.allocator();
+        m_sub_meshes    = allocator.alloc<SubMesh[]>(header.n_sub_meshes);
+        m_vertices      = allocator.alloc<Vertex[]>(header.n_vertices);
+        m_indices       = allocator.alloc<uint_vertex_index[]>(header.n_indices);
+    }
 
     auto offset = sizeof(MeshHeader);
 

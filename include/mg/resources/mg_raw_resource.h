@@ -43,7 +43,7 @@ public:
     bool should_reload_on_file_change() const override { return true; }
 
     /** Load from file. */
-    void load_resource(const ResourceDataLoader& loader) override;
+    void load_resource(const LoadResourceParams& load_params) override;
 
     /** Access byte stream. */
     span<std::byte> bytes() { return span{ m_buffer.begin(), m_buffer.end() }; }

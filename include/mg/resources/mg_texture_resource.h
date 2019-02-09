@@ -118,7 +118,7 @@ public:
     using BaseResource::BaseResource;
 
     /** Constructs a texture from file. Only DDS files are supported. */
-    void load_resource(const ResourceDataLoader& loader) override;
+    void load_resource(const LoadResourceParams& load_params) override;
 
     /** Access the binary pixel data.
      * @param mip_index Which mipmap to get.
@@ -139,8 +139,8 @@ public:
 private:
     void init(span<const std::byte> dds_data, memory::DefragmentingAllocator& alloc);
 
-    Format                        m_format;
-    Settings                      m_settings;
+    Format                            m_format;
+    Settings                          m_settings;
     memory::DA_UniquePtr<std::byte[]> m_pixel_data;
 };
 
