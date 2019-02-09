@@ -32,7 +32,7 @@
 #include "mg/core/mg_identifier.h"
 #include "mg/gfx/mg_submesh.h"
 #include "mg/gfx/mg_vertex.h"
-#include "mg/memory/mg_compacting_heap.h"
+#include "mg/memory/mg_defragmenting_allocator.h"
 #include "mg/resources/mg_base_resource.h"
 #include "mg/utils/mg_gsl.h"
 

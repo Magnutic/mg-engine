@@ -6,7 +6,7 @@
 #include <iostream>
 #include <random>
 
-#include <mg/memory/mg_compacting_heap.h>
+#include <mg/memory/mg_defragmenting_allocator.h>
 
 // TODO: test const handle, test alloc_copy
 

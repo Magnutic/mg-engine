@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-/** @file mg_compacting_heap.h
+/** @file mg_defragmenting_allocator.h
  * Allocator which may defragment by compacting allocated memory, moving objects to close gaps.
  */
 

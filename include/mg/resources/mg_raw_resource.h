@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include "mg/memory/mg_compacting_heap.h"
+#include "mg/memory/mg_defragmenting_allocator.h"
 #include "mg/resources/mg_base_resource.h"
 #include "mg/utils/mg_gsl.h"
 

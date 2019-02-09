@@ -49,7 +49,7 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/input/mg_joy.h
     ${MG_HEADER_DIR}/mg/input/mg_keyboard.h
     ${MG_HEADER_DIR}/mg/input/mg_mouse.h
-    ${MG_HEADER_DIR}/mg/memory/mg_compacting_heap.h
+    ${MG_HEADER_DIR}/mg/memory/mg_defragmenting_allocator.h
     ${MG_HEADER_DIR}/mg/mg_defs.h
     ${MG_HEADER_DIR}/mg/resources/mg_mesh_resource.h
     ${MG_HEADER_DIR}/mg/resources/mg_shader_enums.h
@@ -109,7 +109,7 @@ add_library(mg_engine
     input/mg_joy.cpp
     input/mg_keyboard.cpp
     input/mg_mouse.cpp
-    memory/mg_compacting_heap.cpp
+    memory/mg_defragmenting_allocator.cpp
     resources/mg_mesh_resource.cpp
     resources/mg_raw_resource.cpp
     resources/mg_shader_resource.cpp
