@@ -28,10 +28,10 @@
 
 #pragma once
 
+#include "mg/utils/mg_simple_pimpl.h"
+
 #include <string_view>
 #include <utility>
-
-#include "mg/utils/mg_simple_pimpl.h"
 
 namespace Mg {
 

@@ -23,6 +23,10 @@
 
 #include "mg/core/mg_log.h"
 
+#include "mg/mg_defs.h"
+#include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_text_file_io.h"
+
 #include <ctime>
 #include <experimental/filesystem>
 #include <iostream>
@@ -31,19 +35,17 @@
 #include <fmt/format.h>
 #include <fmt/time.h>
 
-#include "mg/mg_defs.h"
-#include "mg/utils/mg_assert.h"
-#include "mg/utils/mg_text_file_io.h"
-
 namespace Mg {
 
 namespace fs = std::experimental::filesystem;
 
 struct LogData {
-    LogData(std::string_view file_path, Log::Prio console_verbosity, Log::Prio log_file_verbosity)
-        : console_verbosity{ console_verbosity }
-        , log_file_verbosity{ log_file_verbosity }
-        , file_path{ file_path }
+    LogData(std::string_view file_path_,
+            Log::Prio        console_verbosity_,
+            Log::Prio        log_file_verbosity_)
+        : console_verbosity(console_verbosity_)
+        , log_file_verbosity(log_file_verbosity_)
+        , file_path(file_path_)
     {}
 
     Log::Prio console_verbosity  = Log::Prio::Verbose;
