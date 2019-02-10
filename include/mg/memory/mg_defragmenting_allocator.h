@@ -124,6 +124,15 @@ public:
     template<typename T> friend class detail::DA_PtrBase;
     template<typename T> friend class DA_UniquePtr;
 
+    /** Type thrown on allocation failure. */
+    class BadAlloc : public std::exception {
+    public:
+        const char* what() const noexcept override
+        {
+            return "Allocation failure in DefragmentingAllocator.";
+        }
+    };
+
     explicit DefragmentingAllocator(size_t size_in_bytes)
         : m_data(std::make_unique<unsigned char[]>(size_in_bytes)), m_data_size(size_in_bytes)
     {
@@ -315,6 +324,8 @@ public:
     size_t size() const noexcept { return is_null() ? 0 : _alloc_info().num_elems; }
 
     bool is_null() const noexcept { return m_owning_heap == nullptr; }
+
+    operator bool() const noexcept { return !is_null(); }
 
     // Raw pointer access --------------------------------------------------------------------------
 

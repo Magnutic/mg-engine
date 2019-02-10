@@ -66,7 +66,7 @@ size_t DefragmentingAllocator::_alloc_impl(size_t elem_size, size_t num)
     size_t alloc_size = _calculate_alloc_size(elem_size, num);
 
     // If allocation cannot fit at end of heap, throw.
-    if (alloc_size + m_data_head > m_data_size) { throw std::bad_alloc{}; }
+    if (alloc_size + m_data_head > m_data_size) { throw BadAlloc{}; }
 
     // Find unused AllocInfo.
     // TODO: Optimisation: intrusive linked-list of free AllocInfos instead of linear search.
