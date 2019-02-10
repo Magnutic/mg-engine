@@ -46,7 +46,7 @@
 
 #include "mg/core/mg_file_loader.h"
 
-#include <experimental/filesystem>
+#include <filesystem>
 #include <stdexcept>
 
 #include <zip.h>
@@ -58,7 +58,7 @@
 
 namespace Mg {
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 //--------------------------------------------------------------------------------------------------
 // Direct file loading

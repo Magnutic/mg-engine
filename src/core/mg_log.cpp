@@ -28,7 +28,7 @@
 #include "mg/utils/mg_text_file_io.h"
 
 #include <ctime>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <iostream>
 #include <new>
 
@@ -37,7 +37,7 @@
 
 namespace Mg {
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 struct LogData {
     LogData(std::string_view file_path_,
