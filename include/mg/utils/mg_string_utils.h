@@ -27,9 +27,9 @@
 
 #pragma once
 
-#include <algorithm>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace Mg {
@@ -41,17 +41,10 @@ namespace Mg {
 // left unmodified.                                                           //
 ////////////////////////////////////////////////////////////////////////////////
 
-static const std::string_view k_white_space = " \t\f\v\n\r";
+static constexpr std::string_view k_white_space = " \t\f\v\n\r";
 
-inline bool is_white_space(char c)
-{
-    return std::find(k_white_space.begin(), k_white_space.end(), c) != k_white_space.end();
-}
-
-inline bool is_not_whitespace(char c)
-{
-    return std::find(k_white_space.begin(), k_white_space.end(), c) == k_white_space.end();
-}
+bool is_white_space(char c);
+bool is_not_whitespace(char c);
 
 /** Tokenise string by delimiter, returns tokens in vector. Works on UTF-8
  * strings, but delimiter has to be ASCII.

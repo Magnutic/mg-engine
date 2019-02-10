@@ -23,11 +23,21 @@
 
 #include "mg/utils/mg_string_utils.h"
 
+#include <algorithm>
 #include <cstring> // memcpy
 
 #include "mg/utils/mg_gsl.h"
 
 namespace Mg {
+
+bool is_white_space(char c)
+{
+    return std::find(k_white_space.begin(), k_white_space.end(), c) != k_white_space.end();
+}
+bool is_not_whitespace(char c)
+{
+    return std::find(k_white_space.begin(), k_white_space.end(), c) == k_white_space.end();
+}
 
 /** Tokenise string by delimiter, returns tokens in vector. */
 std::vector<std::string_view> tokenise_string(std::string_view s, std::string_view delims)
