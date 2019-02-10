@@ -41,54 +41,6 @@ namespace Mg {
 // left unmodified.                                                           //
 ////////////////////////////////////////////////////////////////////////////////
 
-//--------------------------------------------------------------------------------------------------
-// Encoding converters
-//--------------------------------------------------------------------------------------------------
-
-/** Convert UTF-8 string to std::wstring. */
-std::wstring utf8_to_wstring(std::string_view str);
-
-/** Convert wstring to UTF-8 String. */
-std::string wstring_to_utf8(std::wstring_view str);
-
-/** Convert ISO-8859-1 (aka. LATIN_1) strings to UTF-8. */
-std::string iso_8859_1_to_utf8(std::string_view str);
-
-#ifdef _WIN32
-
-#ifdef _MSC_VER
-/** Converts string to wstring if compiled with MSVC. Intended for MSVC's file
- * stream open(std::wstring) extension. */
-std::wstring widen_if_msvc(std::string_view str);
-
-#else // Windows with some non-MSVC compiler
-
-/* Unsolved issue here - how to open fstreams with unicode file paths on Windows? MSVC supports a
- * non-standard wstring (UTF-16) overload, but AFAIK other Windows compilers like MinGW does not.
- * After searching around a bit and reading some old mailing lists, it seems they are not interested
- * in solving this problem either.
- *
- * Until all Windows compilers support fstream::open with UTF-16 wstrings, or until Windows supports
- * UTF-8 strings in its API (even better), this problem seems to be largely unsolvable.
- *
- * UPDATE 2017: Now that filesystem is in C++17, fstream now takes filesystem::path() as a
- * parameter. I imagine MSVC will implement this to work correctly with UTF-8 paths. However, as of
- * writing, it seems libstdc++ has not yet implemented filesystem, so we will keep this solution
- * until then.
- */
-#error "No support for unicode file paths in fstream on the current platform."
-
-#endif
-
-#else
-std::string widen_if_msvc(std::string_view str);
-#endif // _WIN32
-
-/** Cross-platform (Windows, Linux, probably OS X) fopen for UTF-8 file paths.  */
-std::FILE* fopen_utf8(const char* filepath_utf8, const char* mode);
-
-//--------------------------------------------------------------------------------------------------
-
 static const std::string_view k_white_space = " \t\f\v\n\r";
 
 inline bool is_white_space(char c)

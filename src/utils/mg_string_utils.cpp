@@ -23,87 +23,11 @@
 
 #include "mg/utils/mg_string_utils.h"
 
-#include <codecvt>
 #include <cstring> // memcpy
-#include <locale>
 
 #include "mg/utils/mg_gsl.h"
 
 namespace Mg {
-
-// TODO: investigate replacements for codecvt, which is deprecated in C++17.
-
-/** Convert UTF-8 string to wstring. */
-std::wstring utf8_to_wstring(std::string_view str)
-{
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> myconv("");
-    span<const char>                                 bytes{ str.data(), str.size() };
-    return myconv.from_bytes(bytes.begin(), bytes.end());
-}
-
-/** Convert wstring to UTF-8 string. */
-std::string wstring_to_utf8(std::wstring_view str)
-{
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> myconv("");
-    span<const wchar_t>                              wchars{ str.data(), str.size() };
-    auto u8str = myconv.to_bytes(wchars.begin(), wchars.end());
-    return std::string{ u8str };
-}
-
-std::string iso_8859_1_to_utf8(std::string_view str)
-{
-    std::string out;
-
-    for (char c : str) {
-        unsigned char uc;
-        std::memcpy(&uc, &c, 1);
-
-        if (uc < 0x80) { out.push_back(c); }
-        else {
-            auto out_uchar0 = narrow<unsigned char>(0xc0 | uc >> 6);
-            auto out_uchar1 = narrow<unsigned char>(0x80 | (uc & 0x3f));
-
-            char out_char0, out_char1;
-            std::memcpy(&out_char0, &out_uchar0, 1);
-            std::memcpy(&out_char1, &out_uchar1, 1);
-
-            out.push_back(out_char0);
-            out.push_back(out_char1);
-        }
-    }
-
-    return out;
-}
-
-#ifdef _MSC_VER
-
-/** Widens a UTF-8 encoded std::string to std::wstring for file stream open()
- * MSVC extension. */
-std::wstring widen_if_msvc(std::string_view str)
-{
-    return utf8_to_wstring(str);
-}
-
-std::FILE* fopen_utf8(const char* filepath_utf8, const char* mode)
-{
-    return _wfopen(utf8_to_wstring(filepath_utf8).data(), utf8_to_wstring(mode).data());
-}
-
-#else
-
-std::string widen_if_msvc(std::string_view str)
-{
-    return std::string(str);
-}
-
-std::FILE* fopen_utf8(const char* filepath_utf8, const char* mode)
-{
-    return fopen(filepath_utf8, mode);
-}
-
-#endif // _MSC_VER
-
-//--------------------------------------------------------------------------------------------------
 
 /** Tokenise string by delimiter, returns tokens in vector. */
 std::vector<std::string_view> tokenise_string(std::string_view s, std::string_view delims)
