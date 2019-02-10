@@ -61,7 +61,8 @@ public:
 
     bool should_reload_on_file_change() const override { return true; }
 
-    void load_resource(const LoadResourceParams& load_params) override;
+protected:
+    LoadResourceResult load_resource_impl(const LoadResourceParams& load_params) override;
 
 private:
     // Owning pointers to mesh data

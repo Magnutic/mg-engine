@@ -76,11 +76,12 @@ public:
 
     ShaderTag::Value tags() const { return m_tags; }
 
-    void load_resource(const LoadResourceParams& load_params) override;
-
     bool should_reload_on_file_change() const override { return true; }
 
     std::string debug_print() const;
+
+protected:
+    LoadResourceResult load_resource_impl(const LoadResourceParams& load_params) override;
 
 private:
     memory::DA_UniquePtr<Parameter[]> m_parameters;

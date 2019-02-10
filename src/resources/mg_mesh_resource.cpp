@@ -56,7 +56,7 @@ static_assert(std::is_trivially_copyable_v<MeshHeader>);
 constexpr uint32_t mesh_4cc              = 0x444D474Du; // = MGMD
 constexpr uint32_t k_mesh_format_version = 1;
 
-void MeshResource::load_resource(const LoadResourceParams& load_params)
+LoadResourceResult MeshResource::load_resource_impl(const LoadResourceParams& load_params)
 {
     const auto                  fname      = resource_id().str_view();
     const span<const std::byte> bytestream = load_params.resource_data();
@@ -83,13 +83,11 @@ void MeshResource::load_resource(const LoadResourceParams& load_params)
                         k_mesh_format_version));
     }
 
-    {
-        // Allocate memory for mesh data
-        auto& allocator = load_params.allocator();
-        m_sub_meshes    = allocator.alloc<SubMesh[]>(header.n_sub_meshes);
-        m_vertices      = allocator.alloc<Vertex[]>(header.n_vertices);
-        m_indices       = allocator.alloc<uint_vertex_index[]>(header.n_indices);
-    }
+    // Allocate memory for mesh data
+    auto& allocator = load_params.allocator();
+    m_sub_meshes    = allocator.alloc<SubMesh[]>(header.n_sub_meshes);
+    m_vertices      = allocator.alloc<Vertex[]>(header.n_vertices);
+    m_indices       = allocator.alloc<uint_vertex_index[]>(header.n_indices);
 
     auto offset = sizeof(MeshHeader);
 
@@ -100,21 +98,32 @@ void MeshResource::load_resource(const LoadResourceParams& load_params)
         const auto size = bytes_to_read == 0 ? sizeof(data_type) : bytes_to_read;
 
         for (size_t i = 0; i < span.size(); ++i) {
+            if (offset + size > bytestream.size()) { return false; }
+
             const void* ptr = &(bytestream[offset]);
             std::memcpy(&span[i], ptr, size);
             offset += size + stride;
         }
+
+        return true;
     };
 
-    load_to(span{ m_sub_meshes }, 4, 8); // Skip unused 'material_index' from submesh header
-    load_to(span{ m_vertices }, 0);
-    load_to(span{ m_indices }, 0);
+    bool success = true;
+    // Skip unused 'material_index' from submesh header
+    success = success && load_to(span{ m_sub_meshes }, 4, 8);
+    success = success && load_to(span{ m_vertices }, 0);
+    success = success && load_to(span{ m_indices }, 0);
+
+    if (!success) { return LoadResourceResult::data_error("Missing mesh data."); }
 
     m_centre = header.centre;
     m_radius = header.radius;
 
     MG_ASSERT(offset <= bytestream.size());
-    MG_ASSERT(validate());
+
+    if (!validate()) { return LoadResourceResult::data_error("Mesh validation failed."); }
+
+    return LoadResourceResult::success();
 }
 
 

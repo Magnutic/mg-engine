@@ -29,24 +29,21 @@
 
 #pragma once
 
-#include <chrono>
-#include <cstddef>
-#include <cstdint>
-#include <memory>
-
-#include <fmt/core.h>
-
 #include "mg/core/mg_file_loader.h"
 #include "mg/core/mg_identifier.h"
-#include "mg/core/mg_log.h"
 #include "mg/core/mg_resource_entry.h"
+#include "mg/core/mg_resource_handle_fwd.h"
 #include "mg/memory/mg_defragmenting_allocator.h"
 #include "mg/resources/mg_base_resource.h"
 #include "mg/resources/mg_file_changed_event.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_observer.h"
 
-#include "mg/core/mg_resource_handle_fwd.h"
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <exception>
+#include <memory>
 
 namespace Mg {
 
@@ -154,6 +151,40 @@ private:
     ResourceEntryBase*     m_resource_entry;
 };
 
+class ResourceError : public std::exception {};
+
+class ResourceNotFound : public ResourceError {
+public:
+    ResourceNotFound() = default;
+
+    const char* what() const noexcept override
+    {
+        return "A requested resource file could not be found (see log for details)";
+    }
+};
+
+class ResourceDataError : public ResourceError {
+public:
+    ResourceDataError() = default;
+
+    const char* what() const noexcept override
+    {
+        return "A requested resource file could not be loaded due to invalid data (see log for "
+               "details)";
+    }
+};
+
+class ResourceCacheOutOfMemory : public ResourceError {
+public:
+    ResourceCacheOutOfMemory() = default;
+
+    const char* what() const noexcept override
+    {
+        return "A requested resource file could not be loaded due to the ResourceCache being out "
+               "of memory (see log for details).";
+    }
+};
+
 /** ResourceCache is an efficient and flexible way of loading and using resources.
  * It works with both file-system directories and zip archives via file loaders (see IFileLoader).
  *
@@ -191,7 +222,7 @@ public:
      */
     template<typename... LoaderTs>
     explicit ResourceCache(size_t resource_buffer_size, std::shared_ptr<LoaderTs>... file_loaders)
-        : m_heap(resource_buffer_size)
+        : m_alloc(resource_buffer_size)
     {
         MG_ASSERT((... && (file_loaders != nullptr)) && "File loaders may not be nullptr.");
 
@@ -227,7 +258,7 @@ public:
     ResourceHandle<ResT> resource_handle(Identifier file, bool load_resource_immediately = true);
 
     /** Get the allocator used by this ResourceCache. */
-    memory::DefragmentingAllocator& allocator() { return m_heap; }
+    memory::DefragmentingAllocator& allocator() { return m_alloc; }
 
     /** Returns whether a file with the given path exists in the file index.
      * N.B. returns the state as of most recent call to `refresh()`
@@ -307,6 +338,9 @@ private:
     // Load binary data for into memory
     std::vector<std::byte> load_resource_data(const FileInfo& file_info);
 
+    // Try to load file, unloading unused files if cache is full
+    void try_load(const FileInfo& file_info, ResourceEntryBase& entry);
+
     template<typename ResT>
     ResEntryOwningPtr make_resource_entry(Identifier resource_id, time_point time_stamp)
     {
@@ -318,7 +352,20 @@ private:
         return allocator().alloc<ResourceEntry<ResT>>(resource_id, time_stamp);
     }
 
-    std::runtime_error make_not_found_exception(Identifier filename);
+    // Throw ResourceNotFound exception and write details to log.
+    void throw_resource_not_found(Identifier filename);
+
+    // Throw ResourceDataError exception and write details to log.
+    void throw_resource_data_error(Identifier filename, std::string_view reason);
+
+    // Throw ResourceCacheOutOfMemory exception and write details to log.
+    void throw_resource_cache_oom(Identifier filename);
+
+    // Log a message with nice formatting.
+    void log_verbose(Identifier resource, std::string_view message) const;
+    void log_message(Identifier resource, std::string_view message) const;
+    void log_warning(Identifier resource, std::string_view message) const;
+    void log_error(Identifier resource, std::string_view message) const;
 
     // --------------------------------------- Data members ----------------------------------------
 
@@ -326,7 +373,7 @@ private:
     std::vector<std::shared_ptr<IFileLoader>> m_file_loaders;
 
     // Allocator for resource data
-    memory::DefragmentingAllocator m_heap;
+    memory::DefragmentingAllocator m_alloc;
 
     // List of resource files available through the resource loaders.
     std::vector<FileInfo> m_file_list;
@@ -343,39 +390,32 @@ private:
 template<typename ResT>
 ResourceAccessGuard<ResT> ResourceCache::access_resource(Identifier filename)
 {
-    g_log.write_verbose(fmt::format("ResourceCache[{}]::get_resource()): getting file '{}'.",
-                                    static_cast<void*>(this),
-                                    filename.c_str()));
-
-    const auto access_time = std::chrono::system_clock::now();
+    log_verbose(filename, "Accessing file.");
 
     // Check if file is already loaded
     if (auto p_entry = get_if_loaded(filename); p_entry != nullptr) {
-        p_entry->last_access = access_time;
+        log_verbose(filename, "File was in cache.");
+
+        p_entry->last_access = std::chrono::system_clock::now();
         return ResourceAccessGuard<ResT>(*p_entry);
     }
 
+    // File is not already in cache.
+    // Check for file in known-files list.
     const auto p_file_info = file_info(filename);
+    if (p_file_info == nullptr) { throw_resource_not_found(filename); }
 
-    if (p_file_info == nullptr) { throw make_not_found_exception(filename); }
+    {
+        // Create resource entry.
+        ResEntryOwningPtr p_entry = make_resource_entry<ResT>(filename, p_file_info->time_stamp);
 
-    g_log.write_verbose(fmt::format("ResourceCache[{}]::access_resource(): '{}' was not in cache.",
-                                    static_cast<void*>(this),
-                                    filename.c_str()));
+        // Try to load the resource and store the resource entry in m_resources.
+        try_load(*p_file_info, *p_entry);
+        m_resources.emplace_back(std::move(p_entry));
+    }
 
-    auto load_resource = [&] {
-        ResEntryOwningPtr  p_entry = make_resource_entry<ResT>(filename, p_file_info->time_stamp);
-        LoadResourceParams load_params{ load_resource_data(*p_file_info), *this, *p_entry };
-
-        p_entry->get_resource().load_resource(load_params);
-        p_entry->last_access = access_time;
-
-        return p_entry;
-    };
-
-    // Try to load file, unloading unused files if cache is full
-    return ResourceAccessGuard<ResT>(
-        *m_resources.emplace_back(try_or_unload_unused(load_resource)));
+    // Create access guard for the new resource.
+    return ResourceAccessGuard<ResT>(*m_resources.back());
 }
 
 template<typename ResT>
@@ -384,28 +424,6 @@ ResourceHandle<ResT> ResourceCache::resource_handle(Identifier file, bool load_r
     ResourceHandle<ResT> handle(file, *this);
     if (load_resource_immediately) handle.access();
     return handle;
-}
-
-/** Try to call given function; if it throws (due to full cache), then deallocate the least
- * recently used resource.
- */
-template<typename F> auto ResourceCache::try_or_unload_unused(F f) -> decltype(f())
-{
-    try {
-        return f();
-    }
-    catch (...) { // TODO: use specific exception type for DefragmentingAllocator out of memory
-        g_log.write_message("Failed to load resource, retrying...");
-        if (!unload_unused()) {
-            g_log.write_error(
-                fmt::format("ResourceCache[{}]::try_or_unload_unused(): "
-                            "Action failed while there are no more unused resources to unload.",
-                            static_cast<void*>(this)));
-            throw;
-        }
-
-        return try_or_unload_unused(f);
-    }
 }
 
 //--------------------------------------------------------------------------------------------------

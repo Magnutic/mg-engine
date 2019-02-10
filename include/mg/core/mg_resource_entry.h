@@ -28,11 +28,12 @@
 
 #pragma once
 
-#include <chrono>
-#include <vector>
-
 #include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_macros.h"
+
+#include <chrono>
+#include <memory>
+#include <vector>
 
 namespace Mg {
 
@@ -53,8 +54,16 @@ public:
     MG_MAKE_DEFAULT_MOVABLE(ResourceEntryBase);
 
     virtual ~ResourceEntryBase() {}
+
     virtual BaseResource&       get_resource()       = 0;
     virtual const BaseResource& get_resource() const = 0;
+
+    /** Make a new (empty) ResourceEntry of the same derived type as this one. */
+    virtual std::unique_ptr<ResourceEntryBase> new_entry(Identifier resource_id,
+                                                         time_point time_stamp_) = 0;
+
+    /** Swap values. Requires that this and other are of the same derived type. */
+    virtual void swap_entry(ResourceEntryBase& other) noexcept = 0;
 
     struct Dependency {
         Identifier dependency_id;
@@ -87,6 +96,19 @@ public:
     // ResT is assumed to be derived from BaseResource, as all resource types have to be.
     BaseResource&       get_resource() override { return resource; }
     const BaseResource& get_resource() const override { return resource; }
+
+    std::unique_ptr<ResourceEntryBase> new_entry(Identifier resource_id,
+                                                 time_point time_stamp_) override
+    {
+        return std::make_unique<ResourceEntry>(resource_id, time_stamp_);
+    }
+
+    void swap(ResourceEntry& other) noexcept { std::swap(*this, other); }
+
+    void swap_entry(ResourceEntryBase& other) noexcept override
+    {
+        swap(static_cast<ResourceEntry&>(other));
+    }
 };
 
 } // namespace Mg

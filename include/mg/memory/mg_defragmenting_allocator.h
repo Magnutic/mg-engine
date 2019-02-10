@@ -499,6 +499,10 @@ public:
     DA_Ptr(const DA_UniquePtr<U>& rhs) : Base(rhs.m_owning_heap, rhs.m_alloc_index)
     {}
 
+    // Disallow conversion from rvalue DA_UniquePtr, since it would lead to a dangling pointer.
+    template<typename U, typename = std::enable_if_t<detail::da_ptr_conversion_is_valid<T, U>>>
+    DA_Ptr(DA_UniquePtr<U>&& rhs) = delete;
+
     DA_Ptr& operator=(DA_Ptr rhs) noexcept
     {
         this->swap(rhs);

@@ -117,9 +117,6 @@ public:
 
     using BaseResource::BaseResource;
 
-    /** Constructs a texture from file. Only DDS files are supported. */
-    void load_resource(const LoadResourceParams& load_params) override;
-
     /** Access the binary pixel data.
      * @param mip_index Which mipmap to get.
      */
@@ -136,9 +133,11 @@ public:
 
     bool should_reload_on_file_change() const override { return true; }
 
-private:
-    void init(span<const std::byte> dds_data, memory::DefragmentingAllocator& alloc);
+protected:
+    /** Constructs a texture from file. Only DDS files are supported. */
+    LoadResourceResult load_resource_impl(const LoadResourceParams& load_params) override;
 
+private:
     Format                            m_format;
     Settings                          m_settings;
     memory::DA_UniquePtr<std::byte[]> m_pixel_data;

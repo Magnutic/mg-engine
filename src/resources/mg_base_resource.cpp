@@ -1,7 +1,7 @@
 //**************************************************************************************************
 // Mg Engine
 //--------------------------------------------------------------------------------------------------
-// Copyright (c) 2018 Magnus Bergsten
+// Copyright (c) 2019 Magnus Bergsten
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -21,17 +21,24 @@
 //
 //**************************************************************************************************
 
-#include "mg/resources/mg_raw_resource.h"
+#include "mg/resources/mg_base_resource.h"
 
 #include "mg/core/mg_resource_cache.h"
+#include "mg/memory/mg_defragmenting_allocator.h"
 
 namespace Mg {
 
-LoadResourceResult RawResource::load_resource_impl(const LoadResourceParams& load_params)
+LoadResourceResult BaseResource::load_resource(const LoadResourceParams& params)
 {
-    span<const std::byte> data = load_params.resource_data();
-    m_buffer                   = load_params.allocator().alloc_copy(data.begin(), data.end());
-    return LoadResourceResult::success();
+    try {
+        return load_resource_impl(params);
+    }
+    catch (const memory::DefragmentingAllocator::BadAlloc&) {
+        return LoadResourceResult::allocation_failure();
+    }
+    catch (const ResourceNotFound&) {
+        return LoadResourceResult::data_error("Dependency not found.");
+    }
 }
 
 } // namespace Mg

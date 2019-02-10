@@ -43,8 +43,6 @@ public:
     bool should_reload_on_file_change() const override { return true; }
 
     /** Load from file. */
-    void load_resource(const LoadResourceParams& load_params) override;
-
     /** Access byte stream. */
     span<std::byte> bytes() { return span{ m_buffer.begin(), m_buffer.end() }; }
 
@@ -52,6 +50,8 @@ public:
     span<const std::byte> bytes() const { return span{ m_buffer.begin(), m_buffer.end() }; }
 
 protected:
+    LoadResourceResult load_resource_impl(const LoadResourceParams& load_params) override;
+
     memory::DA_UniquePtr<std::byte[]> m_buffer;
 };
 

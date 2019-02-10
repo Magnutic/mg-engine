@@ -27,6 +27,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include <fmt/core.h>
+
 #include "mg/core/mg_file_loader.h"
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_resource_cache.h"
@@ -157,43 +159,20 @@ inline size_t num_blocks_by_img_size(TextureResource::DimT width, TextureResourc
 // TextureResource implementation
 //--------------------------------------------------------------------------------------------------
 
-void TextureResource::load_resource(const LoadResourceParams& load_params)
+LoadResourceResult TextureResource::load_resource_impl(const LoadResourceParams& load_params)
 {
-    // Init texture using raw data
-    init(load_params.resource_data(), load_params.allocator());
-}
+    span<const std::byte> dds_data  = load_params.resource_data();
+    auto&                 allocator = load_params.allocator();
 
-TextureResource::MipLevelData TextureResource::pixel_data(MipIndexT mip_index) const
-{
-    auto width  = m_format.width;
-    auto height = m_format.height;
-
-    size_t     offset     = 0;
-    const auto block_size = block_size_by_format(m_format.pixel_format);
-    auto       size       = num_blocks_by_img_size(width, height) * block_size;
-
-    for (MipIndexT i = 0; i < mip_index; ++i) {
-        offset += size;
-        width /= 2;
-        height /= 2;
-        size = num_blocks_by_img_size(width, height) * block_size;
-    }
-
-    return MipLevelData{ span{ m_pixel_data }.subspan(offset, size), width, height };
-}
-
-// DDS loading
-void TextureResource::init(span<const std::byte> dds_data, memory::DefragmentingAllocator& alloc)
-{
     if (dds_data.length() < sizeof(DDS_HEADER)) {
-        throw std::runtime_error{ "DDS file corrupt, missing data." };
+        return LoadResourceResult::data_error("DDS file corrupt, missing data.");
     }
 
     // Read 4CC marker
     uint32_t four_cc;
     std::memcpy(&four_cc, dds_data.data(), 4);
 
-    if (four_cc != DDS) { throw std::runtime_error{ "Not a DDS texture." }; }
+    if (four_cc != DDS) { return LoadResourceResult::data_error("Not a DDS texture."); }
 
     // Read header
     DDS_HEADER header{};
@@ -227,7 +206,9 @@ void TextureResource::init(span<const std::byte> dds_data, memory::Defragmenting
 
     const auto sane_size = num_blocks * block_size_by_format(pixel_format);
 
-    if (size < sane_size) { throw std::runtime_error{ "DDS file corrupt, missing data." }; }
+    if (size < sane_size) {
+        return LoadResourceResult::data_error("DDS file corrupt, missing data.");
+    }
 
     if (size > sane_size) {
         const auto fname = resource_id().c_str();
@@ -249,7 +230,28 @@ void TextureResource::init(span<const std::byte> dds_data, memory::Defragmenting
 
     // Copy pixel data
     span<const std::byte> data(&dds_data[pixel_data_offset], sane_size);
-    m_pixel_data = alloc.alloc_copy(data.begin(), data.end());
+    m_pixel_data = allocator.alloc_copy(data.begin(), data.end());
+
+    return LoadResourceResult::success();
+}
+
+TextureResource::MipLevelData TextureResource::pixel_data(MipIndexT mip_index) const
+{
+    auto width  = m_format.width;
+    auto height = m_format.height;
+
+    size_t     offset     = 0;
+    const auto block_size = block_size_by_format(m_format.pixel_format);
+    auto       size       = num_blocks_by_img_size(width, height) * block_size;
+
+    for (MipIndexT i = 0; i < mip_index; ++i) {
+        offset += size;
+        width /= 2;
+        height /= 2;
+        size = num_blocks_by_img_size(width, height) * block_size;
+    }
+
+    return MipLevelData{ span{ m_pixel_data }.subspan(offset, size), width, height };
 }
 
 } // namespace Mg

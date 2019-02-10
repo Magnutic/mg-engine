@@ -1,7 +1,7 @@
 //**************************************************************************************************
 // Mg Engine
 //--------------------------------------------------------------------------------------------------
-// Copyright (c) 2018 Magnus Bergsten
+// Copyright (c) 2019 Magnus Bergsten
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -30,6 +30,9 @@
 #include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_macros.h"
 
+#include <string>
+#include <string_view>
+
 namespace Mg::memory {
 class DefragmentingAllocator;
 }
@@ -37,6 +40,25 @@ class DefragmentingAllocator;
 namespace Mg {
 
 class LoadResourceParams;
+
+struct LoadResourceResult {
+    enum ResultCode { Success, AllocationFailure, DataError };
+
+    static LoadResourceResult success() { return { ResultCode::Success, "" }; }
+
+    static LoadResourceResult allocation_failure()
+    {
+        return { ResultCode::AllocationFailure, "Allocation failure." };
+    }
+
+    static LoadResourceResult data_error(std::string_view reason)
+    {
+        return { ResultCode::AllocationFailure, std::string(reason) };
+    }
+
+    ResultCode  result_code;
+    std::string error_reason;
+};
 
 /** Resource interface. All resources for use with ResourceCache should derive from this.
  * Additionally, all subtypes should inherit BaseResource constructor (or provide a constructor with
@@ -64,12 +86,15 @@ public:
     /** Load resource from binary file data. This is the interface through which Mg::ResourceCache
      * initialises resource types.
      */
-    virtual void load_resource(const LoadResourceParams& params) = 0;
+    LoadResourceResult load_resource(const LoadResourceParams& params);
 
     virtual bool should_reload_on_file_change() const = 0;
 
     /** Resource identifier (filename, if loaded from file). */
     Identifier resource_id() const { return m_id; }
+
+protected:
+    virtual LoadResourceResult load_resource_impl(const LoadResourceParams& params) = 0;
 
 private:
     Identifier m_id;

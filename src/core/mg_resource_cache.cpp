@@ -23,9 +23,12 @@
 
 #include "mg/core/mg_resource_cache.h"
 
-#include <stdexcept>
-
+#include "mg/core/mg_log.h"
 #include "mg/utils/mg_stl_helpers.h"
+
+#include <fmt/core.h>
+
+#include <stdexcept>
 
 namespace Mg {
 
@@ -68,17 +71,16 @@ void ResourceCache::refresh()
         if (!should_update) { continue; }
 
         // Reload resource and notify observers.
-        g_log.write_message(
-            fmt::format("Resource '{}' was modified, loading...", filename.c_str()));
+        log_verbose(filename, "Resource was modified, re-loading...");
 
         try {
-            LoadResourceParams load_params{ load_resource_data(*p_file_info), *this, *p_entry };
-            p_entry->dependencies.clear();
-            p_entry->get_resource().load_resource(load_params);
+            // Create new ResourceEntry, load resource into that, then swap with the old entry.
+            auto p_new_entry = p_entry->new_entry(filename, new_time_stamp);
+            try_load(*p_file_info, *p_new_entry);
+            p_entry->swap_entry(*p_new_entry);
         }
-        catch (std::exception& e) {
-            g_log.write_error(
-                fmt::format("Failed to load resource '{}':\n\t'{}'", filename.c_str(), e.what()));
+        catch (const ResourceError&) {
+            log_error(filename, "Resource was modified but re-loading failed.");
             continue;
         }
 
@@ -122,16 +124,89 @@ void ResourceCache::rebuild_file_index()
     m_file_list.erase(std::unique(m_file_list.begin(), m_file_list.end(), same_filename));
 }
 
-std::runtime_error ResourceCache::make_not_found_exception(Identifier filename)
+// Try to load file, unloading unused files if cache is full
+void ResourceCache::try_load(const FileInfo& file_info, ResourceEntryBase& entry)
 {
-    std::string msg = fmt::format(
-        "ResourceCache[{}]: No such file '{}'.", static_cast<void*>(this), filename.c_str());
+    const Identifier filename = file_info.filename;
 
-    msg += " [ searched in ";
+    LoadResourceParams load_params{ load_resource_data(file_info), *this, entry };
+    LoadResourceResult result = entry.get_resource().load_resource(load_params);
+
+    switch (result.result_code) {
+    case LoadResourceResult::Success: entry.last_access = std::chrono::system_clock::now(); return;
+
+    case LoadResourceResult::DataError:
+        throw_resource_data_error(filename, result.error_reason);
+        break;
+
+    case LoadResourceResult::AllocationFailure:
+        log_message(
+            filename,
+            "Loading resource failed due to lack of space. Unloading one resource and retrying.");
+
+        if (!unload_unused()) { throw_resource_cache_oom(filename); }
+
+        return try_load(file_info, entry);
+    }
+
+    MG_ASSERT(false && "unreachable");
+}
+
+// Throw ResourceNotFound exception and write details to log.
+void ResourceCache::throw_resource_not_found(Identifier filename)
+{
+    std::string msg = "No such file. [ searched in ";
     for (auto&& p_loader : file_loaders()) { msg += fmt::format("'{}' ", p_loader->name()); }
     msg += ']';
 
-    return std::runtime_error(msg);
+    log_error(filename, msg);
+    throw ResourceNotFound{};
+}
+
+// Throw ResourceDataError exception and write details to log.
+void ResourceCache::throw_resource_data_error(Identifier filename, std::string_view reason)
+{
+    log_error(filename,
+              std::string("Failed to load resource, invalid data: " + std::string(reason)));
+
+    throw ResourceDataError{};
+}
+
+// Throw ResourceCacheOutOfMemory exception and write details to log.
+void ResourceCache::throw_resource_cache_oom(Identifier filename)
+{
+    log_error(filename,
+              "Failed to load resource due to lack of memory allocated to this resource cache.");
+
+    throw ResourceCacheOutOfMemory{};
+}
+
+// Log a message with nice formatting.
+static void
+log(Log::Prio prio, const ResourceCache* origin, Identifier resource, std::string_view message)
+{
+    std::string msg = fmt::format("ResourceCache[{}]: {} [resource: {}]",
+                                  static_cast<const void*>(origin),
+                                  message,
+                                  resource.c_str());
+    g_log.write(prio, msg);
+}
+
+void ResourceCache::log_verbose(Identifier resource, std::string_view message) const
+{
+    log(Log::Prio::Verbose, this, resource, message);
+}
+void ResourceCache::log_message(Identifier resource, std::string_view message) const
+{
+    log(Log::Prio::Message, this, resource, message);
+}
+void ResourceCache::log_warning(Identifier resource, std::string_view message) const
+{
+    log(Log::Prio::Warning, this, resource, message);
+}
+void ResourceCache::log_error(Identifier resource, std::string_view message) const
+{
+    log(Log::Prio::Error, this, resource, message);
 }
 
 // Get iterator to entry corresponding to the given Identifier if the entry is in cache.
@@ -150,8 +225,7 @@ bool ResourceCache::unload_unused(bool unload_all_unused)
     auto is_unused = [](auto&& e) { return e->ref_count == 0; };
 
     if (unload_all_unused) {
-        g_log.write_verbose(fmt::format("ResourceCache[{}]: unloading all unused resources.",
-                                        static_cast<void*>(this)));
+        log_verbose("<N/A>", "Unloading all unused resources.");
         return find_and_erase_if(m_resources, is_unused);
     }
 
@@ -164,8 +238,7 @@ bool ResourceCache::unload_unused(bool unload_all_unused)
 
     if (found) {
         auto resource_id = m_resources[index]->get_resource().resource_id();
-        g_log.write_verbose(fmt::format(
-            "ResourceCache[{}]: unloading '{}'.", static_cast<void*>(this), resource_id.c_str()));
+        log_verbose(resource_id, "Unloading unused resource.");
         m_resources.erase(m_resources.begin() + ptrdiff_t(index));
     }
 
@@ -173,7 +246,8 @@ bool ResourceCache::unload_unused(bool unload_all_unused)
 }
 
 // Load binary data for into memory
-std::vector<std::byte> ResourceCache::load_resource_data(const FileInfo& file_info) {
+std::vector<std::byte> ResourceCache::load_resource_data(const FileInfo& file_info)
+{
     const Identifier fname = file_info.filename;
 
     std::vector<std::byte> file_data;

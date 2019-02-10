@@ -23,12 +23,13 @@
 
 #include "mg/resources/mg_shader_resource.h"
 
+#include <filesystem>
 #include <functional>
 #include <string>
 #include <variant>
 #include <vector>
 
-#include <filesystem>
+#include <fmt/core.h>
 
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_file_loader.h"
@@ -589,7 +590,7 @@ inline std::string assemble_shader_code(const fs::path&           include_direct
     return code;
 }
 
-void ShaderResource::load_resource(const LoadResourceParams& load_params)
+LoadResourceResult ShaderResource::load_resource_impl(const LoadResourceParams& load_params)
 {
     auto&            allocator = load_params.allocator();
     std::string_view input     = load_params.resource_data_as_text();
@@ -615,6 +616,8 @@ void ShaderResource::load_resource(const LoadResourceParams& load_params)
     });
 
     m_tags = parser.tags;
+
+    return LoadResourceResult::success();
 }
 
 std::string ShaderResource::debug_print() const
