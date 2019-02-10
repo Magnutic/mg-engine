@@ -106,10 +106,6 @@ std::string to_lower(std::string_view str);
 /** Returns a uppercase version of an ASCII string. */
 std::string to_upper(std::string_view str);
 
-/** Returns a cleaned up version of a file path. Converts backslashes to
- * forward slashes, removes trailing slashes and removes duplicate slashes. */
-std::string clean_path(std::string_view path);
-
 /** Parse value from string if possible.
  * @param str std::string to convert
  * @return (bool success, float value), where success is true if conversion

@@ -132,24 +132,4 @@ std::string to_upper(std::string_view str)
     return ret_val;
 }
 
-/** Returns a clean version of a file path. */
-std::string clean_path(std::string_view path)
-{
-    std::string ret_val(path);
-
-    std::replace(ret_val.begin(), ret_val.end(), '\\', '/');
-
-    for (;;) {
-        auto duplicate = std::search_n(ret_val.begin(), ret_val.end(), 2, '/');
-        if (duplicate == ret_val.end()) { break; }
-        ret_val.erase(duplicate);
-    }
-
-    auto last_index = ret_val.find_last_not_of('/');
-
-    if (last_index != std::string::npos) { ret_val = ret_val.substr(0, last_index + 1); }
-
-    return ret_val;
-}
-
 } // namespace Mg
