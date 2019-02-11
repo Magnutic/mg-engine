@@ -31,6 +31,7 @@
 #include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_macros.h"
 
+#include <atomic>
 #include <chrono>
 #include <memory>
 #include <vector>
@@ -80,7 +81,7 @@ public:
     time_point time_stamp{};
     time_point last_access{};
 
-    int32_t ref_count = 0;
+    std::atomic_int32_t ref_count = 0;
 };
 
 /** ResourceEntry is the internal storage-node type for resources stored within a ResourceCache. */
@@ -103,11 +104,17 @@ public:
         return std::make_unique<ResourceEntry>(resource_id, time_stamp_);
     }
 
-    void swap(ResourceEntry& other) noexcept { std::swap(*this, other); }
-
     void swap_entry(ResourceEntryBase& other) noexcept override
     {
-        swap(static_cast<ResourceEntry&>(other));
+        using std::swap;
+        auto& rhs = static_cast<ResourceEntry&>(other);
+
+        MG_ASSERT(ref_count == 0 && rhs.ref_count == 0 && "Trying to swap an in-use resource.");
+
+        swap(dependencies, rhs.dependencies);
+        swap(time_stamp, rhs.time_stamp);
+        swap(last_access, rhs.last_access);
+        swap(resource, rhs.resource);
     }
 };
 

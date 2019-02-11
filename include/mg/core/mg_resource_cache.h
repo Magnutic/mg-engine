@@ -69,7 +69,7 @@ class ResourceCache;
  */
 template<typename ResT> class ResourceAccessGuard {
 public:
-    ~ResourceAccessGuard() { --m_entry->ref_count; }
+    ~ResourceAccessGuard() { m_entry->ref_count.fetch_sub(1, std::memory_order_acq_rel); }
 
     // Not copyable or movable -- ResourceAccessGuard should only be placed on the stack, not be
     // stored or passed around.
@@ -114,7 +114,7 @@ private:
     // Only ResourceCache may create ResourceAccessGuard
     ResourceAccessGuard(ResourceEntryBase& resource_entry) : m_entry(&resource_entry)
     {
-        ++m_entry->ref_count;
+        m_entry->ref_count.fetch_add(1, std::memory_order_relaxed);
     }
 
 private:
@@ -241,7 +241,9 @@ public:
     MG_MAKE_NON_COPYABLE(ResourceCache);
     MG_MAKE_NON_MOVABLE(ResourceCache); // Prevents pointer invalidation
 
-    /** Update file index, detects if files have changed (added, removed, changed timestamp). */
+    /** Update file index, detects if files have changed (added, removed, changed timestamp).
+     * Thread safety: should not be called when other threads are accessing resources.
+     */
     void refresh();
 
     /** Get resource from file (or cache).
