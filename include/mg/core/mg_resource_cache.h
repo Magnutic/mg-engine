@@ -349,7 +349,7 @@ private:
         static_assert(!std::is_abstract_v<ResT>, "Resource types must not be abstract.");
         static_assert(std::is_constructible_v<ResT, Identifier>);
 
-        return std::make_unique<ResourceEntry<ResT>>(resource_id, time_stamp);
+        return std::make_unique<ResourceEntry<ResT>>(resource_id, time_stamp, *this);
     }
 
     // Throw ResourceNotFound exception and write details to log.

@@ -49,7 +49,9 @@ using time_point = std::chrono::system_clock::time_point;
  */
 class ResourceEntryBase {
 public:
-    ResourceEntryBase(time_point time_stamp_) : time_stamp(time_stamp_) {}
+    ResourceEntryBase(time_point time_stamp_, ResourceCache& owner)
+        : time_stamp(time_stamp_), p_owning_cache(&owner)
+    {}
 
     MG_MAKE_NON_COPYABLE(ResourceEntryBase);
     MG_MAKE_DEFAULT_MOVABLE(ResourceEntryBase);
@@ -81,7 +83,8 @@ public:
     time_point time_stamp{};
     time_point last_access{};
 
-    std::atomic_int32_t ref_count = 0;
+    std::atomic_int32_t ref_count      = 0;
+    ResourceCache*      p_owning_cache = nullptr;
 };
 
 /** ResourceEntry is the internal storage-node type for resources stored within a ResourceCache. */
@@ -89,8 +92,8 @@ template<typename ResT> class ResourceEntry : public ResourceEntryBase {
 public:
     ResT resource;
 
-    ResourceEntry(Identifier resource_id, time_point time_stamp_)
-        : ResourceEntryBase{ time_stamp_ }, resource(resource_id)
+    ResourceEntry(Identifier resource_id, time_point time_stamp_, ResourceCache& owner)
+        : ResourceEntryBase(time_stamp_, owner), resource(resource_id)
     {}
 
     // Allow base class to access resource member.
@@ -101,7 +104,7 @@ public:
     std::unique_ptr<ResourceEntryBase> new_entry(Identifier resource_id,
                                                  time_point time_stamp_) override
     {
-        return std::make_unique<ResourceEntry>(resource_id, time_stamp_);
+        return std::make_unique<ResourceEntry>(resource_id, time_stamp_, *p_owning_cache);
     }
 
     void swap_entry(ResourceEntryBase& other) noexcept override
@@ -110,6 +113,7 @@ public:
         auto& rhs = static_cast<ResourceEntry&>(other);
 
         MG_ASSERT(ref_count == 0 && rhs.ref_count == 0 && "Trying to swap an in-use resource.");
+        MG_ASSERT(p_owning_cache == rhs.p_owning_cache);
 
         swap(dependencies, rhs.dependencies);
         swap(time_stamp, rhs.time_stamp);
