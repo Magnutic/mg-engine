@@ -87,13 +87,13 @@ public:
     ResT* get() & noexcept
     {
         auto& entry = static_cast<ResourceEntry<ResT>&>(*m_entry);
-        return &entry.resource;
+        return &entry.resource.value();
     }
 
     const ResT* get() const& noexcept
     {
         auto& entry = static_cast<ResourceEntry<ResT>&>(*m_entry);
-        return &entry.resource;
+        return &entry.resource.value();
     }
 
     // Disallow dereferencing rvalue ResourceAccessGuard.
@@ -279,8 +279,8 @@ public:
     /** Returns whether the resource with given id is currently cached in this ResourceCache. */
     bool is_cached(Identifier resource_id) const
     {
-        auto oit = get_if_loaded(resource_id);
-        return oit != nullptr;
+        auto p_entry = get_if_loaded(resource_id);
+        return p_entry != nullptr;
     }
 
     /** Unload the least-recently-used resource which is not currently in use.
@@ -318,20 +318,22 @@ private:
         Identifier   filename;
         time_point   time_stamp;
         IFileLoader* loader;
+
+        // ResourceEntry associated with this file. Nullptr if not loaded.
+        std::unique_ptr<ResourceEntryBase> entry;
     };
 
     // Rebuilds resource file index data structures.
     void rebuild_file_index();
 
-    // Try to call given function; if it throws (due to full cache), then deallocate an unused
-    // resource, then try again until it either succeeds, or there are no unused resources left to
-    // unload (at which point this function throws).
-    template<typename F> auto try_or_unload_unused(F f) -> decltype(f());
-
     // Get pointer to FileInfo record for the given filename, or nullptr if no such file exists
     const FileInfo* file_info(Identifier file) const;
+    FileInfo*       file_info(Identifier file)
+    {
+        return const_cast<FileInfo*>(static_cast<const ResourceCache*>(this)->file_info(file));
+    }
 
-    // Get entry corresponding to the given Identifier if the entry is in cache.
+    // Get pointer to entry corresponding to the given Identifier if the entry is in cache.
     ResourceEntryBase* get_if_loaded(Identifier file) const;
 
     // Load binary data for into memory
@@ -378,9 +380,6 @@ private:
     // List of resource files available through the resource loaders.
     // Always sorted by filename hash.
     std::vector<FileInfo> m_file_list;
-
-    // Resource owner.
-    std::vector<std::unique_ptr<ResourceEntryBase>> m_resources;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -410,13 +409,13 @@ ResourceAccessGuard<ResT> ResourceCache::access_resource(Identifier filename)
         // Create resource entry.
         auto p_entry = make_resource_entry<ResT>(filename, p_file_info->time_stamp);
 
-        // Try to load the resource and store the resource entry in m_resources.
+        // Try to load the resource and store the resource entry in its file entry.
         try_load(*p_file_info, *p_entry);
-        m_resources.emplace_back(std::move(p_entry));
+        std::swap(p_file_info->entry, p_entry);
     }
 
     // Create access guard for the new resource.
-    return ResourceAccessGuard<ResT>(*m_resources.back());
+    return ResourceAccessGuard<ResT>(*p_file_info->entry);
 }
 
 template<typename ResT>

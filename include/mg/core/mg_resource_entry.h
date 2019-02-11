@@ -34,6 +34,7 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace Mg {
@@ -49,8 +50,8 @@ using time_point = std::chrono::system_clock::time_point;
  */
 class ResourceEntryBase {
 public:
-    ResourceEntryBase(time_point time_stamp_, ResourceCache& owner)
-        : time_stamp(time_stamp_), p_owning_cache(&owner)
+    ResourceEntryBase(Identifier resource_id_, time_point time_stamp_, ResourceCache& owner)
+        : resource_id(resource_id_), time_stamp(time_stamp_), p_owning_cache(&owner)
     {}
 
     MG_MAKE_NON_COPYABLE(ResourceEntryBase);
@@ -68,10 +69,21 @@ public:
     /** Swap values. Requires that this and other are of the same derived type. */
     virtual void swap_entry(ResourceEntryBase& other) noexcept = 0;
 
+    /** Whether resource is loaded. */
+    virtual bool is_loaded() = 0;
+
+    /** Unload stored resource. */
+    virtual void unload() = 0;
+
+    /** Whether resource is unloadable: is loaded and reference count is zero. */
+    bool is_unloadable() { return is_loaded() && ref_count == 0; }
+
     struct Dependency {
         Identifier dependency_id;
         time_point time_stamp;
     };
+
+    Identifier resource_id;
 
     /** A list of resource files upon which this resource depends. This is used to trigger
      * re-loading of this resource if those files are changed. Dependencies are automatically
@@ -90,16 +102,16 @@ public:
 /** ResourceEntry is the internal storage-node type for resources stored within a ResourceCache. */
 template<typename ResT> class ResourceEntry : public ResourceEntryBase {
 public:
-    ResT resource;
+    std::optional<ResT> resource;
 
-    ResourceEntry(Identifier resource_id, time_point time_stamp_, ResourceCache& owner)
-        : ResourceEntryBase(time_stamp_, owner), resource(resource_id)
+    ResourceEntry(Identifier resource_id_, time_point time_stamp_, ResourceCache& owner)
+        : ResourceEntryBase(resource_id_, time_stamp_, owner), resource(resource_id)
     {}
 
     // Allow base class to access resource member.
     // ResT is assumed to be derived from BaseResource, as all resource types have to be.
-    BaseResource&       get_resource() override { return resource; }
-    const BaseResource& get_resource() const override { return resource; }
+    BaseResource&       get_resource() override { return resource.value(); }
+    const BaseResource& get_resource() const override { return resource.value(); }
 
     std::unique_ptr<ResourceEntryBase> new_entry(Identifier resource_id,
                                                  time_point time_stamp_) override
@@ -120,6 +132,10 @@ public:
         swap(last_access, rhs.last_access);
         swap(resource, rhs.resource);
     }
+
+    bool is_loaded() override { return resource.has_value(); }
+
+    void unload() override { resource.reset(); }
 };
 
 } // namespace Mg

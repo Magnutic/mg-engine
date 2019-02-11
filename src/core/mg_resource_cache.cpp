@@ -42,49 +42,42 @@ void ResourceCache::refresh()
     rebuild_file_index();
 
     // Reload & notify for any changed files
-    for (std::unique_ptr<ResourceEntryBase>& p_entry : m_resources) {
-        if (!p_entry->get_resource().should_reload_on_file_change()) { continue; }
+    for (FileInfo& file : m_file_list) {
+        auto& p_entry = file.entry;
 
-        Identifier      filename    = p_entry->get_resource().resource_id();
-        const FileInfo* p_file_info = file_info(filename);
-
-        // If file does not exist in the data source (any more), move on to next resource.
-        if (p_file_info == nullptr) { continue; }
-
-        auto new_time_stamp = p_file_info->time_stamp;
+        if (p_entry == nullptr || !p_entry->get_resource().should_reload_on_file_change()) {
+            continue;
+        }
 
         // Determine whether to update resource.
         bool should_update = false;
 
         // First, check whether resource file has been updated.
-        if (new_time_stamp > p_entry->time_stamp) { should_update = true; }
+        if (file.time_stamp > p_entry->time_stamp) { should_update = true; }
 
         // Then, check whether dependencies have been updated.
         for (auto&& dep : p_entry->dependencies) {
-            if (should_update) {
-                break; // Do not iterate more than necessary.
-            }
-
+            if (should_update) { break; } // Do not iterate more than necessary.
             if (file_info(dep.dependency_id)->time_stamp > dep.time_stamp) { should_update = true; }
         }
 
         if (!should_update) { continue; }
 
         // Reload resource and notify observers.
-        log_verbose(filename, "Resource was modified, re-loading...");
+        log_verbose(file.filename, "Resource was modified, re-loading...");
 
         try {
             // Create new ResourceEntry, load resource into that, then swap with the old entry.
-            auto p_new_entry = p_entry->new_entry(filename, new_time_stamp);
-            try_load(*p_file_info, *p_new_entry);
+            auto p_new_entry = p_entry->new_entry(file.filename, file.time_stamp);
+            try_load(file, *p_new_entry);
             p_entry->swap_entry(*p_new_entry);
         }
         catch (const ResourceError&) {
-            log_error(filename, "Resource was modified but re-loading failed.");
+            log_error(file.filename, "Resource was modified but re-loading failed.");
             continue;
         }
 
-        m_file_changed_subject.notify(FileChangedEvent{ p_entry->get_resource(), new_time_stamp });
+        m_file_changed_subject.notify(FileChangedEvent{ p_entry->get_resource(), file.time_stamp });
     }
 }
 
@@ -99,14 +92,13 @@ const ResourceCache::FileInfo* ResourceCache::file_info(Identifier file) const
     // m_file_list is sorted by filename hash, so we can look up with binary search.
     auto it = std::lower_bound(m_file_list.begin(), m_file_list.end(), file, cmp_filename);
     if (it == m_file_list.end() || it->filename != file) { return nullptr; }
-
     return std::addressof(*it);
 }
 
 // Rebuilds available-file list data structure.
 void ResourceCache::rebuild_file_index()
 {
-    log_verbose("N/A", "Building file index...");
+    log_verbose("<N/A>", "Building file index...");
 
     // Update file list with the new file record.
     auto update_file_list = [&](const FileRecord& file_record, IFileLoader& loader) {
@@ -115,7 +107,7 @@ void ResourceCache::rebuild_file_index()
 
         // If not found, insert new FileInfo
         if (it == m_file_list.end() || it->filename != filename) {
-            m_file_list.insert(it, FileInfo{ filename, file_record.time_stamp, &loader });
+            m_file_list.insert(it, FileInfo{ filename, file_record.time_stamp, &loader, nullptr });
             return;
         }
 
@@ -144,12 +136,8 @@ void ResourceCache::try_load(const FileInfo& file_info, ResourceEntryBase& entry
 
     switch (result.result_code) {
     case LoadResourceResult::Success: entry.last_access = std::chrono::system_clock::now(); return;
-
-    case LoadResourceResult::DataError:
-        throw_resource_data_error(filename, result.error_reason);
-        break;
-
-    case LoadResourceResult::AllocationFailure:
+    case LoadResourceResult::DataError: throw_resource_data_error(filename, result.error_reason);
+    case LoadResourceResult::AllocationFailure: {
         log_message(
             filename,
             "Loading resource failed due to lack of space. Unloading one resource and retrying.");
@@ -157,6 +145,7 @@ void ResourceCache::try_load(const FileInfo& file_info, ResourceEntryBase& entry
         if (!unload_unused()) { throw_resource_cache_oom(filename); }
 
         return try_load(file_info, entry);
+    }
     }
 
     MG_ASSERT(false && "unreachable");
@@ -185,9 +174,7 @@ void ResourceCache::throw_resource_data_error(Identifier filename, std::string_v
 // Throw ResourceCacheOutOfMemory exception and write details to log.
 void ResourceCache::throw_resource_cache_oom(Identifier filename)
 {
-    log_error(filename,
-              "Failed to load resource due to lack of memory allocated to this resource cache.");
-
+    log_error(filename, "Failed to load resource for lack of memory allocated to resource cache.");
     throw ResourceCacheOutOfMemory{};
 }
 
@@ -219,37 +206,55 @@ void ResourceCache::log_error(Identifier resource, std::string_view message) con
     log(Log::Prio::Error, this, resource, message);
 }
 
-// Get iterator to entry corresponding to the given Identifier if the entry is in cache.
+// Get pointer to entry corresponding to the given Identifier if the entry is in cache.
 auto ResourceCache::get_if_loaded(Identifier file) const -> ResourceEntryBase*
 {
-    auto [found, index] =
-        index_where(m_resources, [&](auto&& e) { return e->get_resource().resource_id() == file; });
+    if (const FileInfo* p_file_info = file_info(file); p_file_info != nullptr) {
+        auto& entry = p_file_info->entry;
+        return entry != nullptr && entry->is_loaded() ? entry.get() : nullptr;
+    }
 
-    if (!found) { return nullptr; }
-    return m_resources[index].get();
+    return nullptr;
 }
 
 // Unload the least recently used resource for which is not currently in use.
 bool ResourceCache::unload_unused(bool unload_all_unused)
 {
-    auto is_unused = [](auto&& e) { return e->ref_count == 0; };
+    auto is_unused = [](const FileInfo* fi) {
+        return fi->entry != nullptr && fi->entry->is_unloadable();
+    };
 
     if (unload_all_unused) {
         log_verbose("<N/A>", "Unloading all unused resources.");
-        return find_and_erase_if(m_resources, is_unused);
+        size_t num_unloaded = 0;
+
+        for (FileInfo& file_info : m_file_list) {
+            if (is_unused(&file_info)) {
+                file_info.entry->unload();
+                ++num_unloaded;
+            }
+        }
+
+        return num_unloaded > 0;
     }
 
-    // Sort so that ResourceEntry with earliest last-access time comes first.
-    // The ordering of m_resources does not matter outside of this function; by sorting it, it will
-    // likely be almost sorted in the next call of this function.
-    sort(m_resources, [&](auto& e1, auto& e2) { return e1->last_access < e2->last_access; });
+    // Create vector of FileInfos sorted so that ResourceEntry with earliest last-access time comes
+    // first (and thus unload resources in least-recently-used order).
+    std::vector<FileInfo*> file_infos;
+    for (FileInfo& file_info : m_file_list) { file_infos.push_back(&file_info); }
 
-    auto [found, index] = index_where(m_resources, is_unused);
+    sort(file_infos, [&](FileInfo* l, FileInfo* r) {
+        if (l->entry == nullptr) { return false; }
+        if (r->entry == nullptr) { return true; }
+        return l->entry->last_access < r->entry->last_access;
+    });
+
+    auto [found, index] = index_where(file_infos, is_unused);
 
     if (found) {
-        auto resource_id = m_resources[index]->get_resource().resource_id();
-        log_verbose(resource_id, "Unloading unused resource.");
-        m_resources.erase(m_resources.begin() + ptrdiff_t(index));
+        ResourceEntryBase& entry_to_unload = *file_infos[index]->entry;
+        entry_to_unload.unload();
+        log_verbose(entry_to_unload.resource_id, "Unloaded unused resource.");
     }
 
     return found;
@@ -258,12 +263,10 @@ bool ResourceCache::unload_unused(bool unload_all_unused)
 // Load binary data for into memory
 std::vector<std::byte> ResourceCache::load_resource_data(const FileInfo& file_info)
 {
-    const Identifier fname = file_info.filename;
-
     std::vector<std::byte> file_data;
-    file_data.resize(file_info.loader->file_size(fname));
+    file_data.resize(file_info.loader->file_size(file_info.filename));
 
-    file_info.loader->load_file(fname, file_data);
+    file_info.loader->load_file(file_info.filename, file_data);
     return file_data;
 }
 
