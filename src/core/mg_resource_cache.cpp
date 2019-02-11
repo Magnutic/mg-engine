@@ -88,13 +88,15 @@ void ResourceCache::refresh()
     }
 }
 
+// Compare FileInfo struct and Identifier by filename hash.
+// Used for binary search / ordered insertion in m_file_list.
+static auto cmp_filename = [](const auto& file_info, Identifier r) {
+    return file_info.filename.hash() < r.hash();
+};
+
 const ResourceCache::FileInfo* ResourceCache::file_info(Identifier file) const
 {
     // m_file_list is sorted by filename hash, so we can look up with binary search.
-    auto cmp_filename = [](const FileInfo& l, Identifier r) {
-        return l.filename.hash() < r.hash();
-    };
-
     auto it = std::lower_bound(m_file_list.begin(), m_file_list.end(), file, cmp_filename);
     if (it == m_file_list.end() || it->filename != file) { return nullptr; }
 
@@ -106,27 +108,30 @@ void ResourceCache::rebuild_file_index()
 {
     log_verbose("N/A", "Building file index...");
 
+    // Update file list with the new file record.
+    auto update_file_list = [&](const FileRecord& file_record, IFileLoader& loader) {
+        const auto filename = file_record.name;
+        auto it = std::lower_bound(m_file_list.begin(), m_file_list.end(), filename, cmp_filename);
+
+        // If not found, insert new FileInfo
+        if (it == m_file_list.end() || it->filename != filename) {
+            m_file_list.insert(it, FileInfo{ filename, file_record.time_stamp, &loader });
+            return;
+        }
+
+        // Update old FileInfo, if new record has greater time stamp.
+        if (file_record.time_stamp > it->time_stamp) {
+            it->time_stamp = file_record.time_stamp;
+            it->loader     = &loader;
+        }
+    };
+
     for (auto&& p_loader : file_loaders()) {
         MG_ASSERT(p_loader != nullptr);
         g_log.write_verbose(fmt::format("Refreshing file index for '{}'", p_loader->name()));
-        std::vector<FileRecord> files = p_loader->available_files();
 
-        for (auto&& fr : files) {
-            m_file_list.push_back({ fr.name, fr.time_stamp, p_loader.get() });
-        }
+        for (auto&& fr : p_loader->available_files()) { update_file_list(fr, *p_loader); }
     }
-
-    auto order_by_filename_hash_and_greater_time_stamp = [](auto&& af1, auto&& af2) {
-        auto hash1 = af1.filename.hash();
-        auto hash2 = af2.filename.hash();
-        return (hash1 < hash2) || (hash1 == hash2 && af1.time_stamp > af2.time_stamp);
-    };
-
-    auto same_filename = [](auto&& af1, auto&& af2) { return af1.filename == af2.filename; };
-
-    // Filter duplicate files, keeping the one with greater timestamp.
-    sort(m_file_list, order_by_filename_hash_and_greater_time_stamp);
-    m_file_list.erase(std::unique(m_file_list.begin(), m_file_list.end(), same_filename));
 }
 
 // Try to load file, unloading unused files if cache is full
