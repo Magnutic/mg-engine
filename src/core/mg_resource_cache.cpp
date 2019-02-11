@@ -42,7 +42,7 @@ void ResourceCache::refresh()
     rebuild_file_index();
 
     // Reload & notify for any changed files
-    for (ResEntryOwningPtr& p_entry : m_resources) {
+    for (std::unique_ptr<ResourceEntryBase>& p_entry : m_resources) {
         if (!p_entry->get_resource().should_reload_on_file_change()) { continue; }
 
         Identifier      filename    = p_entry->get_resource().resource_id();
@@ -210,13 +210,13 @@ void ResourceCache::log_error(Identifier resource, std::string_view message) con
 }
 
 // Get iterator to entry corresponding to the given Identifier if the entry is in cache.
-auto ResourceCache::get_if_loaded(Identifier file) const -> ResEntryPtr
+auto ResourceCache::get_if_loaded(Identifier file) const -> ResourceEntryBase*
 {
     auto [found, index] =
         index_where(m_resources, [&](auto&& e) { return e->get_resource().resource_id() == file; });
 
     if (!found) { return nullptr; }
-    return m_resources[index];
+    return m_resources[index].get();
 }
 
 // Unload the least recently used resource for which is not currently in use.

@@ -278,7 +278,7 @@ public:
     bool is_cached(Identifier resource_id) const
     {
         auto oit = get_if_loaded(resource_id);
-        return !oit.is_null();
+        return oit != nullptr;
     }
 
     /** Unload the least-recently-used resource which is not currently in use.
@@ -312,9 +312,6 @@ private:
      */
     Subject<FileChangedEvent> m_file_changed_subject;
 
-    using ResEntryPtr       = memory::DA_Ptr<ResourceEntryBase>;
-    using ResEntryOwningPtr = memory::DA_UniquePtr<ResourceEntryBase>;
-
     struct FileInfo {
         Identifier   filename;
         time_point   time_stamp;
@@ -333,7 +330,7 @@ private:
     const FileInfo* file_info(Identifier file) const;
 
     // Get entry corresponding to the given Identifier if the entry is in cache.
-    ResEntryPtr get_if_loaded(Identifier file) const;
+    ResourceEntryBase* get_if_loaded(Identifier file) const;
 
     // Load binary data for into memory
     std::vector<std::byte> load_resource_data(const FileInfo& file_info);
@@ -342,14 +339,15 @@ private:
     void try_load(const FileInfo& file_info, ResourceEntryBase& entry);
 
     template<typename ResT>
-    ResEntryOwningPtr make_resource_entry(Identifier resource_id, time_point time_stamp)
+    std::unique_ptr<ResourceEntryBase> make_resource_entry(Identifier resource_id,
+                                                           time_point time_stamp)
     {
         static_assert(std::is_base_of_v<BaseResource, ResT>,
                       "Type must be derived from Mg::BaseResource.");
         static_assert(!std::is_abstract_v<ResT>, "Resource types must not be abstract.");
         static_assert(std::is_constructible_v<ResT, Identifier>);
 
-        return allocator().alloc<ResourceEntry<ResT>>(resource_id, time_stamp);
+        return std::make_unique<ResourceEntry<ResT>>(resource_id, time_stamp);
     }
 
     // Throw ResourceNotFound exception and write details to log.
@@ -379,7 +377,7 @@ private:
     std::vector<FileInfo> m_file_list;
 
     // Resource owner.
-    std::vector<ResEntryOwningPtr> m_resources;
+    std::vector<std::unique_ptr<ResourceEntryBase>> m_resources;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -407,7 +405,7 @@ ResourceAccessGuard<ResT> ResourceCache::access_resource(Identifier filename)
 
     {
         // Create resource entry.
-        ResEntryOwningPtr p_entry = make_resource_entry<ResT>(filename, p_file_info->time_stamp);
+        auto p_entry = make_resource_entry<ResT>(filename, p_file_info->time_stamp);
 
         // Try to load the resource and store the resource entry in m_resources.
         try_load(*p_file_info, *p_entry);
