@@ -90,16 +90,21 @@ void ResourceCache::refresh()
 
 const ResourceCache::FileInfo* ResourceCache::file_info(Identifier file) const
 {
-    auto [found, index] = index_where(m_file_list, [&](auto&& af) { return af.filename == file; });
-    if (!found) { return nullptr; }
-    return &m_file_list[index];
+    // m_file_list is sorted by filename hash, so we can look up with binary search.
+    auto cmp_filename = [](const FileInfo& l, Identifier r) {
+        return l.filename.hash() < r.hash();
+    };
+
+    auto it = std::lower_bound(m_file_list.begin(), m_file_list.end(), file, cmp_filename);
+    if (it == m_file_list.end() || it->filename != file) { return nullptr; }
+
+    return std::addressof(*it);
 }
 
 // Rebuilds available-file list data structure.
 void ResourceCache::rebuild_file_index()
 {
-    g_log.write_verbose(
-        fmt::format("ResourceCache[{}]: building file index...", static_cast<void*>(this)));
+    log_verbose("N/A", "Building file index...");
 
     for (auto&& p_loader : file_loaders()) {
         MG_ASSERT(p_loader != nullptr);

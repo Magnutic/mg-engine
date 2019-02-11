@@ -376,6 +376,7 @@ private:
     memory::DefragmentingAllocator m_alloc;
 
     // List of resource files available through the resource loaders.
+    // Always sorted by filename hash.
     std::vector<FileInfo> m_file_list;
 
     // Resource owner.
