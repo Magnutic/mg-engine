@@ -341,14 +341,15 @@ private:
     void try_load(const FileInfo& file_info, ResourceEntryBase& entry);
 
     template<typename ResT>
-    std::unique_ptr<ResourceEntryBase> make_resource_entry(time_point time_stamp)
+    std::unique_ptr<ResourceEntryBase> make_resource_entry(const FileInfo& file_info)
     {
         static_assert(std::is_base_of_v<BaseResource, ResT>,
                       "Type must be derived from Mg::BaseResource.");
         static_assert(!std::is_abstract_v<ResT>, "Resource types must not be abstract.");
         static_assert(std::is_constructible_v<ResT, Identifier>);
 
-        return std::make_unique<ResourceEntry<ResT>>(time_stamp, *this);
+        return std::make_unique<ResourceEntry<ResT>>(
+            file_info.filename, file_info.time_stamp, *this);
     }
 
     // Throw ResourceNotFound exception and write details to log.
@@ -404,7 +405,7 @@ ResourceAccessGuard<ResT> ResourceCache::access_resource(Identifier filename)
 
     // File is not already in cache.
     // Create resource entry if not already present.
-    if (!p_entry) { p_entry = make_resource_entry<ResT>(p_file_info->time_stamp); }
+    if (!p_entry) { p_entry = make_resource_entry<ResT>(*p_file_info); }
 
     // Try to load the resource.
     try_load(*p_file_info, *p_entry);

@@ -50,8 +50,8 @@ using time_point = std::chrono::system_clock::time_point;
  */
 class ResourceEntryBase {
 public:
-    ResourceEntryBase(time_point time_stamp_, ResourceCache& owner)
-        : time_stamp(time_stamp_), p_owning_cache(&owner)
+    ResourceEntryBase(Identifier resource_id_, time_point time_stamp_, ResourceCache& owner)
+        : resource_id(resource_id_), time_stamp(time_stamp_), p_owning_cache(&owner)
     {}
 
     MG_MAKE_NON_COPYABLE(ResourceEntryBase);
@@ -63,13 +63,14 @@ public:
     virtual const BaseResource& get_resource() const = 0;
 
     /** Make a new (empty) ResourceEntry of the same derived type as this one. */
-    virtual std::unique_ptr<ResourceEntryBase> new_entry(time_point time_stamp_) = 0;
+    virtual std::unique_ptr<ResourceEntryBase> new_entry(Identifier resource_id,
+                                                         time_point time_stamp_) = 0;
 
     /** Swap values. Requires that this and other are of the same derived type. */
     virtual void swap_entry(ResourceEntryBase& other) noexcept = 0;
 
     /** Return the stored resource object, or, if it does not exist, create a new empty one. */
-    virtual BaseResource& get_or_create_resource(Identifier resource_id) = 0;
+    virtual BaseResource& get_or_create_resource() = 0;
 
     /** Whether resource is loaded. */
     virtual bool is_loaded() = 0;
@@ -84,6 +85,8 @@ public:
         Identifier dependency_id;
         time_point time_stamp;
     };
+
+    Identifier resource_id;
 
     /** A list of resource files upon which this resource depends. This is used to trigger
      * re-loading of this resource if those files are changed. Dependencies are automatically
@@ -109,9 +112,10 @@ public:
     ResT&       get_resource() override { return m_resource.value(); }
     const ResT& get_resource() const override { return m_resource.value(); }
 
-    std::unique_ptr<ResourceEntryBase> new_entry(time_point time_stamp_) override
+    std::unique_ptr<ResourceEntryBase> new_entry(Identifier resource_id,
+                                                 time_point time_stamp_) override
     {
-        return std::make_unique<ResourceEntry>(time_stamp_, *p_owning_cache);
+        return std::make_unique<ResourceEntry>(resource_id, time_stamp_, *p_owning_cache);
     }
 
     void swap_entry(ResourceEntryBase& other) noexcept override
@@ -128,7 +132,7 @@ public:
         swap(m_resource, rhs.m_resource);
     }
 
-    ResT& get_or_create_resource(Identifier resource_id) override
+    ResT& get_or_create_resource() override
     {
         if (!is_loaded()) { m_resource.emplace(resource_id); }
         return m_resource.value();

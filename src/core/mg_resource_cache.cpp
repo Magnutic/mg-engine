@@ -68,7 +68,7 @@ void ResourceCache::refresh()
 
         try {
             // Create new ResourceEntry, load resource into that, then swap with the old entry.
-            auto p_new_entry = p_entry->new_entry(file.time_stamp);
+            auto p_new_entry = p_entry->new_entry(file.filename, file.time_stamp);
             try_load(file, *p_new_entry);
             p_entry->swap_entry(*p_new_entry);
         }
@@ -132,7 +132,7 @@ void ResourceCache::try_load(const FileInfo& file_info, ResourceEntryBase& entry
     const Identifier filename = file_info.filename;
 
     LoadResourceParams load_params{ load_resource_data(file_info), *this, entry };
-    LoadResourceResult result = entry.get_or_create_resource(filename).load_resource(load_params);
+    LoadResourceResult result = entry.get_or_create_resource().load_resource(load_params);
 
     switch (result.result_code) {
     case LoadResourceResult::Success: entry.last_access = std::chrono::system_clock::now(); return;
