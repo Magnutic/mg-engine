@@ -254,7 +254,7 @@ bool ResourceCache::unload_unused(bool unload_all_unused)
     if (found) {
         ResourceEntryBase& entry_to_unload = *file_infos[index]->entry;
         entry_to_unload.unload();
-        log_verbose(entry_to_unload.resource_id, "Unloaded unused resource.");
+        log_verbose(file_infos[index]->filename, "Unloaded unused resource.");
     }
 
     return found;

@@ -50,8 +50,8 @@ using time_point = std::chrono::system_clock::time_point;
  */
 class ResourceEntryBase {
 public:
-    ResourceEntryBase(Identifier resource_id_, time_point time_stamp_, ResourceCache& owner)
-        : resource_id(resource_id_), time_stamp(time_stamp_), p_owning_cache(&owner)
+    ResourceEntryBase(time_point time_stamp_, ResourceCache& owner)
+        : time_stamp(time_stamp_), p_owning_cache(&owner)
     {}
 
     MG_MAKE_NON_COPYABLE(ResourceEntryBase);
@@ -83,8 +83,6 @@ public:
         time_point time_stamp;
     };
 
-    Identifier resource_id;
-
     /** A list of resource files upon which this resource depends. This is used to trigger
      * re-loading of this resource if those files are changed. Dependencies are automatically
      * tracked when a dependency is loaded in a resource type's `load_resource()` function via
@@ -105,7 +103,7 @@ public:
     std::optional<ResT> resource;
 
     ResourceEntry(Identifier resource_id_, time_point time_stamp_, ResourceCache& owner)
-        : ResourceEntryBase(resource_id_, time_stamp_, owner), resource(resource_id)
+        : ResourceEntryBase(time_stamp_, owner), resource(resource_id_)
     {}
 
     // Allow base class to access resource member.
