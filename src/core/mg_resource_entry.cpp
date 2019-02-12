@@ -21,32 +21,16 @@
 //
 //**************************************************************************************************
 
-/** @file mg_resource_handle_fwd.h
- * Forward declaration of ResourceHandle.
- * Full implementation is in mg_resource_cache.h
- */
-
-#pragma once
-
 #include "mg/core/mg_resource_entry.h"
+
+#include "mg/core/mg_resource_cache.h"
 
 namespace Mg {
 
-// Forward declarations.
-class ResourceCache;
-template<typename ResT> class ResourceAccessGuard;
-
-/** Storable handle to a resource. */
-template<typename ResT> class ResourceHandle {
-public:
-    explicit ResourceHandle(ResourceEntry<ResT>& entry) : m_p_entry(&entry) {}
-
-    ResourceAccessGuard<ResT> access() { return m_p_entry->access_resource(); }
-
-    Identifier resource_id() const noexcept { return m_p_entry->resource_id; }
-
-private:
-    ResourceEntry<ResT>* m_p_entry = nullptr;
-};
+void ResourceEntryBase::load_resource()
+{
+    MG_ASSERT(p_owning_cache != nullptr);
+    p_owning_cache->load_into_resource_entry(*this);
+}
 
 } // namespace Mg

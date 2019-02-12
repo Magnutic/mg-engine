@@ -49,78 +49,6 @@ namespace Mg {
 
 class ResourceCache;
 
-/** Reference-counting access to a resource within a ResourceCache.
- * Do not store this anywhere -- instead, store the resource's ResourceHandle, and then get a
- * ResourceAccessGuard from the ResourceHandle only when access is needed (i.e. within function
- * bodies, on the stack).
- *
- * Usage example:
- *
- *     void some_function_that_uses_a_resource(ResourceHandle resource_handle) {
- *         ResourceCache& res_cache = ...
- *         ResourceAccessGuard<ResType> res_access = res_cache.access_resource(resource_handle);
- *         auto something = res_access->something_in_the_resource;
- *         // etc. Resource can be safely accessed as long as `res_access` remains in scope.
- *     }
- *
- * As long as at least one ResourceAccessGuard to a given resource exist, then that resource will
- * not be unloaded from the ResourceCache.
- * @see Mg::ResourceCache
- */
-template<typename ResT> class ResourceAccessGuard {
-public:
-    ~ResourceAccessGuard() { m_entry->ref_count.fetch_sub(1, std::memory_order_acq_rel); }
-
-    // Not copyable or movable -- ResourceAccessGuard should only be placed on the stack, not be
-    // stored or passed around.
-    MG_MAKE_NON_COPYABLE(ResourceAccessGuard);
-    MG_MAKE_NON_MOVABLE(ResourceAccessGuard);
-
-    time_point file_time_stamp() const noexcept { return m_entry->time_stamp; }
-
-    const ResT& operator*() const& noexcept { return *get(); }
-    const ResT* operator->() const& noexcept { return get(); }
-
-    ResT& operator*() & noexcept { return *get(); }
-    ResT* operator->() & noexcept { return get(); }
-
-    ResT* get() & noexcept
-    {
-        auto& entry = static_cast<ResourceEntry<ResT>&>(*m_entry);
-        return &entry.get_resource();
-    }
-
-    const ResT* get() const& noexcept
-    {
-        auto& entry = static_cast<ResourceEntry<ResT>&>(*m_entry);
-        return &entry.get_resource();
-    }
-
-    // Disallow dereferencing rvalue ResourceAccessGuard.
-    // ResourceAccessGuard is intended to remain on the stack for the duration of the resource use,
-    // this prevents simple mistakes violating that intention.
-    const ResT& operator*() const&&  = delete;
-    const ResT* operator->() const&& = delete;
-
-    ResT& operator*() &&  = delete;
-    ResT* operator->() && = delete;
-
-    ResT*       get() &&      = delete;
-    const ResT* get() const&& = delete;
-
-private:
-    friend class ResourceCache;
-
-    // Only ResourceCache may create ResourceAccessGuard
-    ResourceAccessGuard(ResourceEntryBase& resource_entry) : m_entry(&resource_entry)
-    {
-        m_entry->ref_count.fetch_add(1, std::memory_order_relaxed);
-    }
-
-private:
-    ResourceEntryBase* m_entry = nullptr;
-};
-
 /** Input to resource types' `load_resource()` member function. */
 class LoadResourceParams {
 public:
@@ -309,6 +237,15 @@ public:
         m_file_changed_subject.add_observer(observer);
     }
 
+    void load_into_resource_entry(ResourceEntryBase& entry)
+    {
+        FileInfo* p_file_info = file_info(entry.resource_id);
+        MG_ASSERT(p_file_info != nullptr);
+        MG_ASSERT(p_file_info->entry.get() == &entry);
+
+        try_load(*p_file_info, entry);
+    }
+
 private:
     /** Subject notifying Observers whenever a resource has been re-loaded as a result of its file
      * changing.
@@ -417,8 +354,14 @@ ResourceAccessGuard<ResT> ResourceCache::access_resource(Identifier filename)
 template<typename ResT>
 ResourceHandle<ResT> ResourceCache::resource_handle(Identifier file, bool load_resource_immediately)
 {
-    ResourceHandle<ResT> handle(file, *this);
+    FileInfo* p_file_info = file_info(file);
+    if (!p_file_info) { throw_resource_not_found(file); }
+    if (!p_file_info->entry) { p_file_info->entry = make_resource_entry<ResT>(*p_file_info); }
+
+    ResourceHandle<ResT> handle(static_cast<ResourceEntry<ResT>&>(*p_file_info->entry));
+
     if (load_resource_immediately) handle.access();
+
     return handle;
 }
 
@@ -437,15 +380,6 @@ ResourceAccessGuard<ResT> LoadResourceParams::load_dependency(Identifier depende
 inline memory::DefragmentingAllocator& LoadResourceParams::allocator() const noexcept
 {
     return m_owning_cache->allocator();
-}
-
-//--------------------------------------------------------------------------------------------------
-// ResourceHandle member function implementations
-//--------------------------------------------------------------------------------------------------
-
-template<typename ResT> ResourceAccessGuard<ResT> ResourceHandle<ResT>::access()
-{
-    return m_owning_cache->access_resource<ResT>(m_resource_id);
 }
 
 } // namespace Mg

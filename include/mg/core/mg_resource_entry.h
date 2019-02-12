@@ -100,12 +100,90 @@ public:
 
     std::atomic_int32_t ref_count      = 0;
     ResourceCache*      p_owning_cache = nullptr;
+
+protected:
+    void load_resource();
+};
+
+/** Reference-counting access to a resource within a ResourceCache.
+ * Do not store this anywhere -- instead, store the resource's ResourceHandle, and then get a
+ * ResourceAccessGuard from the ResourceHandle only when access is needed (i.e. within function
+ * bodies, on the stack).
+ *
+ * Usage example:
+ *
+ *     void some_function_that_uses_a_resource(ResourceHandle resource_handle) {
+ *         ResourceCache& res_cache = ...
+ *         ResourceAccessGuard<ResType> res_access = res_cache.access_resource(resource_handle);
+ *         auto something = res_access->something_in_the_resource;
+ *         // etc. Resource can be safely accessed as long as `res_access` remains in scope.
+ *     }
+ *
+ * As long as at least one ResourceAccessGuard to a given resource exist, then that resource will
+ * not be unloaded from the ResourceCache.
+ * @see Mg::ResourceCache
+ */
+template<typename ResT> class ResourceAccessGuard {
+public:
+    ResourceAccessGuard(ResourceEntryBase& resource_entry) : m_entry(&resource_entry)
+    {
+        m_entry->ref_count.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    ~ResourceAccessGuard() { m_entry->ref_count.fetch_sub(1, std::memory_order_acq_rel); }
+
+    // Not copyable or movable -- ResourceAccessGuard should only be placed on the stack, not be
+    // stored or passed around.
+    MG_MAKE_NON_COPYABLE(ResourceAccessGuard);
+    MG_MAKE_NON_MOVABLE(ResourceAccessGuard);
+
+    time_point file_time_stamp() const noexcept { return m_entry->time_stamp; }
+
+    const ResT& operator*() const& noexcept { return *get(); }
+    const ResT* operator->() const& noexcept { return get(); }
+
+    ResT& operator*() & noexcept { return *get(); }
+    ResT* operator->() & noexcept { return get(); }
+
+    ResT* get() & noexcept
+    {
+        BaseResource* base_res = &m_entry->get_resource();
+        return static_cast<ResT*>(base_res);
+    }
+
+    const ResT* get() const& noexcept
+    {
+        const BaseResource* base_res = &m_entry->get_resource();
+        return static_cast<const ResT*>(base_res);
+    }
+
+    // Disallow dereferencing rvalue ResourceAccessGuard.
+    // ResourceAccessGuard is intended to remain on the stack for the duration of the resource use,
+    // this prevents simple mistakes violating that intention.
+    const ResT& operator*() const&&  = delete;
+    const ResT* operator->() const&& = delete;
+
+    ResT& operator*() &&  = delete;
+    ResT* operator->() && = delete;
+
+    ResT*       get() &&      = delete;
+    const ResT* get() const&& = delete;
+
+private:
+    ResourceEntryBase* m_entry = nullptr;
 };
 
 /** ResourceEntry is the internal storage-node type for resources stored within a ResourceCache. */
 template<typename ResT> class ResourceEntry final : public ResourceEntryBase {
 public:
     using ResourceEntryBase::ResourceEntryBase;
+
+    ResourceAccessGuard<ResT> access_resource()
+    {
+        if (!is_loaded()) { load_resource(); }
+        last_access = std::chrono::system_clock::now();
+        return ResourceAccessGuard<ResT>(*this);
+    }
 
     // Allow base class to access resource member.
     // ResT is assumed to be derived from BaseResource, as all resource types have to be.

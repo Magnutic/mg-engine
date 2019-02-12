@@ -78,6 +78,7 @@ add_library(mg_engine
     core/mg_identifier.cpp
     core/mg_log.cpp
     core/mg_resource_cache.cpp
+    core/mg_resource_entry.cpp
     core/mg_root.cpp
     core/mg_rotation.cpp
     core/mg_window.cpp
