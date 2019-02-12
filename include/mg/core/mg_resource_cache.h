@@ -343,15 +343,14 @@ private:
     void try_load(const FileInfo& file_info, ResourceEntryBase& entry);
 
     template<typename ResT>
-    std::unique_ptr<ResourceEntryBase> make_resource_entry(Identifier resource_id,
-                                                           time_point time_stamp)
+    std::unique_ptr<ResourceEntryBase> make_resource_entry(time_point time_stamp)
     {
         static_assert(std::is_base_of_v<BaseResource, ResT>,
                       "Type must be derived from Mg::BaseResource.");
         static_assert(!std::is_abstract_v<ResT>, "Resource types must not be abstract.");
         static_assert(std::is_constructible_v<ResT, Identifier>);
 
-        return std::make_unique<ResourceEntry<ResT>>(resource_id, time_stamp, *this);
+        return std::make_unique<ResourceEntry<ResT>>(time_stamp, *this);
     }
 
     // Throw ResourceNotFound exception and write details to log.
@@ -392,30 +391,28 @@ ResourceAccessGuard<ResT> ResourceCache::access_resource(Identifier filename)
 {
     log_verbose(filename, "Accessing file.");
 
-    // Check if file is already loaded
-    if (auto p_entry = get_if_loaded(filename); p_entry != nullptr) {
-        log_verbose(filename, "File was in cache.");
+    // Check for file in known-files list.
+    FileInfo* p_file_info = file_info(filename);
+    if (p_file_info == nullptr) { throw_resource_not_found(filename); }
 
+    std::unique_ptr<ResourceEntryBase>& p_entry = p_file_info->entry;
+
+    // Check if file is already loaded
+    if (p_entry && p_entry->is_loaded()) {
+        log_verbose(filename, "File was in cache.");
         p_entry->last_access = std::chrono::system_clock::now();
         return ResourceAccessGuard<ResT>(*p_entry);
     }
 
     // File is not already in cache.
-    // Check for file in known-files list.
-    const auto p_file_info = file_info(filename);
-    if (p_file_info == nullptr) { throw_resource_not_found(filename); }
+    // Create resource entry if not already present.
+    if (!p_entry) { p_entry = make_resource_entry<ResT>(p_file_info->time_stamp); }
 
-    {
-        // Create resource entry.
-        auto p_entry = make_resource_entry<ResT>(filename, p_file_info->time_stamp);
-
-        // Try to load the resource and store the resource entry in its file entry.
-        try_load(*p_file_info, *p_entry);
-        std::swap(p_file_info->entry, p_entry);
-    }
+    // Try to load the resource.
+    try_load(*p_file_info, *p_entry);
 
     // Create access guard for the new resource.
-    return ResourceAccessGuard<ResT>(*p_file_info->entry);
+    return ResourceAccessGuard<ResT>(*p_entry);
 }
 
 template<typename ResT>

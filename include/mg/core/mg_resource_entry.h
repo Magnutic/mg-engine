@@ -55,7 +55,7 @@ public:
     {}
 
     MG_MAKE_NON_COPYABLE(ResourceEntryBase);
-    MG_MAKE_DEFAULT_MOVABLE(ResourceEntryBase);
+    MG_MAKE_NON_MOVABLE(ResourceEntryBase);
 
     virtual ~ResourceEntryBase() {}
 
@@ -63,11 +63,13 @@ public:
     virtual const BaseResource& get_resource() const = 0;
 
     /** Make a new (empty) ResourceEntry of the same derived type as this one. */
-    virtual std::unique_ptr<ResourceEntryBase> new_entry(Identifier resource_id,
-                                                         time_point time_stamp_) = 0;
+    virtual std::unique_ptr<ResourceEntryBase> new_entry(time_point time_stamp_) = 0;
 
     /** Swap values. Requires that this and other are of the same derived type. */
     virtual void swap_entry(ResourceEntryBase& other) noexcept = 0;
+
+    /** Return the stored resource object, or, if it does not exist, create a new empty one. */
+    virtual BaseResource& get_or_create_resource(Identifier resource_id) = 0;
 
     /** Whether resource is loaded. */
     virtual bool is_loaded() = 0;
@@ -100,19 +102,16 @@ public:
 /** ResourceEntry is the internal storage-node type for resources stored within a ResourceCache. */
 template<typename ResT> class ResourceEntry final : public ResourceEntryBase {
 public:
-    ResourceEntry(Identifier resource_id_, time_point time_stamp_, ResourceCache& owner)
-        : ResourceEntryBase(time_stamp_, owner), resource(resource_id_)
-    {}
+    using ResourceEntryBase::ResourceEntryBase;
 
     // Allow base class to access resource member.
     // ResT is assumed to be derived from BaseResource, as all resource types have to be.
-    ResT&       get_resource() override { return resource.value(); }
-    const ResT& get_resource() const override { return resource.value(); }
+    ResT&       get_resource() override { return m_resource.value(); }
+    const ResT& get_resource() const override { return m_resource.value(); }
 
-    std::unique_ptr<ResourceEntryBase> new_entry(Identifier resource_id,
-                                                 time_point time_stamp_) override
+    std::unique_ptr<ResourceEntryBase> new_entry(time_point time_stamp_) override
     {
-        return std::make_unique<ResourceEntry>(resource_id, time_stamp_, *p_owning_cache);
+        return std::make_unique<ResourceEntry>(time_stamp_, *p_owning_cache);
     }
 
     void swap_entry(ResourceEntryBase& other) noexcept override
@@ -126,15 +125,25 @@ public:
         swap(dependencies, rhs.dependencies);
         swap(time_stamp, rhs.time_stamp);
         swap(last_access, rhs.last_access);
-        swap(resource, rhs.resource);
+        swap(m_resource, rhs.m_resource);
     }
 
-    bool is_loaded() override { return resource.has_value(); }
+    ResT& get_or_create_resource(Identifier resource_id) override
+    {
+        if (!is_loaded()) { m_resource.emplace(resource_id); }
+        return m_resource.value();
+    }
 
-    void unload() override { resource.reset(); }
+    bool is_loaded() override { return m_resource.has_value(); }
+
+    void unload() override
+    {
+        MG_ASSERT(is_unloadable());
+        m_resource.reset();
+    }
 
 private:
-    std::optional<ResT> resource;
+    std::optional<ResT> m_resource;
 };
 
 } // namespace Mg
