@@ -206,17 +206,6 @@ void ResourceCache::log_error(Identifier resource, std::string_view message) con
     log(Log::Prio::Error, this, resource, message);
 }
 
-// Get pointer to entry corresponding to the given Identifier if the entry is in cache.
-auto ResourceCache::get_if_loaded(Identifier file) const -> ResourceEntryBase*
-{
-    if (const FileInfo* p_file_info = file_info(file); p_file_info != nullptr) {
-        auto& entry = p_file_info->entry;
-        return entry != nullptr && entry->is_loaded() ? entry.get() : nullptr;
-    }
-
-    return nullptr;
-}
-
 // Unload the least recently used resource for which is not currently in use.
 bool ResourceCache::unload_unused(bool unload_all_unused)
 {

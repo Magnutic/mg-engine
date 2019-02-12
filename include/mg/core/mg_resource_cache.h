@@ -279,8 +279,10 @@ public:
     /** Returns whether the resource with given id is currently cached in this ResourceCache. */
     bool is_cached(Identifier resource_id) const
     {
-        auto p_entry = get_if_loaded(resource_id);
-        return p_entry != nullptr;
+        if (const FileInfo* p_file_info = file_info(resource_id); p_file_info != nullptr) {
+            return p_file_info->entry && p_file_info->entry->is_loaded();
+        }
+        return false;
     }
 
     /** Unload the least-recently-used resource which is not currently in use.
@@ -326,15 +328,12 @@ private:
     // Rebuilds resource file index data structures.
     void rebuild_file_index();
 
-    // Get pointer to FileInfo record for the given filename, or nullptr if no such file exists
+    // Get pointer to FileInfo record for the given filename, or nullptr if no such file exists.
     const FileInfo* file_info(Identifier file) const;
     FileInfo*       file_info(Identifier file)
     {
         return const_cast<FileInfo*>(static_cast<const ResourceCache*>(this)->file_info(file));
     }
-
-    // Get pointer to entry corresponding to the given Identifier if the entry is in cache.
-    ResourceEntryBase* get_if_loaded(Identifier file) const;
 
     // Load binary data for into memory
     std::vector<std::byte> load_resource_data(const FileInfo& file_info);
