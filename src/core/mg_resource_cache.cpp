@@ -152,7 +152,7 @@ void ResourceCache::try_load(const FileInfo& file_info, ResourceEntryBase& entry
 }
 
 // Throw ResourceNotFound exception and write details to log.
-void ResourceCache::throw_resource_not_found(Identifier filename)
+void ResourceCache::throw_resource_not_found(Identifier filename) const
 {
     std::string msg = "No such file. [ searched in ";
     for (auto&& p_loader : file_loaders()) { msg += fmt::format("'{}' ", p_loader->name()); }
@@ -163,7 +163,7 @@ void ResourceCache::throw_resource_not_found(Identifier filename)
 }
 
 // Throw ResourceDataError exception and write details to log.
-void ResourceCache::throw_resource_data_error(Identifier filename, std::string_view reason)
+void ResourceCache::throw_resource_data_error(Identifier filename, std::string_view reason) const
 {
     log_error(filename,
               std::string("Failed to load resource, invalid data: " + std::string(reason)));
@@ -172,7 +172,7 @@ void ResourceCache::throw_resource_data_error(Identifier filename, std::string_v
 }
 
 // Throw ResourceCacheOutOfMemory exception and write details to log.
-void ResourceCache::throw_resource_cache_oom(Identifier filename)
+void ResourceCache::throw_resource_cache_oom(Identifier filename) const
 {
     log_error(filename, "Failed to load resource for lack of memory allocated to resource cache.");
     throw ResourceCacheOutOfMemory{};
