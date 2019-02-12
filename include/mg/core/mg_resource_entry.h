@@ -98,18 +98,16 @@ public:
 };
 
 /** ResourceEntry is the internal storage-node type for resources stored within a ResourceCache. */
-template<typename ResT> class ResourceEntry : public ResourceEntryBase {
+template<typename ResT> class ResourceEntry final : public ResourceEntryBase {
 public:
-    std::optional<ResT> resource;
-
     ResourceEntry(Identifier resource_id_, time_point time_stamp_, ResourceCache& owner)
         : ResourceEntryBase(time_stamp_, owner), resource(resource_id_)
     {}
 
     // Allow base class to access resource member.
     // ResT is assumed to be derived from BaseResource, as all resource types have to be.
-    BaseResource&       get_resource() override { return resource.value(); }
-    const BaseResource& get_resource() const override { return resource.value(); }
+    ResT&       get_resource() override { return resource.value(); }
+    const ResT& get_resource() const override { return resource.value(); }
 
     std::unique_ptr<ResourceEntryBase> new_entry(Identifier resource_id,
                                                  time_point time_stamp_) override
@@ -134,6 +132,9 @@ public:
     bool is_loaded() override { return resource.has_value(); }
 
     void unload() override { resource.reset(); }
+
+private:
+    std::optional<ResT> resource;
 };
 
 } // namespace Mg

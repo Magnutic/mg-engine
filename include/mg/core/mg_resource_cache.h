@@ -87,13 +87,13 @@ public:
     ResT* get() & noexcept
     {
         auto& entry = static_cast<ResourceEntry<ResT>&>(*m_entry);
-        return &entry.resource.value();
+        return &entry.get_resource();
     }
 
     const ResT* get() const& noexcept
     {
         auto& entry = static_cast<ResourceEntry<ResT>&>(*m_entry);
-        return &entry.resource.value();
+        return &entry.get_resource();
     }
 
     // Disallow dereferencing rvalue ResourceAccessGuard.
