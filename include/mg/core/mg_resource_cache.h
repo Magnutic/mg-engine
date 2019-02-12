@@ -267,13 +267,12 @@ public:
      */
     bool file_exists(Identifier file) const { return file_info(file) != nullptr; }
 
-    /** Returns the time stamp of the given file, or default-constructed time_point if file did not
-     * exists.
-     */
+    /** Returns the time stamp of the given file. Throws if file does not exist in file index. */
     time_point file_time_stamp(Identifier file) const
     {
         auto p_file_info = file_info(file);
-        return p_file_info == nullptr ? time_point{} : p_file_info->time_stamp;
+        if (!p_file_info) { throw_resource_not_found(file); }
+        return p_file_info->time_stamp;
     }
 
     /** Returns whether the resource with given id is currently cached in this ResourceCache. */
