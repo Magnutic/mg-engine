@@ -277,16 +277,19 @@ private:
     // Try to load file, unloading unused files if cache is full
     void try_load(const FileInfo& file_info, ResourceEntryBase& entry);
 
-    template<typename ResT>
-    std::unique_ptr<ResourceEntryBase> make_resource_entry(const FileInfo& file_info)
+    template<typename ResT> ResourceEntryBase& get_or_create_resource_entry(FileInfo& file_info)
     {
         static_assert(std::is_base_of_v<BaseResource, ResT>,
                       "Type must be derived from Mg::BaseResource.");
         static_assert(!std::is_abstract_v<ResT>, "Resource types must not be abstract.");
         static_assert(std::is_constructible_v<ResT, Identifier>);
 
-        return std::make_unique<ResourceEntry<ResT>>(
-            file_info.filename, file_info.time_stamp, *this);
+        if (!file_info.entry) {
+            file_info.entry = std::make_unique<ResourceEntry<ResT>>(
+                file_info.filename, file_info.time_stamp, *this);
+        }
+
+        return *file_info.entry;
     }
 
     // Throw ResourceNotFound exception and write details to log.
@@ -331,24 +334,8 @@ ResourceAccessGuard<ResT> ResourceCache::access_resource(Identifier filename)
     FileInfo* p_file_info = file_info(filename);
     if (p_file_info == nullptr) { throw_resource_not_found(filename); }
 
-    std::unique_ptr<ResourceEntryBase>& p_entry = p_file_info->entry;
-
-    // Check if file is already loaded
-    if (p_entry && p_entry->is_loaded()) {
-        log_verbose(filename, "File was in cache.");
-        p_entry->last_access = std::chrono::system_clock::now();
-        return ResourceAccessGuard<ResT>(*p_entry);
-    }
-
-    // File is not already in cache.
-    // Create resource entry if not already present.
-    if (!p_entry) { p_entry = make_resource_entry<ResT>(*p_file_info); }
-
-    // Try to load the resource.
-    try_load(*p_file_info, *p_entry);
-
-    // Create access guard for the new resource.
-    return ResourceAccessGuard<ResT>(*p_entry);
+    ResourceEntryBase& entry = get_or_create_resource_entry<ResT>(*p_file_info);
+    return static_cast<ResourceEntry<ResT>&>(entry).access_resource();
 }
 
 template<typename ResT>
@@ -356,9 +343,9 @@ ResourceHandle<ResT> ResourceCache::resource_handle(Identifier file, bool load_r
 {
     FileInfo* p_file_info = file_info(file);
     if (!p_file_info) { throw_resource_not_found(file); }
-    if (!p_file_info->entry) { p_file_info->entry = make_resource_entry<ResT>(*p_file_info); }
 
-    ResourceHandle<ResT> handle(static_cast<ResourceEntry<ResT>&>(*p_file_info->entry));
+    ResourceEntryBase&   entry = get_or_create_resource_entry<ResT>(*p_file_info);
+    ResourceHandle<ResT> handle(static_cast<ResourceEntry<ResT>&>(entry));
 
     if (load_resource_immediately) handle.access();
 
