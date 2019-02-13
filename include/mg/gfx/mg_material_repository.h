@@ -30,7 +30,7 @@
 #include <memory>
 
 #include "mg/core/mg_identifier.h"
-#include "mg/core/mg_resource_handle_fwd.h"
+#include "mg/core/mg_resource_handle.h"
 #include "mg/utils/mg_macros.h"
 
 namespace Mg {

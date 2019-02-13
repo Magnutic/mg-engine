@@ -33,7 +33,7 @@
 #include "mg/core/mg_identifier.h"
 #include "mg/core/mg_resource_entry.h"
 #include "mg/core/mg_resource_exceptions.h"
-#include "mg/core/mg_resource_handle_fwd.h"
+#include "mg/core/mg_resource_handle.h"
 #include "mg/memory/mg_defragmenting_allocator.h"
 #include "mg/resources/mg_base_resource.h"
 #include "mg/resources/mg_file_changed_event.h"
