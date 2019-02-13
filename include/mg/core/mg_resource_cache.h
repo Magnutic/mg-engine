@@ -40,7 +40,6 @@
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_observer.h"
 
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <memory>

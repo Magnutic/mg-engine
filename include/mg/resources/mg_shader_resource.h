@@ -27,17 +27,16 @@
 
 #pragma once
 
-#include <cassert>
-#include <optional>
-#include <string_view>
-
-#include <glm/vec4.hpp>
-
-#include "mg/containers/mg_small_vector.h"
 #include "mg/memory/mg_defragmenting_allocator.h"
 #include "mg/resources/mg_base_resource.h"
 #include "mg/resources/mg_shader_enums.h"
 #include "mg/utils/mg_gsl.h"
+
+#include <glm/vec4.hpp>
+
+#include <cassert>
+#include <optional>
+#include <string_view>
 
 namespace Mg {
 
