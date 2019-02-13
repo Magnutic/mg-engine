@@ -191,10 +191,10 @@ public:
     ResT&       get_resource() override { return m_resource.value(); }
     const ResT& get_resource() const override { return m_resource.value(); }
 
-    std::unique_ptr<ResourceEntryBase> new_entry(Identifier resource_id,
+    std::unique_ptr<ResourceEntryBase> new_entry(Identifier resource_id_,
                                                  time_point time_stamp_) override
     {
-        return std::make_unique<ResourceEntry>(resource_id, time_stamp_, *p_owning_cache);
+        return std::make_unique<ResourceEntry>(resource_id_, time_stamp_, *p_owning_cache);
     }
 
     void swap_entry(ResourceEntryBase& other) noexcept override
