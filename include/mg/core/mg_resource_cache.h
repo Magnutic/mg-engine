@@ -32,6 +32,7 @@
 #include "mg/core/mg_file_loader.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/core/mg_resource_entry.h"
+#include "mg/core/mg_resource_exceptions.h"
 #include "mg/core/mg_resource_handle_fwd.h"
 #include "mg/memory/mg_defragmenting_allocator.h"
 #include "mg/resources/mg_base_resource.h"
@@ -42,7 +43,6 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <exception>
 #include <memory>
 
 namespace Mg {
@@ -77,40 +77,6 @@ private:
     std::vector<std::byte> m_data;
     ResourceCache*         m_owning_cache;
     ResourceEntryBase*     m_resource_entry;
-};
-
-class ResourceError : public std::exception {};
-
-class ResourceNotFound : public ResourceError {
-public:
-    ResourceNotFound() = default;
-
-    const char* what() const noexcept override
-    {
-        return "A requested resource file could not be found (see log for details)";
-    }
-};
-
-class ResourceDataError : public ResourceError {
-public:
-    ResourceDataError() = default;
-
-    const char* what() const noexcept override
-    {
-        return "A requested resource file could not be loaded due to invalid data (see log for "
-               "details)";
-    }
-};
-
-class ResourceCacheOutOfMemory : public ResourceError {
-public:
-    ResourceCacheOutOfMemory() = default;
-
-    const char* what() const noexcept override
-    {
-        return "A requested resource file could not be loaded due to the ResourceCache being out "
-               "of memory (see log for details).";
-    }
 };
 
 /** ResourceCache is an efficient and flexible way of loading and using resources.
