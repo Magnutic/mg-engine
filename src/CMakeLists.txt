@@ -11,8 +11,10 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/core/mg_file_loader.h
     ${MG_HEADER_DIR}/mg/core/mg_identifier.h
     ${MG_HEADER_DIR}/mg/core/mg_log.h
+    ${MG_HEADER_DIR}/mg/core/mg_resource_access_guard.h
     ${MG_HEADER_DIR}/mg/core/mg_resource_cache.h
     ${MG_HEADER_DIR}/mg/core/mg_resource_exceptions.h
+    ${MG_HEADER_DIR}/mg/core/mg_resource_entry_base.h
     ${MG_HEADER_DIR}/mg/core/mg_resource_entry.h
     ${MG_HEADER_DIR}/mg/core/mg_resource_handle.h
     ${MG_HEADER_DIR}/mg/core/mg_root.h
@@ -80,7 +82,7 @@ add_library(mg_engine
     core/mg_identifier.cpp
     core/mg_log.cpp
     core/mg_resource_cache.cpp
-    core/mg_resource_entry.cpp
+    core/mg_resource_entry_base.cpp
     core/mg_root.cpp
     core/mg_rotation.cpp
     core/mg_window.cpp

@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-#include "mg/core/mg_resource_entry.h"
+#include "mg/core/mg_resource_entry_base.h"
 
 #include "mg/core/mg_resource_cache.h"
 
