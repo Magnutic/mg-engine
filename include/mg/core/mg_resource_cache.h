@@ -105,16 +105,16 @@ public:
      *
      * @param file_loaders The file loaders that this ResourceCache should use to find and load
      * files -- each loader representing e.g. a directory or a zip archive. Type: arbitrary number
-     * of std::shared_ptr to type derived from IFileLoader.
+     * of std::unique_ptr to type derived from IFileLoader.
      *
      * Usage example, creating a 50MiB ResourceCache that loads files from a zip archive:
      *
-     *     ResourceCache cache{ 50*1024*1024, std::make_shared<ZipFileLoader>("data/data.zip") };
+     *     ResourceCache cache{ 50*1024*1024, std::make_unique<ZipFileLoader>("data/data.zip") };
      *
      * In this case, the path to archive is given relative to current working directory.
      */
     template<typename... LoaderTs>
-    explicit ResourceCache(size_t resource_buffer_size, std::shared_ptr<LoaderTs>... file_loaders)
+    explicit ResourceCache(size_t resource_buffer_size, std::unique_ptr<LoaderTs>... file_loaders)
         : m_alloc(resource_buffer_size)
     {
         MG_ASSERT((... && (file_loaders != nullptr)) && "File loaders may not be nullptr.");
@@ -122,7 +122,7 @@ public:
         // This assertion is redundant but gives a nicer error message on type errors.
         static_assert((... && std::is_base_of_v<IFileLoader, LoaderTs>),
                       "ResourceCache constructor: arguments passed in file_loaders... must be "
-                      "std::shared_ptr to a type derived from IFileLoader.");
+                      "std::unique_ptr to a type derived from IFileLoader.");
 
         static_assert(sizeof...(file_loaders) > 0,
                       "ResourceCache constructor: there must be at least one file loader.");
@@ -189,7 +189,7 @@ public:
      */
     void defragment_stored_data() { allocator().defragment(); }
 
-    span<const std::shared_ptr<IFileLoader>> file_loaders() const noexcept
+    span<const std::unique_ptr<IFileLoader>> file_loaders() const noexcept
     {
         return m_file_loaders;
     }
@@ -275,7 +275,7 @@ private:
     // --------------------------------------- Data members ----------------------------------------
 
     // Loaders for loading resources
-    std::vector<std::shared_ptr<IFileLoader>> m_file_loaders;
+    std::vector<std::unique_ptr<IFileLoader>> m_file_loaders;
 
     // Allocator for resource data
     memory::DefragmentingAllocator m_alloc;

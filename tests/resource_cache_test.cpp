@@ -11,8 +11,8 @@ TEST_CASE("ResourceCache test")
     constexpr static const char archive_name[]   = "data/test-archive.zip";
 
     Mg::ResourceCache cache(cache_size,
-                            std::make_shared<Mg::BasicFileLoader>(directory_name),
-                            std::make_shared<Mg::ZipFileLoader>(archive_name));
+                            std::make_unique<Mg::BasicFileLoader>(directory_name),
+                            std::make_unique<Mg::ZipFileLoader>(archive_name));
 
     SECTION("can_construct") {}
 
