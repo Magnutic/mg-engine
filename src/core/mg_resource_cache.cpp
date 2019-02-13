@@ -134,7 +134,9 @@ void ResourceCache::try_load(const FileInfo& file_info, ResourceEntryBase& entry
 
     switch (result.result_code) {
     case LoadResourceResult::Success: entry.last_access = std::chrono::system_clock::now(); return;
-    case LoadResourceResult::DataError: throw_resource_data_error(filename, result.error_reason);
+    case LoadResourceResult::DataError:
+        throw_resource_data_error(filename, result.error_reason);
+        break;
     case LoadResourceResult::AllocationFailure: {
         log_message(
             filename,
