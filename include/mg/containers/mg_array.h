@@ -177,7 +177,7 @@ public:
         return this->m_ptr[i];
     }
 
-    typename Base::size_type size() const noexcept { return size; }
+    typename Base::size_type size() const noexcept { return m_size; }
 
 private:
     typename Base::size_type m_size = 0;
