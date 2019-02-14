@@ -40,13 +40,6 @@ public:
     {
         return std::string_view(reinterpret_cast<const char*>(bytes().data()), bytes().size());
     }
-
-    void init_resource(memory::DefragmentingAllocator& heap, std::string_view text)
-    {
-        auto begin = reinterpret_cast<const std::byte*>(text.data()); // NOLINT
-        auto end   = begin + text.size();
-        m_buffer   = heap.alloc_copy(begin, end);
-    }
 };
 
 } // namespace Mg
