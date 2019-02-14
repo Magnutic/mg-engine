@@ -237,7 +237,7 @@ private:
     }
 
     // Load binary data for into memory
-    std::vector<std::byte> load_resource_data(const FileInfo& file_info);
+    std::vector<std::byte> load_resource_data(const FileInfo& file_info) const;
 
     // Try to load file, unloading unused files if cache is full
     void try_load(const FileInfo& file_info, ResourceEntryBase& entry);

@@ -250,7 +250,7 @@ bool ResourceCache::unload_unused(bool unload_all_unused)
 }
 
 // Load binary data for into memory
-std::vector<std::byte> ResourceCache::load_resource_data(const FileInfo& file_info)
+std::vector<std::byte> ResourceCache::load_resource_data(const FileInfo& file_info) const
 {
     std::vector<std::byte> file_data;
     file_data.resize(file_info.loader->file_size(file_info.filename));
