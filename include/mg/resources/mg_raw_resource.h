@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include "mg/memory/mg_defragmenting_allocator.h"
+#include "mg/containers/mg_array.h"
 #include "mg/resources/mg_base_resource.h"
 #include "mg/utils/mg_gsl.h"
 
@@ -52,7 +52,7 @@ public:
 protected:
     LoadResourceResult load_resource_impl(const LoadResourceParams& load_params) override;
 
-    memory::DA_UniquePtr<std::byte[]> m_buffer;
+    Array<std::byte> m_buffer;
 };
 
 } // namespace Mg
