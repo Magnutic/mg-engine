@@ -247,9 +247,6 @@ private:
     // Throw ResourceDataError exception and write details to log.
     void throw_resource_data_error(Identifier filename, std::string_view reason) const;
 
-    // Throw ResourceCacheOutOfMemory exception and write details to log.
-    void throw_resource_cache_oom(Identifier filename) const;
-
     // Log a message with nice formatting.
     void log_verbose(Identifier resource, std::string_view message) const;
     void log_message(Identifier resource, std::string_view message) const;

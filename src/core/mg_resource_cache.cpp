@@ -137,15 +137,6 @@ void ResourceCache::try_load(const FileInfo& file_info, ResourceEntryBase& entry
     case LoadResourceResult::DataError:
         throw_resource_data_error(filename, result.error_reason);
         break;
-    case LoadResourceResult::AllocationFailure: {
-        log_message(
-            filename,
-            "Loading resource failed due to lack of space. Unloading one resource and retrying.");
-
-        if (!unload_unused()) { throw_resource_cache_oom(filename); }
-
-        return try_load(file_info, entry);
-    }
     }
 
     MG_ASSERT(false && "unreachable");
@@ -169,13 +160,6 @@ void ResourceCache::throw_resource_data_error(Identifier filename, std::string_v
               std::string("Failed to load resource, invalid data: " + std::string(reason)));
 
     throw ResourceDataError{};
-}
-
-// Throw ResourceCacheOutOfMemory exception and write details to log.
-void ResourceCache::throw_resource_cache_oom(Identifier filename) const
-{
-    log_error(filename, "Failed to load resource for lack of memory allocated to resource cache.");
-    throw ResourceCacheOutOfMemory{};
 }
 
 // Log a message with nice formatting.

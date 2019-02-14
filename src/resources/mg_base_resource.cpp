@@ -33,9 +33,6 @@ LoadResourceResult BaseResource::load_resource(const LoadResourceParams& params)
     try {
         return load_resource_impl(params);
     }
-    catch (const memory::DefragmentingAllocator::BadAlloc&) {
-        return LoadResourceResult::allocation_failure();
-    }
     catch (const ResourceNotFound&) {
         return LoadResourceResult::data_error("Dependency not found.");
     }

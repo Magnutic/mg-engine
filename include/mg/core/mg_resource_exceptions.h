@@ -57,17 +57,4 @@ public:
     }
 };
 
-/** Exception thrown when a resource can not be loaded due to the ResourceCache being out of memory.
- */
-class ResourceCacheOutOfMemory : public ResourceError {
-public:
-    ResourceCacheOutOfMemory() = default;
-
-    const char* what() const noexcept override
-    {
-        return "A requested resource file could not be loaded due to the ResourceCache being out "
-               "of memory (see log for details).";
-    }
-};
-
 }

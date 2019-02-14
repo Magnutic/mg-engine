@@ -33,27 +33,18 @@
 #include <string>
 #include <string_view>
 
-namespace Mg::memory {
-class DefragmentingAllocator;
-}
-
 namespace Mg {
 
 class LoadResourceParams;
 
 struct LoadResourceResult {
-    enum ResultCode { Success, AllocationFailure, DataError };
+    enum ResultCode { Success, DataError };
 
     static LoadResourceResult success() { return { ResultCode::Success, "" }; }
 
-    static LoadResourceResult allocation_failure()
-    {
-        return { ResultCode::AllocationFailure, "Allocation failure." };
-    }
-
     static LoadResourceResult data_error(std::string_view reason)
     {
-        return { ResultCode::AllocationFailure, std::string(reason) };
+        return { ResultCode::DataError, std::string(reason) };
     }
 
     ResultCode  result_code;
