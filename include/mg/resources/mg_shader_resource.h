@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include "mg/memory/mg_defragmenting_allocator.h"
+#include "mg/containers/mg_array.h"
 #include "mg/resources/mg_base_resource.h"
 #include "mg/resources/mg_shader_enums.h"
 #include "mg/utils/mg_gsl.h"
@@ -83,12 +83,12 @@ protected:
     LoadResourceResult load_resource_impl(const LoadResourceParams& load_params) override;
 
 private:
-    memory::DA_UniquePtr<Parameter[]> m_parameters;
-    memory::DA_UniquePtr<Sampler[]>   m_samplers;
-    memory::DA_UniquePtr<Option[]>    m_options;
+    Array<Parameter> m_parameters;
+    Array<Sampler>   m_samplers;
+    Array<Option>    m_options;
 
-    memory::DA_UniquePtr<char[]> m_vertex_code;
-    memory::DA_UniquePtr<char[]> m_fragment_code;
+    Array<char> m_vertex_code;
+    Array<char> m_fragment_code;
 
     ShaderTag::Value m_tags = 0;
 };

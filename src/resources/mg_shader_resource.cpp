@@ -23,7 +23,6 @@
 
 #include "mg/resources/mg_shader_resource.h"
 
-#include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_file_loader.h"
 #include "mg/core/mg_resource_cache.h"
 #include "mg/resources/mg_text_resource.h"
@@ -550,12 +549,12 @@ public:
 
     ShaderTag::Value tags = {};
 
-    small_vector<std::string, 4> vertex_includes;
-    small_vector<std::string, 4> fragment_includes;
+    std::vector<std::string> vertex_includes;
+    std::vector<std::string> fragment_includes;
 
-    small_vector<ShaderResource::Sampler, 4>   samplers;
-    small_vector<ShaderResource::Parameter, 8> parameters;
-    small_vector<ShaderResource::Option, 4>    options;
+    std::vector<ShaderResource::Sampler>   samplers;
+    std::vector<ShaderResource::Parameter> parameters;
+    std::vector<ShaderResource::Option>    options;
 
 private:
     std::vector<Token>           m_tokens;
@@ -592,23 +591,22 @@ inline std::string assemble_shader_code(const fs::path&           include_direct
 
 LoadResourceResult ShaderResource::load_resource_impl(const LoadResourceParams& load_params)
 {
-    auto&            allocator = load_params.allocator();
-    std::string_view input     = load_params.resource_data_as_text();
+    std::string_view input = load_params.resource_data_as_text();
 
     Parser parser{ input };
 
-    m_samplers   = allocator.alloc_copy(parser.samplers.begin(), parser.samplers.end());
-    m_parameters = allocator.alloc_copy(parser.parameters.begin(), parser.parameters.end());
-    m_options    = allocator.alloc_copy(parser.options.begin(), parser.options.end());
+    m_parameters = Array<Parameter>::make_copy(parser.parameters);
+    m_samplers   = Array<Sampler>::make_copy(parser.samplers);
+    m_options    = Array<Option>::make_copy(parser.options);
 
     // Get directory of shader file so that #include directives search relative to that path.
     fs::path include_path = fs::path{ resource_id().str_view() }.parent_path();
 
     auto vertex_code = assemble_shader_code(include_path, parser.vertex_includes, load_params);
-    m_vertex_code    = allocator.alloc_copy(vertex_code.begin(), vertex_code.end());
+    m_vertex_code    = Array<char>::make_copy(vertex_code);
 
     auto fragment_code = assemble_shader_code(include_path, parser.fragment_includes, load_params);
-    m_fragment_code    = allocator.alloc_copy(fragment_code.begin(), fragment_code.end());
+    m_fragment_code    = Array<char>::make_copy(fragment_code);
 
     // Sort parameters so that larger types come first (for the sake of alignment)
     sort(m_parameters, [](const Parameter& l, const Parameter& r) {
