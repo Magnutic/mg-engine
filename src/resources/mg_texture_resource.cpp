@@ -161,8 +161,7 @@ inline size_t num_blocks_by_img_size(TextureResource::DimT width, TextureResourc
 
 LoadResourceResult TextureResource::load_resource_impl(const LoadResourceParams& load_params)
 {
-    span<const std::byte> dds_data  = load_params.resource_data();
-    auto&                 allocator = load_params.allocator();
+    span<const std::byte> dds_data = load_params.resource_data();
 
     if (dds_data.length() < sizeof(DDS_HEADER)) {
         return LoadResourceResult::data_error("DDS file corrupt, missing data.");
@@ -230,7 +229,7 @@ LoadResourceResult TextureResource::load_resource_impl(const LoadResourceParams&
 
     // Copy pixel data
     span<const std::byte> data(&dds_data[pixel_data_offset], sane_size);
-    m_pixel_data = allocator.alloc_copy(data.begin(), data.end());
+    m_pixel_data = Array<std::byte>::make_copy(data);
 
     return LoadResourceResult::success();
 }

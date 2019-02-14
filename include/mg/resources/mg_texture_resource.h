@@ -27,16 +27,16 @@
 
 #pragma once
 
-#include <cstdint>
-
-#include "mg/memory/mg_defragmenting_allocator.h"
+#include "mg/containers/mg_array.h"
 #include "mg/resources/mg_base_resource.h"
 #include "mg/utils/mg_gsl.h"
+
+#include <cstdint>
 
 namespace Mg {
 
 /** Texture resource class supporting DDS texture data. */
-class TextureResource : public BaseResource {
+class TextureResource final : public BaseResource {
 public:
     /** Size type for texture dimensions (width, height, ...). */
     using DimT = uint32_t;
@@ -138,9 +138,9 @@ protected:
     LoadResourceResult load_resource_impl(const LoadResourceParams& load_params) override;
 
 private:
-    Format                            m_format;
-    Settings                          m_settings;
-    memory::DA_UniquePtr<std::byte[]> m_pixel_data;
+    Format           m_format;
+    Settings         m_settings;
+    Array<std::byte> m_pixel_data;
 };
 
 } // namespace Mg
