@@ -28,7 +28,6 @@
 
 #pragma once
 
-#include <array>
 #include <cstddef>
 #include <type_traits>
 
@@ -169,14 +168,6 @@ public:
     constexpr span(U (&array)[N]) MG_SPAN_NOEXCEPT : span(&array[0], &array[0] + N)
     {}
 
-    template<typename U, size_t N>
-    constexpr span(std::array<U, N>& array) : span(&array[0], narrow_cast<size_type>(N))
-    {}
-
-    template<typename U, size_t N>
-    constexpr span(const std::array<U, N>& array) : span(&array[0], narrow_cast<size_type>(N))
-    {}
-
     template<typename U> constexpr span& operator=(const span<U>& rhs) noexcept
     {
         m_begin = rhs.m_begin;
@@ -270,8 +261,6 @@ static_assert(std::is_trivially_copyable_v<span<int>>);
 #if MG_HAVE_CLASS_TEMPLATE_DEDUCTION
 template<typename U          > span(U*, U*)                  -> span<U>;
 template<typename U, size_t N> span(U (&)[N])                -> span<U>;
-template<typename U, size_t N> span(std::array<U, N>&)       -> span<U>;
-template<typename U, size_t N> span(const std::array<U, N>&) -> span<const U>;
 
 // Deduce to the pointee type of the result of calling data() on a variable of the container type.
 template<typename ContainerT> // requires ContiguousContainer<ContainerT>
