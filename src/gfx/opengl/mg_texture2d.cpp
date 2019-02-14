@@ -28,6 +28,8 @@
 #include "mg_gl_debug.h"
 #include "mg_glad.h"
 
+#include <stdexcept>
+
 namespace Mg::gfx {
 
 //--------------------------------------------------------------------------------------------------
