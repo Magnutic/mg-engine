@@ -34,7 +34,6 @@
 #include "mg/core/mg_resource_entry_base.h"
 #include "mg/core/mg_resource_exceptions.h"
 #include "mg/core/mg_resource_handle.h"
-#include "mg/memory/mg_defragmenting_allocator.h"
 #include "mg/resources/mg_base_resource.h"
 #include "mg/resources/mg_file_changed_event.h"
 #include "mg/utils/mg_macros.h"
@@ -57,8 +56,6 @@ public:
     {
         return { reinterpret_cast<const char*>(m_data.data()), m_data.size() }; // NOLINT
     }
-
-    memory::DefragmentingAllocator& allocator() const noexcept;
 
     /** Load a resource and mark this resource as dependent on the newly loaded resource. */
     template<typename ResT>
@@ -98,24 +95,21 @@ private:
  */
 class ResourceCache {
 public:
-    /** Construct ResourceCache with the given resource buffer size (in bytes) and the file loaders
-     * to use to find and load files.
-     *
-     * @param resource_buffer_size Size of buffer for resource data -- the cache size -- in bytes.
+    /** Construct ResourceCache with the given file loaders to use to find and load files.
      *
      * @param file_loaders The file loaders that this ResourceCache should use to find and load
      * files -- each loader representing e.g. a directory or a zip archive. Type: arbitrary number
      * of std::unique_ptr to type derived from IFileLoader.
      *
-     * Usage example, creating a 50MiB ResourceCache that loads files from a zip archive:
+     * Usage example, creating a ResourceCache that loads files from a zip archive:
      *
-     *     ResourceCache cache{ 50*1024*1024, std::make_unique<ZipFileLoader>("data/data.zip") };
+     *     ResourceCache cache{ std::make_unique<ZipFileLoader>("data/data.zip") };
      *
      * In this case, the path to archive is given relative to current working directory.
      */
     template<typename... LoaderTs>
-    explicit ResourceCache(size_t resource_buffer_size, std::unique_ptr<LoaderTs>... file_loaders)
-        : m_alloc(resource_buffer_size)
+    explicit ResourceCache(size_t temp_compat_dummy, std::unique_ptr<LoaderTs>... file_loaders)
+
     {
         MG_ASSERT((... && (file_loaders != nullptr)) && "File loaders may not be nullptr.");
 
@@ -152,9 +146,6 @@ public:
     template<typename ResT>
     ResourceHandle<ResT> resource_handle(Identifier file, bool load_resource_immediately = true);
 
-    /** Get the allocator used by this ResourceCache. */
-    memory::DefragmentingAllocator& allocator() { return m_alloc; }
-
     /** Returns whether a file with the given path exists in the file index.
      * N.B. returns the state as of most recent call to `refresh()`
      */
@@ -183,11 +174,6 @@ public:
      * unload).
      */
     bool unload_unused(bool unload_all_unused = false);
-
-    /** Moves stored resource-data to compact and to remove fragmentation, potentially resulting in
-     * larger contiguous free space.
-     */
-    void defragment_stored_data() { allocator().defragment(); }
 
     span<const std::unique_ptr<IFileLoader>> file_loaders() const noexcept
     {
@@ -277,9 +263,6 @@ private:
     // Loaders for loading resources
     std::vector<std::unique_ptr<IFileLoader>> m_file_loaders;
 
-    // Allocator for resource data
-    memory::DefragmentingAllocator m_alloc;
-
     // List of resource files available through the resource loaders.
     // Always sorted by filename hash.
     std::vector<FileInfo> m_file_list;
@@ -327,11 +310,6 @@ ResourceAccessGuard<ResT> LoadResourceParams::load_dependency(Identifier depende
     time_point file_time_stamp = m_owning_cache->file_time_stamp(dependency_file_id);
     m_resource_entry->dependencies.push_back({ dependency_file_id, file_time_stamp });
     return m_owning_cache->access_resource<ResT>(dependency_file_id);
-}
-
-inline memory::DefragmentingAllocator& LoadResourceParams::allocator() const noexcept
-{
-    return m_owning_cache->allocator();
 }
 
 } // namespace Mg
