@@ -107,9 +107,7 @@ public:
      *
      * In this case, the path to archive is given relative to current working directory.
      */
-    template<typename... LoaderTs>
-    explicit ResourceCache(size_t temp_compat_dummy, std::unique_ptr<LoaderTs>... file_loaders)
-
+    template<typename... LoaderTs> explicit ResourceCache(std::unique_ptr<LoaderTs>... file_loaders)
     {
         MG_ASSERT((... && (file_loaders != nullptr)) && "File loaders may not be nullptr.");
 
