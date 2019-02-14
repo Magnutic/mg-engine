@@ -27,19 +27,19 @@
 
 #pragma once
 
-#include <glm/vec3.hpp>
-
+#include "mg/containers/mg_array.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/gfx/mg_submesh.h"
 #include "mg/gfx/mg_vertex.h"
-#include "mg/memory/mg_defragmenting_allocator.h"
 #include "mg/resources/mg_base_resource.h"
 #include "mg/utils/mg_gsl.h"
+
+#include <glm/vec3.hpp>
 
 namespace Mg {
 
 /** Mesh data resource. */
-class MeshResource : public BaseResource {
+class MeshResource final : public BaseResource {
 public:
     using BaseResource::BaseResource;
 
@@ -65,10 +65,9 @@ protected:
     LoadResourceResult load_resource_impl(const LoadResourceParams& load_params) override;
 
 private:
-    // Owning pointers to mesh data
-    memory::DA_UniquePtr<SubMesh[]>           m_sub_meshes;
-    memory::DA_UniquePtr<Vertex[]>            m_vertices;
-    memory::DA_UniquePtr<uint_vertex_index[]> m_indices;
+    Array<SubMesh>           m_sub_meshes;
+    Array<Vertex>            m_vertices;
+    Array<uint_vertex_index> m_indices;
 
     glm::vec3 m_centre{};
     float     m_radius = 0.0f;

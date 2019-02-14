@@ -84,10 +84,9 @@ LoadResourceResult MeshResource::load_resource_impl(const LoadResourceParams& lo
     }
 
     // Allocate memory for mesh data
-    auto& allocator = load_params.allocator();
-    m_sub_meshes    = allocator.alloc<SubMesh[]>(header.n_sub_meshes);
-    m_vertices      = allocator.alloc<Vertex[]>(header.n_vertices);
-    m_indices       = allocator.alloc<uint_vertex_index[]>(header.n_indices);
+    m_sub_meshes = Array<SubMesh>::make(header.n_sub_meshes);
+    m_vertices   = Array<Vertex>::make(header.n_vertices);
+    m_indices    = Array<uint_vertex_index>::make(header.n_indices);
 
     auto offset = sizeof(MeshHeader);
 
