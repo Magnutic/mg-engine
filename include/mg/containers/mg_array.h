@@ -34,6 +34,9 @@
 
 #pragma once
 
+#include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_gsl.h"
+
 #include <utility>
 
 namespace Mg {
@@ -122,7 +125,7 @@ public:
 };
 
 /** Minimalistic container for heap-allocated arrays. Tracks the size of the array and provides
- * out-of-bounds access checks. A light-weight alternative to std::vector, for when dynamic growing
+ * out-of-bounds access checks. A light-weight alternative to std::vector, for when dynamic growth
  * is not required.
  */
 template<typename T> class Array : public detail::ArrayBase<T> {
@@ -133,6 +136,37 @@ public:
     using const_iterator = const T*;
 
     template<typename... Args> static Array make(size_t size) { return Array(new T[size](), size); }
+
+    static Array<T> make_copy(span<const T> data)
+    {
+        struct alignas(T) block {
+            std::byte storage[sizeof(T)];
+        };
+
+        block*       p_storage = nullptr;
+        size_t       i         = 0;
+        const size_t num_elems = data.size();
+
+        try {
+            // Allocate storage.
+            p_storage = new block[num_elems];
+
+            // Construct copies in storage.
+            for (; i < num_elems; ++i) { new (&p_storage[i]) T(data[i]); }
+        }
+        catch (...) {
+            // If an exception was thrown, destroy all the so-far constructed objects in reverse
+            // order of construction.
+            for (size_t u = 0; u < i; ++u) {
+                auto index = i - u - 1;
+                reinterpret_cast<T*>(p_storage)[index].~T(); // NOLINT
+            }
+
+            throw;
+        }
+
+        return Array<T>(reinterpret_cast<T*>(p_storage), num_elems); // NOLINT
+    }
 
     Array() = default;
 
