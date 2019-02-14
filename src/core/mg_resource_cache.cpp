@@ -66,8 +66,8 @@ void ResourceCache::refresh()
 
         try {
             // Create new ResourceEntry, load resource into that, then swap with the old entry.
-            auto p_new_entry = p_entry->new_entry(file.filename, file.time_stamp);
-            try_load(file, *p_new_entry);
+            auto p_new_entry = p_entry->new_entry(*file.loader, file.time_stamp);
+            p_new_entry->load_resource();
             p_entry->swap_entry(*p_new_entry);
         }
         catch (const ResourceError&) {
@@ -113,6 +113,7 @@ void ResourceCache::rebuild_file_index()
         if (file_record.time_stamp > it->time_stamp) {
             it->time_stamp = file_record.time_stamp;
             it->loader     = &loader;
+            if (it->entry) { it->entry->p_loader = &loader; }
         }
     };
 
@@ -124,24 +125,6 @@ void ResourceCache::rebuild_file_index()
     }
 }
 
-// Try to load file, unloading unused files if cache is full
-void ResourceCache::try_load(const FileInfo& file_info, ResourceEntryBase& entry)
-{
-    const Identifier filename = file_info.filename;
-
-    LoadResourceParams load_params{ load_resource_data(file_info), *this, entry };
-    LoadResourceResult result = entry.get_or_create_resource().load_resource(load_params);
-
-    switch (result.result_code) {
-    case LoadResourceResult::Success: entry.last_access = std::chrono::system_clock::now(); return;
-    case LoadResourceResult::DataError:
-        throw_resource_data_error(filename, result.error_reason);
-        break;
-    }
-
-    MG_ASSERT(false && "unreachable");
-}
-
 // Throw ResourceNotFound exception and write details to log.
 void ResourceCache::throw_resource_not_found(Identifier filename) const
 {
@@ -151,15 +134,6 @@ void ResourceCache::throw_resource_not_found(Identifier filename) const
 
     log_error(filename, msg);
     throw ResourceNotFound{};
-}
-
-// Throw ResourceDataError exception and write details to log.
-void ResourceCache::throw_resource_data_error(Identifier filename, std::string_view reason) const
-{
-    log_error(filename,
-              std::string("Failed to load resource, invalid data: " + std::string(reason)));
-
-    throw ResourceDataError{};
 }
 
 // Log a message with nice formatting.
@@ -211,8 +185,8 @@ bool ResourceCache::unload_unused(bool unload_all_unused)
         return num_unloaded > 0;
     }
 
-    // Create vector of FileInfos sorted so that ResourceEntry with earliest last-access time comes
-    // first (and thus unload resources in least-recently-used order).
+    // Create vector of FileInfos sorted so that ResourceEntry with earliest last-access time
+    // comes first (and thus unload resources in least-recently-used order).
     std::vector<FileInfo*> file_infos;
     for (FileInfo& file_info : m_file_list) { file_infos.push_back(&file_info); }
 
@@ -231,16 +205,6 @@ bool ResourceCache::unload_unused(bool unload_all_unused)
     }
 
     return found;
-}
-
-// Load binary data for into memory
-std::vector<std::byte> ResourceCache::load_resource_data(const FileInfo& file_info) const
-{
-    std::vector<std::byte> file_data;
-    file_data.resize(file_info.loader->file_size(file_info.filename));
-
-    file_info.loader->load_file(file_info.filename, file_data);
-    return file_data;
 }
 
 } // namespace Mg

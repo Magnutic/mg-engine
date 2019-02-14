@@ -57,10 +57,10 @@ public:
     ResT&       get_resource() override { return m_resource.value(); }
     const ResT& get_resource() const override { return m_resource.value(); }
 
-    std::unique_ptr<ResourceEntryBase> new_entry(Identifier resource_id_,
-                                                 time_point time_stamp_) override
+    std::unique_ptr<ResourceEntryBase> new_entry(IFileLoader& loader,
+                                                 time_point   time_stamp_) override
     {
-        return std::make_unique<ResourceEntry>(resource_id_, time_stamp_, *p_owning_cache);
+        return std::make_unique<ResourceEntry>(resource_id, loader, time_stamp_, *p_owning_cache);
     }
 
     void swap_entry(ResourceEntryBase& other) noexcept override
@@ -69,7 +69,6 @@ public:
         auto& rhs = static_cast<ResourceEntry&>(other);
 
         MG_ASSERT(ref_count == 0 && rhs.ref_count == 0 && "Trying to swap an in-use resource.");
-        MG_ASSERT(p_owning_cache == rhs.p_owning_cache);
 
         swap(dependencies, rhs.dependencies);
         swap(time_stamp, rhs.time_stamp);

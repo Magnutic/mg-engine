@@ -41,8 +41,9 @@
 
 namespace Mg {
 
-class ResourceCache;
+class IFileLoader;
 class BaseResource;
+class ResourceCache;
 
 using time_point = std::chrono::system_clock::time_point;
 
@@ -52,8 +53,14 @@ using time_point = std::chrono::system_clock::time_point;
  */
 class ResourceEntryBase {
 public:
-    ResourceEntryBase(Identifier resource_id_, time_point time_stamp_, ResourceCache& owner)
-        : resource_id(resource_id_), time_stamp(time_stamp_), p_owning_cache(&owner)
+    ResourceEntryBase(Identifier     resource_id_,
+                      IFileLoader&   loader,
+                      time_point     time_stamp_,
+                      ResourceCache& owning_cache)
+        : resource_id(resource_id_)
+        , time_stamp(time_stamp_)
+        , p_owning_cache(&owning_cache)
+        , p_loader(&loader)
     {}
 
     MG_MAKE_NON_COPYABLE(ResourceEntryBase);
@@ -65,14 +72,17 @@ public:
     virtual const BaseResource& get_resource() const = 0;
 
     /** Make a new (empty) ResourceEntry of the same derived type as this one. */
-    virtual std::unique_ptr<ResourceEntryBase> new_entry(Identifier resource_id,
-                                                         time_point time_stamp_) = 0;
+    virtual std::unique_ptr<ResourceEntryBase> new_entry(IFileLoader& loader,
+                                                         time_point   time_stamp_) = 0;
 
     /** Swap values. Requires that this and other are of the same derived type. */
     virtual void swap_entry(ResourceEntryBase& other) noexcept = 0;
 
     /** Return the stored resource object, or, if it does not exist, create a new empty one. */
     virtual BaseResource& get_or_create_resource() = 0;
+
+    /** Load the resource. */
+    void load_resource();
 
     /** Whether resource is loaded. */
     virtual bool is_loaded() = 0;
@@ -100,11 +110,10 @@ public:
     time_point time_stamp{};
     time_point last_access{};
 
-    std::atomic_int32_t ref_count      = 0;
-    ResourceCache*      p_owning_cache = nullptr;
+    std::atomic_int32_t ref_count = 0;
 
-protected:
-    void load_resource();
+    ResourceCache* p_owning_cache = nullptr;
+    IFileLoader*   p_loader       = nullptr;
 };
 
 } // namespace Mg

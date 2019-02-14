@@ -50,6 +50,12 @@ class ResourceCache;
 /** Input to resource types' `load_resource()` member function. */
 class LoadResourceParams {
 public:
+    explicit LoadResourceParams(std::vector<std::byte> data,
+                                ResourceCache&         owning_cache,
+                                ResourceEntryBase&     resource_entry)
+        : m_data(std::move(data)), m_owning_cache(&owning_cache), m_resource_entry(&resource_entry)
+    {}
+
     span<const std::byte> resource_data() const noexcept { return m_data; }
 
     std::string_view resource_data_as_text() const noexcept
@@ -62,14 +68,6 @@ public:
     ResourceAccessGuard<ResT> load_dependency(Identifier dependency_file_id) const;
 
 private:
-    friend class ResourceCache;
-
-    explicit LoadResourceParams(std::vector<std::byte> data,
-                                ResourceCache&         owning_cache,
-                                ResourceEntryBase&     resource_entry)
-        : m_data(std::move(data)), m_owning_cache(&owning_cache), m_resource_entry(&resource_entry)
-    {}
-
     std::vector<std::byte> m_data;
     ResourceCache*         m_owning_cache;
     ResourceEntryBase*     m_resource_entry;
@@ -186,15 +184,6 @@ public:
         m_file_changed_subject.add_observer(observer);
     }
 
-    void load_into_resource_entry(ResourceEntryBase& entry)
-    {
-        FileInfo* p_file_info = file_info(entry.resource_id);
-        MG_ASSERT(p_file_info != nullptr);
-        MG_ASSERT(p_file_info->entry.get() == &entry);
-
-        try_load(*p_file_info, entry);
-    }
-
 private:
     /** Subject notifying Observers whenever a resource has been re-loaded as a result of its file
      * changing.
@@ -220,12 +209,6 @@ private:
         return const_cast<FileInfo*>(static_cast<const ResourceCache*>(this)->file_info(file));
     }
 
-    // Load binary data for into memory
-    std::vector<std::byte> load_resource_data(const FileInfo& file_info) const;
-
-    // Try to load file, unloading unused files if cache is full
-    void try_load(const FileInfo& file_info, ResourceEntryBase& entry);
-
     template<typename ResT> ResourceEntryBase& get_or_create_resource_entry(FileInfo& file_info)
     {
         static_assert(std::is_base_of_v<BaseResource, ResT>,
@@ -235,7 +218,7 @@ private:
 
         if (!file_info.entry) {
             file_info.entry = std::make_unique<ResourceEntry<ResT>>(
-                file_info.filename, file_info.time_stamp, *this);
+                file_info.filename, *file_info.loader, file_info.time_stamp, *this);
         }
 
         return *file_info.entry;
@@ -243,9 +226,6 @@ private:
 
     // Throw ResourceNotFound exception and write details to log.
     void throw_resource_not_found(Identifier filename) const;
-
-    // Throw ResourceDataError exception and write details to log.
-    void throw_resource_data_error(Identifier filename, std::string_view reason) const;
 
     // Log a message with nice formatting.
     void log_verbose(Identifier resource, std::string_view message) const;
