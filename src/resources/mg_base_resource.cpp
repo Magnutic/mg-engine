@@ -24,7 +24,6 @@
 #include "mg/resources/mg_base_resource.h"
 
 #include "mg/core/mg_resource_cache.h"
-#include "mg/memory/mg_defragmenting_allocator.h"
 
 namespace Mg {
 
