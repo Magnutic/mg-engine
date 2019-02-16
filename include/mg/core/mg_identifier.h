@@ -99,13 +99,13 @@ public:
     Identifier& operator=(const Identifier& rhs) noexcept = default;
 
     /** Returns the calculated hash value. */
-    uint32_t hash() const noexcept { return m_hash; }
+    constexpr uint32_t hash() const noexcept { return m_hash; }
 
     /** Returns the full string from which this Identifier was created. */
-    const char* c_str() const noexcept { return m_str; };
+    constexpr const char* c_str() const noexcept { return m_str; };
 
     /** Returns the full string from which this Identifier was created. */
-    std::string_view str_view() const noexcept { return m_str; };
+    constexpr std::string_view str_view() const noexcept { return m_str; };
 
 private:
     // Construct from dynamic string (comparatively costly). Invoked by `from_runtime_string()`.
