@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-#include "mg/gfx/mg_lit_mesh_renderer.h"
+#include "mg/gfx/mg_mesh_renderer.h"
 
 #include <algorithm>
 #include <cmath>

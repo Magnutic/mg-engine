@@ -10,8 +10,8 @@
 #include <mg/gfx/mg_debug_renderer.h>
 #include <mg/gfx/mg_gfx_device.h>
 #include <mg/gfx/mg_light.h>
-#include <mg/gfx/mg_lit_mesh_renderer.h>
 #include <mg/gfx/mg_material.h>
+#include <mg/gfx/mg_mesh_renderer.h>
 #include <mg/gfx/mg_post_process.h>
 #include <mg/gfx/mg_render_command_list.h>
 #include <mg/gfx/mg_render_target.h>

@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-/** @file mg_lit_mesh_renderer.h
+/** @file mg_mesh_renderer.h
  * Mesh renderer using the clustered forward rendering technique.
  */
 

@@ -36,7 +36,7 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/gfx/mg_light.h
     ${MG_HEADER_DIR}/mg/gfx/mg_light_buffers.h
     ${MG_HEADER_DIR}/mg/gfx/mg_light_grid.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_lit_mesh_renderer.h
+    ${MG_HEADER_DIR}/mg/gfx/mg_mesh_renderer.h
     ${MG_HEADER_DIR}/mg/gfx/mg_material.h
     ${MG_HEADER_DIR}/mg/gfx/mg_material_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_matrix_ubo.h
@@ -96,7 +96,7 @@ add_library(mg_engine
     gfx/opengl/mg_debug_renderer.cpp
     gfx/opengl/mg_gfx_device.cpp
     gfx/opengl/mg_gl_debug.cpp
-    gfx/opengl/mg_lit_mesh_renderer.cpp
+    gfx/opengl/mg_mesh_renderer.cpp
     gfx/opengl/mg_material.cpp
     gfx/opengl/mg_matrix_ubo.cpp
     gfx/opengl/mg_mesh_repository.cpp
