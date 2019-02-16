@@ -13,6 +13,7 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/core/mg_log.h
     ${MG_HEADER_DIR}/mg/core/mg_resource_access_guard.h
     ${MG_HEADER_DIR}/mg/core/mg_resource_cache.h
+    ${MG_HEADER_DIR}/mg/core/mg_resource_loading_input.h
     ${MG_HEADER_DIR}/mg/core/mg_resource_exceptions.h
     ${MG_HEADER_DIR}/mg/core/mg_resource_entry_base.h
     ${MG_HEADER_DIR}/mg/core/mg_resource_entry.h

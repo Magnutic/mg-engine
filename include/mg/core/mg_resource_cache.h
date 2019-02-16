@@ -47,32 +47,6 @@ namespace Mg {
 
 class ResourceCache;
 
-/** Input to resource types' `load_resource()` member function. */
-class LoadResourceParams {
-public:
-    explicit LoadResourceParams(std::vector<std::byte> data,
-                                ResourceCache&         owning_cache,
-                                ResourceEntryBase&     resource_entry)
-        : m_data(std::move(data)), m_owning_cache(&owning_cache), m_resource_entry(&resource_entry)
-    {}
-
-    span<const std::byte> resource_data() const noexcept { return m_data; }
-
-    std::string_view resource_data_as_text() const noexcept
-    {
-        return { reinterpret_cast<const char*>(m_data.data()), m_data.size() }; // NOLINT
-    }
-
-    /** Load a resource and mark this resource as dependent on the newly loaded resource. */
-    template<typename ResT>
-    ResourceAccessGuard<ResT> load_dependency(Identifier dependency_file_id) const;
-
-private:
-    std::vector<std::byte> m_data;
-    ResourceCache*         m_owning_cache;
-    ResourceEntryBase*     m_resource_entry;
-};
-
 /** ResourceCache is an efficient and flexible way of loading and using resources.
  * It works with both file-system directories and zip archives via file loaders (see IFileLoader).
  *
@@ -275,18 +249,6 @@ ResourceHandle<ResT> ResourceCache::resource_handle(Identifier file, bool load_r
     if (load_resource_immediately) handle->access();
 
     return handle.value();
-}
-
-//--------------------------------------------------------------------------------------------------
-// ResourceDataLoader member function implementations
-//--------------------------------------------------------------------------------------------------
-
-template<typename ResT>
-ResourceAccessGuard<ResT> LoadResourceParams::load_dependency(Identifier dependency_file_id) const
-{
-    time_point file_time_stamp = m_owning_cache->file_time_stamp(dependency_file_id);
-    m_resource_entry->dependencies.push_back({ dependency_file_id, file_time_stamp });
-    return m_owning_cache->resource_handle<ResT>(dependency_file_id).access();
 }
 
 } // namespace Mg

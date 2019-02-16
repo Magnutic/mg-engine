@@ -24,7 +24,7 @@
 #include "mg/resources/mg_base_resource.h"
 
 #include "mg/core/mg_log.h"
-#include "mg/core/mg_resource_cache.h"
+#include "mg/core/mg_resource_exceptions.h"
 
 #include <fmt/core.h>
 

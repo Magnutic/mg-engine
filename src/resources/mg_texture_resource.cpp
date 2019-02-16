@@ -31,7 +31,7 @@
 
 #include "mg/core/mg_file_loader.h"
 #include "mg/core/mg_log.h"
-#include "mg/core/mg_resource_cache.h"
+#include "mg/core/mg_resource_loading_input.h"
 
 namespace Mg {
 

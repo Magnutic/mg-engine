@@ -34,7 +34,7 @@
 #include <fmt/core.h>
 
 #include "mg/core/mg_log.h"
-#include "mg/core/mg_resource_cache.h"
+#include "mg/core/mg_resource_loading_input.h"
 #include "mg/utils/mg_gsl.h"
 
 namespace Mg {

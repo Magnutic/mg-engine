@@ -24,7 +24,7 @@
 #include "mg/resources/mg_shader_resource.h"
 
 #include "mg/core/mg_file_loader.h"
-#include "mg/core/mg_resource_cache.h"
+#include "mg/core/mg_resource_loading_input.h"
 #include "mg/resources/mg_text_resource.h"
 #include "mg/utils/mg_stl_helpers.h"
 #include "mg/utils/mg_string_utils.h"
