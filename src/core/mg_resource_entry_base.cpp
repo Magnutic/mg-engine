@@ -24,6 +24,7 @@
 #include "mg/core/mg_resource_entry_base.h"
 
 #include "mg/core/mg_log.h"
+#include "mg/core/mg_resource_exceptions.h"
 #include "mg/core/mg_resource_loading_input.h"
 
 #include <fmt/core.h>
