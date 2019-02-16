@@ -35,7 +35,7 @@
 
 #include "mg_render_command_data.h"
 #include "mg_texture_node.h"
-#include "shader_factories/mg_lit_mesh_shader_factory.h"
+#include "shader_factories/mg_mesh_shader_provider.h"
 
 #include "mg_gl_debug.h"
 #include "mg_glad.h"

@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-/** @file mg_lit_mesh_shader_factory.
+/** @file mg_mesh_shader_provider.
  * Creates shader programs for MeshRenderer.
  */
 

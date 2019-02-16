@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-#include "mg_lit_mesh_shader_factory.h"
+#include "mg_mesh_shader_provider.h"
 
 #include "mg/core/mg_resource_cache.h"
 #include "mg/core/mg_root.h"

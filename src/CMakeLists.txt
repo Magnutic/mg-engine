@@ -108,7 +108,7 @@ add_library(mg_engine
     gfx/opengl/mg_texture2d.cpp
     gfx/opengl/mg_texture_repository.cpp
     gfx/opengl/mg_uniform_buffer.cpp
-    gfx/opengl/shader_factories/mg_lit_mesh_shader_factory.cpp
+    gfx/opengl/shader_factories/mg_mesh_shader_provider.cpp
     gfx/opengl/shader_factories/mg_post_process_shader_factory.cpp
     gfx/opengl/shader_factories/mg_shader_factory.cpp
     input/mg_input.cpp
