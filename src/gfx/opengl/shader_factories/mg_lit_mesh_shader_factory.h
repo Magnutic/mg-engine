@@ -22,7 +22,7 @@
 //**************************************************************************************************
 
 /** @file mg_lit_mesh_shader_factory.
- * Creates shader programs for LitMeshRenderer.
+ * Creates shader programs for MeshRenderer.
  */
 
 #pragma once

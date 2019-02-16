@@ -23,7 +23,7 @@
 
 /** @file mg_lit_mesh_framework_shader_code.h
  * The 'framework' shader code -- the code which defines the interface between renderer and the
- * material-specific shader code -- for LitMeshRenderer.
+ * material-specific shader code -- for MeshRenderer.
  */
 
 #pragma once

@@ -43,7 +43,7 @@ struct Scene {
     Mg::Root          root;
     Mg::ResourceCache resource_cache = setup_resource_cache();
 
-    Mg::gfx::LitMeshRenderer     mesh_renderer;
+    Mg::gfx::MeshRenderer        mesh_renderer;
     Mg::gfx::DebugRenderer       debug_renderer;
     Mg::gfx::BillboardRenderer   billboard_renderer;
     Mg::gfx::PostProcessRenderer post_renderer;

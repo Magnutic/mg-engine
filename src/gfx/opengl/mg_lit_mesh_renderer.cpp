@@ -42,8 +42,8 @@
 
 namespace Mg::gfx {
 
-/** LitMeshRenderer's state. */
-struct LitMeshRendererData {
+/** MeshRenderer's state. */
+struct MeshRendererData {
     ShaderFactory shader_factory = make_mesh_shader_factory();
 
     MatrixUniformHandler m_matrix_uniform_handler;
@@ -64,7 +64,7 @@ struct LitMeshRendererData {
 };
 
 /** Set current shader to the one required for the given material. */
-inline void set_shader(LitMeshRendererData& data, const Material& material)
+inline void set_shader(MeshRendererData& data, const Material& material)
 {
     const auto new_shader_hash = material.shader_hash();
 
@@ -77,7 +77,7 @@ inline void set_shader(LitMeshRendererData& data, const Material& material)
 }
 
 /** Set shader input to match the given material. */
-inline void set_material(LitMeshRendererData& data, const Material& material)
+inline void set_material(MeshRendererData& data, const Material& material)
 {
     set_shader(data, material);
     MG_ASSERT(data.m_current_shader != ShaderFactory::ShaderHandle{});
@@ -94,7 +94,7 @@ inline void set_material(LitMeshRendererData& data, const Material& material)
 }
 
 /** Upload frame-constant buffers to GPU. */
-inline void upload_frame_constant_buffers(LitMeshRendererData& data, const ICamera& cam)
+inline void upload_frame_constant_buffers(MeshRendererData& data, const ICamera& cam)
 {
     using namespace mesh_renderer;
 
@@ -123,14 +123,14 @@ inline void set_matrix_index(uint32_t index)
 }
 
 //--------------------------------------------------------------------------------------------------
-// LitMeshRenderer implementation
+// MeshRenderer implementation
 //--------------------------------------------------------------------------------------------------
 
-LitMeshRenderer::LitMeshRenderer() = default;
+MeshRenderer::MeshRenderer() = default;
 
-LitMeshRenderer::~LitMeshRenderer() = default;
+MeshRenderer::~MeshRenderer() = default;
 
-void LitMeshRenderer::render(const ICamera&           cam,
+void MeshRenderer::render(const ICamera&           cam,
                              const RenderCommandList& mesh_list,
                              span<const Light>        lights)
 {

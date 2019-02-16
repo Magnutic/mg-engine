@@ -38,16 +38,16 @@ class ICamera;
 class RenderCommandList;
 class Material;
 
-struct LitMeshRendererData;
+struct MeshRendererData;
 
 // TODO: Should be renamed to just MeshRenderer, but defer that for a while to avoid nasty merge
 // conflicts.
-class LitMeshRenderer : PimplMixin<LitMeshRendererData> {
+class MeshRenderer : PimplMixin<MeshRendererData> {
 public:
-    LitMeshRenderer();
-    MG_MAKE_DEFAULT_MOVABLE(LitMeshRenderer);
-    MG_MAKE_NON_COPYABLE(LitMeshRenderer);
-    ~LitMeshRenderer();
+    MeshRenderer();
+    MG_MAKE_DEFAULT_MOVABLE(MeshRenderer);
+    MG_MAKE_NON_COPYABLE(MeshRenderer);
+    ~MeshRenderer();
 
     /** Render the supplied list of meshes. */
     void render(const ICamera& cam, const RenderCommandList& mesh_list, span<const Light> lights);
