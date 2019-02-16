@@ -34,10 +34,10 @@
 #include "mg/resources/mg_base_resource.h"
 #include "mg/resources/mg_file_changed_event.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_observer.h"
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
@@ -154,20 +154,13 @@ public:
         return m_file_loaders;
     }
 
-    /** Add Observer to be notified whenever a resource has been re-loaded as a result of its
-     * file changing.
-     */
-    void add_file_changed_observer(Observer<FileChangedEvent>& observer)
+    void set_resource_reload_callback(std::function<void(const FileChangedEvent&)> callback)
     {
-        std::unique_lock lock{ m_mutex };
-        m_file_changed_subject.add_observer(observer);
+        m_resource_reload_callback = std::move(callback);
     }
 
 private:
-    /** Subject notifying Observers whenever a resource has been re-loaded as a result of its file
-     * changing.
-     */
-    Subject<FileChangedEvent> m_file_changed_subject;
+    std::function<void(const FileChangedEvent&)> m_resource_reload_callback;
 
     struct FileInfo {
         Identifier   filename;

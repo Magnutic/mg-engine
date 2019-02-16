@@ -81,7 +81,10 @@ void ResourceCache::refresh()
             continue;
         }
 
-        m_file_changed_subject.notify(FileChangedEvent{ p_entry->get_resource(), file.time_stamp });
+        if (m_resource_reload_callback) {
+            m_resource_reload_callback(
+                FileChangedEvent{ p_entry->get_resource(), file.time_stamp });
+        }
     }
 }
 
