@@ -133,12 +133,24 @@ void init()
         window.set_cursor_lock_mode(CursorLockMode::LOCKED);
     }
 
+    g_scene.resource_cache.set_resource_reload_callback([](const FileChangedEvent& event) {
+        switch (event.resource.type_id().hash()) {
+        case Identifier("TextureResource").hash():
+            g_scene.root.gfx_context().texture_repository().update(
+                static_cast<TextureResource&>(event.resource));
+            break;
+        default:
+            g_log.write_verbose(fmt::format("Resource '{}' was updated, but ignored.",
+                                            event.resource.resource_id().str_view()));
+        }
+    });
+
     g_scene.hdr_target = make_hdr_target(window.settings().video_mode);
 
     g_scene.root.gfx_context().set_clear_colour(0.0125f, 0.01275f, 0.025f);
 
     g_scene.camera.set_aspect_ratio(window.aspect_ratio());
-    g_scene.camera.field_of_view         = { FieldOfView::DEGREES, 90.0f };
+    g_scene.camera.field_of_view         = { FieldOfView::DEGREES, 80.0f };
     g_scene.current_state.cam_position.z = 1.0f;
     g_scene.prev_state                   = g_scene.current_state;
 
