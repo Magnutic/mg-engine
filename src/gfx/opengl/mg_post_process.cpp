@@ -30,7 +30,7 @@
 #include "mg/utils/mg_object_id.h"
 
 #include "mg_texture_node.h"
-#include "shader_factories/mg_post_process_shader_factory.h"
+#include "shader_factories/mg_post_process_shader_provider.h"
 
 #include "mg_gl_debug.h"
 #include "mg_glad.h"

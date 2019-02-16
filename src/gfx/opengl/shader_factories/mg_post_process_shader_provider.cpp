@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-#include "mg_post_process_shader_factory.h"
+#include "mg_post_process_shader_provider.h"
 
 #include "mg/core/mg_resource_cache.h"
 #include "mg/gfx/mg_material.h"

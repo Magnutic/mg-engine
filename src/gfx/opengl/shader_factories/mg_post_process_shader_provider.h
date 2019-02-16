@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-/** @file mg_post_process_shader_factory.h
+/** @file mg_post_process_shader_provider.h
  * Creates shader programs for PostProcessRenderer.
  */
 
