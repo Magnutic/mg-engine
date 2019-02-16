@@ -37,6 +37,8 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
+#include <mutex>
+#include <shared_mutex>
 #include <vector>
 
 namespace Mg {
@@ -53,14 +55,14 @@ using time_point = std::chrono::system_clock::time_point;
  */
 class ResourceEntryBase {
 public:
-    ResourceEntryBase(Identifier     resource_id_,
+    ResourceEntryBase(Identifier     resource_id,
                       IFileLoader&   loader,
-                      time_point     time_stamp_,
+                      time_point     time_stamp,
                       ResourceCache& owning_cache)
-        : resource_id(resource_id_)
-        , time_stamp(time_stamp_)
-        , p_owning_cache(&owning_cache)
-        , p_loader(&loader)
+        : m_p_loader(&loader)
+        , m_p_owning_cache(&owning_cache)
+        , m_resource_id(resource_id)
+        , m_time_stamp(time_stamp)
     {}
 
     MG_MAKE_NON_COPYABLE(ResourceEntryBase);
@@ -73,47 +75,52 @@ public:
 
     /** Make a new (empty) ResourceEntry of the same derived type as this one. */
     virtual std::unique_ptr<ResourceEntryBase> new_entry(IFileLoader& loader,
-                                                         time_point   time_stamp_) = 0;
+                                                         time_point   time_stamp) const = 0;
 
-    /** Swap values. Requires that this and other are of the same derived type. */
-    virtual void swap_entry(ResourceEntryBase& other) noexcept = 0;
-
-    /** Return the stored resource object, or, if it does not exist, create a new empty one. */
-    virtual BaseResource& get_or_create_resource() = 0;
+    /** Swap values. Requires that this and rhs are of the same derived type. */
+    virtual void swap_entry(ResourceEntryBase& rhs) noexcept = 0;
 
     /** Load the resource. */
     void load_resource();
 
     /** Whether resource is loaded. */
-    virtual bool is_loaded() = 0;
+    virtual bool is_loaded() const = 0;
 
     /** Unload stored resource. */
     virtual void unload() = 0;
 
-    /** Whether resource is unloadable: is loaded and reference count is zero. */
-    bool is_unloadable() { return is_loaded() && ref_count == 0; }
+    Identifier resource_id() const { return m_resource_id; }
+
+    time_point time_stamp() const { return m_time_stamp; }
+
+    ResourceCache& owning_cache() const { return *m_p_owning_cache; }
+
+    IFileLoader& loader() const { return *m_p_loader; }
 
     struct Dependency {
         Identifier dependency_id;
         time_point time_stamp;
     };
 
-    Identifier resource_id;
-
     /** A list of resource files upon which this resource depends. This is used to trigger
      * re-loading of this resource if those files are changed. Dependencies are automatically
      * tracked when a dependency is loaded in a resource type's `load_resource()` function via
-     * `ResourceDataLoader::load_dependency()`.
+     * `LoadResourceParams::load_dependency()`.
      */
     std::vector<Dependency> dependencies;
 
-    time_point time_stamp{};
     time_point last_access{};
 
-    std::atomic_int32_t ref_count = 0;
+    mutable std::shared_timed_mutex mutex;
+    std::atomic_uint32_t            ref_count{};
 
-    ResourceCache* p_owning_cache = nullptr;
-    IFileLoader*   p_loader       = nullptr;
+protected:
+    IFileLoader*   m_p_loader       = nullptr;
+    ResourceCache* m_p_owning_cache = nullptr;
+    Identifier     m_resource_id;
+    time_point     m_time_stamp{};
+
+    virtual BaseResource& create_resource() = 0;
 };
 
 } // namespace Mg

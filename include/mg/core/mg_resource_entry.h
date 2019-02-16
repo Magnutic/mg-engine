@@ -45,12 +45,7 @@ template<typename ResT> class ResourceEntry final : public ResourceEntryBase {
 public:
     using ResourceEntryBase::ResourceEntryBase;
 
-    ResourceAccessGuard<ResT> access_resource()
-    {
-        if (!is_loaded()) { load_resource(); }
-        last_access = std::chrono::system_clock::now();
-        return ResourceAccessGuard<ResT>(*this);
-    }
+    ResourceAccessGuard<ResT> access_resource() { return ResourceAccessGuard<ResT>(*this); }
 
     // Allow base class to access resource member.
     // ResT is assumed to be derived from BaseResource, as all resource types have to be.
@@ -58,37 +53,37 @@ public:
     const ResT& get_resource() const override { return m_resource.value(); }
 
     std::unique_ptr<ResourceEntryBase> new_entry(IFileLoader& loader,
-                                                 time_point   time_stamp_) override
+                                                 time_point   time_stamp) const override
     {
-        return std::make_unique<ResourceEntry>(resource_id, loader, time_stamp_, *p_owning_cache);
+        return std::make_unique<ResourceEntry>(resource_id(), loader, time_stamp, owning_cache());
     }
 
-    void swap_entry(ResourceEntryBase& other) noexcept override
+    void swap_entry(ResourceEntryBase& rhs) noexcept override
     {
         using std::swap;
-        auto& rhs = static_cast<ResourceEntry&>(other);
+        auto& other = static_cast<ResourceEntry<ResT>&>(rhs);
 
-        MG_ASSERT(ref_count == 0 && rhs.ref_count == 0 && "Trying to swap an in-use resource.");
+        MG_ASSERT(ref_count == 0 && other.ref_count == 0);
+        MG_ASSERT(m_p_owning_cache == other.m_p_owning_cache);
 
-        swap(dependencies, rhs.dependencies);
-        swap(time_stamp, rhs.time_stamp);
-        swap(last_access, rhs.last_access);
-        swap(m_resource, rhs.m_resource);
+        swap(dependencies, other.dependencies);
+        swap(last_access, other.last_access);
+        swap(m_resource_id, other.m_resource_id);
+        swap(m_time_stamp, other.m_time_stamp);
+        swap(m_resource, other.m_resource);
     }
-
-    ResT& get_or_create_resource() override
-    {
-        if (!is_loaded()) { m_resource.emplace(resource_id); }
-        return m_resource.value();
-    }
-
-    bool is_loaded() override { return m_resource.has_value(); }
 
     void unload() override
     {
-        MG_ASSERT(is_unloadable());
+        MG_ASSERT(ref_count == 0);
+        MG_ASSERT(is_loaded());
         m_resource.reset();
     }
+
+    bool is_loaded() const override { return m_resource.has_value(); }
+
+protected:
+    ResT& create_resource() override { return m_resource.emplace(resource_id()); }
 
 private:
     std::optional<ResT> m_resource;

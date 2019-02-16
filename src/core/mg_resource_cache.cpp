@@ -37,13 +37,18 @@ namespace Mg {
 // Update file index, detects if files have changed (added, removed, changed timestamp).
 void ResourceCache::refresh()
 {
+    std::unique_lock lock{ m_mutex };
     rebuild_file_index();
 
     // Reload & notify for any changed files
     for (FileInfo& file : m_file_list) {
         auto& p_entry = file.entry;
 
-        if (p_entry == nullptr || !p_entry->get_resource().should_reload_on_file_change()) {
+        if (!p_entry) { continue; }
+
+        std::unique_lock entry_lock{ p_entry->mutex };
+
+        if (!p_entry->is_loaded() || !p_entry->get_resource().should_reload_on_file_change()) {
             continue;
         }
 
@@ -51,7 +56,7 @@ void ResourceCache::refresh()
         bool should_update = false;
 
         // First, check whether resource file has been updated.
-        if (file.time_stamp > p_entry->time_stamp) { should_update = true; }
+        if (file.time_stamp > p_entry->time_stamp()) { should_update = true; }
 
         // Then, check whether dependencies have been updated.
         for (auto&& dep : p_entry->dependencies) {
@@ -113,7 +118,6 @@ void ResourceCache::rebuild_file_index()
         if (file_record.time_stamp > it->time_stamp) {
             it->time_stamp = file_record.time_stamp;
             it->loader     = &loader;
-            if (it->entry) { it->entry->p_loader = &loader; }
         }
     };
 
@@ -165,21 +169,35 @@ void ResourceCache::log_error(Identifier resource, std::string_view message) con
 }
 
 // Unload the least recently used resource for which is not currently in use.
-bool ResourceCache::unload_unused(bool unload_all_unused)
+bool ResourceCache::unload_unused(bool unload_all_unused) const
 {
-    auto is_unused = [](const FileInfo* fi) {
-        return fi->entry != nullptr && fi->entry->is_unloadable();
+    // unload_unused does not modify anything in the ResourceCache itself, so shared lock suffices.
+    std::shared_lock lock{ m_mutex };
+
+    auto is_unloadable = [](const ResourceEntryBase& entry) -> bool {
+        return entry.ref_count == 0 && entry.is_loaded();
+    };
+
+    auto try_unload = [&](const FileInfo& file_info) -> bool {
+        using namespace std::chrono_literals;
+        if (file_info.entry == nullptr || file_info.entry->ref_count != 0) { return false; }
+
+        ResourceEntryBase& entry = *file_info.entry;
+        std::unique_lock   entry_lock{ entry.mutex, 100ms };
+
+        if (!entry_lock.owns_lock() || !is_unloadable(entry)) { return false; }
+
+        entry.unload();
+        log_verbose(file_info.filename, "Unloaded unused resource.");
+        return true;
     };
 
     if (unload_all_unused) {
         log_verbose("<N/A>", "Unloading all unused resources.");
         size_t num_unloaded = 0;
 
-        for (FileInfo& file_info : m_file_list) {
-            if (is_unused(&file_info)) {
-                file_info.entry->unload();
-                ++num_unloaded;
-            }
+        for (const FileInfo& file_info : m_file_list) {
+            if (try_unload(file_info)) { ++num_unloaded; }
         }
 
         return num_unloaded > 0;
@@ -187,24 +205,22 @@ bool ResourceCache::unload_unused(bool unload_all_unused)
 
     // Create vector of FileInfos sorted so that ResourceEntry with earliest last-access time
     // comes first (and thus unload resources in least-recently-used order).
-    std::vector<FileInfo*> file_infos;
-    for (FileInfo& file_info : m_file_list) { file_infos.push_back(&file_info); }
+    std::vector<const FileInfo*> file_infos;
+    for (const FileInfo& file_info : m_file_list) { file_infos.push_back(&file_info); }
 
-    sort(file_infos, [&](FileInfo* l, FileInfo* r) {
+    auto lru_order = [](const FileInfo* l, const FileInfo* r) {
         if (l->entry == nullptr) { return false; }
         if (r->entry == nullptr) { return true; }
         return l->entry->last_access < r->entry->last_access;
-    });
+    };
 
-    auto [found, index] = index_where(file_infos, is_unused);
+    sort(file_infos, lru_order);
 
-    if (found) {
-        ResourceEntryBase& entry_to_unload = *file_infos[index]->entry;
-        entry_to_unload.unload();
-        log_verbose(file_infos[index]->filename, "Unloaded unused resource.");
+    for (const FileInfo* p_file_info : file_infos) {
+        if (try_unload(*p_file_info)) { return true; }
     }
 
-    return found;
+    return false;
 }
 
 } // namespace Mg

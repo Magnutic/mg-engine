@@ -23,12 +23,17 @@
 
 #include "mg/resources/mg_base_resource.h"
 
+#include "mg/core/mg_log.h"
 #include "mg/core/mg_resource_cache.h"
+
+#include <fmt/core.h>
 
 namespace Mg {
 
 LoadResourceResult BaseResource::load_resource(const LoadResourceParams& params)
 {
+    g_log.write_verbose(fmt::format("Loading resource '{}'...", resource_id().str_view()));
+
     try {
         return load_resource_impl(params);
     }

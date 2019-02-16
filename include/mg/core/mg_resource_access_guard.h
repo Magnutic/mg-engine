@@ -43,8 +43,7 @@ namespace Mg {
  * Usage example:
  *
  *     void some_function_that_uses_a_resource(ResourceHandle resource_handle) {
- *         ResourceCache& res_cache = ...
- *         ResourceAccessGuard<ResType> res_access = res_cache.access_resource(resource_handle);
+ *         ResourceAccessGuard<ResType> res_access = resource_handle.access();
  *         auto something = res_access->something_in_the_resource;
  *         // etc. Resource can be safely accessed as long as `res_access` remains in scope.
  *     }
@@ -55,19 +54,22 @@ namespace Mg {
  */
 template<typename ResT> class ResourceAccessGuard {
 public:
-    ResourceAccessGuard(ResourceEntryBase& resource_entry) : m_entry(&resource_entry)
+    ResourceAccessGuard(ResourceEntryBase& resource_entry)
+        : m_entry(&resource_entry), m_lock(resource_entry.mutex)
     {
-        m_entry->ref_count.fetch_add(1, std::memory_order_relaxed);
+        if (!m_entry->is_loaded()) { m_entry->load_resource(); }
+        m_entry->last_access = std::chrono::system_clock::now();
+        ++m_entry->ref_count;
     }
 
-    ~ResourceAccessGuard() { m_entry->ref_count.fetch_sub(1, std::memory_order_acq_rel); }
+    ~ResourceAccessGuard() { --m_entry->ref_count; }
 
     // Not copyable or movable -- ResourceAccessGuard should only be placed on the stack, not be
     // stored or passed around.
     MG_MAKE_NON_COPYABLE(ResourceAccessGuard);
     MG_MAKE_NON_MOVABLE(ResourceAccessGuard);
 
-    time_point file_time_stamp() const noexcept { return m_entry->time_stamp; }
+    time_point file_time_stamp() const noexcept { return m_entry->time_stamp(); }
 
     const ResT& operator*() const& noexcept { return *get(); }
     const ResT* operator->() const& noexcept { return get(); }
@@ -100,7 +102,8 @@ public:
     const ResT* get() const&& = delete;
 
 private:
-    ResourceEntryBase* m_entry = nullptr;
+    ResourceEntryBase*                        m_entry = nullptr;
+    std::shared_lock<std::shared_timed_mutex> m_lock;
 };
 
 } // namespace Mg

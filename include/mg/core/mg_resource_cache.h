@@ -25,8 +25,6 @@
  * Manages loading and updating of data resources, acting as a in-memory cache to the file-system.
  */
 
-// TODO: consider thread safety, currently not thread-safe.
-
 #pragma once
 
 #include "mg/core/mg_file_loader.h"
@@ -42,6 +40,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <mutex>
+#include <shared_mutex>
 
 namespace Mg {
 
@@ -124,15 +124,8 @@ public:
     MG_MAKE_NON_COPYABLE(ResourceCache);
     MG_MAKE_NON_MOVABLE(ResourceCache); // Prevents pointer invalidation
 
-    /** Update file index, detects if files have changed (added, removed, changed timestamp).
-     * Thread safety: should not be called when other threads are accessing resources.
-     */
+    /** Update file index, detects if files have changed (added, removed, changed timestamp). */
     void refresh();
-
-    /** Get resource from file (or cache).
-     * @param file Filename (path) to resource file.
-     */
-    template<typename ResT> ResourceAccessGuard<ResT> access_resource(Identifier file);
 
     /** Get handle to a resource with the given path.
      * @param file Filename (path) to resource file.
@@ -142,15 +135,25 @@ public:
     template<typename ResT>
     ResourceHandle<ResT> resource_handle(Identifier file, bool load_resource_immediately = true);
 
+    template<typename ResT> ResourceAccessGuard<ResT> access_resource(Identifier file)
+    {
+        return resource_handle<ResT>(file).access();
+    }
+
     /** Returns whether a file with the given path exists in the file index.
      * N.B. returns the state as of most recent call to `refresh()`
      */
-    bool file_exists(Identifier file) const { return file_info(file) != nullptr; }
+    bool file_exists(Identifier file) const
+    {
+        std::shared_lock lock{ m_mutex };
+        return file_info(file) != nullptr;
+    }
 
     /** Returns the time stamp of the given file. Throws if file does not exist in file index. */
     time_point file_time_stamp(Identifier file) const
     {
-        auto p_file_info = file_info(file);
+        std::shared_lock lock{ m_mutex };
+        auto             p_file_info = file_info(file);
         if (!p_file_info) { throw_resource_not_found(file); }
         return p_file_info->time_stamp;
     }
@@ -158,6 +161,7 @@ public:
     /** Returns whether the resource with given id is currently cached in this ResourceCache. */
     bool is_cached(Identifier resource_id) const
     {
+        std::shared_lock lock{ m_mutex };
         if (const FileInfo* p_file_info = file_info(resource_id); p_file_info != nullptr) {
             return p_file_info->entry && p_file_info->entry->is_loaded();
         }
@@ -169,10 +173,11 @@ public:
      * @return Whether a resource was unloaded (i.e. there was an unused resource in the cache to
      * unload).
      */
-    bool unload_unused(bool unload_all_unused = false);
+    bool unload_unused(bool unload_all_unused = false) const;
 
     span<const std::unique_ptr<IFileLoader>> file_loaders() const noexcept
     {
+        // No need to lock, since m_file_loaders never changes after construction.
         return m_file_loaders;
     }
 
@@ -181,6 +186,7 @@ public:
      */
     void add_file_changed_observer(Observer<FileChangedEvent>& observer)
     {
+        std::unique_lock lock{ m_mutex };
         m_file_changed_subject.add_observer(observer);
     }
 
@@ -241,38 +247,34 @@ private:
     // List of resource files available through the resource loaders.
     // Always sorted by filename hash.
     std::vector<FileInfo> m_file_list;
+
+    // Shared mutex to allow multiple readers, single writer.
+    mutable std::shared_mutex m_mutex;
 };
 
 //--------------------------------------------------------------------------------------------------
 // ResourceCache member function template implementations
 //--------------------------------------------------------------------------------------------------
 
-/** Get resource from file (or cache). */
-template<typename ResT>
-ResourceAccessGuard<ResT> ResourceCache::access_resource(Identifier filename)
-{
-    log_verbose(filename, "Accessing file.");
-
-    // Check for file in known-files list.
-    FileInfo* p_file_info = file_info(filename);
-    if (p_file_info == nullptr) { throw_resource_not_found(filename); }
-
-    ResourceEntryBase& entry = get_or_create_resource_entry<ResT>(*p_file_info);
-    return static_cast<ResourceEntry<ResT>&>(entry).access_resource();
-}
-
 template<typename ResT>
 ResourceHandle<ResT> ResourceCache::resource_handle(Identifier file, bool load_resource_immediately)
 {
-    FileInfo* p_file_info = file_info(file);
-    if (!p_file_info) { throw_resource_not_found(file); }
+    std::optional<ResourceHandle<ResT>> handle;
 
-    ResourceEntryBase&   entry = get_or_create_resource_entry<ResT>(*p_file_info);
-    ResourceHandle<ResT> handle(static_cast<ResourceEntry<ResT>&>(entry));
+    {
+        // Unique lock instead of shared as get_or_create_resource_entry might write.
+        std::unique_lock lock{ m_mutex };
 
-    if (load_resource_immediately) handle.access();
+        FileInfo* p_file_info = file_info(file);
+        if (!p_file_info) { throw_resource_not_found(file); }
 
-    return handle;
+        ResourceEntryBase& entry = get_or_create_resource_entry<ResT>(*p_file_info);
+        handle.emplace(static_cast<ResourceEntry<ResT>&>(entry));
+    }
+
+    if (load_resource_immediately) handle->access();
+
+    return handle.value();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -284,7 +286,7 @@ ResourceAccessGuard<ResT> LoadResourceParams::load_dependency(Identifier depende
 {
     time_point file_time_stamp = m_owning_cache->file_time_stamp(dependency_file_id);
     m_resource_entry->dependencies.push_back({ dependency_file_id, file_time_stamp });
-    return m_owning_cache->access_resource<ResT>(dependency_file_id);
+    return m_owning_cache->resource_handle<ResT>(dependency_file_id).access();
 }
 
 } // namespace Mg

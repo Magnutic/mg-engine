@@ -33,23 +33,24 @@ namespace Mg {
 void ResourceEntryBase::load_resource()
 {
     MG_ASSERT(!is_loaded());
-    MG_ASSERT(p_owning_cache != nullptr);
-    MG_ASSERT(p_loader != nullptr);
+    MG_ASSERT(ref_count == 0);
+    MG_ASSERT(m_p_owning_cache != nullptr);
+    MG_ASSERT(m_p_loader != nullptr);
 
     last_access = std::chrono::system_clock::now();
 
     std::vector<std::byte> file_data;
-    file_data.resize(p_loader->file_size(resource_id));
+    file_data.resize(loader().file_size(resource_id()));
 
-    p_loader->load_file(resource_id, file_data);
-    LoadResourceParams load_params{ file_data, *p_owning_cache, *this };
+    loader().load_file(resource_id(), file_data);
+    LoadResourceParams load_params{ file_data, owning_cache(), *this };
 
-    LoadResourceResult result = get_or_create_resource().load_resource(load_params);
+    LoadResourceResult result = create_resource().load_resource(load_params);
 
     switch (result.result_code) {
     case LoadResourceResult::DataError:
         g_log.write_error(fmt::format(
-            "Loading resource '{}': DataError: {}", resource_id.str_view(), result.error_reason));
+            "Loading resource '{}': DataError: {}", resource_id().str_view(), result.error_reason));
         throw ResourceDataError{};
     case LoadResourceResult::Success: break;
     }

@@ -43,7 +43,7 @@ public:
 
     ResourceAccessGuard<ResT> access() { return m_p_entry->access_resource(); }
 
-    Identifier resource_id() const noexcept { return m_p_entry->resource_id; }
+    Identifier resource_id() const noexcept { return m_p_entry->resource_id(); }
 
 private:
     ResourceEntry<ResT>* m_p_entry = nullptr;
