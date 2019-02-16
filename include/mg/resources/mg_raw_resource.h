@@ -49,6 +49,8 @@ public:
     /** Access byte stream. */
     span<const std::byte> bytes() const { return span{ m_buffer.begin(), m_buffer.end() }; }
 
+    Identifier type_id() const override { return "RawResource"; }
+
 protected:
     LoadResourceResult load_resource_impl(const ResourceLoadingInput& input) override;
 

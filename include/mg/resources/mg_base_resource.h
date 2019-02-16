@@ -74,6 +74,11 @@ public:
 
     virtual bool should_reload_on_file_change() const = 0;
 
+    /** Get identifier for the actual type of the resource. As a convention, it is recommended to
+     * use the same name as the class.
+     */
+    virtual Identifier type_id() const = 0;
+
     /** Resource identifier (filename, if loaded from file). */
     Identifier resource_id() const { return m_id; }
 

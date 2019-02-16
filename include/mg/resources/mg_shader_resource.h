@@ -79,6 +79,8 @@ public:
 
     std::string debug_print() const;
 
+    Identifier type_id() const override { return "ShaderResource"; }
+
 protected:
     LoadResourceResult load_resource_impl(const ResourceLoadingInput& input) override;
 

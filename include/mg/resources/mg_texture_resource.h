@@ -133,6 +133,8 @@ public:
 
     bool should_reload_on_file_change() const override { return true; }
 
+    Identifier type_id() const override { return "TextureResource"; }
+
 protected:
     /** Constructs a texture from file. Only DDS files are supported. */
     LoadResourceResult load_resource_impl(const ResourceLoadingInput& input) override;

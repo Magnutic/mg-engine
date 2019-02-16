@@ -40,6 +40,8 @@ public:
     {
         return std::string_view(reinterpret_cast<const char*>(bytes().data()), bytes().size());
     }
+
+    Identifier type_id() const override { return "TextResource"; }
 };
 
 } // namespace Mg

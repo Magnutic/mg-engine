@@ -61,6 +61,8 @@ public:
 
     bool should_reload_on_file_change() const override { return true; }
 
+    Identifier type_id() const override { return "MeshResource"; }
+
 protected:
     LoadResourceResult load_resource_impl(const ResourceLoadingInput& input) override;
 
