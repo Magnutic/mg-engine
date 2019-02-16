@@ -50,7 +50,7 @@ public:
     span<const std::byte> bytes() const { return span{ m_buffer.begin(), m_buffer.end() }; }
 
 protected:
-    LoadResourceResult load_resource_impl(const LoadResourceParams& load_params) override;
+    LoadResourceResult load_resource_impl(const ResourceLoadingInput& input) override;
 
     Array<std::byte> m_buffer;
 };

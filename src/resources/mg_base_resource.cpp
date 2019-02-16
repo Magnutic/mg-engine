@@ -30,7 +30,7 @@
 
 namespace Mg {
 
-LoadResourceResult BaseResource::load_resource(const LoadResourceParams& params)
+LoadResourceResult BaseResource::load_resource(const ResourceLoadingInput& params)
 {
     g_log.write_verbose(fmt::format("Loading resource '{}'...", resource_id().str_view()));
 

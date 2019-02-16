@@ -34,9 +34,9 @@
 namespace Mg {
 
 /** Input to resource types' `load_resource()` member function. */
-class LoadResourceParams {
+class ResourceLoadingInput {
 public:
-    explicit LoadResourceParams(std::vector<std::byte> data,
+    explicit ResourceLoadingInput(std::vector<std::byte> data,
                                 ResourceCache&         owning_cache,
                                 ResourceEntryBase&     resource_entry)
         : m_data(std::move(data)), m_owning_cache(&owning_cache), m_resource_entry(&resource_entry)

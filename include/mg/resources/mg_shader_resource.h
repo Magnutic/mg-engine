@@ -80,7 +80,7 @@ public:
     std::string debug_print() const;
 
 protected:
-    LoadResourceResult load_resource_impl(const LoadResourceParams& load_params) override;
+    LoadResourceResult load_resource_impl(const ResourceLoadingInput& input) override;
 
 private:
     Array<Parameter> m_parameters;

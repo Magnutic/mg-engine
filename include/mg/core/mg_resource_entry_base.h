@@ -105,7 +105,7 @@ public:
     /** A list of resource files upon which this resource depends. This is used to trigger
      * re-loading of this resource if those files are changed. Dependencies are automatically
      * tracked when a dependency is loaded in a resource type's `load_resource()` function via
-     * `LoadResourceParams::load_dependency()`.
+     * `ResourceLoadingInput::load_dependency()`.
      */
     std::vector<Dependency> dependencies;
 

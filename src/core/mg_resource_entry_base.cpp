@@ -43,9 +43,9 @@ void ResourceEntryBase::load_resource()
     file_data.resize(loader().file_size(resource_id()));
 
     loader().load_file(resource_id(), file_data);
-    LoadResourceParams load_params{ file_data, owning_cache(), *this };
+    ResourceLoadingInput input{ file_data, owning_cache(), *this };
 
-    LoadResourceResult result = create_resource().load_resource(load_params);
+    LoadResourceResult result = create_resource().load_resource(input);
 
     switch (result.result_code) {
     case LoadResourceResult::DataError:

@@ -159,9 +159,9 @@ inline size_t num_blocks_by_img_size(TextureResource::DimT width, TextureResourc
 // TextureResource implementation
 //--------------------------------------------------------------------------------------------------
 
-LoadResourceResult TextureResource::load_resource_impl(const LoadResourceParams& load_params)
+LoadResourceResult TextureResource::load_resource_impl(const ResourceLoadingInput& input)
 {
-    span<const std::byte> dds_data = load_params.resource_data();
+    span<const std::byte> dds_data = input.resource_data();
 
     if (dds_data.length() < sizeof(DDS_HEADER)) {
         return LoadResourceResult::data_error("DDS file corrupt, missing data.");

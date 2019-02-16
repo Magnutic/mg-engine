@@ -62,7 +62,7 @@ public:
     bool should_reload_on_file_change() const override { return true; }
 
 protected:
-    LoadResourceResult load_resource_impl(const LoadResourceParams& load_params) override;
+    LoadResourceResult load_resource_impl(const ResourceLoadingInput& input) override;
 
 private:
     Array<SubMesh>           m_sub_meshes;

@@ -35,7 +35,7 @@
 
 namespace Mg {
 
-class LoadResourceParams;
+class ResourceLoadingInput;
 
 struct LoadResourceResult {
     enum ResultCode { Success, DataError };
@@ -70,7 +70,7 @@ public:
     /** Load resource from binary file data. This is the interface through which Mg::ResourceCache
      * initialises resource types.
      */
-    LoadResourceResult load_resource(const LoadResourceParams& params);
+    LoadResourceResult load_resource(const ResourceLoadingInput& params);
 
     virtual bool should_reload_on_file_change() const = 0;
 
@@ -78,7 +78,7 @@ public:
     Identifier resource_id() const { return m_id; }
 
 protected:
-    virtual LoadResourceResult load_resource_impl(const LoadResourceParams& params) = 0;
+    virtual LoadResourceResult load_resource_impl(const ResourceLoadingInput& params) = 0;
 
 private:
     Identifier m_id;

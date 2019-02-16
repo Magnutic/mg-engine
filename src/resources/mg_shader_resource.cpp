@@ -565,9 +565,9 @@ static constexpr auto k_delimiter_line =
     "================================================================================";
 
 // Helper for ShaderResource::load_resource. Assemble shader code by loading included code files.
-inline std::string assemble_shader_code(const fs::path&           include_directory,
-                                        span<std::string>         include_files,
-                                        const LoadResourceParams& load_params)
+inline std::string assemble_shader_code(const fs::path&             include_directory,
+                                        span<std::string>           include_files,
+                                        const ResourceLoadingInput& input)
 {
     std::string code;
     code.reserve(1024);
@@ -581,19 +581,19 @@ inline std::string assemble_shader_code(const fs::path&           include_direct
                 k_delimiter_line + '\n';
 
         // Load include file as a dependency of this resource.
-        auto include_file_access = load_params.load_dependency<TextResource>(
-            Identifier::from_runtime_string(include_path));
+        auto include_file_access =
+            input.load_dependency<TextResource>(Identifier::from_runtime_string(include_path));
         code += include_file_access->text();
     }
 
     return code;
 }
 
-LoadResourceResult ShaderResource::load_resource_impl(const LoadResourceParams& load_params)
+LoadResourceResult ShaderResource::load_resource_impl(const ResourceLoadingInput& input)
 {
-    std::string_view input = load_params.resource_data_as_text();
+    std::string_view shader_description = input.resource_data_as_text();
 
-    Parser parser{ input };
+    Parser parser{ shader_description };
 
     m_parameters = Array<Parameter>::make_copy(parser.parameters);
     m_samplers   = Array<Sampler>::make_copy(parser.samplers);
@@ -602,10 +602,10 @@ LoadResourceResult ShaderResource::load_resource_impl(const LoadResourceParams& 
     // Get directory of shader file so that #include directives search relative to that path.
     fs::path include_path = fs::path{ resource_id().str_view() }.parent_path();
 
-    auto vertex_code = assemble_shader_code(include_path, parser.vertex_includes, load_params);
+    auto vertex_code = assemble_shader_code(include_path, parser.vertex_includes, input);
     m_vertex_code    = Array<char>::make_copy(vertex_code);
 
-    auto fragment_code = assemble_shader_code(include_path, parser.fragment_includes, load_params);
+    auto fragment_code = assemble_shader_code(include_path, parser.fragment_includes, input);
     m_fragment_code    = Array<char>::make_copy(fragment_code);
 
     // Sort parameters so that larger types come first (for the sake of alignment)
