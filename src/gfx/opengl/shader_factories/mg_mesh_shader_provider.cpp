@@ -33,7 +33,7 @@
 #include "../mg_opengl_shader.h"
 #include "../mg_glad.h"
 
-#include "shader_code/mg_lit_mesh_framework_shader_code.h"
+#include "shader_code/mg_mesh_framework_shader_code.h"
 
 namespace Mg::gfx::mesh_renderer {
 
