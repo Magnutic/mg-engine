@@ -27,10 +27,10 @@
 
 #pragma once
 
-#include <memory>
-
 #include "mg/gfx/mg_texture_handle.h"
 #include "mg/utils/mg_macros.h"
+
+#include <memory>
 
 namespace Mg {
 class TextureResource;
@@ -51,6 +51,11 @@ public:
     TextureHandle create(const TextureResource& resource);
 
     TextureHandle create_render_target(const RenderTargetParams& params);
+
+    /** Update the texture that was created from resource.
+     * N.B. used for hot-reloading of texture files.
+     */
+    void update(const TextureResource& resource);
 
     void destroy(TextureHandle handle);
 
