@@ -24,6 +24,7 @@
 #include "mg/resources/mg_shader_resource.h"
 
 #include "mg/core/mg_file_loader.h"
+#include "mg/core/mg_resource_exceptions.h"
 #include "mg/core/mg_resource_loading_input.h"
 #include "mg/resources/mg_text_resource.h"
 #include "mg/utils/mg_stl_helpers.h"
@@ -39,6 +40,11 @@
 #include <vector>
 
 namespace fs = std::filesystem;
+
+// The shader-file parser is quite messy and I am not a big fan of how it turned out (in particular,
+// I do not like the use of exceptions). However, it has turned out suprisingly tricky to refactor
+// it into something nicer. I should look at some examples on how to write parsers elegantly and
+// imitate that, at some point.
 
 namespace Mg {
 
@@ -595,24 +601,30 @@ LoadResourceResult ShaderResource::load_resource_impl(const ResourceLoadingInput
 {
     std::string_view shader_description = input.resource_data_as_text();
 
-    Parser parser{ shader_description };
+    // I would prefer not to use exceptions to catch parse errors here but changing the parsing code
+    // to not use exceptions seems suprisingly tricky.
+    try {
+        Parser parser{ shader_description };
+        m_parameters = Array<Parameter>::make_copy(parser.parameters);
+        m_samplers   = Array<Sampler>::make_copy(parser.samplers);
+        m_options    = Array<Option>::make_copy(parser.options);
 
-    m_parameters = Array<Parameter>::make_copy(parser.parameters);
-    m_samplers   = Array<Sampler>::make_copy(parser.samplers);
-    m_options    = Array<Option>::make_copy(parser.options);
+        // Get directory of shader file so that #include directives search relative to that path.
+        fs::path include_path = fs::path{ resource_id().str_view() }.parent_path();
 
-    // Get directory of shader file so that #include directives search relative to that path.
-    fs::path include_path = fs::path{ resource_id().str_view() }.parent_path();
+        m_vertex_code   = assemble_shader_code(include_path, parser.vertex_includes, input);
+        m_fragment_code = assemble_shader_code(include_path, parser.fragment_includes, input);
 
-    m_vertex_code   = assemble_shader_code(include_path, parser.vertex_includes, input);
-    m_fragment_code = assemble_shader_code(include_path, parser.fragment_includes, input);
+        // Sort parameters so that larger types come first (for the sake of alignment)
+        sort(m_parameters, [](const Parameter& l, const Parameter& r) {
+            return static_cast<int>(l.type) > static_cast<int>(r.type);
+        });
 
-    // Sort parameters so that larger types come first (for the sake of alignment)
-    sort(m_parameters, [](const Parameter& l, const Parameter& r) {
-        return static_cast<int>(l.type) > static_cast<int>(r.type);
-    });
-
-    m_tags = parser.tags;
+        m_tags = parser.tags;
+    }
+    catch (const std::exception& e) {
+        return LoadResourceResult::data_error(e.what());
+    }
 
     return LoadResourceResult::success();
 }
