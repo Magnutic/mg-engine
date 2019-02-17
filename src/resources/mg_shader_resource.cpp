@@ -131,7 +131,8 @@ static std::string_view token_type_to_str(TokenType type)
     case TokenType::END_OF_FILE: return "END_OF_FILE";
     }
     // clang-format on
-    throw "unreachable";
+
+    MG_ASSERT(false && "Unexpected TokenType");
 }
 
 constexpr std::array<std::pair<std::string_view, TokenType>, 18> keywords{ {
