@@ -23,19 +23,17 @@
 
 #include "mg/resources/mg_mesh_resource.h"
 
-#include <algorithm>
-#include <cstring>
-#include <stdexcept>
-#include <type_traits>
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_resource_loading_input.h"
+#include "mg/utils/mg_gsl.h"
 
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
 
 #include <fmt/core.h>
 
-#include "mg/core/mg_log.h"
-#include "mg/core/mg_resource_loading_input.h"
-#include "mg/utils/mg_gsl.h"
+#include <cstring>
+#include <type_traits>
 
 namespace Mg {
 
@@ -70,14 +68,13 @@ LoadResourceResult MeshResource::load_resource_impl(const ResourceLoadingInput& 
     }
 
     if (header.four_cc != mesh_4cc) {
-        throw std::runtime_error{ fmt::format("Mesh '{}': invalid data (4CC mismatch).", fname) };
+        return LoadResourceResult::data_error(fmt::format("Invalid data (4CC mismatch).", fname));
     }
 
     // Check file format version
     if (header.version > k_mesh_format_version) {
         g_log.write_warning(
-            fmt::format("Mesh '{}': Unknown mesh format: version {:d}. "
-                        "This version of Mg Engine expects version {:d}",
+            fmt::format("Mesh '{}': Unknown mesh format: version {:d}. Expected version {:d}",
                         fname,
                         header.version,
                         k_mesh_format_version));
@@ -183,8 +180,9 @@ void MeshResource::calculate_bounds()
     float radius_sqr = 0.0f;
 
     for (Vertex& v : m_vertices) {
-        auto diff  = m_centre - v.position;
-        radius_sqr = std::max(radius_sqr, glm::dot(diff, diff));
+        auto  diff           = m_centre - v.position;
+        float new_radius_sqr = glm::dot(diff, diff);
+        radius_sqr           = glm::max(radius_sqr, new_radius_sqr);
     }
 
     m_radius = glm::sqrt(radius_sqr);
