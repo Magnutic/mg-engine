@@ -86,13 +86,13 @@ template<typename To, typename From> constexpr To narrow(From value)
 
 template<typename T, size_t N> auto& at(T (&array)[N], size_t index)
 {
-    MG_ASSERT(index >= 0 && index < N);
+    MG_ASSERT(index < N);
     return array[index];
 }
 
 template<typename T> auto& at(T& container, size_t index)
 {
-    MG_ASSERT(index >= 0 && index < container.size());
+    MG_ASSERT(index < container.size());
     return container[index];
 }
 
