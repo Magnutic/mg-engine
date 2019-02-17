@@ -23,15 +23,13 @@
 
 #include "mg/resources/mg_texture_resource.h"
 
-#include <cstring> // memcpy
-#include <stdexcept>
-#include <vector>
-
-#include <fmt/core.h>
-
 #include "mg/core/mg_file_loader.h"
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_resource_loading_input.h"
+
+#include <fmt/core.h>
+
+#include <cstring> // memcpy
 
 namespace Mg {
 
@@ -107,15 +105,19 @@ struct DDS_HEADER {
     uint32_t        dwReserved2;
 };
 
-/** Determine pixel format of DDS file. Throws if format is unsupported. */
-static TextureResource::PixelFormat dds_pf_to_pixel_format(const DDS_PIXELFORMAT& pf)
+struct PixelFormatResult {
+    bool                         valid;
+    TextureResource::PixelFormat format;
+};
+/** Determine pixel format of DDS file. Nullopt if format is unsupported. */
+static PixelFormatResult dds_pf_to_pixel_format(const DDS_PIXELFORMAT& pf)
 {
     if ((pf.dwFlags & DDPF_FOURCC) != 0) {
         switch (pf.dwFourCC) {
-        case DXT1: return TextureResource::PixelFormat::DXT1;
-        case DXT3: return TextureResource::PixelFormat::DXT3;
-        case DXT5: return TextureResource::PixelFormat::DXT5;
-        case ATI2: return TextureResource::PixelFormat::ATI2;
+        case DXT1: return { true, TextureResource::PixelFormat::DXT1 };
+        case DXT3: return { true, TextureResource::PixelFormat::DXT3 };
+        case DXT5: return { true, TextureResource::PixelFormat::DXT5 };
+        case ATI2: return { true, TextureResource::PixelFormat::ATI2 };
         default: break;
         }
     }
@@ -125,14 +127,15 @@ static TextureResource::PixelFormat dds_pf_to_pixel_format(const DDS_PIXELFORMAT
 
     bool alpha = ((pf.dwFlags & DDPF_ALPHAPIXELS) != 0) && (pf.dwABitMask == 0xff000000u);
 
-    if (rgb && alpha && pf.dwRGBBitCount == 32) { return TextureResource::PixelFormat::BGRA; }
+    if (rgb && alpha && pf.dwRGBBitCount == 32) {
+        return { true, TextureResource::PixelFormat::BGRA };
+    }
 
-    if (rgb && !alpha && pf.dwRGBBitCount == 24) { return TextureResource::PixelFormat::BGR; }
+    if (rgb && !alpha && pf.dwRGBBitCount == 24) {
+        return { true, TextureResource::PixelFormat::BGR };
+    }
 
-    throw std::runtime_error{
-        "Unsupported DDS format. Supported formats: "
-        "RGB8; ARGB8; DXT1; DXT3; DXT5; 3Dc (ATI2)."
-    };
+    return { false, {} };
 }
 
 inline size_t block_size_by_format(TextureResource::PixelFormat pixel_format)
@@ -146,7 +149,7 @@ inline size_t block_size_by_format(TextureResource::PixelFormat pixel_format)
     case TextureResource::PixelFormat::BGRA: return 64;
     }
 
-    throw std::runtime_error{ "Unexpected value for TextureResource::PixelFormat" };
+    MG_ASSERT(false && "Unexpected value for TextureResource::PixelFormat");
 }
 
 /** Get the number of blocks in a mipmap of given dimensions. */
@@ -178,7 +181,8 @@ LoadResourceResult TextureResource::load_resource_impl(const ResourceLoadingInpu
     std::memcpy(&header, dds_data.subspan(4).data(), sizeof(header));
 
     // Determine texture's pixel format
-    PixelFormat pixel_format = dds_pf_to_pixel_format(header.ddspf);
+    auto [valid, pixel_format] = dds_pf_to_pixel_format(header.ddspf);
+    if (!valid) { return LoadResourceResult::data_error("Unsupported DDS format."); }
 
     // Get location and size of pixel data
     const auto pixel_data_offset = sizeof(DDS_HEADER) + 4;
