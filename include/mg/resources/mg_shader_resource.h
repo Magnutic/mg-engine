@@ -63,14 +63,8 @@ public:
     span<const Parameter> parameters() const { return m_parameters; }
     span<const Option>    options() const { return m_options; }
 
-    std::string_view vertex_code() const
-    {
-        return std::string_view(m_vertex_code.data(), m_vertex_code.size());
-    }
-    std::string_view fragment_code() const
-    {
-        return std::string_view(m_fragment_code.data(), m_fragment_code.size());
-    }
+    std::string_view vertex_code() const { return m_vertex_code; }
+    std::string_view fragment_code() const { return m_fragment_code; }
 
     ShaderTag::Value tags() const { return m_tags; }
 
@@ -88,8 +82,8 @@ private:
     Array<Sampler>   m_samplers;
     Array<Option>    m_options;
 
-    Array<char> m_vertex_code;
-    Array<char> m_fragment_code;
+    std::string m_vertex_code;
+    std::string m_fragment_code;
 
     ShaderTag::Value m_tags = 0;
 };

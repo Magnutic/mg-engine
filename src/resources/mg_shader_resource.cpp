@@ -604,11 +604,8 @@ LoadResourceResult ShaderResource::load_resource_impl(const ResourceLoadingInput
     // Get directory of shader file so that #include directives search relative to that path.
     fs::path include_path = fs::path{ resource_id().str_view() }.parent_path();
 
-    auto vertex_code = assemble_shader_code(include_path, parser.vertex_includes, input);
-    m_vertex_code    = Array<char>::make_copy(vertex_code);
-
-    auto fragment_code = assemble_shader_code(include_path, parser.fragment_includes, input);
-    m_fragment_code    = Array<char>::make_copy(fragment_code);
+    m_vertex_code   = assemble_shader_code(include_path, parser.vertex_includes, input);
+    m_fragment_code = assemble_shader_code(include_path, parser.fragment_includes, input);
 
     // Sort parameters so that larger types come first (for the sake of alignment)
     sort(m_parameters, [](const Parameter& l, const Parameter& r) {
