@@ -34,8 +34,7 @@
 
 #include <glm/vec4.hpp>
 
-#include <cassert>
-#include <optional>
+#include <string>
 #include <string_view>
 
 namespace Mg {

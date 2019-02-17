@@ -33,6 +33,7 @@
 
 #include <filesystem>
 #include <functional>
+#include <optional>
 #include <string>
 #include <variant>
 #include <vector>
