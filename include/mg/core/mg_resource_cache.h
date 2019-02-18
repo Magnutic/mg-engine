@@ -118,14 +118,14 @@ public:
      */
     bool file_exists(Identifier file) const
     {
-        std::shared_lock lock{ m_mutex };
+        std::shared_lock lock{ m_file_list_mutex };
         return file_info(file) != nullptr;
     }
 
     /** Returns the time stamp of the given file. Throws if file does not exist in file index. */
     time_point file_time_stamp(Identifier file) const
     {
-        std::shared_lock lock{ m_mutex };
+        std::shared_lock lock{ m_file_list_mutex };
         auto             p_file_info = file_info(file);
         if (!p_file_info) { throw_resource_not_found(file); }
         return p_file_info->time_stamp;
@@ -134,7 +134,7 @@ public:
     /** Returns whether the resource with given id is currently cached in this ResourceCache. */
     bool is_cached(Identifier resource_id) const
     {
-        std::shared_lock lock{ m_mutex };
+        std::shared_lock lock{ m_file_list_mutex };
         if (const FileInfo* p_file_info = file_info(resource_id); p_file_info != nullptr) {
             return p_file_info->entry && p_file_info->entry->is_loaded();
         }
@@ -181,6 +181,8 @@ private:
         return const_cast<FileInfo*>(static_cast<const ResourceCache*>(this)->file_info(file));
     }
 
+    // Get ResourceEntry corresponding to the given FileInfo. If this is the first time the
+    // ResourceEntry is requested, then create it.
     template<typename ResT> ResourceEntryBase& get_or_create_resource_entry(FileInfo& file_info)
     {
         static_assert(std::is_base_of_v<BaseResource, ResT>,
@@ -188,9 +190,17 @@ private:
         static_assert(!std::is_abstract_v<ResT>, "Resource types must not be abstract.");
         static_assert(std::is_constructible_v<ResT, Identifier>);
 
+        // Create ResourcEntry if not present (i.e. this is the first time it is requested).
         if (!file_info.entry) {
-            file_info.entry = std::make_unique<ResourceEntry<ResT>>(
-                file_info.filename, *file_info.loader, file_info.time_stamp, *this);
+            // Lock to make sure that no other thread is trying to create a ResourceEntry for the
+            // same resource at the same time.
+            std::unique_lock{ m_set_resource_entry_mutex };
+
+            // Check again after locking, in case another thread did the same thing ahead of us.
+            if (!file_info.entry) {
+                file_info.entry = std::make_unique<ResourceEntry<ResT>>(
+                    file_info.filename, *file_info.loader, file_info.time_stamp, *this);
+            }
         }
 
         return *file_info.entry;
@@ -215,7 +225,23 @@ private:
     std::vector<FileInfo> m_file_list;
 
     // Shared mutex to allow multiple readers, single writer.
-    mutable std::shared_mutex m_mutex;
+    mutable std::shared_mutex m_file_list_mutex;
+
+    // Special mutex to allow `get_or_create_resource_entry` to create a new `ResourceEntry` and
+    // store it in `FileInfo::entry` without risking race conditions where multiple threads try to
+    // create a `ResourceEntry` for the same resource at the same time.
+    //
+    // Note that this is a single mutex for all FileInfos; however, creating a `ResourceEntry` is a
+    // very quick (and rare) operation so this should not matter.
+    //
+    // Unique-locking `m_file_list_mutex` would be too coarse-grained for this purpose, since any
+    // attempt to access a resource would need to do so (any access is, potentially, the first, and
+    // so might have to create the ResourceEntry). That would, in particular, cause deadlocks in
+    // `ResourceCache::refresh()` when reloading a file that needs to load dependencies:
+    // `ResourceCache::refresh()` needs to hold a shared lock on `m_file_list_mutex` as it iterates
+    // through the file list; re-loading the resource, in turn, invokes
+    // `ResourceCache::resource_handle` as it requests a dependency.
+    std::mutex m_set_resource_entry_mutex;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -228,8 +254,7 @@ ResourceHandle<ResT> ResourceCache::resource_handle(Identifier file, bool load_r
     std::optional<ResourceHandle<ResT>> handle;
 
     {
-        // Unique lock instead of shared as get_or_create_resource_entry might write.
-        std::unique_lock lock{ m_mutex };
+        std::shared_lock lock{ m_file_list_mutex };
 
         FileInfo* p_file_info = file_info(file);
         if (!p_file_info) { throw_resource_not_found(file); }
@@ -238,7 +263,7 @@ ResourceHandle<ResT> ResourceCache::resource_handle(Identifier file, bool load_r
         handle.emplace(static_cast<ResourceEntry<ResT>&>(entry));
     }
 
-    if (load_resource_immediately) handle->access();
+    if (load_resource_immediately) { handle->access(); }
 
     return handle.value();
 }

@@ -38,12 +38,16 @@ namespace Mg {
 // Update file index, detects if files have changed (added, removed, changed timestamp).
 void ResourceCache::refresh()
 {
-    std::unique_lock lock{ m_mutex };
-    rebuild_file_index();
+    {
+        std::unique_lock lock{ m_file_list_mutex };
+        rebuild_file_index();
+    }
+
+    std::shared_lock lock{ m_file_list_mutex };
 
     // Reload & notify for any changed files
-    for (FileInfo& file : m_file_list) {
-        auto& p_entry = file.entry;
+    for (const FileInfo& file : m_file_list) {
+        ResourceEntryBase* p_entry = file.entry.get();
 
         if (!p_entry) { continue; }
 
@@ -105,6 +109,7 @@ const ResourceCache::FileInfo* ResourceCache::file_info(Identifier file) const
 // Rebuilds available-file list data structure.
 void ResourceCache::rebuild_file_index()
 {
+    // Caller (i.e. refresh()) is responsible for locking m_file_list_mutex.
     log_verbose("<N/A>", "Building file index...");
 
     // Update file list with the new file record.
@@ -175,8 +180,8 @@ void ResourceCache::log_error(Identifier resource, std::string_view message) con
 // Unload the least recently used resource for which is not currently in use.
 bool ResourceCache::unload_unused(bool unload_all_unused) const
 {
-    // unload_unused does not modify anything in the ResourceCache itself, so shared lock suffices.
-    std::shared_lock lock{ m_mutex };
+    // unload_unused does not modify anything in the file list itself, so shared lock suffices.
+    std::shared_lock lock{ m_file_list_mutex };
 
     auto is_unloadable = [](const ResourceEntryBase& entry) -> bool {
         return entry.ref_count == 0 && entry.is_loaded();
