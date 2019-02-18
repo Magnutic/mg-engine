@@ -130,9 +130,14 @@ MeshRenderer::MeshRenderer() = default;
 
 MeshRenderer::~MeshRenderer() = default;
 
+void MeshRenderer::drop_shaders()
+{
+    data().shader_factory.drop_shaders();
+}
+
 void MeshRenderer::render(const ICamera&           cam,
-                             const RenderCommandList& mesh_list,
-                             span<const Light>        lights)
+                          const RenderCommandList& mesh_list,
+                          span<const Light>        lights)
 {
     using namespace internal;
 

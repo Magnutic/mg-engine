@@ -219,7 +219,8 @@ layout(std140) uniform LightBlock {
 struct LightInput {
     vec3 direction;
     vec3 colour;
-    float NdotL;
+    float range_sqr;
+    float distance_sqr;
 };
 
 struct SurfaceParams {
@@ -271,14 +272,14 @@ vec3 _light_accumulate(const SurfaceParams surface, const vec3 view_direction)
         Light ls         = _light_block.lights[light_index];
 
         LightInput li;
-        li.direction             = ls.vector.xyz - WORLD_POSITION;
-        float light_distance_sqr = dot(li.direction, li.direction);
+        li.direction    = ls.vector.xyz - WORLD_POSITION;
+        li.distance_sqr = dot(li.direction, li.direction);
 
-        if (light_distance_sqr >= ls.range_sqr) { continue; }
+        if (li.distance_sqr >= ls.range_sqr) { continue; }
 
+        li.range_sqr = ls.range_sqr;
         li.direction = normalize(li.direction);
-        li.NdotL     = max(0.0, dot(surface.normal, li.direction));
-        li.colour    = ls.colour * attenuate(light_distance_sqr, 1.0 / ls.range_sqr);
+        li.colour    = ls.colour;
 
         result += light(li, surface, view_direction);
     }

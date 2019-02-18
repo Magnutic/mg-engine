@@ -84,6 +84,8 @@ public:
 
     ShaderHandle get_shader(const Material& material);
 
+    void drop_shaders() { m_shader_nodes.clear(); }
+
 private:
     ShaderHandle make_shader(const Material& material);
 
@@ -92,7 +94,6 @@ private:
 
     struct ShaderNode {
         uint32_t                       shader_hash;
-        ResourceHandle<ShaderResource> resource_handle;
         ShaderProgram                  program;
     };
 

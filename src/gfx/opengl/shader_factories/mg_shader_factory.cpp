@@ -82,7 +82,7 @@ ShaderFactory::ShaderHandle ShaderFactory::make_shader(const Material& material)
     }
 
     m_shader_nodes.push_back(
-        { material.shader_hash(), material.shader(), std::move(opt_program.value()) });
+        { material.shader_hash(), std::move(opt_program.value()) });
 
     ShaderNode& node = m_shader_nodes.back();
 

@@ -31,6 +31,10 @@ vec3 light(const LightInput light, const SurfaceParams surface, const vec3 view_
     vec3 h = normalize(light.direction + view_direction);
 
     // Calculate lighting factors
+    const float wrap_factor = 0.0;
+    float NdotL_unclipped = dot(surface.normal, light.direction);
+    float wrap_falloff = (NdotL_unclipped + 1.0) * 0.5;
+    float NdotL = max(0.0, NdotL_unclipped);
     float NdotH = max(0.0, dot(surface.normal, h));
 
     // PBR Blinn-Phong specular
@@ -38,6 +42,7 @@ vec3 light(const LightInput light, const SurfaceParams surface, const vec3 view_
     vec3  fresnel          = schlick(surface.specular, view_direction, h);
     vec3  specular_contrib = fresnel * ((pwr + 2.0) / 8.0) * pow(NdotH, pwr);
 
-    return (surface.albedo + specular_contrib) * light.colour * light.NdotL;
+    float angle_factor = mix(NdotL, wrap_falloff, wrap_factor) / (1.0 + wrap_factor);
+    return (surface.albedo * angle_factor + specular_contrib * NdotL) * light.colour * attenuate(light.distance_sqr, 1.0 / light.range_sqr);
 }
 

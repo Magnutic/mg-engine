@@ -49,6 +49,11 @@ public:
     MG_MAKE_NON_COPYABLE(MeshRenderer);
     ~MeshRenderer();
 
+    /** Drop all shaders generated for this renderer. This means that each shader will be recompiled
+     * from source on the next use. This is useful for hot-reloading of shader assets.
+     */
+    void drop_shaders();
+
     /** Render the supplied list of meshes. */
     void render(const ICamera& cam, const RenderCommandList& mesh_list, span<const Light> lights);
 };
