@@ -42,6 +42,11 @@ namespace Mg {
 
 /** ResourceEntry is the internal storage-node type for resources stored within a ResourceCache. */
 template<typename ResT> class ResourceEntry final : public ResourceEntryBase {
+    static_assert(std::is_base_of_v<BaseResource, ResT>,
+                  "Type must be derived from Mg::BaseResource.");
+    static_assert(!std::is_abstract_v<ResT>, "Resource types must not be abstract.");
+    static_assert(std::is_constructible_v<ResT, Identifier>);
+
 public:
     using ResourceEntryBase::ResourceEntryBase;
 

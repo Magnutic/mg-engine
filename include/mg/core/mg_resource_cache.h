@@ -31,7 +31,6 @@
 #include "mg/core/mg_identifier.h"
 #include "mg/core/mg_resource_entry_base.h"
 #include "mg/core/mg_resource_handle.h"
-#include "mg/resources/mg_base_resource.h"
 #include "mg/resources/mg_file_changed_event.h"
 #include "mg/utils/mg_macros.h"
 
@@ -185,11 +184,6 @@ private:
     // ResourceEntry is requested, then create it.
     template<typename ResT> ResourceEntryBase& get_or_create_resource_entry(FileInfo& file_info)
     {
-        static_assert(std::is_base_of_v<BaseResource, ResT>,
-                      "Type must be derived from Mg::BaseResource.");
-        static_assert(!std::is_abstract_v<ResT>, "Resource types must not be abstract.");
-        static_assert(std::is_constructible_v<ResT, Identifier>);
-
         // Create ResourcEntry if not present (i.e. this is the first time it is requested).
         if (!file_info.entry) {
             // Lock to make sure that no other thread is trying to create a ResourceEntry for the
