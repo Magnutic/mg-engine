@@ -69,7 +69,7 @@ Log::Log(std::string_view file_path, Prio console_verbosity, Prio log_file_verbo
     time_t log_open_time = time(nullptr);
     tm&    t             = *localtime(&log_open_time);
 
-    *data().writer << fmt::format("Log started at {0:F}, {0:T}\n", t);
+    *data().writer << fmt::format("Log started at {0:%F}, {0:%T}\n", t);
 }
 
 /** Set verbosity for console output */
@@ -126,7 +126,7 @@ void Log::output(Prio prio, std::string_view str)
         time_t msg_time = time(nullptr);
         tm&    t        = *localtime(&msg_time);
 
-        data().writer.value() << fmt::format("{:T}: {}\n", t, message);
+        data().writer.value() << fmt::format("{:%T}: {}\n", t, message);
 
         // If message was a warning or error, make sure it's written to file
         // immediately (perhaps a crash is imminent!)
@@ -169,7 +169,7 @@ void write_crash_log(Log& log)
     time_t crash_time = time(nullptr);
     tm&    t          = *localtime(&crash_time);
 
-    auto out_directory_name = fmt::format("crashlog_{:F}_{:T}", t);
+    auto out_directory_name = fmt::format("crashlog_{:%F}_{:%T}", t);
 
     auto fp            = log.file_path();
     auto log_path      = fs::u8path(fp.begin(), fp.end());
