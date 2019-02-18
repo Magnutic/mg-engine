@@ -211,7 +211,7 @@ private:
 
     // --------------------------------------- Data members ----------------------------------------
 
-    // Loaders for loading resources
+    // Loaders for loading resource file data into memory.
     std::vector<std::unique_ptr<IFileLoader>> m_file_loaders;
 
     // List of resource files available through the resource loaders.
