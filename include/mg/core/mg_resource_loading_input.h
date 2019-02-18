@@ -37,8 +37,8 @@ namespace Mg {
 class ResourceLoadingInput {
 public:
     explicit ResourceLoadingInput(std::vector<std::byte> data,
-                                ResourceCache&         owning_cache,
-                                ResourceEntryBase&     resource_entry)
+                                  ResourceCache&         owning_cache,
+                                  ResourceEntryBase&     resource_entry)
         : m_data(std::move(data)), m_owning_cache(&owning_cache), m_resource_entry(&resource_entry)
     {}
 
@@ -51,11 +51,11 @@ public:
 
     /** Load a resource and mark this resource as dependent on the newly loaded resource. */
     template<typename ResT>
-    ResourceAccessGuard<ResT> load_dependency(Identifier dependency_file_id) const
+    ResourceHandle<ResT> load_dependency(Identifier dependency_file_id) const
     {
         time_point file_time_stamp = m_owning_cache->file_time_stamp(dependency_file_id);
         m_resource_entry->dependencies.push_back({ dependency_file_id, file_time_stamp });
-        return m_owning_cache->access_resource<ResT>(dependency_file_id);
+        return m_owning_cache->resource_handle<ResT>(dependency_file_id);
     }
 
 
