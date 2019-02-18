@@ -569,8 +569,13 @@ private:
     decltype(m_tokens)::iterator m_current_token{};
 };
 
-static constexpr auto k_delimiter_line =
-    "================================================================================";
+// Used delimit sections in assembled shader code.
+static constexpr auto k_delimiter_comment = R"(
+//==============================================================================
+// Origin: {}
+//==============================================================================
+
+)";
 
 // Helper for ShaderResource::load_resource. Assemble shader code by loading included code files.
 inline std::string assemble_shader_code(const fs::path&             include_directory,
@@ -585,8 +590,7 @@ inline std::string assemble_shader_code(const fs::path&             include_dire
         auto include_path = (include_directory / include_file).u8string();
 
         // Add origin tracking comment (helps debugging shader)
-        code += std::string("\n//") + k_delimiter_line + "\n// Origin: " + include_path + "\n//" +
-                k_delimiter_line + '\n';
+        code += fmt::format(k_delimiter_comment, include_path);
 
         // Load include file as a dependency of this resource.
         Identifier     path_identifier     = Identifier::from_runtime_string(include_path);
