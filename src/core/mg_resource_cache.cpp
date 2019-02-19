@@ -44,51 +44,71 @@ void ResourceCache::refresh()
         rebuild_file_index();
     }
 
-    std::shared_lock lock{ m_file_list_mutex };
+    struct ReloadInfo {
+        ResourceEntryBase& entry;
+        time_point         new_time_stamp;
+        IFileLoader&       new_loader;
+    };
+    std::vector<ReloadInfo> entries_to_reload;
 
-    // Reload & notify for any changed files
-    for (const FileInfo& file : m_file_list) {
-        ResourceEntryBase* p_entry = file.entry.get();
+    {
+        std::shared_lock lock{ m_file_list_mutex };
 
-        if (!p_entry) { continue; }
+        // Reload & notify for any changed files
+        for (const FileInfo& file : m_file_list) {
+            ResourceEntryBase* p_entry = file.entry.get();
+            if (!p_entry) { continue; }
 
-        std::unique_lock entry_lock{ p_entry->mutex };
+            std::shared_lock   entry_lock{ p_entry->mutex };
 
-        if (!p_entry->is_loaded() || !p_entry->get_resource().should_reload_on_file_change()) {
-            continue;
+            if (!p_entry->is_loaded() || !p_entry->get_resource().should_reload_on_file_change()) {
+                continue;
+            }
+
+            // Determine whether to update resource.
+            bool should_update = false;
+
+            // First, check whether resource file has been updated.
+            if (file.time_stamp > p_entry->time_stamp()) { should_update = true; }
+
+            // Then, check whether dependencies have been updated.
+            for (auto&& dep : p_entry->dependencies) {
+                if (should_update) { break; } // Do not iterate more than necessary.
+                if (file_info(dep.dependency_id)->time_stamp > dep.time_stamp) {
+                    should_update = true;
+                }
+            }
+
+            if (should_update) {
+                entries_to_reload.push_back({ *p_entry, file.time_stamp, *file.loader });
+            }
         }
+    }
 
-        // Determine whether to update resource.
-        bool should_update = false;
-
-        // First, check whether resource file has been updated.
-        if (file.time_stamp > p_entry->time_stamp()) { should_update = true; }
-
-        // Then, check whether dependencies have been updated.
-        for (auto&& dep : p_entry->dependencies) {
-            if (should_update) { break; } // Do not iterate more than necessary.
-            if (file_info(dep.dependency_id)->time_stamp > dep.time_stamp) { should_update = true; }
-        }
-
-        if (!should_update) { continue; }
+    for (const auto& reload_info : entries_to_reload) {
+        ResourceEntryBase& entry = reload_info.entry;
 
         // Reload resource and notify observers.
-        log_verbose(file.filename, "Resource was modified, re-loading...");
+        log_verbose(entry.resource_id(), "Resource was modified, re-loading...");
 
         try {
             // Create new ResourceEntry, load resource into that, then swap with the old entry.
-            auto p_new_entry = p_entry->new_entry(*file.loader, file.time_stamp);
+            auto p_new_entry = entry.new_entry(reload_info.new_loader, reload_info.new_time_stamp);
             p_new_entry->load_resource();
-            p_entry->swap_entry(*p_new_entry);
+
+            {
+                std::unique_lock entry_lock{ entry.mutex };
+                entry.swap_entry(*p_new_entry);
+            }
         }
         catch (const ResourceError&) {
-            log_error(file.filename, "Resource was modified but re-loading failed.");
+            log_error(entry.resource_id(), "Resource was modified but re-loading failed.");
             continue;
         }
 
         if (m_resource_reload_callback) {
             m_resource_reload_callback(
-                FileChangedEvent{ p_entry->get_resource(), file.time_stamp });
+                FileChangedEvent{ entry.get_resource(), reload_info.new_time_stamp });
         }
     }
 }
