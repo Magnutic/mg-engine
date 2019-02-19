@@ -39,10 +39,38 @@ namespace Mg {
 // Update file index, detects if files have changed (added, removed, changed timestamp).
 void ResourceCache::refresh()
 {
+    // Refresh index of available files.
     {
         std::unique_lock lock{ m_file_list_mutex };
         rebuild_file_index();
     }
+
+    // Has any of the given ResourceEntry's dependencies' files changed since they were loaded?
+    auto dependencies_were_updated = [this](const ResourceEntryBase& entry) -> bool {
+        auto dependency_was_updated = [&](const ResourceEntryBase::Dependency& dependency) {
+            return file_info(dependency.dependency_id)->time_stamp > dependency.time_stamp;
+        };
+
+        return find_if(entry.dependencies, dependency_was_updated) != entry.dependencies.end();
+    };
+
+    // Should the resource corresponding to the given file be re-loaded (i.e. has its file or those
+    // of any of its dependencies changed)?
+    auto should_reload = [&dependencies_were_updated](const FileInfo& fi) -> bool {
+        if (fi.entry == nullptr) { return false; }
+
+        std::shared_lock entry_lock{ fi.entry->mutex };
+
+        if (!fi.entry->is_loaded() || !fi.entry->get_resource().should_reload_on_file_change()) {
+            return false;
+        }
+
+        // First, check whether resource file has been updated.
+        if (fi.time_stamp > fi.entry->time_stamp()) { return true; }
+
+        // Then, check whether dependencies have been updated.
+        return dependencies_were_updated(*fi.entry);
+    };
 
     struct ReloadInfo {
         ResourceEntryBase& entry;
@@ -51,49 +79,26 @@ void ResourceCache::refresh()
     };
     std::vector<ReloadInfo> entries_to_reload;
 
+    // Scope for lock.
     {
         std::shared_lock lock{ m_file_list_mutex };
 
-        // Reload & notify for any changed files
+        // Create list of files to reload (not doing it immediately to not have to hold the lock on
+        // the m_file_list_mutex during resource loading).
         for (const FileInfo& file : m_file_list) {
-            ResourceEntryBase* p_entry = file.entry.get();
-            if (!p_entry) { continue; }
-
-            std::shared_lock   entry_lock{ p_entry->mutex };
-
-            if (!p_entry->is_loaded() || !p_entry->get_resource().should_reload_on_file_change()) {
-                continue;
-            }
-
-            // Determine whether to update resource.
-            bool should_update = false;
-
-            // First, check whether resource file has been updated.
-            if (file.time_stamp > p_entry->time_stamp()) { should_update = true; }
-
-            // Then, check whether dependencies have been updated.
-            for (auto&& dep : p_entry->dependencies) {
-                if (should_update) { break; } // Do not iterate more than necessary.
-                if (file_info(dep.dependency_id)->time_stamp > dep.time_stamp) {
-                    should_update = true;
-                }
-            }
-
-            if (should_update) {
-                entries_to_reload.push_back({ *p_entry, file.time_stamp, *file.loader });
+            if (should_reload(file)) {
+                entries_to_reload.push_back({ *file.entry, file.time_stamp, *file.loader });
             }
         }
     }
 
-    for (const auto& reload_info : entries_to_reload) {
-        ResourceEntryBase& entry = reload_info.entry;
-
-        // Reload resource and notify observers.
+    // Re-load any modified resources.
+    for (const auto& [entry, new_time_stamp, new_loader] : entries_to_reload) {
         log_verbose(entry.resource_id(), "Resource was modified, re-loading...");
 
         try {
             // Create new ResourceEntry, load resource into that, then swap with the old entry.
-            auto p_new_entry = entry.new_entry(reload_info.new_loader, reload_info.new_time_stamp);
+            auto p_new_entry = entry.new_entry(new_loader, new_time_stamp);
             p_new_entry->load_resource();
 
             {
@@ -107,8 +112,7 @@ void ResourceCache::refresh()
         }
 
         if (m_resource_reload_callback) {
-            m_resource_reload_callback(
-                FileChangedEvent{ entry.get_resource(), reload_info.new_time_stamp });
+            m_resource_reload_callback(FileChangedEvent{ entry.get_resource(), new_time_stamp });
         }
     }
 }
