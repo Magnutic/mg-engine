@@ -58,7 +58,7 @@ class ResourceCache;
  * assets that are finished should be included in an archive, instead, for better performance (as
  * less fragmented resource data reduces hard-drive seek time).
  *
- * The cache maintains an index of files available to its resource loaders. This allows the cache to
+ * The cache maintains an list of files available to its resource loaders. This allows the cache to
  * know whether to load from directory or from archive, without a file system look-up. However, it
  * also means that `refresh()` should be called if either directory or archive contents have
  * changed. One may, for example, call `refresh()` upon window-receiving-focus events.
@@ -96,7 +96,7 @@ public:
     MG_MAKE_NON_COPYABLE(ResourceCache);
     MG_MAKE_NON_MOVABLE(ResourceCache); // Prevents pointer invalidation
 
-    /** Update file index, detects if files have changed (added, removed, changed timestamp). */
+    /** Update file list, detects if files have changed (added, removed, changed timestamp). */
     void refresh();
 
     /** Get handle to a resource with the given path.
@@ -112,7 +112,7 @@ public:
         return resource_handle<ResT>(file).access();
     }
 
-    /** Returns whether a file with the given path exists in the file index.
+    /** Returns whether a file with the given path exists in the file list.
      * N.B. returns the state as of most recent call to `refresh()`
      */
     bool file_exists(Identifier file) const
@@ -121,7 +121,7 @@ public:
         return file_info(file) != nullptr;
     }
 
-    /** Returns the time stamp of the given file. Throws if file does not exist in file index. */
+    /** Returns the time stamp of the given file. Throws if file does not exist in file list. */
     time_point file_time_stamp(Identifier file) const
     {
         std::shared_lock lock{ m_file_list_mutex };
@@ -170,8 +170,8 @@ private:
         std::unique_ptr<ResourceEntryBase> entry;
     };
 
-    // Rebuilds resource file index data structures.
-    void rebuild_file_index();
+    // Rebuilds resource-file-list data structures.
+    void rebuild_file_list();
 
     // Get pointer to FileInfo record for the given filename, or nullptr if no such file exists.
     const FileInfo* file_info(Identifier file) const;

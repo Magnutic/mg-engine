@@ -36,13 +36,13 @@ namespace Mg {
 // ResourceCache implementation
 //--------------------------------------------------------------------------------------------------
 
-// Update file index, detects if files have changed (added, removed, changed timestamp).
+// Update file list, detects if files have changed (added, removed, changed timestamp).
 void ResourceCache::refresh()
 {
-    // Refresh index of available files.
+    // Refresh list of available files.
     {
         std::unique_lock lock{ m_file_list_mutex };
-        rebuild_file_index();
+        rebuild_file_list();
     }
 
     // Has any of the given ResourceEntry's dependencies' files changed since they were loaded?
@@ -132,10 +132,10 @@ const ResourceCache::FileInfo* ResourceCache::file_info(Identifier file) const
 }
 
 // Rebuilds available-file list data structure.
-void ResourceCache::rebuild_file_index()
+void ResourceCache::rebuild_file_list()
 {
     // Caller (i.e. refresh()) is responsible for locking m_file_list_mutex.
-    log_verbose("<N/A>", "Building file index...");
+    log_verbose("<N/A>", "Building file list...");
 
     // Update file list with the new file record.
     auto update_file_list = [&](const FileRecord& file_record, IFileLoader& loader) {
@@ -157,7 +157,7 @@ void ResourceCache::rebuild_file_index()
 
     for (auto&& p_loader : file_loaders()) {
         MG_ASSERT(p_loader != nullptr);
-        g_log.write_verbose(fmt::format("Refreshing file index for '{}'", p_loader->name()));
+        g_log.write_verbose(fmt::format("Refreshing file list for '{}'", p_loader->name()));
 
         for (auto&& fr : p_loader->available_files()) { update_file_list(fr, *p_loader); }
     }
