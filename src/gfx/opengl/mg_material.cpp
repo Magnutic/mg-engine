@@ -269,7 +269,7 @@ std::string shader_interface_code(const Material& material)
 
     // Include pre-processor #defines for each enabled option
     for (const Material::Option& o : material.options()) {
-        snippet += fmt::format("#define {} {}\n", o.c_str(), material.get_option(o));
+        snippet += fmt::format("#define {} {:d}\n", o.c_str(), material.get_option(o));
     }
 
     return snippet;
