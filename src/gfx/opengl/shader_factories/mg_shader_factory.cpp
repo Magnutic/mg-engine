@@ -23,35 +23,34 @@
 
 #include "../../mg_shader_factory.h"
 
-#include <sstream>
-
-#include <fmt/core.h>
+#include "../mg_opengl_shader.h"
 
 #include "mg/core/mg_log.h"
 #include "mg/gfx/mg_material.h"
 #include "mg/resources/mg_shader_resource.h"
 #include "mg/utils/mg_stl_helpers.h"
 
-#include "../mg_opengl_shader.h"
+#include <fmt/core.h>
 
 namespace Mg::gfx {
 
 // Dump code to log with line numbers
 inline std::string error_dump_code(std::string_view code)
 {
-    std::stringstream oss;
-    size_t            line = 1;
+    std::string str;
+    str.reserve(1024);
+    size_t line = 1;
 
-    oss << line << '\t';
+    str += std::to_string(line) + '\t';
     for (char c : code) {
-        oss << c;
+        str += c;
         if (c == '\n') {
             ++line;
-            oss << line << '\t';
+            str += std::to_string(line) + '\t';
         }
     }
 
-    return oss.str();
+    return str;
 }
 
 inline ShaderProgram make_shader_program(const IShaderProvider& shader_provider,

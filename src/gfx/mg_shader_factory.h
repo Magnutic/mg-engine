@@ -27,14 +27,14 @@
 
 #pragma once
 
-#include <cstdint>
-#include <memory>
-#include <string>
-
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_resource_handle.h"
 #include "mg/gfx/mg_shader.h"
 #include "mg/utils/mg_macros.h"
+
+#include <cstdint>
+#include <memory>
+#include <string>
 
 namespace Mg {
 struct FileChangedEvent;
