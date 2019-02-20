@@ -171,7 +171,7 @@ void init()
 
         {
             Model& hest_model = g_scene.scene_models.emplace_back(
-                load_model("meshes/misc/hestdraugr.mgm", hest_mats, {}));
+                load_model("meshes/misc/hestdraugr.mgm", hest_mats, { "RIM_LIGHT" }));
 
             hest_model.transform.position.x = 3.0f;
         }

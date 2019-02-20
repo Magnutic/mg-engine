@@ -69,11 +69,11 @@ FrameBlock make_frame_block(const ICamera& camera)
 
 namespace Mg::gfx {
 
-ShaderCode MeshShaderProvider::make_shader_code(const Material& material) const
-{
-    constexpr size_t     code_reservation_size = 5 * 1024;
-    constexpr const char version_tag[]         = "#version 330 core\n";
+static constexpr size_t     code_reservation_size = 5 * 1024;
+static constexpr const char version_tag[]         = "#version 330 core\n";
 
+inline ShaderCode shader_code_stub()
+{
     std::string vertex_code;
     vertex_code.reserve(code_reservation_size);
 
@@ -84,27 +84,66 @@ ShaderCode MeshShaderProvider::make_shader_code(const Material& material) const
     vertex_code += version_tag;
     fragment_code += version_tag;
 
+    return { vertex_code, fragment_code };
+}
+
+
+ShaderCode MeshShaderProvider::on_error_shader_code() const
+{
+    ShaderCode code = shader_code_stub();
+
+    // Include framework shader code.
+    code.vertex_code += k_lit_mesh_framework_vertex_code;
+    code.fragment_code += k_lit_mesh_framework_fragment_code;
+
+    code.fragment_code += R"(
+float attenuate(float distance_sqr, float range_sqr_reciprocal) { return 1.0; }
+
+vec3 light(const LightInput light, const SurfaceParams surface, const vec3 view_direction) {
+    return vec3(0.0);
+}
+
+void final_colour(const SurfaceInput s_in, const SurfaceParams s, inout vec4 colour) {}
+
+void surface(const SurfaceInput s_in, out SurfaceParams s_out) {
+    s_out.albedo    = vec3(0.0);
+    s_out.specular  = vec3(0.0);
+    s_out.gloss     = 0.0;
+    s_out.normal    = vec3(0.0);
+    s_out.emission  = vec3(100.0, 0.0, 100.0);
+    s_out.occlusion = 0.0;
+    s_out.alpha     = 1.0;
+}
+    )";
+
+    return code;
+}
+
+ShaderCode MeshShaderProvider::make_shader_code(const Material& material) const
+{
+    ShaderCode code = shader_code_stub();
+
     // Access shader resource
     auto shader_resource_access = material.shader().access();
 
     // If there is a vertex-preprocess function, then include the corresponding #define
     if ((shader_resource_access->tags() & ShaderTag::DEFINES_VERTEX_PREPROCESS) != 0) {
-        vertex_code += "#define VERTEX_PREPROCESS_ENABLED 1";
+        code.vertex_code += "#define VERTEX_PREPROCESS_ENABLED 1";
     }
 
     // Include framework shader code.
-    vertex_code += k_lit_mesh_framework_vertex_code;
-    fragment_code += k_lit_mesh_framework_fragment_code;
+    code.vertex_code += k_lit_mesh_framework_vertex_code;
+    code.fragment_code += k_lit_mesh_framework_fragment_code;
 
     // Include sampler, parameter, and enabled-option definitions.
-    vertex_code += shader_interface_code(material);
-    fragment_code += shader_interface_code(material);
+    code.vertex_code += shader_interface_code(material);
+    code.fragment_code += shader_interface_code(material);
 
     // Include resource-defined shader code.
-    vertex_code += shader_resource_access->vertex_code();
-    fragment_code += shader_resource_access->fragment_code();
+    code.vertex_code += shader_resource_access->vertex_code();
+    code.fragment_code += shader_resource_access->fragment_code();
 
-    return ShaderCode{ std::move(vertex_code), std::move(fragment_code) };
+    return code;
 }
 
 void MeshShaderProvider::setup_shader_state(ShaderProgram& program, const Material& material) const

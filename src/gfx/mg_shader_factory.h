@@ -55,7 +55,22 @@ class IShaderProvider {
 public:
     MG_INTERFACE_BOILERPLATE(IShaderProvider);
 
-    virtual ShaderCode make_shader_code(const Material& material) const                     = 0;
+    /** Code to use as fallback when shaders fail to compile. Should be something visually
+     * noticeable and garish, ideally.
+     *
+     * @remark
+     * It would, perhaps, seem like a good idea to just crash if a shader fails to compile -- it is
+     * a fairly critical error -- but the main reason for not doing so is that we might be editing a
+     * shader and hot-reloading it to see the effect immediately. If the application crashed every
+     * time we save the shader code with an error, iterating on shaders would become quite the
+     * exercise in patience.
+     */
+    virtual ShaderCode on_error_shader_code() const = 0;
+
+    /** Create shader code appropriate for the given material: using its parameters and options. */
+    virtual ShaderCode make_shader_code(const Material& material) const = 0;
+
+    /** Initialise state of the given ShaderProgram (e.g. setting up bindings for samplers). */
     virtual void setup_shader_state(ShaderProgram& program, const Material& material) const = 0;
 };
 

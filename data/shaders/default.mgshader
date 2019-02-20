@@ -8,7 +8,7 @@ TAGS {
 
 // Options are #defines in shader code and may be used via '#if OPTION_NAME', etc
 OPTIONS {
-    RIM_LIGHT = true;
+    RIM_LIGHT = false;
     PARALLAX = false;
 }
 

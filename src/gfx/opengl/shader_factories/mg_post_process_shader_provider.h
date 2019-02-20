@@ -50,6 +50,7 @@ namespace Mg::gfx {
 
 class PostProcessShaderProvider : public IShaderProvider {
 public:
+    ShaderCode on_error_shader_code() const override;
     ShaderCode make_shader_code(const Material& material) const override;
     void       setup_shader_state(ShaderProgram& program, const Material& material) const override;
 };

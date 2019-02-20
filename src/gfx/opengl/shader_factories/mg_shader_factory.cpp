@@ -53,36 +53,36 @@ inline std::string error_dump_code(std::string_view code)
     return str;
 }
 
-inline ShaderProgram make_shader_program(const IShaderProvider& shader_provider,
-                                         const Material&        material)
+inline std::optional<ShaderProgram> compile_shader_program(ShaderCode code)
 {
-    ShaderCode code = shader_provider.make_shader_code(material);
+    std::optional<VertexShader>   ovs = VertexShader::make(code.vertex_code);
+    std::optional<FragmentShader> ofs = FragmentShader::make(code.fragment_code);
 
-    try {
-        std::optional<VertexShader>   ovs = VertexShader::make(code.vertex_code);
-        std::optional<FragmentShader> ofs = FragmentShader::make(code.fragment_code);
+    if (!ovs.has_value() || !ofs.has_value()) { return std::nullopt; }
 
-        return ShaderProgram::make(ovs.value(), ofs.value()).value();
-    }
-    catch (const std::bad_optional_access&) {
-        const auto* shader_name = material.shader().resource_id().c_str();
-        g_log.write_error(fmt::format("Failed to compile shader '{}'.", shader_name));
-        g_log.write_message(fmt::format("Vertex code:\n{}", error_dump_code(code.vertex_code)));
-        g_log.write_message(fmt::format("Fragment code:\n{}", error_dump_code(code.fragment_code)));
-
-        throw;
-    }
+    return ShaderProgram::make(ovs.value(), ofs.value());
 }
 
 ShaderFactory::ShaderHandle ShaderFactory::make_shader(const Material& material)
 {
-    const auto* shader_name = material.shader().resource_id().c_str();
+    const char* shader_name = material.shader().resource_id().c_str();
     g_log.write_message(
         fmt::format("ShaderFactory: compiling variant of shader '{}'.", shader_name));
 
-    m_shader_nodes.push_back({ material.shader_hash(),
-                               material.shader(),
-                               make_shader_program(*m_shader_provider, material) });
+    const ShaderCode             code        = m_shader_provider->make_shader_code(material);
+    std::optional<ShaderProgram> opt_program = compile_shader_program(code);
+
+    if (!opt_program.has_value()) {
+        g_log.write_error(fmt::format("Failed to compile shader '{}'.", shader_name));
+        g_log.write_message(fmt::format("Vertex code:\n{}", error_dump_code(code.vertex_code)));
+        g_log.write_message(fmt::format("Fragment code:\n{}", error_dump_code(code.fragment_code)));
+
+        g_log.write_message("Using error-fallback shader.");
+        opt_program = compile_shader_program(m_shader_provider->on_error_shader_code());
+    }
+
+    m_shader_nodes.push_back(
+        { material.shader_hash(), material.shader(), std::move(opt_program.value()) });
 
     ShaderNode& node = m_shader_nodes.back();
 

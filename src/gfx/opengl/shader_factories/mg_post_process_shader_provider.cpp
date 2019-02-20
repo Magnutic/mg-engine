@@ -72,6 +72,12 @@ float linearise_depth(float depth) {
 
 namespace Mg::gfx {
 
+ShaderCode PostProcessShaderProvider::on_error_shader_code() const {
+    ShaderCode code{ post_renderer::post_process_vs, post_renderer::post_process_fs };
+    code.fragment_code += R"(void main() { frag_out = vec4(1.0, 0.0, 1.0, 1.0); })";
+    return code;
+}
+
 ShaderCode PostProcessShaderProvider::make_shader_code(const Material& material) const
 {
     ShaderCode code{ post_renderer::post_process_vs, post_renderer::post_process_fs };
