@@ -105,8 +105,28 @@ public:
      * handle, or to defer loading until first access.
      */
     template<typename ResT>
-    ResourceHandle<ResT> resource_handle(Identifier file, bool load_resource_immediately = true);
+    ResourceHandle<ResT> resource_handle(Identifier file, bool load_resource_immediately = true)
+    {
+        std::optional<ResourceHandle<ResT>> handle;
 
+        {
+            std::shared_lock lock{ m_file_list_mutex };
+
+            FileInfo* p_file_info = file_info(file);
+            if (!p_file_info) { throw_resource_not_found(file); }
+
+            ResourceEntryBase& entry = get_or_create_resource_entry<ResT>(*p_file_info);
+            handle.emplace(static_cast<ResourceEntry<ResT>&>(entry));
+        }
+
+        if (load_resource_immediately) { handle->access(); }
+
+        return handle.value();
+    }
+
+    /** Access the resource with the given file path.
+     * @param file Filename (path) to resource file.
+     */
     template<typename ResT> ResourceAccessGuard<ResT> access_resource(Identifier file)
     {
         return resource_handle<ResT>(file).access();
@@ -237,29 +257,5 @@ private:
     // `ResourceCache::resource_handle` as it requests a dependency.
     std::mutex m_set_resource_entry_mutex;
 };
-
-//--------------------------------------------------------------------------------------------------
-// ResourceCache member function template implementations
-//--------------------------------------------------------------------------------------------------
-
-template<typename ResT>
-ResourceHandle<ResT> ResourceCache::resource_handle(Identifier file, bool load_resource_immediately)
-{
-    std::optional<ResourceHandle<ResT>> handle;
-
-    {
-        std::shared_lock lock{ m_file_list_mutex };
-
-        FileInfo* p_file_info = file_info(file);
-        if (!p_file_info) { throw_resource_not_found(file); }
-
-        ResourceEntryBase& entry = get_or_create_resource_entry<ResT>(*p_file_info);
-        handle.emplace(static_cast<ResourceEntry<ResT>&>(entry));
-    }
-
-    if (load_resource_immediately) { handle->access(); }
-
-    return handle.value();
-}
 
 } // namespace Mg
