@@ -67,7 +67,7 @@ public:
     using Handle = Ptr<Window>;
 
     /** Callback to invoke when window gains or loses focus.
-     * Parametres: bool is_focused, whether the window is focused.
+     * Parameters: bool is_focused, whether the window is focused.
      */
     using FocusCallbackT = void (*)(bool);
 

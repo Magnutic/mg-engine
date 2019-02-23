@@ -38,7 +38,7 @@ enum class BlendFunc {
     MAX              = 0x8008
 };
 
-/** Parametres for blend functions */
+/** Parameters for blend functions */
 enum class BlendParam {
     ZERO                 = 0x0000,
     ONE                  = 0x0001,
