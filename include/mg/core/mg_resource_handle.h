@@ -21,9 +21,9 @@
 //
 //**************************************************************************************************
 
-/** @file mg_resource_handle_fwd.h
- * Forward declaration of ResourceHandle.
- * Full implementation is in mg_resource_cache.h
+/** @file mg_resource_handle.h
+ * Handle to a resource.
+ * @see ResourceCache
  */
 
 #pragma once
