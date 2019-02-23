@@ -27,10 +27,9 @@
 
 #pragma once
 
-#include <memory>
-
 #include "mg/gfx/mg_blend_modes.h"
 #include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_simple_pimpl.h"
 
 namespace Mg {
 class Window;
@@ -58,12 +57,12 @@ enum class DepthFunc {
 /** Types of functions to use in culling. */
 enum class CullFunc { NONE = 0, FRONT = 0x404, BACK = 0x405 };
 
+struct GfxDeviceData;
+
 /** Provides access to the graphics context.
  * N.B. only one GfxDevice object exist at a time.
  */
-class GfxDevice {
-    class Data;
-
+class GfxDevice : PimplMixin<GfxDeviceData> {
 public:
     /** Construct new graphics context management object.
      * @param window The window object whose graphics context to manage.
@@ -105,11 +104,6 @@ public:
     MeshRepository&     mesh_repository();
     TextureRepository&  texture_repository();
     MaterialRepository& material_repository();
-
-private:
-    Data& data() { return *m_impl; }
-
-    std::unique_ptr<Data> m_impl;
 };
 
 } // namespace Mg::gfx

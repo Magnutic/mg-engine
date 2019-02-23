@@ -62,10 +62,7 @@ static void APIENTRY ogl_error_callback_wrapper(uint32_t      source,
 
 static GfxDevice* p_gfx_device = nullptr;
 
-class GfxDevice::Data {
-public:
-    explicit Data() = default;
-
+struct GfxDeviceData {
     MeshRepository     mesh_repository;
     TextureRepository  texture_repository;
     MaterialRepository material_repository;
@@ -73,7 +70,7 @@ public:
 
 //--------------------------------------------------------------------------------------------------
 
-GfxDevice::GfxDevice(::Mg::Window& window) : m_impl(std::make_unique<Data>())
+GfxDevice::GfxDevice(::Mg::Window& window)
 {
     if (p_gfx_device != nullptr) {
         throw std::logic_error{ "Only one Mg::gfx::GfxDevice may be constructed at a time." };
