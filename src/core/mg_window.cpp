@@ -50,7 +50,7 @@ VideoMode current_monitor_video_mode()
     return VideoMode{ gvm->width, gvm->height };
 }
 
-std::vector<VideoMode> find_available_resolutions()
+std::vector<VideoMode> find_available_video_modes()
 {
     std::vector<VideoMode> res;
 

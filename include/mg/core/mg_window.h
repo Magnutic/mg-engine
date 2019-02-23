@@ -27,16 +27,15 @@
 
 #pragma once
 
-#include <cstdint>
-#include <optional>
-#include <string>
-#include <vector>
-
 #include "mg/core/mg_window_settings.h"
 #include "mg/gfx/mg_render_target.h"
 #include "mg/input/mg_keyboard.h"
 #include "mg/input/mg_mouse.h"
 #include "mg/utils/mg_pointer.h"
+
+#include <cstdint>
+#include <string>
+#include <vector>
 
 struct GLFWwindow;
 
