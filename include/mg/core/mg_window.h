@@ -32,10 +32,10 @@
 #include "mg/input/mg_keyboard.h"
 #include "mg/input/mg_mouse.h"
 #include "mg/utils/mg_pointer.h"
+#include "mg/containers/mg_array.h"
 
 #include <cstdint>
 #include <string>
-#include <vector>
 
 struct GLFWwindow;
 
@@ -46,7 +46,7 @@ namespace Mg {
 /* Find all available screen resolutions.
  * This could be useful for e.g. listing choices in a display options menu.
  */
-std::vector<VideoMode> find_available_video_modes();
+Array<VideoMode> find_available_video_modes();
 
 /** Get video mode of primary monitor. */
 VideoMode current_monitor_video_mode();

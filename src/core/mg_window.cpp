@@ -23,20 +23,21 @@
 
 #include "mg/core/mg_window.h"
 
-#include <mutex>
-#include <stdexcept>
-
-#define GLFW_INCLUDE_NONE // Do not let GLFW include OpenGL headers.
-#include <GLFW/glfw3.h>
-#undef GLFW_INCLUDE_NONE
-
-#include <fmt/core.h>
-
+#include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_root.h"
 #include "mg/gfx/mg_render_target.h"
 #include "mg/mg_defs.h"
 #include "mg/utils/mg_gsl.h"
+
+#include <fmt/core.h>
+
+#define GLFW_INCLUDE_NONE // Do not let GLFW include OpenGL headers.
+#include <GLFW/glfw3.h>
+#undef GLFW_INCLUDE_NONE
+
+#include <mutex>
+#include <stdexcept>
 
 namespace Mg {
 
@@ -50,9 +51,9 @@ VideoMode current_monitor_video_mode()
     return VideoMode{ gvm->width, gvm->height };
 }
 
-std::vector<VideoMode> find_available_video_modes()
+Array<VideoMode> find_available_video_modes()
 {
-    std::vector<VideoMode> res;
+    small_vector<VideoMode, 20> res;
 
     auto vid_modes = []() -> span<const GLFWvidmode> {
         int  n_modes;
@@ -72,7 +73,7 @@ std::vector<VideoMode> find_available_video_modes()
         res.push_back(vm);
     }
 
-    return res;
+    return Array<VideoMode>::make_copy(res);
 }
 
 // GLFW callbacks provide the GLFW window handle, but we must forward to the appropriate instance
