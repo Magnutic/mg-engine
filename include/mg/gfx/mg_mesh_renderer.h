@@ -40,6 +40,11 @@ class Material;
 
 struct MeshRendererData;
 
+struct RenderParameters {
+    float current_time;
+    float camera_exposure;
+};
+
 class MeshRenderer : PimplMixin<MeshRendererData> {
 public:
     MeshRenderer();
@@ -53,7 +58,10 @@ public:
     void drop_shaders();
 
     /** Render the supplied list of meshes. */
-    void render(const ICamera& cam, const RenderCommandList& mesh_list, span<const Light> lights);
+    void render(const ICamera&           cam,
+                const RenderCommandList& mesh_list,
+                span<const Light>        lights,
+                RenderParameters         params);
 };
 
 } // namespace Mg::gfx

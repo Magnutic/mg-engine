@@ -91,12 +91,15 @@ inline void set_material(MeshRendererData& data, const Material& material)
 }
 
 /** Upload frame-constant buffers to GPU. */
-inline void upload_frame_constant_buffers(MeshRendererData& data, const ICamera& cam)
+inline void
+upload_frame_constant_buffers(MeshRendererData& data, const ICamera& cam, RenderParameters params)
 {
     using namespace mesh_renderer;
 
     // Upload frame-global uniforms
-    FrameBlock frame_block = mesh_renderer::make_frame_block(cam, 0.0, -7.0);
+    FrameBlock frame_block = mesh_renderer::make_frame_block(cam,
+                                                             params.current_time,
+                                                             params.camera_exposure);
     data.m_frame_ubo.set_data(byte_representation(frame_block));
     data.m_frame_ubo.bind_to(UniformBufferSlot{ k_frame_ubo_index });
 
@@ -134,7 +137,8 @@ void MeshRenderer::drop_shaders()
 
 void MeshRenderer::render(const ICamera&           cam,
                           const RenderCommandList& mesh_list,
-                          span<const Light>        lights)
+                          span<const Light>        lights,
+                          RenderParameters         params)
 {
     using namespace internal;
 
@@ -147,7 +151,7 @@ void MeshRenderer::render(const ICamera&           cam,
     }
 
     update_light_data(data().m_light_buffers, lights, cam, data().m_light_grid);
-    upload_frame_constant_buffers(data(), cam);
+    upload_frame_constant_buffers(data(), cam, params);
 
     size_t next_matrix_update_index = 0;
 

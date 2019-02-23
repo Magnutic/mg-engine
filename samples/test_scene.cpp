@@ -40,8 +40,8 @@ inline Mg::gfx::TextureHandle load_texture(std::string_view file)
 
 inline Mg::gfx::Material* load_material(Identifier file, std::initializer_list<Identifier> options)
 {
-    auto handle =
-        g_scene->resource_cache.resource_handle<ShaderResource>("shaders/default.mgshader");
+    auto handle = g_scene->resource_cache.resource_handle<ShaderResource>(
+        "shaders/default.mgshader");
     Material* m = g_scene->root.gfx_context().material_repository().create(file, handle);
 
     for (auto o : options) { m->set_option(o, true); }
@@ -190,8 +190,8 @@ void init()
     {
         auto handle = g_scene->resource_cache.resource_handle<ShaderResource>(
             "shaders/post_process_test.mgshader");
-        g_scene->post_material =
-            g_scene->root.gfx_context().material_repository().create("PostProcessMaterial", handle);
+        g_scene->post_material = g_scene->root.gfx_context().material_repository().create(
+            "PostProcessMaterial", handle);
     }
 
     g_scene->light_billboard_texture = load_texture("light_t");
@@ -343,7 +343,8 @@ void render_scene(double lerp_factor)
     g_scene->hdr_target->bind();
     gfx.clear();
 
-    g_scene->mesh_renderer.render(g_scene->camera, render_list, lights);
+    auto time = float(g_scene->root.time_since_init());
+    g_scene->mesh_renderer.render(g_scene->camera, render_list, lights, { time, -6.0 });
 
     g_scene->billboard_renderer.render(g_scene->camera,
                                        g_scene->billboard_render_list,
