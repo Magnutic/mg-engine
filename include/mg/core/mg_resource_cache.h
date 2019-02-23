@@ -36,7 +36,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
@@ -173,13 +172,15 @@ public:
         return m_file_loaders;
     }
 
-    void set_resource_reload_callback(std::function<void(const FileChangedEvent&)> callback)
+    using FileChangeCallbackT = void (*)(const FileChangedEvent&);
+
+    void set_resource_reload_callback(FileChangeCallbackT callback)
     {
         m_resource_reload_callback = std::move(callback);
     }
 
 private:
-    std::function<void(const FileChangedEvent&)> m_resource_reload_callback;
+    FileChangeCallbackT m_resource_reload_callback;
 
     struct FileInfo {
         Identifier   filename;
