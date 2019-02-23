@@ -23,16 +23,6 @@
 
 #include "mg/gfx/mg_debug_renderer.h"
 
-#include <cstdint>
-#include <map>
-#include <vector>
-
-#include <glm/common.hpp>
-#include <glm/gtc/constants.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/mat4x4.hpp>
-#include <glm/trigonometric.hpp>
-
 #include "mg/core/mg_rotation.h"
 #include "mg/gfx/mg_shader.h"
 #include "mg/utils/mg_assert.h"
@@ -41,6 +31,16 @@
 #include "mg_gl_debug.h"
 #include "mg_opengl_shader.h"
 #include "mg_glad.h"
+
+#include <glm/common.hpp>
+#include <glm/gtc/constants.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/trigonometric.hpp>
+
+#include <cstdint>
+#include <map>
+#include <vector>
 
 namespace Mg::gfx {
 
@@ -231,23 +231,21 @@ static EllipsoidData generate_ellipsoid_verts(size_t steps)
 // DebugRenderer implementation
 //--------------------------------------------------------------------------------------------------
 
-struct DebugRenderer::Data {
+struct Sphere {
+    DebugMeshOwner mesh{};
+    int32_t        num_indices{};
+};
+
+struct DebugRendererData {
     ShaderProgram program = ShaderProgram::make(VertexShader::make(vs_code).value(),
                                                 FragmentShader::make(fs_code).value())
                                 .value();
 
-    DebugMeshOwner box = generate_mesh(box_vertices, box_indices);
-
-    struct Sphere {
-        DebugMeshOwner mesh{};
-        int32_t        num_indices{};
-    };
-
+    DebugMeshOwner           box = generate_mesh(box_vertices, box_indices);
     std::map<size_t, Sphere> spheres;
 };
 
-DebugRenderer::DebugRenderer() : m_data{ std::make_unique<Data>() } {}
-
+DebugRenderer::DebugRenderer()  = default;
 DebugRenderer::~DebugRenderer() = default;
 
 static void draw_primitive(ShaderProgram&                      program,
@@ -298,9 +296,9 @@ void DebugRenderer::draw_ellipsoid(const ICamera& camera, EllipsoidDrawParams pa
         auto ellipsoid_data = generate_ellipsoid_verts(params.steps);
 
         auto p = data().spheres.emplace(params.steps,
-                                        Data::Sphere{ generate_mesh(ellipsoid_data.verts,
-                                                                    ellipsoid_data.indices),
-                                                      int32_t(ellipsoid_data.indices.size()) });
+                                        Sphere{ generate_mesh(ellipsoid_data.verts,
+                                                              ellipsoid_data.indices),
+                                                int32_t(ellipsoid_data.indices.size()) });
 
         it = p.first;
     }
@@ -309,11 +307,6 @@ void DebugRenderer::draw_ellipsoid(const ICamera& camera, EllipsoidDrawParams pa
     int32_t     num_indices = it->second.num_indices;
 
     draw_primitive(data().program, camera, mesh, num_indices, params);
-}
-
-DebugRenderer::Data& DebugRenderer::data() const
-{
-    return *m_data;
 }
 
 } // namespace Mg::gfx

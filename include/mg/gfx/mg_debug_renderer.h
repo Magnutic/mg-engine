@@ -27,13 +27,12 @@
 
 #pragma once
 
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
-
-#include <memory>
-
 #include "mg/gfx/mg_camera.h"
 #include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_simple_pimpl.h"
+
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 
 namespace Mg {
 class Rotation;
@@ -41,10 +40,12 @@ class Rotation;
 
 namespace Mg::gfx {
 
+struct DebugRendererData;
+
 /** Renderer for drawing debug geometry.
  * N.B. this renderer is relatively inefficient and is intended for debugging visualisation.
  */
-class DebugRenderer {
+class DebugRenderer : PimplMixin<DebugRendererData> {
 public:
     DebugRenderer();
     MG_MAKE_NON_COPYABLE(DebugRenderer);
@@ -68,12 +69,6 @@ public:
     void draw_box(const ICamera& camera, BoxDrawParams params);
 
     void draw_ellipsoid(const ICamera& camera, EllipsoidDrawParams params);
-
-private:
-    struct Data;
-    Data& data() const;
-
-    std::unique_ptr<Data> m_data;
 };
 
 } // namespace Mg::gfx
