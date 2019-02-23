@@ -23,6 +23,13 @@
 
 #include "mg/core/mg_root.h"
 
+#include "mg/core/mg_config.h"
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_window.h"
+#include "mg/gfx/mg_gfx_device.h"
+#include "mg/mg_defs.h"
+
+#include <chrono>
 #include <cstdlib>
 #include <exception>
 #include <stdexcept>
@@ -37,19 +44,15 @@
 #undef NOMINMAX
 #endif
 
-#define GLFW_INCLUDE_NONE // Do not let GLFW include OpenGL headers.
-#include <GLFW/glfw3.h>
-#undef GLFW_INCLUDE_NONE
-
-#include "mg/core/mg_config.h"
-#include "mg/core/mg_log.h"
-#include "mg/core/mg_window.h"
-#include "mg/gfx/mg_gfx_device.h"
-#include "mg/mg_defs.h"
-
 namespace Mg {
 
-Root* g_root = nullptr;
+struct RootData {
+    std::chrono::high_resolution_clock::time_point start_time;
+
+    std::unique_ptr<Config>         config;
+    std::unique_ptr<Window>         window;
+    std::unique_ptr<gfx::GfxDevice> gfx_device;
+};
 
 #ifdef _WIN32
 // Old code page to return to on application exit
@@ -58,11 +61,7 @@ static uint32_t s_old_codepage;
 
 Root::Root()
 {
-    if (g_root != nullptr) {
-        throw std::logic_error{ "Attempting to construct multiple instances of Mg::Root." };
-    }
-
-    g_root = this;
+    data().start_time = std::chrono::high_resolution_clock::now();
 
 #ifdef _WIN32
     // Allow UTF-8 output to Windows console
@@ -73,44 +72,50 @@ Root::Root()
     g_log.write_message("Mg Engine initialising...");
 
     // Set up engine config
-    m_config = std::make_unique<Config>(defs::k_default_config_file_name);
+    data().config = std::make_unique<Config>(defs::k_default_config_file_name);
 
     // Create window
     {
         auto window = Window::make(WindowSettings{}, "Mg Engine");
         if (!window) { throw std::runtime_error("Failed to open window."); }
-        m_window = std::move(window.value());
+        data().window = std::move(window.value());
     }
 
     // Create render context
-    m_render_context = std::make_unique<gfx::GfxDevice>(*m_window);
+    data().gfx_device = std::make_unique<gfx::GfxDevice>(*data().window);
 }
 
 Root::~Root()
 {
     g_log.write_message("Mg Engine exiting...");
-    m_config->write_to_file(defs::k_default_config_file_name);
+    data().config->write_to_file(defs::k_default_config_file_name);
 
 #ifdef _WIN32
     // Return to code page used before the application started.
     SetConsoleOutputCP(s_old_codepage);
 #endif
-
-    g_root = nullptr;
 }
 
 double Root::time_since_init()
 {
-    return glfwGetTime();
+    using namespace std::chrono;
+    using seconds_double = duration<double, seconds::period>;
+    return seconds_double(high_resolution_clock::now() - data().start_time).count();
 }
 
-Root& Root::instance()
+Config& Root::config()
 {
-    if (g_root == nullptr) {
-        throw std::logic_error{ "Mg::Root::instance() called outside Mg::Root lifetime." };
-    }
+    return *data().config;
+}
 
-    return *g_root;
+Window& Root::window()
+{
+    return *data().window;
+}
+
+gfx::GfxDevice& Root::gfx_context()
+{
+    return *data().gfx_device;
 }
 
 }; // namespace Mg

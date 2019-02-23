@@ -20,7 +20,7 @@ Scene* g_scene;
 
 inline void setup_config()
 {
-    auto& cfg = Root::config();
+    auto& cfg = g_scene->root.config();
     cfg.set_default_value("mouse_sensitivity_x", 0.002f);
     cfg.set_default_value("mouse_sensitivity_y", 0.002f);
 }
@@ -127,7 +127,7 @@ void init()
             if (is_focused) { g_scene->resource_cache.refresh(); }
         });
 
-        WindowSettings window_settings = read_display_settings(Root::config());
+        WindowSettings window_settings = read_display_settings(g_scene->root.config());
         window.set_title("Mg Engine Example Application");
         window.apply_settings(window_settings);
         window.set_cursor_lock_mode(CursorLockMode::LOCKED);
@@ -206,7 +206,7 @@ void time_step()
     auto& camera     = g_scene->camera;
     auto& prev_state = g_scene->prev_state;
     auto& state      = g_scene->current_state;
-    auto& config     = Root::config();
+    auto& config     = g_scene->root.config();
 
     window.poll_input_events();
     input.refresh();

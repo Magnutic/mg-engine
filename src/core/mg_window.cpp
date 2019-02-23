@@ -193,7 +193,7 @@ std::optional<Window::Handle> Window::make(WindowSettings settings, const std::s
 Window::Window(ConstructKey /*unused*/, GLFWwindow* handle, WindowSettings settings)
     : keyboard{ *this }, mouse{ *this }, m_settings{ settings }, m_window{ handle }
 {
-    MG_ASSERT(s_window == nullptr);
+    MG_ASSERT(s_window == nullptr && "Only one Mg::Window may exist at a time.");
     s_window = this;
     render_target.set_size(m_settings.video_mode.width, m_settings.video_mode.height);
 }

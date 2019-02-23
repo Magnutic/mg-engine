@@ -27,9 +27,8 @@
 
 #pragma once
 
-#include <memory>
-
 #include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_simple_pimpl.h"
 
 /** Mg Engine */
 namespace Mg {
@@ -42,11 +41,13 @@ namespace gfx {
 class GfxDevice;
 }
 
+struct RootData;
+
 /** Mg Engine root. Initialises and owns subsystems.
  * Only one instance of the engine root may exist at a time in an application
  * (due to global state such as config, log, and -- more fundamentally -- graphics API context).
  */
-class Root {
+class Root : PimplMixin<RootData> {
 public:
     Root();
     MG_MAKE_NON_COPYABLE(Root);
@@ -56,20 +57,13 @@ public:
     /** Gets the high-precision time since the engine was started.
      * @return Time since engine start, in seconds.
      */
-    static double time_since_init();
+    double time_since_init();
 
-    static Config& config() { return *instance().m_config; }
+    Config& config();
 
-    Window& window() { return *m_window; }
+    Window& window();
 
-    gfx::GfxDevice& gfx_context() { return *m_render_context; }
-
-private:
-    static Root& instance();
-
-    std::unique_ptr<Config>         m_config;
-    std::unique_ptr<Window>         m_window;
-    std::unique_ptr<gfx::GfxDevice> m_render_context;
+    gfx::GfxDevice& gfx_context();
 };
 
 } // namespace Mg
