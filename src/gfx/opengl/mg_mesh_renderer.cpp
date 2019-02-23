@@ -99,7 +99,7 @@ inline void upload_frame_constant_buffers(MeshRendererData& data, const ICamera&
     using namespace mesh_renderer;
 
     // Upload frame-global uniforms
-    FrameBlock frame_block(mesh_renderer::make_frame_block(cam));
+    FrameBlock frame_block = mesh_renderer::make_frame_block(cam, 0.0, -7.0);
     data.m_frame_ubo.set_data(byte_representation(frame_block));
     data.m_frame_ubo.bind_to(UniformBufferSlot{ k_frame_ubo_index });
 

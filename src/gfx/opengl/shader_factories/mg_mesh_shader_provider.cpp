@@ -37,7 +37,7 @@
 
 namespace Mg::gfx::mesh_renderer {
 
-FrameBlock make_frame_block(const ICamera& camera)
+FrameBlock make_frame_block(const ICamera& camera, float current_time, float camera_exposure)
 {
     std::array<int, 4> viewport_data{};
     glGetIntegerv(GL_VIEWPORT, &viewport_data[0]);
@@ -52,15 +52,14 @@ FrameBlock make_frame_block(const ICamera& camera)
     const auto c           = std::log2(2.0f * z_far * z_near);
 
     FrameBlock frame_block;
-    frame_block.camera_position_and_time =
-        glm::vec4(camera.get_position(), float(Root::time_since_init()));
-    frame_block.viewport_size = viewport_size;
+    frame_block.camera_position_and_time = glm::vec4(camera.get_position(), current_time);
+    frame_block.viewport_size            = viewport_size;
 
     frame_block.cluster_grid_params.z_param = glm::vec2(z_near - z_far, z_near + z_far);
     frame_block.cluster_grid_params.scale   = -scale;
     frame_block.cluster_grid_params.bias    = float(MG_LIGHT_GRID_DEPTH_BIAS) + c * scale;
 
-    frame_block.camera_exposure = -7.0;
+    frame_block.camera_exposure = camera_exposure;
 
     return frame_block;
 }

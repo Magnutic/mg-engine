@@ -82,6 +82,6 @@ struct FrameBlock {
     float camera_exposure = 0.0f;
 };
 
-FrameBlock make_frame_block(const ICamera& camera);
+FrameBlock make_frame_block(const ICamera& camera, float current_time, float camera_exposure);
 
 } // namespace Mg::gfx::mesh_renderer
