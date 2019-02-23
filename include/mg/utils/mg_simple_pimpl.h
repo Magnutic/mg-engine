@@ -27,7 +27,8 @@
 
 #pragma once
 
-#include <memory>
+#include "mg/utils/mg_pointer.h"
+
 #include <utility>
 
 namespace Mg {
@@ -48,10 +49,10 @@ namespace Mg {
 template<typename ImplT> class PimplMixin {
 protected:
     template<typename... Args>
-    PimplMixin(Args&&... args) : m_impl(std::make_unique<ImplT>(std::forward<Args>(args)...))
+    PimplMixin(Args&&... args) : m_impl(Ptr<ImplT>::make(std::forward<Args>(args)...))
     {}
 
-    PimplMixin(const PimplMixin& rhs) : m_impl(std::make_unique<ImplT>(*rhs.m_impl)) {}
+    PimplMixin(const PimplMixin& rhs) : m_impl(Ptr<ImplT>::make(*rhs.m_impl)) {}
 
     PimplMixin(PimplMixin&& rhs) = default;
 
@@ -69,7 +70,7 @@ protected:
     const ImplT& data() const { return *m_impl; }
 
 private:
-    std::unique_ptr<ImplT> m_impl;
+    Ptr<ImplT> m_impl;
 };
 
 /** Mixin utility type, acts like the PIMPL-pattern but stores the private implementation data
