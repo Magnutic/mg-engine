@@ -89,7 +89,7 @@ ShaderCode PostProcessShaderProvider::make_shader_code(const Material& material)
 
     // Access shader resource
     {
-        auto shader_resource_access = material.shader().access();
+        ResourceAccessGuard shader_resource_access(material.shader());
         code.vertex_code += shader_resource_access->vertex_code();
         code.fragment_code += shader_resource_access->fragment_code();
     }

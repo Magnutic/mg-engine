@@ -649,7 +649,7 @@ inline std::string assemble_shader_code(const fs::path&             include_dire
         // Load include file as a dependency of this resource.
         Identifier     path_identifier     = Identifier::from_runtime_string(include_path);
         ResourceHandle include_file_handle = input.load_dependency<TextResource>(path_identifier);
-        ResourceAccessGuard include_access = include_file_handle.access();
+        ResourceAccessGuard include_access(include_file_handle);
         code += include_access->text();
     }
 

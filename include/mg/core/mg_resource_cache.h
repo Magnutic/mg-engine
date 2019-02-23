@@ -29,14 +29,13 @@
 
 #include "mg/core/mg_file_loader.h"
 #include "mg/core/mg_identifier.h"
-#include "mg/core/mg_resource_entry_base.h"
+#include "mg/core/mg_resource_access_guard.h"
+#include "mg/core/mg_resource_entry.h"
 #include "mg/core/mg_resource_handle.h"
 #include "mg/resources/mg_file_changed_event.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_pointer.h"
 
-#include <cstddef>
-#include <cstdint>
 #include <mutex>
 #include <shared_mutex>
 
@@ -106,7 +105,7 @@ public:
     template<typename ResT>
     ResourceHandle<ResT> resource_handle(Identifier file, bool load_resource_immediately = true)
     {
-        std::optional<ResourceHandle<ResT>> handle;
+        ResourceHandle<ResT> handle;
 
         {
             std::shared_lock lock{ m_file_list_mutex };
@@ -115,12 +114,12 @@ public:
             if (!p_file_info) { throw_resource_not_found(file); }
 
             ResourceEntryBase& entry = get_or_create_resource_entry<ResT>(*p_file_info);
-            handle.emplace(static_cast<ResourceEntry<ResT>&>(entry));
+            handle = ResourceHandle<ResT>(file, static_cast<ResourceEntry<ResT>&>(entry));
         }
 
-        if (load_resource_immediately) { handle->access(); }
+        if (load_resource_immediately) { ResourceAccessGuard access(handle); }
 
-        return handle.value();
+        return handle;
     }
 
     /** Access the resource with the given file path.
@@ -128,7 +127,7 @@ public:
      */
     template<typename ResT> ResourceAccessGuard<ResT> access_resource(Identifier file)
     {
-        return resource_handle<ResT>(file).access();
+        return ResourceAccessGuard(resource_handle<ResT>(file));
     }
 
     /** Returns whether a file with the given path exists in the file list.

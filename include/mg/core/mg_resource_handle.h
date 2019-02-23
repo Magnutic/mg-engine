@@ -1,7 +1,7 @@
 //**************************************************************************************************
 // Mg Engine
 //--------------------------------------------------------------------------------------------------
-// Copyright (c) 2018 Magnus Bergsten
+// Copyright (c) 2019 Magnus Bergsten
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -28,24 +28,28 @@
 
 #pragma once
 
-#include "mg/core/mg_resource_entry.h"
+#include "mg/core/mg_identifier.h"
 
 namespace Mg {
 
 // Forward declarations.
 class ResourceCache;
+template<typename ResT> class ResourceEntry;
 template<typename ResT> class ResourceAccessGuard;
 
 /** Storable handle to a resource. */
 template<typename ResT> class ResourceHandle {
 public:
-    explicit ResourceHandle(ResourceEntry<ResT>& entry) : m_p_entry(&entry) {}
+    ResourceHandle() = default;
+    explicit ResourceHandle(Identifier id, ResourceEntry<ResT>& entry) : m_id(id), m_p_entry(&entry)
+    {}
 
-    ResourceAccessGuard<ResT> access() { return m_p_entry->access_resource(); }
-
-    Identifier resource_id() const noexcept { return m_p_entry->resource_id(); }
+    Identifier resource_id() const noexcept { return m_id; }
 
 private:
+    friend class ResourceAccessGuard<ResT>;
+
+    Identifier           m_id      = "";
     ResourceEntry<ResT>* m_p_entry = nullptr;
 };
 

@@ -39,7 +39,7 @@ namespace Mg::gfx {
 Material::Material(Identifier material_id, ResourceHandle<ShaderResource> shader)
     : m_id(material_id), m_shader(shader)
 {
-    auto shader_resource_access = shader.access();
+    ResourceAccessGuard shader_resource_access(shader);
 
     MG_ASSERT(shader_resource_access->samplers().size() <= defs::k_max_samplers_per_material);
 

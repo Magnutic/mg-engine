@@ -31,7 +31,6 @@
 
 #pragma once
 
-#include "mg/core/mg_resource_access_guard.h"
 #include "mg/core/mg_resource_entry_base.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_macros.h"
@@ -49,8 +48,6 @@ template<typename ResT> class ResourceEntry final : public ResourceEntryBase {
 
 public:
     using ResourceEntryBase::ResourceEntryBase;
-
-    ResourceAccessGuard<ResT> access_resource() { return ResourceAccessGuard<ResT>(*this); }
 
     // Allow base class to access resource member.
     // ResT is assumed to be derived from BaseResource, as all resource types have to be.

@@ -31,6 +31,7 @@
 #pragma once
 
 #include "mg/core/mg_resource_entry_base.h"
+#include "mg/core/mg_resource_handle.h"
 #include "mg/utils/mg_macros.h"
 
 namespace Mg {
@@ -43,7 +44,7 @@ namespace Mg {
  * Usage example:
  *
  *     void some_function_that_uses_a_resource(ResourceHandle resource_handle) {
- *         ResourceAccessGuard<ResType> res_access = resource_handle.access();
+ *         ResourceAccessGuard<ResType> res_access{ resource_handle };
  *         auto something = res_access->something_in_the_resource;
  *         // etc. Resource can be safely accessed as long as `res_access` remains in scope.
  *     }
@@ -54,8 +55,8 @@ namespace Mg {
  */
 template<typename ResT> class ResourceAccessGuard {
 public:
-    ResourceAccessGuard(ResourceEntryBase& resource_entry)
-        : m_entry(&resource_entry), m_lock(resource_entry.mutex)
+    ResourceAccessGuard(ResourceHandle<ResT> handle)
+        : m_entry(handle.m_p_entry), m_lock(handle.m_p_entry->mutex)
     {
         if (!m_entry->is_loaded()) { m_entry->load_resource(); }
         m_entry->last_access = std::chrono::system_clock::now();

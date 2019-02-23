@@ -123,7 +123,7 @@ ShaderCode MeshShaderProvider::make_shader_code(const Material& material) const
     ShaderCode code = shader_code_stub();
 
     // Access shader resource
-    auto shader_resource_access = material.shader().access();
+    ResourceAccessGuard shader_resource_access(material.shader());
 
     // If there is a vertex-preprocess function, then include the corresponding #define
     if ((shader_resource_access->tags() & ShaderTag::DEFINES_VERTEX_PREPROCESS) != 0) {
