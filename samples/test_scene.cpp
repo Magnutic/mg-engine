@@ -139,7 +139,11 @@ void init()
             g_scene->root.gfx_device().texture_repository().update(
                 static_cast<TextureResource&>(event.resource));
             break;
-        case Identifier("ShaderResource").hash(): g_scene->mesh_renderer.drop_shaders(); break;
+
+        case Identifier("ShaderResource").hash():
+            g_scene->mesh_renderer.drop_shaders();
+            break;
+
         default:
             g_log.write_verbose(fmt::format("Resource '{}' was updated, but ignored.",
                                             event.resource.resource_id().str_view()));
