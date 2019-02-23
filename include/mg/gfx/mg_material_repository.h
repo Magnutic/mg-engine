@@ -27,11 +27,10 @@
 
 #pragma once
 
-#include <memory>
-
 #include "mg/core/mg_identifier.h"
 #include "mg/core/mg_resource_handle.h"
 #include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_simple_pimpl.h"
 
 namespace Mg {
 class ShaderResource;
@@ -40,8 +39,9 @@ class ShaderResource;
 namespace Mg::gfx {
 
 class Material;
+struct MaterialRepositoryData;
 
-class MaterialRepository {
+class MaterialRepository : PimplMixin<MaterialRepositoryData> {
 public:
     MG_MAKE_NON_MOVABLE(MaterialRepository);
     MG_MAKE_NON_COPYABLE(MaterialRepository);
@@ -52,10 +52,6 @@ public:
     Material* create(Identifier id, ResourceHandle<ShaderResource> shader);
 
     void destroy(const Material* handle);
-
-private:
-    class Impl;
-    std::unique_ptr<Impl> m_impl;
 };
 
 } // namespace Mg::gfx

@@ -41,22 +41,21 @@ struct MaterialNode {
     uint32_t self_index{};
 };
 
-class MaterialRepository::Impl {
+struct MaterialRepositoryData {
     // Size of the pools allocated for the data structure, in number of elements.
     // This is a fairly arbitrary choice: larger pools may make allocations more rare and provide
     // better data locality but could also waste space if the pool is never filled.
     static constexpr size_t k_material_node_pool_size = 512;
 
-public:
-    PoolingVector<MaterialNode> m_nodes{ k_material_node_pool_size };
+    PoolingVector<MaterialNode> nodes{ k_material_node_pool_size };
 };
 
-MaterialRepository::MaterialRepository() : m_impl(std::make_unique<Impl>()) {}
+MaterialRepository::MaterialRepository()  = default;
 MaterialRepository::~MaterialRepository() = default;
 
 Material* MaterialRepository::create(Identifier id, ResourceHandle<ShaderResource> shader)
 {
-    auto [index, ptr] = m_impl->m_nodes.construct(Material{ id, shader });
+    auto [index, ptr] = data().nodes.construct(Material{ id, shader });
     ptr->self_index   = index;
     return &ptr->material;
 }
@@ -64,7 +63,7 @@ Material* MaterialRepository::create(Identifier id, ResourceHandle<ShaderResourc
 void MaterialRepository::destroy(const Material* handle)
 {
     auto* p_node = reinterpret_cast<const MaterialNode*>(handle); // NOLINT
-    m_impl->m_nodes.destroy(p_node->self_index);
+    data().nodes.destroy(p_node->self_index);
 }
 
 } // namespace Mg::gfx
