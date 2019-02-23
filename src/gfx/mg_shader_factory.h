@@ -31,9 +31,9 @@
 #include "mg/core/mg_resource_handle.h"
 #include "mg/gfx/mg_shader.h"
 #include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_pointer.h"
 
 #include <cstdint>
-#include <memory>
 #include <string>
 
 namespace Mg {
@@ -78,7 +78,7 @@ class ShaderFactory {
 public:
     enum class ShaderHandle : uintptr_t;
 
-    explicit ShaderFactory(std::unique_ptr<IShaderProvider> shader_provider)
+    explicit ShaderFactory(Ptr<IShaderProvider> shader_provider)
         : m_shader_provider(std::move(shader_provider))
     {}
 
@@ -90,7 +90,7 @@ private:
     ShaderHandle make_shader(const Material& material);
 
 private:
-    std::unique_ptr<IShaderProvider> m_shader_provider;
+    Ptr<IShaderProvider> m_shader_provider;
 
     struct ShaderNode {
         uint32_t      shader_hash;
