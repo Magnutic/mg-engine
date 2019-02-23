@@ -27,15 +27,12 @@
 
 #pragma once
 
-#include <cstdint>
-#include <cstdlib>
-#include <memory>
-#include <optional>
-
 #include "mg/gfx/mg_texture_handle.h"
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_object_id.h"
+
+#include <cstdint>
 
 namespace Mg {
 class Window;
