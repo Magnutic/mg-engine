@@ -60,6 +60,8 @@ public:
 
     explicit Ptr(T* raw_ptr) noexcept : m_ptr(raw_ptr) {}
 
+    Ptr(std::nullptr_t) noexcept : m_ptr(nullptr) {}
+
     ~Ptr() { deleter_type{}(m_ptr); }
 
     // Converting constructor
