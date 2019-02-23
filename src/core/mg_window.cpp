@@ -147,7 +147,7 @@ static WindowSettings sanitise_settings(WindowSettings s)
 // Window implementation
 //--------------------------------------------------------------------------------------------------
 
-std::optional<Window::Handle> Window::make(WindowSettings settings, const std::string& title)
+Ptr<Window> Window::make(WindowSettings settings, const std::string& title)
 {
     // glfwInit() may be called multiple times
     if (glfwInit() == GLFW_FALSE) {

@@ -77,9 +77,8 @@ Root::Root()
 
     // Create window
     {
-        auto window = Window::make(WindowSettings{}, "Mg Engine");
-        if (!window) { throw std::runtime_error("Failed to open window."); }
-        data().window = std::move(window.value());
+        data().window = Window::make(WindowSettings{}, "Mg Engine");
+        if (data().window == nullptr) { throw std::runtime_error("Failed to open window."); }
     }
 
     // Create render context

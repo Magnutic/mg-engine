@@ -63,16 +63,13 @@ class Window {
     struct ConstructKey {}; // Limits access to Window constructor
 
 public:
-    /** Owning handle for Window. */
-    using Handle = Ptr<Window>;
-
     /** Callback to invoke when window gains or loses focus.
      * Parameters: bool is_focused, whether the window is focused.
      */
     using FocusCallbackT = void (*)(bool);
 
     /** Create new window. */
-    static std::optional<Handle> make(WindowSettings settings, const std::string& title);
+    static Ptr<Window> make(WindowSettings settings, const std::string& title);
 
     /** Restricted constructor (see Window::make()). */
     explicit Window(ConstructKey, GLFWwindow* handle, WindowSettings settings);
