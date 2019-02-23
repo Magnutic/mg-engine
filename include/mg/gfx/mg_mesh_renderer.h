@@ -40,8 +40,6 @@ class Material;
 
 struct MeshRendererData;
 
-// TODO: Should be renamed to just MeshRenderer, but defer that for a while to avoid nasty merge
-// conflicts.
 class MeshRenderer : PimplMixin<MeshRendererData> {
 public:
     MeshRenderer();
