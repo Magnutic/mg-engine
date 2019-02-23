@@ -431,8 +431,13 @@ public:
             // Make sure to allocate new buffer and construct new element there _before_ moving old
             // elements. This prevents dangling reference errors when args depend on an element in
             // this vector (e.g. v.emplace_back(v[0]); )
+
             size_type new_capacity = capacity() * k_growth_factor;
-            auto      new_buffer   = ExternalBuffer::allocate(new_capacity);
+
+            // If k_growth_factor is not large enough, new_capacity might not be any larger.
+            // This is especially likely to happen if initial capacity was very small.
+            if (new_capacity == capacity()) { new_capacity += 1; }
+            auto new_buffer = ExternalBuffer::allocate(new_capacity);
 
             // Construct new elem at end-position in newly allocated buffer.
             new (&new_buffer[size()]) T(std::forward<Args>(args)...);
