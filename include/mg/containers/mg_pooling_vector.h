@@ -78,10 +78,11 @@ public:
 
     void destroy(size_t i)
     {
-        MG_ASSERT_DEBUG(m_present[i]);
         get(i).~T();
         m_present[i] = false;
     }
+
+    bool is_present(size_t i) const { return m_present[i]; }
 
 private:
     using StorageT = std::aligned_storage_t<sizeof(T), alignof(T)>;
@@ -155,17 +156,33 @@ public:
         return m_pools[ei.pool_index].get(ei.element_index);
     }
 
+    /** Get whether there exists an element at the given index. */
+    bool index_valid(uint32_t index) const noexcept
+    {
+        const ElemIndex ei{ _internal_index_unchecked(index) };
+        if (ei.pool_index >= m_pools.size()) { return false; }
+        if (ei.element_index >= m_pool_size) { return false; }
+        return m_pools[ei.pool_index].is_present(ei.element_index);
+    }
+
 private:
     struct ElemIndex {
         size_t pool_index{};
         size_t element_index{};
     };
 
-    // Index within the respective pool.
-    ElemIndex _internal_index(size_t index) const noexcept
+    // Index of and within the respective pool.
+    ElemIndex _internal_index_unchecked(size_t index) const noexcept
     {
         const auto pool_index    = index / m_pool_size;
         const auto element_index = index % m_pool_size;
+
+        return { pool_index, element_index };
+    }
+
+    ElemIndex _internal_index(size_t index) const noexcept
+    {
+        const auto [pool_index, element_index] = _internal_index_unchecked(index);
 
         MG_ASSERT_DEBUG(pool_index < m_pools.size());
         MG_ASSERT_DEBUG(element_index < m_pool_size);
