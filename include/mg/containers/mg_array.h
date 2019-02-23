@@ -99,10 +99,7 @@ template<typename T> class ArrayUnknownSize : public detail::ArrayBase<T> {
     using Base = detail::ArrayBase<T>;
 
 public:
-    template<typename... Args> static ArrayUnknownSize make(size_t size)
-    {
-        return ArrayUnknownSize(new T[size]());
-    }
+    static ArrayUnknownSize make(size_t size) { return ArrayUnknownSize(new T[size]()); }
 
     ArrayUnknownSize() = default;
 
@@ -135,7 +132,7 @@ public:
     using iterator       = T*;
     using const_iterator = const T*;
 
-    template<typename... Args> static Array make(size_t size) { return Array(new T[size](), size); }
+    static Array make(size_t size) { return Array(new T[size](), size); }
 
     static Array<T> make_copy(span<const T> data)
     {
