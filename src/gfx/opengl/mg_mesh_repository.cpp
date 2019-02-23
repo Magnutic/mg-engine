@@ -23,8 +23,6 @@
 
 #include "mg/gfx/mg_mesh_repository.h"
 
-#include <fmt/core.h>
-
 #include "mg/containers/mg_pooling_vector.h"
 #include "mg/core/mg_log.h"
 #include "mg/resources/mg_mesh_resource.h"
@@ -32,6 +30,8 @@
 
 #include "mg_mesh_info.h"
 #include "mg_glad.h"
+
+#include <fmt/core.h>
 
 namespace Mg::gfx {
 
@@ -56,7 +56,7 @@ public:
     // Destruction of MeshNode should destroy assocated VAO.
     ~MeshNode()
     {
-        const auto meshname = mesh_info.mesh_id.c_str();
+        const auto* meshname = mesh_info.mesh_id.c_str();
         g_log.write_verbose(fmt::format("Deleting VAO {} (Mesh '{}')", mesh_info.vao_id, meshname));
         glDeleteVertexArrays(1, &mesh_info.vao_id);
     }
@@ -94,7 +94,7 @@ struct BufferObject {
 
 //--------------------------------------------------------------------------------------------------
 
-class MeshRepository::Impl {
+class MeshRepositoryImpl {
     // Size of the pools allocated for the internal data structures, in number of elements.
     // This is a fairly arbitrary choice:  larger pools may make allocations more rare and provide
     // better data locality but could also waste space if the pool is never filled.
@@ -102,14 +102,14 @@ class MeshRepository::Impl {
     static constexpr size_t k_buffer_object_pool_size = 512;
 
 public:
-    Impl() = default;
+    MeshRepositoryImpl() = default;
 
     MeshHandle create(const MeshResource& mesh_res);
 
     void destroy(MeshHandle handle);
 
 private:
-    friend class MeshBuffer::Impl; // needs access to _make_xxxx_buffer below
+    friend class MeshBufferImpl; // needs access to _make_xxxx_buffer below
 
     VboIndex _make_vertex_buffer(size_t size);
     IboIndex _make_index_buffer(size_t size);
@@ -128,14 +128,14 @@ private:
     PoolingVector<MeshNode>     m_mesh_data{ k_mesh_data_pool_size };
 };
 
-MeshHandle MeshRepository::Impl::create(const MeshResource& mesh_res)
+MeshHandle MeshRepositoryImpl::create(const MeshResource& mesh_res)
 {
     VboIndex vbo_index = _make_vertex_buffer(mesh_res.vertices().size_bytes());
     IboIndex ibo_index = _make_index_buffer(mesh_res.indices().size_bytes());
     return _make_mesh(mesh_res, vbo_index, 0, ibo_index, 0);
 }
 
-void MeshRepository::Impl::destroy(MeshHandle handle)
+void MeshRepositoryImpl::destroy(MeshHandle handle)
 {
     auto&     mesh_info = internal::mesh_info(handle);
     auto      index     = mesh_info.self_index;
@@ -150,7 +150,7 @@ void MeshRepository::Impl::destroy(MeshHandle handle)
     m_mesh_data.destroy(index);
 }
 
-VboIndex MeshRepository::Impl::_make_vertex_buffer(size_t size)
+VboIndex MeshRepositoryImpl::_make_vertex_buffer(size_t size)
 {
     auto [vbo_index, p_vbo] = m_buffer_objects.construct();
     p_vbo->type             = BufferObject::Type::Vertex;
@@ -162,7 +162,7 @@ VboIndex MeshRepository::Impl::_make_vertex_buffer(size_t size)
     return VboIndex{ vbo_index };
 }
 
-IboIndex MeshRepository::Impl::_make_index_buffer(size_t size)
+IboIndex MeshRepositoryImpl::_make_index_buffer(size_t size)
 {
     auto [ibo_index, p_ibo] = m_buffer_objects.construct();
     p_ibo->type             = BufferObject::Type::Index;
@@ -175,11 +175,11 @@ IboIndex MeshRepository::Impl::_make_index_buffer(size_t size)
 }
 
 // Create mesh from MeshResouce, storing data in the given vertex and index buffers
-MeshHandle MeshRepository::Impl::_make_mesh(const MeshResource& mesh_res,
-                                            VboIndex            vbo_index,
-                                            size_t              vbo_data_offset,
-                                            IboIndex            ibo_index,
-                                            size_t              ibo_data_offset)
+MeshHandle MeshRepositoryImpl::_make_mesh(const MeshResource& mesh_res,
+                                          VboIndex            vbo_index,
+                                          size_t              vbo_data_offset,
+                                          IboIndex            ibo_index,
+                                          size_t              ibo_data_offset)
 {
     auto [index, p_mesh_node]     = m_mesh_data.construct();
     internal::MeshInfo& mesh_info = p_mesh_node->mesh_info;
@@ -247,11 +247,11 @@ MeshHandle MeshRepository::Impl::_make_mesh(const MeshResource& mesh_res,
     return internal::make_mesh_handle(&mesh_info);
 }
 
-class MeshBuffer::Impl {
+class MeshBufferImpl {
 public:
-    Impl(MeshRepository::Impl& mesh_repository,
-         VertexBufferSize      vertex_buffer_size,
-         IndexBufferSize       index_buffer_size)
+    MeshBufferImpl(MeshRepositoryImpl& mesh_repository,
+                   VertexBufferSize    vertex_buffer_size,
+                   IndexBufferSize     index_buffer_size)
         : m_mesh_repository(&mesh_repository)
         , m_vbo_size(size_t(vertex_buffer_size))
         , m_ibo_size(size_t(index_buffer_size))
@@ -259,14 +259,14 @@ public:
         , m_ibo_id(mesh_repository._make_index_buffer(m_ibo_size))
     {}
 
-    CreateReturn create(const MeshResource& resource)
+    MeshBuffer::CreateReturn create(const MeshResource& resource)
     {
         if (resource.vertices().size_bytes() + m_vbo_offset > m_vbo_size) {
-            return { std::nullopt, ReturnCode::Vertex_buffer_full };
+            return { std::nullopt, MeshBuffer::ReturnCode::Vertex_buffer_full };
         }
 
         if (resource.indices().size_bytes() + m_ibo_offset > m_ibo_size) {
-            return { std::nullopt, ReturnCode::Index_buffer_full };
+            return { std::nullopt, MeshBuffer::ReturnCode::Index_buffer_full };
         }
 
         MeshHandle mesh = m_mesh_repository->_make_mesh(resource,
@@ -278,11 +278,11 @@ public:
         m_vbo_offset += resource.vertices().size_bytes();
         m_ibo_offset += resource.indices().size_bytes();
 
-        return { mesh, ReturnCode::Success };
+        return { mesh, MeshBuffer::ReturnCode::Success };
     }
 
 private:
-    MeshRepository::Impl* m_mesh_repository = nullptr;
+    MeshRepositoryImpl* m_mesh_repository = nullptr;
 
     size_t m_vbo_offset{ 0 }; // Current offset into vertex buffer -- where to put next mesh's data
     size_t m_ibo_offset{ 0 }; // Current offset into index buffer -- where to put next mesh's data
@@ -296,35 +296,32 @@ private:
 
 //--------------------------------------------------------------------------------------------------
 
-MeshBuffer::MeshBuffer(std::unique_ptr<Impl> impl) : m_impl{ std::move(impl) } {}
 MeshBuffer::~MeshBuffer() = default;
 
 MeshBuffer::CreateReturn MeshBuffer::create(const MeshResource& resource)
 {
-    return m_impl->create(resource);
+    return data().create(resource);
 }
 
 //--------------------------------------------------------------------------------------------------
 
-MeshRepository::MeshRepository() : m_impl{ std::make_unique<Impl>() } {}
+MeshRepository::MeshRepository()  = default;
 MeshRepository::~MeshRepository() = default;
 
 MeshHandle MeshRepository::create(const MeshResource& mesh_res)
 {
-    return m_impl->create(mesh_res);
+    return data().create(mesh_res);
 }
 
 void MeshRepository::destroy(MeshHandle handle)
 {
-    m_impl->destroy(handle);
+    data().destroy(handle);
 }
 
 MeshBuffer MeshRepository::new_mesh_buffer(VertexBufferSize vertex_buffer_size,
                                            IndexBufferSize  index_buffer_size)
 {
-    return MeshBuffer{
-        std::make_unique<MeshBuffer::Impl>(*m_impl, vertex_buffer_size, index_buffer_size)
-    };
+    return MeshBuffer{ data(), vertex_buffer_size, index_buffer_size };
 }
 
 } // namespace Mg::gfx

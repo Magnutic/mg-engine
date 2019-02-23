@@ -81,8 +81,9 @@ private:
  *
  * @tparam ImplT Implementation type.
  * @tparam max_impl_size Maximum size of private implementation class. A buffer of this size is
- * allocated within the class. Changing the private implementation class does not affect the public
- * class's ABI as long as `max_impl_size` stays the same; changing `max_impl_size` will break ABI.
+ * allocated within the class. Changing the private implementation class does not affect the
+ * public class's ABI as long as `max_impl_size` stays the same; changing `max_impl_size` will
+ * break ABI.
  */
 template<typename ImplT, size_t max_impl_size> class InPlacePimplMixin {
 protected:

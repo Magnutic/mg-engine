@@ -27,12 +27,12 @@
 
 #pragma once
 
-#include <cstddef>
-#include <memory>
-#include <optional>
-
 #include "mg/gfx/mg_mesh_handle.h"
 #include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_simple_pimpl.h"
+
+#include <cstddef>
+#include <optional>
 
 namespace Mg {
 class MeshResource;
@@ -40,13 +40,15 @@ class MeshResource;
 
 namespace Mg::gfx {
 
+class MeshBufferImpl;
+
 /** MeshBuffer allows creating meshes within pre-allocated buffers on the GPU. This is useful for
  * performance reasons -- keeping meshes that are often used together in the same buffer may result
  * in better performance.
  *
  * Construct using Mg::MeshRepository::new_mesh_buffer()
  */
-class MeshBuffer {
+class MeshBuffer : PimplMixin<MeshBufferImpl> {
 public:
     MG_MAKE_NON_COPYABLE(MeshBuffer);
     MG_MAKE_DEFAULT_MOVABLE(MeshBuffer);
@@ -63,10 +65,7 @@ public:
 
 private:
     friend class MeshRepository;
-    class Impl;
-
-    std::unique_ptr<Impl> m_impl;
-    MeshBuffer(std::unique_ptr<Impl> impl);
+    using PimplMixin::PimplMixin; // Constructor forwarding to pImpl class constructor.
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -83,8 +82,10 @@ enum class VertexBufferSize : size_t;
  */
 enum class IndexBufferSize : size_t;
 
+class MeshRepositoryImpl;
+
 /** Creates, stores, and updates meshes. */
-class MeshRepository {
+class MeshRepository : PimplMixin<MeshRepositoryImpl> {
 public:
     MeshRepository();
     MG_MAKE_NON_COPYABLE(MeshRepository);
@@ -105,12 +106,6 @@ public:
      */
     MeshBuffer new_mesh_buffer(VertexBufferSize vertex_buffer_size,
                                IndexBufferSize  index_buffer_size);
-
-private:
-    friend class MeshBuffer;
-
-    class Impl;
-    std::unique_ptr<Impl> m_impl;
 };
 
 } // namespace Mg::gfx
