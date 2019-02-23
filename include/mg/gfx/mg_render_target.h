@@ -32,7 +32,6 @@
 #include <memory>
 #include <optional>
 
-#include "mg/gfx/mg_texture2d.h"
 #include "mg/gfx/mg_texture_handle.h"
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/utils/mg_macros.h"
@@ -43,6 +42,8 @@ class Window;
 }
 
 namespace Mg::gfx {
+
+class Texture2D;
 
 class IRenderTarget {
 public:
