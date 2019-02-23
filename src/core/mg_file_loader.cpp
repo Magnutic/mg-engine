@@ -46,15 +46,16 @@
 
 #include "mg/core/mg_file_loader.h"
 
-#include <filesystem>
-#include <stdexcept>
+#include "mg/containers/mg_small_vector.h"
+#include "mg/core/mg_log.h"
+#include "mg/utils/mg_binary_io.h"
 
 #include <zip.h>
 
 #include <fmt/core.h>
 
-#include "mg/core/mg_log.h"
-#include "mg/utils/mg_binary_io.h"
+#include <filesystem>
+#include <stdexcept>
 
 namespace Mg {
 
@@ -64,9 +65,9 @@ namespace fs = std::filesystem;
 // Direct file loading
 //--------------------------------------------------------------------------------------------------
 
-std::vector<FileRecord> BasicFileLoader::available_files()
+Array<FileRecord> BasicFileLoader::available_files()
 {
-    std::vector<FileRecord> index;
+    small_vector<FileRecord, 48> index;
 
     fs::path root_dir{ m_directory };
     auto     search_options = fs::directory_options::follow_directory_symlink;
@@ -88,7 +89,7 @@ std::vector<FileRecord> BasicFileLoader::available_files()
         index.push_back({ Identifier::from_runtime_string(filepath), last_write_time });
     }
 
-    return index;
+    return Array<FileRecord>::make_copy(index);
 }
 
 bool BasicFileLoader::file_exists(Identifier file)
@@ -180,13 +181,12 @@ void ZipFileLoader::close_zip_archive()
     }
 }
 
-std::vector<FileRecord> ZipFileLoader::available_files()
+Array<FileRecord> ZipFileLoader::available_files()
 {
     open_zip_archive();
     auto num_files = zip_get_num_entries(m_archive_file, 0);
 
-    std::vector<FileRecord> index;
-    index.reserve(narrow<size_t>(num_files));
+    auto index = Array<FileRecord>::make(narrow<size_t>(num_files));
 
     for (uint32_t i = 0; i < num_files; ++i) {
         const char* filename = zip_get_name(m_archive_file, i, 0);
@@ -200,7 +200,7 @@ std::vector<FileRecord> ZipFileLoader::available_files()
             last_write_time = std::chrono::system_clock::from_time_t(stat.mtime);
         }
 
-        index.push_back({ Identifier::from_runtime_string(filename), last_write_time });
+        index[i] = FileRecord{ Identifier::from_runtime_string(filename), last_write_time };
     }
 
     return index;

@@ -32,8 +32,8 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
-#include <vector>
 
+#include "mg/containers/mg_array.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
@@ -52,7 +52,7 @@ using time_point = std::chrono::system_clock::time_point;
 
 /** Record representing a single file available in a IFileLoader. */
 struct FileRecord {
-    Identifier name;
+    Identifier name{ "" };
     time_point time_stamp;
 };
 
@@ -62,7 +62,7 @@ public:
     MG_INTERFACE_BOILERPLATE(IFileLoader);
 
     // TODO: TOCTOU?
-    virtual std::vector<FileRecord> available_files() = 0;
+    virtual Array<FileRecord> available_files() = 0;
 
     virtual bool file_exists(Identifier file) = 0;
 
@@ -86,7 +86,7 @@ class BasicFileLoader final : public IFileLoader {
 public:
     explicit BasicFileLoader(std::string_view directory) : m_directory(directory) {}
 
-    std::vector<FileRecord> available_files() override;
+    Array<FileRecord> available_files() override;
 
     bool file_exists(Identifier file) override;
 
@@ -109,7 +109,7 @@ public:
 
     ~ZipFileLoader() { close_zip_archive(); }
 
-    std::vector<FileRecord> available_files() override;
+    Array<FileRecord> available_files() override;
 
     bool file_exists(Identifier file) override;
 
