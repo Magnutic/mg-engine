@@ -60,7 +60,7 @@ static void APIENTRY ogl_error_callback_wrapper(uint32_t      source,
 }
 #endif
 
-static GfxDevice* p_gfx_context = nullptr;
+static GfxDevice* p_gfx_device = nullptr;
 
 class GfxDevice::Data {
 public:
@@ -75,11 +75,11 @@ public:
 
 GfxDevice::GfxDevice(::Mg::Window& window) : m_impl(std::make_unique<Data>())
 {
-    if (p_gfx_context != nullptr) {
+    if (p_gfx_device != nullptr) {
         throw std::logic_error{ "Only one Mg::gfx::GfxDevice may be constructed at a time." };
     }
 
-    p_gfx_context = this;
+    p_gfx_device = this;
 
     // Use the context provided by this GLFW window
     glfwMakeContextCurrent(window.glfw_window());
@@ -118,15 +118,15 @@ GfxDevice::GfxDevice(::Mg::Window& window) : m_impl(std::make_unique<Data>())
 
 GfxDevice& GfxDevice::get()
 {
-    if (p_gfx_context == nullptr) {
+    if (p_gfx_device == nullptr) {
         throw std::logic_error("Attempting to access GfxDevice outside of its lifetime.");
     }
-    return *p_gfx_context;
+    return *p_gfx_device;
 }
 
 GfxDevice::~GfxDevice()
 {
-    p_gfx_context = nullptr;
+    p_gfx_device = nullptr;
 }
 
 void GfxDevice::set_blend_mode(BlendMode blend_mode)

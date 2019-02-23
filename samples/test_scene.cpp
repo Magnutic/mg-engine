@@ -28,21 +28,21 @@ inline void setup_config()
 inline Mg::gfx::MeshHandle load_mesh(Identifier file)
 {
     auto access = g_scene->resource_cache.access_resource<MeshResource>(file);
-    return g_scene->root.gfx_context().mesh_repository().create(*access);
+    return g_scene->root.gfx_device().mesh_repository().create(*access);
 }
 
 inline Mg::gfx::TextureHandle load_texture(std::string_view file)
 {
     auto file_name = Identifier::from_runtime_string(fmt::format("textures/{}.dds", file));
     auto access    = g_scene->resource_cache.access_resource<TextureResource>(file_name);
-    return g_scene->root.gfx_context().texture_repository().create(*access);
+    return g_scene->root.gfx_device().texture_repository().create(*access);
 }
 
 inline Mg::gfx::Material* load_material(Identifier file, std::initializer_list<Identifier> options)
 {
     auto handle = g_scene->resource_cache.resource_handle<ShaderResource>(
         "shaders/default.mgshader");
-    Material* m = g_scene->root.gfx_context().material_repository().create(file, handle);
+    Material* m = g_scene->root.gfx_device().material_repository().create(file, handle);
 
     for (auto o : options) { m->set_option(o, true); }
 
@@ -136,7 +136,7 @@ void init()
     g_scene->resource_cache.set_resource_reload_callback([](const FileChangedEvent& event) {
         switch (event.resource.type_id().hash()) {
         case Identifier("TextureResource").hash():
-            g_scene->root.gfx_context().texture_repository().update(
+            g_scene->root.gfx_device().texture_repository().update(
                 static_cast<TextureResource&>(event.resource));
             break;
         case Identifier("ShaderResource").hash(): g_scene->mesh_renderer.drop_shaders(); break;
@@ -148,7 +148,7 @@ void init()
 
     g_scene->hdr_target = make_hdr_target(window.settings().video_mode);
 
-    g_scene->root.gfx_context().set_clear_colour(0.0125f, 0.01275f, 0.025f);
+    g_scene->root.gfx_device().set_clear_colour(0.0125f, 0.01275f, 0.025f);
 
     g_scene->camera.set_aspect_ratio(window.aspect_ratio());
     g_scene->camera.field_of_view         = { FieldOfView::DEGREES, 80.0f };
@@ -190,7 +190,7 @@ void init()
     {
         auto handle = g_scene->resource_cache.resource_handle<ShaderResource>(
             "shaders/post_process_test.mgshader");
-        g_scene->post_material = g_scene->root.gfx_context().material_repository().create(
+        g_scene->post_material = g_scene->root.gfx_device().material_repository().create(
             "PostProcessMaterial", handle);
     }
 
@@ -295,7 +295,7 @@ inline void add_to_render_list(const Model& model, RenderCommandList& renderlist
 
 void render_scene(double lerp_factor)
 {
-    auto& gfx = g_scene->root.gfx_context();
+    auto& gfx = g_scene->root.gfx_device();
 
     Scene::State render_state = lerp(g_scene->prev_state, g_scene->current_state, lerp_factor);
     g_scene->camera.position  = render_state.cam_position;

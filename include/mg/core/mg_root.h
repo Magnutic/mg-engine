@@ -63,7 +63,7 @@ public:
 
     Window& window();
 
-    gfx::GfxDevice& gfx_context();
+    gfx::GfxDevice& gfx_device();
 };
 
 } // namespace Mg

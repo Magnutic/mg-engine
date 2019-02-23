@@ -113,7 +113,7 @@ Window& Root::window()
     return *data().window;
 }
 
-gfx::GfxDevice& Root::gfx_context()
+gfx::GfxDevice& Root::gfx_device()
 {
     return *data().gfx_device;
 }
