@@ -23,10 +23,6 @@
 
 #include "mg/gfx/mg_render_command_list.h"
 
-#include <cstring>
-
-#include <fmt/core.h>
-
 #include "mg/core/mg_log.h"
 #include "mg/gfx/mg_camera.h"
 #include "mg/gfx/mg_frustum.h"
@@ -35,6 +31,10 @@
 #include "mg_mesh_info.h"
 #include "mg_render_command_data.h"
 #include "mg_texture_node.h"
+
+#include <fmt/core.h>
+
+#include <cstring>
 
 namespace Mg::gfx {
 
@@ -53,7 +53,7 @@ inline Material* material_for_submesh(span<const MaterialBinding> material_bindi
 }
 
 RenderCommandList::RenderCommandList()
-    : m_command_data(std::make_unique<uint8_t[]>(defs::k_render_command_data_buffer_size))
+    : m_command_data(Array<uint8_t>::make(defs::k_render_command_data_buffer_size))
 {}
 
 void RenderCommandList::add_mesh(MeshHandle                  mesh,
@@ -66,10 +66,10 @@ void RenderCommandList::add_mesh(MeshHandle                  mesh,
         auto material = material_for_submesh(material_bindings, i);
 
         if (material == nullptr) {
-            g_log.write_warning(
-                fmt::format("No material specified for mesh '{}', submesh {}. Skipping.",
-                            md.mesh_id.c_str(),
-                            i));
+            auto msg = fmt::format("No material specified for mesh '{}', submesh {}. Skipping.",
+                                   md.mesh_id.c_str(),
+                                   i);
+            g_log.write_warning(msg);
             continue;
         }
 
@@ -160,11 +160,6 @@ void RenderCommandList::sort_draw_list(const ICamera& camera, SortFunc sf)
 
     auto cmp = sf == SortFunc::FAR_TO_NEAR ? cmp_draw_call<true> : cmp_draw_call<false>;
     sort(m_keys, [&](SortKey lhs, SortKey rhs) { return cmp(lhs, rhs); });
-}
-
-span<const uint8_t> RenderCommandList::command_buffer_data() const noexcept
-{
-    return { m_command_data.get(), defs::k_render_command_data_buffer_size };
 }
 
 } // namespace Mg::gfx

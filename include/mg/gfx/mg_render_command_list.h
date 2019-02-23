@@ -27,16 +27,15 @@
 
 #pragma once
 
-#include <cstdint>
-#include <memory>
-#include <vector>
-
+#include "mg/containers/mg_array.h"
 #include "mg/core/mg_transform.h"
 #include "mg/gfx/mg_mesh_handle.h"
 #include "mg/gfx/mg_render_command_data_handle.h"
+#include "mg/mg_defs.h"
 #include "mg/utils/mg_gsl.h"
 
-#include "mg/mg_defs.h"
+#include <cstdint>
+#include <vector>
 
 namespace Mg::gfx {
 
@@ -83,7 +82,7 @@ public:
 
     size_t size() const { return m_render_commands.size(); }
 
-    span<const uint8_t> command_buffer_data() const noexcept;
+    span<const uint8_t> command_buffer_data() const noexcept { return m_command_data; }
 
     struct SortKey {
         uint32_t depth;
@@ -94,7 +93,7 @@ public:
 private:
     std::vector<SortKey>       m_keys;
     std::vector<RenderCommand> m_render_commands;
-    std::unique_ptr<uint8_t[]> m_command_data;
+    Array<uint8_t>             m_command_data;
     uint32_t                   m_command_data_offset = 0;
 };
 
