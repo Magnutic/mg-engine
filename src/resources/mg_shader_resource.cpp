@@ -266,19 +266,42 @@ inline void next_token(LexerState& lex)
 {
     char c = lex.stream.advance();
     switch (c) {
-    case ' ': break;
-    case '\t': break;
-    case '\r': break;
-    case '\n': ++lex.line; break;
-    case ',': add_token(lex, TokenType::COMMA); break;
-    case ';': add_token(lex, TokenType::SEMICOLON); break;
-    case '(': add_token(lex, TokenType::PARENTHESIS_LEFT); break;
-    case ')': add_token(lex, TokenType::PARENTHESIS_RIGHT); break;
-    case '{': add_token(lex, TokenType::CURLY_LEFT); break;
-    case '}': add_token(lex, TokenType::CURLY_RIGHT); break;
-    case '=': add_token(lex, TokenType::EQUALS); break;
-    case '#': add_token(lex, TokenType::HASH); break;
-    case '"': string_literal(lex); break;
+    case ' ':
+        break;
+    case '\t':
+        break;
+    case '\r':
+        break;
+    case '\n':
+        ++lex.line;
+        break;
+    case ',':
+        add_token(lex, TokenType::COMMA);
+        break;
+    case ';':
+        add_token(lex, TokenType::SEMICOLON);
+        break;
+    case '(':
+        add_token(lex, TokenType::PARENTHESIS_LEFT);
+        break;
+    case ')':
+        add_token(lex, TokenType::PARENTHESIS_RIGHT);
+        break;
+    case '{':
+        add_token(lex, TokenType::CURLY_LEFT);
+        break;
+    case '}':
+        add_token(lex, TokenType::CURLY_RIGHT);
+        break;
+    case '=':
+        add_token(lex, TokenType::EQUALS);
+        break;
+    case '#':
+        add_token(lex, TokenType::HASH);
+        break;
+    case '"':
+        string_literal(lex);
+        break;
     case '/':
         if (lex.stream.peek() == '/') {
             while (lex.stream.advance() != '\n' && !lex.stream.is_at_end()) {}
@@ -325,13 +348,25 @@ public:
     {
         auto&& t = next_token();
         switch (t.type) {
-        case TokenType::TAGS: parse_tags_block(); break;
-        case TokenType::PARAMETERS: parse_parameters_block(); break;
-        case TokenType::OPTIONS: parse_options_block(); break;
-        case TokenType::VERTEX_CODE: parse_code_block(ShaderBlockType::Vertex); break;
-        case TokenType::FRAGMENT_CODE: parse_code_block(ShaderBlockType::Fragment); break;
-        case TokenType::END_OF_FILE: return;
-        default: parse_error("Unexpected token at global scope.", t);
+        case TokenType::TAGS:
+            parse_tags_block();
+            break;
+        case TokenType::PARAMETERS:
+            parse_parameters_block();
+            break;
+        case TokenType::OPTIONS:
+            parse_options_block();
+            break;
+        case TokenType::VERTEX_CODE:
+            parse_code_block(ShaderBlockType::Vertex);
+            break;
+        case TokenType::FRAGMENT_CODE:
+            parse_code_block(ShaderBlockType::Fragment);
+            break;
+        case TokenType::END_OF_FILE:
+            return;
+        default:
+            parse_error("Unexpected token at global scope.", t);
         }
 
         MG_ASSERT(m_current_token != m_tokens.end());
@@ -377,9 +412,14 @@ public:
         ShaderSamplerType sampler_type{};
 
         switch (type_token.type) {
-        case TokenType::SAMPLER2D: sampler_type = ShaderSamplerType::Sampler2D; break;
-        case TokenType::SAMPLERCUBE: sampler_type = ShaderSamplerType::SamplerCube; break;
-        default: parse_error("Unexpected token (expected sampler2D or samplerCube).", type_token);
+        case TokenType::SAMPLER2D:
+            sampler_type = ShaderSamplerType::Sampler2D;
+            break;
+        case TokenType::SAMPLERCUBE:
+            sampler_type = ShaderSamplerType::SamplerCube;
+            break;
+        default:
+            parse_error("Unexpected token (expected sampler2D or samplerCube).", type_token);
         }
 
         std::string_view identifier = parse_identifier();
@@ -454,9 +494,14 @@ public:
         bool  default_value{};
         auto& value_token = next_token();
         switch (value_token.type) {
-        case TokenType::TRUE: default_value = true; break;
-        case TokenType::FALSE: default_value = false; break;
-        default: parse_error("Expected 'true' or 'false'.", value_token);
+        case TokenType::TRUE:
+            default_value = true;
+            break;
+        case TokenType::FALSE:
+            default_value = false;
+            break;
+        default:
+            parse_error("Expected 'true' or 'false'.", value_token);
         }
 
         expect_next(TokenType::SEMICOLON);
@@ -469,13 +514,21 @@ public:
         auto parse_tag = [this] {
             auto& tag_token = next_token();
             switch (tag_token.type) {
-            case TokenType::UNLIT: tags |= ShaderTag::UNLIT; break;
-            case TokenType::OPAQUE: tags |= ShaderTag::OPAQUE; break;
-            case TokenType::DEFINES_LIGHT_MODEL: tags |= ShaderTag::DEFINES_LIGHT_MODEL; break;
+            case TokenType::UNLIT:
+                tags |= ShaderTag::UNLIT;
+                break;
+            case TokenType::OPAQUE:
+                tags |= ShaderTag::OPAQUE;
+                break;
+            case TokenType::DEFINES_LIGHT_MODEL:
+                tags |= ShaderTag::DEFINES_LIGHT_MODEL;
+                break;
             case TokenType::DEFINES_VERTEX_PREPROCESS:
                 tags |= ShaderTag::DEFINES_VERTEX_PREPROCESS;
                 break;
-            default: parse_error("Unexpected tag.", tag_token); break;
+            default:
+                parse_error("Unexpected tag.", tag_token);
+                break;
             }
 
             expect_next(TokenType::SEMICOLON);
@@ -505,12 +558,17 @@ public:
             expect_next(TokenType::INCLUDE);
             include_filename = parse_string_literal();
             break;
-        default: parse_error("Unexpected token.", t);
+        default:
+            parse_error("Unexpected token.", t);
         }
 
         switch (shader_type) {
-        case ShaderBlockType::Vertex: vertex_includes.emplace_back(include_filename); break;
-        case ShaderBlockType::Fragment: fragment_includes.emplace_back(include_filename); break;
+        case ShaderBlockType::Vertex:
+            vertex_includes.emplace_back(include_filename);
+            break;
+        case ShaderBlockType::Fragment:
+            fragment_includes.emplace_back(include_filename);
+            break;
         }
     }
 

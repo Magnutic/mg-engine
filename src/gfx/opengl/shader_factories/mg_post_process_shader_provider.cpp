@@ -72,7 +72,8 @@ float linearise_depth(float depth) {
 
 namespace Mg::gfx {
 
-ShaderCode PostProcessShaderProvider::on_error_shader_code() const {
+ShaderCode PostProcessShaderProvider::on_error_shader_code() const
+{
     ShaderCode code{ post_renderer::post_process_vs, post_renderer::post_process_fs };
     code.fragment_code += R"(void main() { frag_out = vec4(1.0, 0.0, 1.0, 1.0); })";
     return code;
@@ -102,10 +103,13 @@ void PostProcessShaderProvider::setup_shader_state(ShaderProgram&  program,
     opengl::use_program(program);
 
     // Set UBO index bindings
-    opengl::set_uniform_block_binding(
-        program, "MaterialParams", UniformBufferSlot{ post_renderer::k_material_params_ubo_slot });
-    opengl::set_uniform_block_binding(
-        program, "FrameBlock", UniformBufferSlot{ post_renderer::k_frame_block_ubo_slot });
+    opengl::set_uniform_block_binding(program,
+                                      "MaterialParams",
+                                      UniformBufferSlot{
+                                          post_renderer::k_material_params_ubo_slot });
+    opengl::set_uniform_block_binding(program,
+                                      "FrameBlock",
+                                      UniformBufferSlot{ post_renderer::k_frame_block_ubo_slot });
 
     // Set built-in sampler bindings
     opengl::set_uniform(opengl::uniform_location(program, "sampler_colour"),

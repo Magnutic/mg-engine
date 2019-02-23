@@ -92,36 +92,53 @@ static std::string button_description(Mouse::Button button)
 static std::string axis_description(Mouse::Axis axis)
 {
     switch (axis) {
-    case Mouse::Axis::pos_x: return "Mouse Position X";
-    case Mouse::Axis::pos_y: return "Mouse Position Y";
-    case Mouse::Axis::delta_x: return "Mouse Delta X";
-    case Mouse::Axis::delta_y: return "Mouse Delta Y";
-    default: MG_ASSERT(false); return "";
+    case Mouse::Axis::pos_x:
+        return "Mouse Position X";
+    case Mouse::Axis::pos_y:
+        return "Mouse Position Y";
+    case Mouse::Axis::delta_x:
+        return "Mouse Delta X";
+    case Mouse::Axis::delta_y:
+        return "Mouse Delta Y";
+    default:
+        MG_ASSERT(false);
+        return "";
     }
 }
 
 std::string Mouse::description(InputSource::Id id) const
 {
     switch (type(id)) {
-    case MouseType::Button: return button_description(to_button(id));
-    case MouseType::Axis: return axis_description(to_axis(id));
-    default: MG_ASSERT(false); return "";
+    case MouseType::Button:
+        return button_description(to_button(id));
+    case MouseType::Axis:
+        return axis_description(to_axis(id));
+    default:
+        MG_ASSERT(false);
+        return "";
     }
 }
 
 float Mouse::state(InputSource::Id id) const
 {
     switch (type(id)) {
-    case MouseType::Button: return float(m_button_states.test(static_cast<size_t>(to_button(id))));
+    case MouseType::Button:
+        return float(m_button_states.test(static_cast<size_t>(to_button(id))));
     case MouseType::Axis:
         switch (to_axis(id)) {
-        case Axis::pos_x: return m_x_pos;
-        case Axis::pos_y: return m_y_pos;
-        case Axis::delta_x: return m_x_delta;
-        case Axis::delta_y: return m_y_delta;
+        case Axis::pos_x:
+            return m_x_pos;
+        case Axis::pos_y:
+            return m_y_pos;
+        case Axis::delta_x:
+            return m_x_delta;
+        case Axis::delta_y:
+            return m_y_delta;
         }
         [[fallthrough]];
-    default: MG_ASSERT(false); return {};
+    default:
+        MG_ASSERT(false);
+        return {};
     }
 }
 

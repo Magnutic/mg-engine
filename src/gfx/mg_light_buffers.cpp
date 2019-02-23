@@ -77,8 +77,8 @@ LightBuffers::LightBuffers()
 
 inline void add_light_to_cluster(size_t light_index, glm::uvec3 cluster, ClusterArray& clusters)
 {
-    auto cluster_index =
-        MG_LIGHT_GRID_WIDTH * (MG_LIGHT_GRID_HEIGHT * cluster.z + cluster.y) + cluster.x;
+    auto cluster_index = MG_LIGHT_GRID_WIDTH * (MG_LIGHT_GRID_HEIGHT * cluster.z + cluster.y) +
+                         cluster.x;
     auto light_offset = clusters[cluster_index].num_lights;
 
     if (light_offset >= MG_MAX_LIGHTS_PER_CLUSTER) {
@@ -123,8 +123,8 @@ void update_light_data(LightBuffers&     light_data_out,
         const size_t min_y = grid.extents(light_pos_view, l.range_sqr, true, false);
         const size_t max_y = grid.extents(light_pos_view, l.range_sqr, true, true);
 
-        const auto [min_z, max_z] =
-            LightGrid::depth_extents(-light_pos_view.z, glm::fastSqrt(l.range_sqr));
+        const auto [min_z, max_z] = LightGrid::depth_extents(-light_pos_view.z,
+                                                             glm::fastSqrt(l.range_sqr));
 
         for (auto z = min_z; z < max_z; ++z) {
             for (auto y = min_y; y < max_y; ++y) {

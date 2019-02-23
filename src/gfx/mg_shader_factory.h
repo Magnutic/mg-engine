@@ -93,8 +93,8 @@ private:
     std::unique_ptr<IShaderProvider> m_shader_provider;
 
     struct ShaderNode {
-        uint32_t                       shader_hash;
-        ShaderProgram                  program;
+        uint32_t      shader_hash;
+        ShaderProgram program;
     };
 
     small_vector<ShaderNode, 64> m_shader_nodes;

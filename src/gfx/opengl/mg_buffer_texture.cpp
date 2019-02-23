@@ -41,30 +41,44 @@ uint32_t buffer_texture_type_to_gl_enums(BufferTexture::Type type)
         switch (type.fmt) {
         case Fmt::UNSIGNED_NORMALISED:
             switch (type.bit_depth) {
-            case BitDepth::BITS_8: return GL_R8;
-            case BitDepth::BITS_16: return GL_R16;
-            case BitDepth::BITS_32: MG_ASSERT(false && "Unsupported combination"); break;
+            case BitDepth::BITS_8:
+                return GL_R8;
+            case BitDepth::BITS_16:
+                return GL_R16;
+            case BitDepth::BITS_32:
+                MG_ASSERT(false && "Unsupported combination");
+                break;
             }
             break;
         case Fmt::SIGNED:
             switch (type.bit_depth) {
-            case BitDepth::BITS_8: return GL_R8I;
-            case BitDepth::BITS_16: return GL_R16I;
-            case BitDepth::BITS_32: return GL_R32I;
+            case BitDepth::BITS_8:
+                return GL_R8I;
+            case BitDepth::BITS_16:
+                return GL_R16I;
+            case BitDepth::BITS_32:
+                return GL_R32I;
             }
             break;
         case Fmt::UNSIGNED:
             switch (type.bit_depth) {
-            case BitDepth::BITS_8: return GL_R8UI;
-            case BitDepth::BITS_16: return GL_R16UI;
-            case BitDepth::BITS_32: return GL_R32UI;
+            case BitDepth::BITS_8:
+                return GL_R8UI;
+            case BitDepth::BITS_16:
+                return GL_R16UI;
+            case BitDepth::BITS_32:
+                return GL_R32UI;
             }
             break;
         case Fmt::FLOAT:
             switch (type.bit_depth) {
-            case BitDepth::BITS_8: MG_ASSERT(false && "Unsupported combination"); break;
-            case BitDepth::BITS_16: return GL_R16F;
-            case BitDepth::BITS_32: return GL_R32F;
+            case BitDepth::BITS_8:
+                MG_ASSERT(false && "Unsupported combination");
+                break;
+            case BitDepth::BITS_16:
+                return GL_R16F;
+            case BitDepth::BITS_32:
+                return GL_R32F;
             }
             break;
         }
@@ -73,30 +87,44 @@ uint32_t buffer_texture_type_to_gl_enums(BufferTexture::Type type)
         switch (type.fmt) {
         case Fmt::UNSIGNED_NORMALISED:
             switch (type.bit_depth) {
-            case BitDepth::BITS_8: return GL_RG8;
-            case BitDepth::BITS_16: return GL_RG16;
-            case BitDepth::BITS_32: MG_ASSERT(false && "Unsupported combination"); break;
+            case BitDepth::BITS_8:
+                return GL_RG8;
+            case BitDepth::BITS_16:
+                return GL_RG16;
+            case BitDepth::BITS_32:
+                MG_ASSERT(false && "Unsupported combination");
+                break;
             }
             break;
         case Fmt::SIGNED:
             switch (type.bit_depth) {
-            case BitDepth::BITS_8: return GL_RG8I;
-            case BitDepth::BITS_16: return GL_RG16I;
-            case BitDepth::BITS_32: return GL_RG32I;
+            case BitDepth::BITS_8:
+                return GL_RG8I;
+            case BitDepth::BITS_16:
+                return GL_RG16I;
+            case BitDepth::BITS_32:
+                return GL_RG32I;
             }
             break;
         case Fmt::UNSIGNED:
             switch (type.bit_depth) {
-            case BitDepth::BITS_8: return GL_RG8UI;
-            case BitDepth::BITS_16: return GL_RG16UI;
-            case BitDepth::BITS_32: return GL_RG32UI;
+            case BitDepth::BITS_8:
+                return GL_RG8UI;
+            case BitDepth::BITS_16:
+                return GL_RG16UI;
+            case BitDepth::BITS_32:
+                return GL_RG32UI;
             }
             break;
         case Fmt::FLOAT:
             switch (type.bit_depth) {
-            case BitDepth::BITS_8: MG_ASSERT(false && "Unsupported combination"); break;
-            case BitDepth::BITS_16: return GL_RG16F;
-            case BitDepth::BITS_32: return GL_RG32F;
+            case BitDepth::BITS_8:
+                MG_ASSERT(false && "Unsupported combination");
+                break;
+            case BitDepth::BITS_16:
+                return GL_RG16F;
+            case BitDepth::BITS_32:
+                return GL_RG32F;
             }
             break;
         }
@@ -104,40 +132,59 @@ uint32_t buffer_texture_type_to_gl_enums(BufferTexture::Type type)
     case Channels::RGB:
         MG_ASSERT(type.bit_depth == BitDepth::BITS_32);
         switch (type.fmt) {
-        case Fmt::UNSIGNED_NORMALISED: MG_ASSERT(false && "Unsupported combination"); break;
-        case Fmt::SIGNED: return GL_RGB32I;
-        case Fmt::UNSIGNED: return GL_RGB32UI;
-        case Fmt::FLOAT: return GL_RGB32F;
+        case Fmt::UNSIGNED_NORMALISED:
+            MG_ASSERT(false && "Unsupported combination");
+            break;
+        case Fmt::SIGNED:
+            return GL_RGB32I;
+        case Fmt::UNSIGNED:
+            return GL_RGB32UI;
+        case Fmt::FLOAT:
+            return GL_RGB32F;
         }
         break;
     case Channels::RGBA:
         switch (type.fmt) {
         case Fmt::UNSIGNED_NORMALISED:
             switch (type.bit_depth) {
-            case BitDepth::BITS_8: return GL_RGBA8;
-            case BitDepth::BITS_16: return GL_RGBA16;
-            case BitDepth::BITS_32: MG_ASSERT(false && "Unsupported combination"); break;
+            case BitDepth::BITS_8:
+                return GL_RGBA8;
+            case BitDepth::BITS_16:
+                return GL_RGBA16;
+            case BitDepth::BITS_32:
+                MG_ASSERT(false && "Unsupported combination");
+                break;
             }
             break;
         case Fmt::SIGNED:
             switch (type.bit_depth) {
-            case BitDepth::BITS_8: return GL_RGBA8I;
-            case BitDepth::BITS_16: return GL_RGBA16I;
-            case BitDepth::BITS_32: return GL_RGBA32I;
+            case BitDepth::BITS_8:
+                return GL_RGBA8I;
+            case BitDepth::BITS_16:
+                return GL_RGBA16I;
+            case BitDepth::BITS_32:
+                return GL_RGBA32I;
             }
             break;
         case Fmt::UNSIGNED:
             switch (type.bit_depth) {
-            case BitDepth::BITS_8: return GL_RGBA8UI;
-            case BitDepth::BITS_16: return GL_RGBA16UI;
-            case BitDepth::BITS_32: return GL_RGBA32UI;
+            case BitDepth::BITS_8:
+                return GL_RGBA8UI;
+            case BitDepth::BITS_16:
+                return GL_RGBA16UI;
+            case BitDepth::BITS_32:
+                return GL_RGBA32UI;
             }
             break;
         case Fmt::FLOAT:
             switch (type.bit_depth) {
-            case BitDepth::BITS_8: MG_ASSERT(false && "Unsupported combination"); break;
-            case BitDepth::BITS_16: return GL_RGBA16F;
-            case BitDepth::BITS_32: return GL_RGBA32F;
+            case BitDepth::BITS_8:
+                MG_ASSERT(false && "Unsupported combination");
+                break;
+            case BitDepth::BITS_16:
+                return GL_RGBA16F;
+            case BitDepth::BITS_32:
+                return GL_RGBA32F;
             }
             break;
         }

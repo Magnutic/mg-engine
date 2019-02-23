@@ -225,9 +225,9 @@ template<typename... Cs> std::tuple<Entity, Cs*...> EntityCollection::iterator<C
     Entity entity     = m_collection.m_entity_data.make_handle(m_it);
     auto&  components = m_collection.m_component_lists[m_it->component_list_handle];
 
-    return std::tuple<Entity, Cs*...>{
-        entity, &m_collection.get_component<Cs>(components[Cs::ComponentTypeId])...
-    };
+    return std::tuple<Entity, Cs*...>{ entity,
+                                       &m_collection.get_component<Cs>(
+                                           components[Cs::ComponentTypeId])... };
 }
 
 /** UnpackingView allows iteration over entities with certain components.

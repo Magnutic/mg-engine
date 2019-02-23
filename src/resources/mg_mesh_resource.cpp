@@ -157,8 +157,9 @@ bool MeshResource::validate() const
 
     // Check vertices
     if (n_vertices > k_max_vertices_per_mesh) {
-        mesh_error(fmt::format(
-            "Too many vertices. Max is '{}', was '{}'", k_max_vertices_per_mesh, n_vertices));
+        mesh_error(fmt::format("Too many vertices. Max is '{}', was '{}'",
+                               k_max_vertices_per_mesh,
+                               n_vertices));
 
         return false;
     }

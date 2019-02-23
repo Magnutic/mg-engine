@@ -40,10 +40,14 @@ namespace Mg::gfx {
 static GLint gl_internal_format_for_format(RenderTargetParams::Format format)
 {
     switch (format) {
-    case RenderTargetParams::Format::RGBA8: return GL_RGBA8;
-    case RenderTargetParams::Format::RGBA16F: return GL_RGBA16F;
-    case RenderTargetParams::Format::RGBA32F: return GL_RGBA32F;
-    case RenderTargetParams::Format::Depth24: return GL_DEPTH24_STENCIL8;
+    case RenderTargetParams::Format::RGBA8:
+        return GL_RGBA8;
+    case RenderTargetParams::Format::RGBA16F:
+        return GL_RGBA16F;
+    case RenderTargetParams::Format::RGBA32F:
+        return GL_RGBA32F;
+    case RenderTargetParams::Format::Depth24:
+        return GL_DEPTH24_STENCIL8;
     default:
         throw std::logic_error{
             "gl_internal_format_for_format() undefined for given format type."
@@ -55,11 +59,16 @@ static GLint gl_internal_format_for_format(RenderTargetParams::Format format)
 static uint32_t gl_format_for_format(RenderTargetParams::Format format)
 {
     switch (format) {
-    case RenderTargetParams::Format::RGBA8: [[fallthrough]];
-    case RenderTargetParams::Format::RGBA16F: [[fallthrough]];
-    case RenderTargetParams::Format::RGBA32F: return GL_RGBA;
-    case RenderTargetParams::Format::Depth24: return GL_DEPTH_STENCIL;
-    default: throw std::logic_error{ "gl_type_for_format() undefined for given format type." };
+    case RenderTargetParams::Format::RGBA8:
+        [[fallthrough]];
+    case RenderTargetParams::Format::RGBA16F:
+        [[fallthrough]];
+    case RenderTargetParams::Format::RGBA32F:
+        return GL_RGBA;
+    case RenderTargetParams::Format::Depth24:
+        return GL_DEPTH_STENCIL;
+    default:
+        throw std::logic_error{ "gl_type_for_format() undefined for given format type." };
     }
 }
 
@@ -67,11 +76,16 @@ static uint32_t gl_format_for_format(RenderTargetParams::Format format)
 static uint32_t gl_type_for_format(RenderTargetParams::Format format)
 {
     switch (format) {
-    case RenderTargetParams::Format::RGBA8: return GL_UNSIGNED_BYTE;
-    case RenderTargetParams::Format::RGBA16F: return GL_FLOAT;
-    case RenderTargetParams::Format::RGBA32F: return GL_FLOAT;
-    case RenderTargetParams::Format::Depth24: return GL_UNSIGNED_INT_24_8;
-    default: throw std::logic_error{ "gl_type_for_format() undefined for given format type." };
+    case RenderTargetParams::Format::RGBA8:
+        return GL_UNSIGNED_BYTE;
+    case RenderTargetParams::Format::RGBA16F:
+        return GL_FLOAT;
+    case RenderTargetParams::Format::RGBA32F:
+        return GL_FLOAT;
+    case RenderTargetParams::Format::Depth24:
+        return GL_UNSIGNED_INT_24_8;
+    default:
+        throw std::logic_error{ "gl_type_for_format() undefined for given format type." };
     }
 }
 
@@ -84,8 +98,12 @@ static Texture2D::GfxApiHandle generate_gl_render_target_texture(const RenderTar
 
     GLint filter_mode{};
     switch (params.filter_mode) {
-    case TextureFilterMode::Nearest: filter_mode = GL_NEAREST; break;
-    case TextureFilterMode::Linear: filter_mode = GL_LINEAR; break;
+    case TextureFilterMode::Nearest:
+        filter_mode = GL_NEAREST;
+        break;
+    case TextureFilterMode::Linear:
+        filter_mode = GL_LINEAR;
+        break;
     }
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_mode);
@@ -152,23 +170,24 @@ static GlTextureInfo gl_texture_info(const TextureResource& texture)
     // Pick OpenGL pixel format
     switch (tex_format.pixel_format) {
     case TextureResource::PixelFormat::DXT1:
-        info.compressed = true;
-        info.internal_format =
-            tex_settings.dxt1_has_alpha
-                ? sRGB ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT : GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
-                : sRGB ? GL_COMPRESSED_SRGB_S3TC_DXT1_EXT : GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+        info.compressed      = true;
+        info.internal_format = tex_settings.dxt1_has_alpha
+                                   ? sRGB ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT
+                                          : GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
+                                   : sRGB ? GL_COMPRESSED_SRGB_S3TC_DXT1_EXT
+                                          : GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
         break;
 
     case TextureResource::PixelFormat::DXT3:
-        info.compressed = true;
-        info.internal_format =
-            sRGB ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT : GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+        info.compressed      = true;
+        info.internal_format = sRGB ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT
+                                    : GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
         break;
 
     case TextureResource::PixelFormat::DXT5:
-        info.compressed = true;
-        info.internal_format =
-            sRGB ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT : GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+        info.compressed      = true;
+        info.internal_format = sRGB ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT
+                                    : GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
         break;
 
     case TextureResource::PixelFormat::ATI2:
@@ -209,9 +228,13 @@ static void set_sampling_params(const TextureResource::Settings& settings)
         edge_sampling = GL_CLAMP_TO_EDGE;
         break;
 
-    case TextureResource::EdgeSampling::REPEAT: edge_sampling = GL_REPEAT; break;
+    case TextureResource::EdgeSampling::REPEAT:
+        edge_sampling = GL_REPEAT;
+        break;
 
-    case TextureResource::EdgeSampling::MIRRORED_REPEAT: edge_sampling = GL_MIRRORED_REPEAT; break;
+    case TextureResource::EdgeSampling::MIRRORED_REPEAT:
+        edge_sampling = GL_MIRRORED_REPEAT;
+        break;
     }
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, edge_sampling);
@@ -321,8 +344,8 @@ static Texture2D::GfxApiHandle generate_gl_texture_from(const TextureResource& t
 
     if (preallocate) { allocate_texture_storage(info); }
 
-    decltype(upload_compressed_mip)* upload_function =
-        (info.compressed ? upload_compressed_mip : upload_uncompressed_mip);
+    decltype(upload_compressed_mip)* upload_function = (info.compressed ? upload_compressed_mip
+                                                                        : upload_uncompressed_mip);
 
     // Upload texture data, mipmap by mipmap
     for (int32_t mip_index = 0; mip_index < info.mip_levels; ++mip_index) {

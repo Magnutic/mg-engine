@@ -269,8 +269,11 @@ public:
             return { std::nullopt, ReturnCode::Index_buffer_full };
         }
 
-        MeshHandle mesh =
-            m_mesh_repository->_make_mesh(resource, m_vbo_id, m_vbo_offset, m_ibo_id, m_ibo_offset);
+        MeshHandle mesh = m_mesh_repository->_make_mesh(resource,
+                                                        m_vbo_id,
+                                                        m_vbo_offset,
+                                                        m_ibo_id,
+                                                        m_ibo_offset);
 
         m_vbo_offset += resource.vertices().size_bytes();
         m_ibo_offset += resource.indices().size_bytes();
@@ -319,8 +322,9 @@ void MeshRepository::destroy(MeshHandle handle)
 MeshBuffer MeshRepository::new_mesh_buffer(VertexBufferSize vertex_buffer_size,
                                            IndexBufferSize  index_buffer_size)
 {
-    return MeshBuffer{ std::make_unique<MeshBuffer::Impl>(
-        *m_impl, vertex_buffer_size, index_buffer_size) };
+    return MeshBuffer{
+        std::make_unique<MeshBuffer::Impl>(*m_impl, vertex_buffer_size, index_buffer_size)
+    };
 }
 
 } // namespace Mg::gfx

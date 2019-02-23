@@ -150,9 +150,9 @@ void RenderCommandList::sort_draw_list(const ICamera& camera, SortFunc sf)
         const auto  depth   = uint32_t(glm::max(0.0f, depth_f));
 
         // TODO: This fingerprint is not much good
-        const uint32_t mesh_fingerprint = command_data.mesh_vao_id & 0x0F;
-        const auto     material_fingerprint =
-            uint32_t(reinterpret_cast<uintptr_t>(command_data.material)); // NOLINT
+        const uint32_t mesh_fingerprint     = command_data.mesh_vao_id & 0x0F;
+        const auto     material_fingerprint = uint32_t(
+            reinterpret_cast<uintptr_t>(command_data.material)); // NOLINT
         const uint32_t draw_call_fingerprint = (material_fingerprint << 8) | mesh_fingerprint;
 
         m_keys[i] = SortKey{ depth, draw_call_fingerprint, i };

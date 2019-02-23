@@ -50,10 +50,12 @@ void ResourceEntryBase::load_resource()
 
     switch (result.result_code) {
     case LoadResourceResult::DataError:
-        g_log.write_error(fmt::format(
-            "Loading resource '{}': DataError: {}", resource_id().str_view(), result.error_reason));
+        g_log.write_error(fmt::format("Loading resource '{}': DataError: {}",
+                                      resource_id().str_view(),
+                                      result.error_reason));
         throw ResourceDataError{};
-    case LoadResourceResult::Success: break;
+    case LoadResourceResult::Success:
+        break;
     }
 }
 

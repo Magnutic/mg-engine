@@ -46,9 +46,12 @@ inline auto alloc_message(int32_t msg_len)
 inline GLenum shader_stage_to_gl_enum(ShaderStage stage)
 {
     switch (stage) {
-    case ShaderStage::VERTEX: return GL_VERTEX_SHADER;
-    case ShaderStage::FRAGMENT: return GL_FRAGMENT_SHADER;
-    case ShaderStage::GEOMETRY: return GL_GEOMETRY_SHADER;
+    case ShaderStage::VERTEX:
+        return GL_VERTEX_SHADER;
+    case ShaderStage::FRAGMENT:
+        return GL_FRAGMENT_SHADER;
+    case ShaderStage::GEOMETRY:
+        return GL_GEOMETRY_SHADER;
     }
 
     throw std::runtime_error("Reached unreachable code.");

@@ -67,8 +67,10 @@ void UniformBuffer::set_data(span<const std::byte> data)
     }
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_gl_ubo_id.value);
-    GLvoid* p = glMapBufferRange(
-        GL_UNIFORM_BUFFER, 0, GLsizeiptr(size), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT);
+    GLvoid* p = glMapBufferRange(GL_UNIFORM_BUFFER,
+                                 0,
+                                 GLsizeiptr(size),
+                                 GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT);
     MG_ASSERT(p != nullptr);
 
     std::memcpy(p, &data[0], size);

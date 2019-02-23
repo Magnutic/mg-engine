@@ -37,8 +37,10 @@ enum class ShaderSamplerType { Sampler2D, SamplerCube };
 inline std::string_view shader_sampler_type_to_string(ShaderSamplerType type)
 {
     switch (type) {
-    case ShaderSamplerType::Sampler2D: return "sampler2D";
-    case ShaderSamplerType::SamplerCube: return "samplerCube";
+    case ShaderSamplerType::Sampler2D:
+        return "sampler2D";
+    case ShaderSamplerType::SamplerCube:
+        return "samplerCube";
     }
     throw "unreachable";
 }
@@ -55,9 +57,12 @@ enum class ShaderParameterType { Float, Vec2, Vec4 }; // Order matters, used for
 inline std::string_view shader_parameter_type_to_string(ShaderParameterType type)
 {
     switch (type) {
-    case ShaderParameterType::Float: return "float";
-    case ShaderParameterType::Vec2: return "vec2";
-    case ShaderParameterType::Vec4: return "vec4";
+    case ShaderParameterType::Float:
+        return "float";
+    case ShaderParameterType::Vec2:
+        return "vec2";
+    case ShaderParameterType::Vec4:
+        return "vec4";
     }
     throw "unreachable";
 }

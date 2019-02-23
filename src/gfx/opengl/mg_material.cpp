@@ -99,8 +99,9 @@ bool Material::get_option(Identifier option) const
     auto [found, index] = index_of(m_options, option);
 
     if (!found) {
-        throw std::runtime_error(fmt::format(
-            "Material '{}': get_option(\"{}\"): no such option.", m_id.c_str(), option.c_str()));
+        throw std::runtime_error(fmt::format("Material '{}': get_option(\"{}\"): no such option.",
+                                             m_id.c_str(),
+                                             option.c_str()));
     }
 
     return (m_option_flags & (1u << index)) != 0;
@@ -132,9 +133,12 @@ void Material::set_parameter(Identifier name, glm::vec4 param)
 static size_t offset_for_param_type(ShaderParameterType type)
 {
     switch (type) {
-    case ShaderParameterType::Vec4: return 16;
-    case ShaderParameterType::Vec2: return 8;
-    case ShaderParameterType::Float: return 4;
+    case ShaderParameterType::Vec4:
+        return 16;
+    case ShaderParameterType::Vec2:
+        return 8;
+    case ShaderParameterType::Float:
+        return 4;
     }
     throw "unreachable";
 }
@@ -142,9 +146,12 @@ static size_t offset_for_param_type(ShaderParameterType type)
 static size_t num_elems_for_param_type(ShaderParameterType type)
 {
     switch (type) {
-    case ShaderParameterType::Vec4: return 4;
-    case ShaderParameterType::Vec2: return 2;
-    case ShaderParameterType::Float: return 1;
+    case ShaderParameterType::Vec4:
+        return 4;
+    case ShaderParameterType::Vec2:
+        return 2;
+    case ShaderParameterType::Float:
+        return 1;
     }
     throw "unreachable";
 }
@@ -155,12 +162,12 @@ static void wrong_type_error(Identifier          material_id,
                              ShaderParameterType expected,
                              ShaderParameterType actual)
 {
-    auto error_msg =
-        fmt::format("Material '{}': set_parameter(\"{}\", ...): wrong type, expected {}, got {}.",
-                    material_id.c_str(),
-                    param_id.c_str(),
-                    shader_parameter_type_to_string(expected),
-                    shader_parameter_type_to_string(actual));
+    auto error_msg = fmt::format(
+        "Material '{}': set_parameter(\"{}\", ...): wrong type, expected {}, got {}.",
+        material_id.c_str(),
+        param_id.c_str(),
+        shader_parameter_type_to_string(expected),
+        shader_parameter_type_to_string(actual));
 
     g_log.write_error(error_msg);
 }

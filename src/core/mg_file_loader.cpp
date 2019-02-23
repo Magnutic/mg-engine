@@ -162,8 +162,9 @@ void ZipFileLoader::open_zip_archive()
         zip_error_t error{};
         zip_error_init_with_code(&error, zip_error);
 
-        std::string msg = fmt::format(
-            "Failed to open archive '{}': {}", m_archive_name, zip_error_strerror(&error));
+        std::string msg = fmt::format("Failed to open archive '{}': {}",
+                                      m_archive_name,
+                                      zip_error_strerror(&error));
 
         zip_error_fini(&error);
 

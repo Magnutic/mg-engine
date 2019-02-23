@@ -114,11 +114,16 @@ static PixelFormatResult dds_pf_to_pixel_format(const DDS_PIXELFORMAT& pf)
 {
     if ((pf.dwFlags & DDPF_FOURCC) != 0) {
         switch (pf.dwFourCC) {
-        case DXT1: return { true, TextureResource::PixelFormat::DXT1 };
-        case DXT3: return { true, TextureResource::PixelFormat::DXT3 };
-        case DXT5: return { true, TextureResource::PixelFormat::DXT5 };
-        case ATI2: return { true, TextureResource::PixelFormat::ATI2 };
-        default: break;
+        case DXT1:
+            return { true, TextureResource::PixelFormat::DXT1 };
+        case DXT3:
+            return { true, TextureResource::PixelFormat::DXT3 };
+        case DXT5:
+            return { true, TextureResource::PixelFormat::DXT5 };
+        case ATI2:
+            return { true, TextureResource::PixelFormat::ATI2 };
+        default:
+            break;
         }
     }
 
@@ -141,12 +146,18 @@ static PixelFormatResult dds_pf_to_pixel_format(const DDS_PIXELFORMAT& pf)
 inline size_t block_size_by_format(TextureResource::PixelFormat pixel_format)
 {
     switch (pixel_format) {
-    case TextureResource::PixelFormat::DXT1: return 8;
-    case TextureResource::PixelFormat::DXT3: return 16;
-    case TextureResource::PixelFormat::DXT5: return 16;
-    case TextureResource::PixelFormat::ATI2: return 16;
-    case TextureResource::PixelFormat::BGR: return 48;
-    case TextureResource::PixelFormat::BGRA: return 64;
+    case TextureResource::PixelFormat::DXT1:
+        return 8;
+    case TextureResource::PixelFormat::DXT3:
+        return 16;
+    case TextureResource::PixelFormat::DXT5:
+        return 16;
+    case TextureResource::PixelFormat::ATI2:
+        return 16;
+    case TextureResource::PixelFormat::BGR:
+        return 48;
+    case TextureResource::PixelFormat::BGRA:
+        return 64;
     }
 
     MG_ASSERT(false && "Unexpected value for TextureResource::PixelFormat");

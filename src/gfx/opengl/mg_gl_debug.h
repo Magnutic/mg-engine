@@ -30,9 +30,10 @@
 #include <string_view>
 
 /** Check for and notify on OpenGL errors. */
-#define MG_CHECK_GL_ERROR()    \
-    ::Mg::gfx::check_gl_error( \
-        static_cast<const char*>(__FILE__), static_cast<const char*>(__func__), __LINE__)
+#define MG_CHECK_GL_ERROR()                                       \
+    ::Mg::gfx::check_gl_error(static_cast<const char*>(__FILE__), \
+                              static_cast<const char*>(__func__), \
+                              __LINE__)
 
 namespace Mg::gfx {
 

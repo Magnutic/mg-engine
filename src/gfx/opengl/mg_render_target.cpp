@@ -116,14 +116,15 @@ TextureRenderTarget TextureRenderTarget::with_colour_target(TextureHandle colour
     // Attach depth/stencil renderbuffer to FBO
     switch (depth_type) {
     case DepthType::RenderBuffer:
-        trt.m_depth_buffer_id.value =
-            create_depth_stencil_buffer(texture_node.texture.image_size());
+        trt.m_depth_buffer_id.value = create_depth_stencil_buffer(
+            texture_node.texture.image_size());
         glFramebufferRenderbuffer(GL_FRAMEBUFFER,
                                   GL_DEPTH_STENCIL_ATTACHMENT,
                                   GL_RENDERBUFFER,
                                   trt.m_depth_buffer_id.value);
         break;
-    case DepthType::None: break; // Do nothing
+    case DepthType::None:
+        break; // Do nothing
     }
 
     check_framebuffer();

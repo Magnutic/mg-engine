@@ -30,9 +30,9 @@
 #include <string>
 #include <type_traits>
 
+#include "mg/utils/mg_fopen_utf8.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_fopen_utf8.h"
 
 namespace Mg {
 

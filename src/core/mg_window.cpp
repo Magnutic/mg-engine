@@ -312,8 +312,9 @@ void Window::mouse_button_callback(int button, bool pressed)
 
 void Window::focus_callback(bool focused)
 {
-    g_log.write_verbose(fmt::format(
-        "Window {} {} focus.", static_cast<void*>(this), focused ? "received" : "lost"));
+    g_log.write_verbose(fmt::format("Window {} {} focus.",
+                                    static_cast<void*>(this),
+                                    focused ? "received" : "lost"));
 
     // Release cursor if it was locked to this window
     if (is_cursor_locked_to_window() && !focused) { release_cursor(); }

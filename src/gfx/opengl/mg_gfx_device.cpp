@@ -23,8 +23,8 @@
 
 #include "mg/gfx/mg_gfx_device.h"
 
-#include <cstdint>
 #include "mg/utils/mg_stl_helpers.h"
+#include <cstdint>
 #include <stdexcept>
 
 #include "mg/core/mg_config.h"

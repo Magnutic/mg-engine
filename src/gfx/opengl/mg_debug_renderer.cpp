@@ -100,10 +100,14 @@ static DebugMeshOwner generate_mesh(span<const glm::vec3> positions, span<const 
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_id.value);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ibo_id.value);
 
-    glBufferData(
-        GL_ARRAY_BUFFER, GLsizeiptr(positions.size_bytes()), positions.data(), GL_STATIC_DRAW);
-    glBufferData(
-        GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(indices.size_bytes()), indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER,
+                 GLsizeiptr(positions.size_bytes()),
+                 positions.data(),
+                 GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                 GLsizeiptr(indices.size_bytes()),
+                 indices.data(),
+                 GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), nullptr);
     glEnableVertexAttribArray(0);
@@ -293,10 +297,10 @@ void DebugRenderer::draw_ellipsoid(const ICamera& camera, EllipsoidDrawParams pa
     if (it == data().spheres.end()) {
         auto ellipsoid_data = generate_ellipsoid_verts(params.steps);
 
-        auto p = data().spheres.emplace(
-            params.steps,
-            Data::Sphere{ generate_mesh(ellipsoid_data.verts, ellipsoid_data.indices),
-                          int32_t(ellipsoid_data.indices.size()) });
+        auto p = data().spheres.emplace(params.steps,
+                                        Data::Sphere{ generate_mesh(ellipsoid_data.verts,
+                                                                    ellipsoid_data.indices),
+                                                      int32_t(ellipsoid_data.indices.size()) });
 
         it = p.first;
     }

@@ -105,11 +105,21 @@ void Log::output(Prio prio, std::string_view str)
     const char* prefix;
 
     switch (prio) {
-    case Prio::Error: prefix = "[ERROR]"; break;
-    case Prio::Warning: prefix = "[WARNING]"; break;
-    case Prio::Message: prefix = "[MESSAGE]"; break;
-    case Prio::Verbose: prefix = "[INFO]"; break;
-    default: MG_ASSERT_DEBUG(false); prefix = "";
+    case Prio::Error:
+        prefix = "[ERROR]";
+        break;
+    case Prio::Warning:
+        prefix = "[WARNING]";
+        break;
+    case Prio::Message:
+        prefix = "[MESSAGE]";
+        break;
+    case Prio::Verbose:
+        prefix = "[INFO]";
+        break;
+    default:
+        MG_ASSERT_DEBUG(false);
+        prefix = "";
     }
 
     std::string message = fmt::format("{} {}", prefix, str);

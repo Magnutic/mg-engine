@@ -212,8 +212,10 @@ private:
 
             // Check again after locking, in case another thread did the same thing ahead of us.
             if (!file_info.entry) {
-                file_info.entry = std::make_unique<ResourceEntry<ResT>>(
-                    file_info.filename, *file_info.loader, file_info.time_stamp, *this);
+                file_info.entry = std::make_unique<ResourceEntry<ResT>>(file_info.filename,
+                                                                        *file_info.loader,
+                                                                        file_info.time_stamp,
+                                                                        *this);
             }
         }
 

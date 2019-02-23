@@ -235,8 +235,10 @@ inline void update_buffer(BillboardRendererData& data, span<const Billboard> bil
     glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(data.vertex_buffer_size), nullptr, GL_STREAM_DRAW);
 
     data.vertex_buffer_size = billboards.size() * sizeof(Billboard);
-    glBufferData(
-        GL_ARRAY_BUFFER, GLsizeiptr(data.vertex_buffer_size), billboards.data(), GL_STREAM_DRAW);
+    glBufferData(GL_ARRAY_BUFFER,
+                 GLsizeiptr(data.vertex_buffer_size),
+                 billboards.data(),
+                 GL_STREAM_DRAW);
 }
 
 // Set shader as required by the flags.
@@ -313,10 +315,10 @@ void BillboardRenderer::render(const ICamera&             camera,
 
     {
         CameraBlock camera_block{};
-        camera_block.VP = camera.view_proj_matrix();
-        camera_block.P  = camera.proj_matrix();
-        camera_block.cam_pos_xyz_aspect_ratio_w =
-            glm::vec4(camera.get_position(), camera.aspect_ratio());
+        camera_block.VP                         = camera.view_proj_matrix();
+        camera_block.P                          = camera.proj_matrix();
+        camera_block.cam_pos_xyz_aspect_ratio_w = glm::vec4(camera.get_position(),
+                                                            camera.aspect_ratio());
 
         data().camera_ubo.set_data(byte_representation(camera_block));
         data().camera_ubo.bind_to(k_camera_ubo_slot);
