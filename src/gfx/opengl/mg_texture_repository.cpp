@@ -34,6 +34,8 @@
 
 #include <fmt/core.h>
 
+#include <vector>
+
 namespace Mg::gfx {
 
 struct TextureRepositoryData {
