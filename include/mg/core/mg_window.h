@@ -28,7 +28,6 @@
 #pragma once
 
 #include <cstdint>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -71,7 +70,7 @@ public:
     /** Callback to invoke when window gains or loses focus.
      * Parametres: bool is_focused, whether the window is focused.
      */
-    using FocusCallbackT = std::function<void(bool)>;
+    using FocusCallbackT = void (*)(bool);
 
     /** Create new window. */
     static std::optional<Handle> make(WindowSettings settings, const std::string& title);
