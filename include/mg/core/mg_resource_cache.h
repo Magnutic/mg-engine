@@ -33,10 +33,10 @@
 #include "mg/core/mg_resource_handle.h"
 #include "mg/resources/mg_file_changed_event.h"
 #include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_pointer.h"
 
 #include <cstddef>
 #include <cstdint>
-#include <memory>
 #include <mutex>
 #include <shared_mutex>
 
@@ -76,7 +76,7 @@ public:
      *
      * In this case, the path to archive is given relative to current working directory.
      */
-    template<typename... LoaderTs> explicit ResourceCache(std::unique_ptr<LoaderTs>... file_loaders)
+    template<typename... LoaderTs> explicit ResourceCache(Ptr<LoaderTs>... file_loaders)
     {
         MG_ASSERT((... && (file_loaders != nullptr)) && "File loaders may not be nullptr.");
 
@@ -154,7 +154,7 @@ public:
     {
         std::shared_lock lock{ m_file_list_mutex };
         if (const FileInfo* p_file_info = file_info(resource_id); p_file_info != nullptr) {
-            return p_file_info->entry && p_file_info->entry->is_loaded();
+            return p_file_info->entry != nullptr && p_file_info->entry->is_loaded();
         }
         return false;
     }
@@ -166,7 +166,7 @@ public:
      */
     bool unload_unused(bool unload_all_unused = false) const;
 
-    span<const std::unique_ptr<IFileLoader>> file_loaders() const noexcept
+    span<const Ptr<IFileLoader>> file_loaders() const noexcept
     {
         // No need to lock, since m_file_loaders never changes after construction.
         return m_file_loaders;
@@ -188,7 +188,7 @@ private:
         IFileLoader* loader;
 
         // ResourceEntry associated with this file. Nullptr if not loaded.
-        std::unique_ptr<ResourceEntryBase> entry;
+        Ptr<ResourceEntryBase> entry;
     };
 
     // Rebuilds resource-file-list data structures.
@@ -206,17 +206,17 @@ private:
     template<typename ResT> ResourceEntryBase& get_or_create_resource_entry(FileInfo& file_info)
     {
         // Create ResourcEntry if not present (i.e. this is the first time it is requested).
-        if (!file_info.entry) {
+        if (file_info.entry == nullptr) {
             // Lock to make sure that no other thread is trying to create a ResourceEntry for the
             // same resource at the same time.
             std::unique_lock{ m_set_resource_entry_mutex };
 
             // Check again after locking, in case another thread did the same thing ahead of us.
-            if (!file_info.entry) {
-                file_info.entry = std::make_unique<ResourceEntry<ResT>>(file_info.filename,
-                                                                        *file_info.loader,
-                                                                        file_info.time_stamp,
-                                                                        *this);
+            if (file_info.entry == nullptr) {
+                file_info.entry = Ptr<ResourceEntry<ResT>>::make(file_info.filename,
+                                                                 *file_info.loader,
+                                                                 file_info.time_stamp,
+                                                                 *this);
             }
         }
 
@@ -235,7 +235,7 @@ private:
     // --------------------------------------- Data members ----------------------------------------
 
     // Loaders for loading resource file data into memory.
-    std::vector<std::unique_ptr<IFileLoader>> m_file_loaders;
+    std::vector<Ptr<IFileLoader>> m_file_loaders;
 
     // List of resource files available through the resource loaders.
     // Always sorted by filename hash.

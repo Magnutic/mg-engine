@@ -36,7 +36,7 @@ struct MaterialAssignment {
 
 inline Mg::ResourceCache setup_resource_cache()
 {
-    return Mg::ResourceCache{ std::make_unique<Mg::BasicFileLoader>("../data") };
+    return Mg::ResourceCache{ Mg::Ptr<Mg::BasicFileLoader>::make("../data") };
 }
 
 struct Scene {
