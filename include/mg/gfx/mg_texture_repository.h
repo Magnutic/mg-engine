@@ -29,8 +29,7 @@
 
 #include "mg/gfx/mg_texture_handle.h"
 #include "mg/utils/mg_macros.h"
-
-#include <memory>
+#include "mg/utils/mg_simple_pimpl.h"
 
 namespace Mg {
 class TextureResource;
@@ -39,8 +38,9 @@ class TextureResource;
 namespace Mg::gfx {
 
 struct RenderTargetParams; // Defined in mg_texture_related_types.h
+struct TextureRepositoryData;
 
-class TextureRepository {
+class TextureRepository : PimplMixin<TextureRepositoryData> {
 public:
     MG_MAKE_NON_MOVABLE(TextureRepository);
     MG_MAKE_NON_COPYABLE(TextureRepository);
@@ -58,10 +58,6 @@ public:
     void update(const TextureResource& resource);
 
     void destroy(TextureHandle handle);
-
-private:
-    class Impl;
-    std::unique_ptr<Impl> m_impl;
 };
 
 } // namespace Mg::gfx
