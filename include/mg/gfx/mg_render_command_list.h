@@ -28,7 +28,6 @@
 #pragma once
 
 #include "mg/containers/mg_array.h"
-#include "mg/core/mg_transform.h"
 #include "mg/gfx/mg_mesh_handle.h"
 #include "mg/gfx/mg_render_command_data_handle.h"
 #include "mg/mg_defs.h"
@@ -36,6 +35,10 @@
 
 #include <cstdint>
 #include <vector>
+
+namespace Mg {
+class Transform;
+}
 
 namespace Mg::gfx {
 
@@ -64,8 +67,9 @@ class RenderCommandList {
 public:
     explicit RenderCommandList();
 
-    void
-    add_mesh(MeshHandle mesh, Transform transform, span<const MaterialBinding> material_bindings);
+    void add_mesh(MeshHandle                  mesh,
+                  const Transform&            transform,
+                  span<const MaterialBinding> material_bindings);
 
     void clear()
     {

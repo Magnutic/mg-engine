@@ -24,6 +24,7 @@
 #include "mg/gfx/mg_render_command_list.h"
 
 #include "mg/core/mg_log.h"
+#include "mg/core/mg_transform.h"
 #include "mg/gfx/mg_camera.h"
 #include "mg/gfx/mg_frustum.h"
 #include "mg/utils/mg_stl_helpers.h"
@@ -57,7 +58,7 @@ RenderCommandList::RenderCommandList()
 {}
 
 void RenderCommandList::add_mesh(MeshHandle                  mesh,
-                                 Transform                   transform,
+                                 const Transform&            transform,
                                  span<const MaterialBinding> material_bindings)
 {
     const internal::MeshInfo& md = internal::mesh_info(mesh);
