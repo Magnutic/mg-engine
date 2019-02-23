@@ -183,7 +183,7 @@ std::optional<Window::Handle> Window::make(WindowSettings settings, const std::s
         window_from_glfw_handle(w).window_size_callback(width, height);
     });
 
-    auto window_handle = std::make_unique<Window>(ConstructKey{}, window, settings);
+    auto window_handle = Ptr<Window>::make(ConstructKey{}, window, settings);
     window_handle->apply_settings(settings);
     window_handle->set_title(title);
 

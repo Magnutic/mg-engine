@@ -28,7 +28,6 @@
 #pragma once
 
 #include <cstdint>
-#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -37,6 +36,7 @@
 #include "mg/gfx/mg_render_target.h"
 #include "mg/input/mg_keyboard.h"
 #include "mg/input/mg_mouse.h"
+#include "mg/utils/mg_pointer.h"
 
 struct GLFWwindow;
 
@@ -64,8 +64,8 @@ class Window {
     struct ConstructKey {}; // Limits access to Window constructor
 
 public:
-    /** unique_ptr handle for Window. */
-    using Handle = std::unique_ptr<Window>;
+    /** Owning handle for Window. */
+    using Handle = Ptr<Window>;
 
     /** Callback to invoke when window gains or loses focus.
      * Parametres: bool is_focused, whether the window is focused.
