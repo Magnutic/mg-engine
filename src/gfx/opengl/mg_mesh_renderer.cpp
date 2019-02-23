@@ -23,9 +23,6 @@
 
 #include "mg/gfx/mg_mesh_renderer.h"
 
-#include <algorithm>
-#include <cmath>
-
 #include "mg/gfx/mg_light_buffers.h"
 #include "mg/gfx/mg_light_grid.h"
 #include "mg/gfx/mg_material.h"
