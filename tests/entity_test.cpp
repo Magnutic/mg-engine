@@ -3,8 +3,6 @@
 #include <utility>
 #include <vector>
 
-#include <mg/core/mg_log.h>
-#include <mg/core/mg_root.h>
 #include <mg/ecs/mg_entity.h>
 
 MG_DEFINE_COMPONENT(TestComponent)
