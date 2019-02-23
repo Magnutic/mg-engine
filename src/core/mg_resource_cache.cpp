@@ -77,7 +77,7 @@ void ResourceCache::refresh()
         time_point         new_time_stamp;
         IFileLoader&       new_loader;
     };
-    std::vector<ReloadInfo> entries_to_reload;
+    small_vector<ReloadInfo, 10> entries_to_reload;
 
     // Scope for lock.
     {
@@ -239,7 +239,7 @@ bool ResourceCache::unload_unused(bool unload_all_unused) const
 
     // Create vector of FileInfos sorted so that ResourceEntry with earliest last-access time
     // comes first (and thus unload resources in least-recently-used order).
-    std::vector<const FileInfo*> file_infos;
+    small_vector<const FileInfo*, 50> file_infos;
     for (const FileInfo& file_info : m_file_list) { file_infos.push_back(&file_info); }
 
     auto lru_order = [](const FileInfo* l, const FileInfo* r) {

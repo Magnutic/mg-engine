@@ -235,11 +235,11 @@ private:
     // --------------------------------------- Data members ----------------------------------------
 
     // Loaders for loading resource file data into memory.
-    std::vector<Ptr<IFileLoader>> m_file_loaders;
+    small_vector<Ptr<IFileLoader>, 2> m_file_loaders;
 
     // List of resource files available through the resource loaders.
     // Always sorted by filename hash.
-    std::vector<FileInfo> m_file_list;
+    small_vector<FileInfo, 1> m_file_list;
 
     // Shared mutex to allow multiple readers, single writer.
     mutable std::shared_mutex m_file_list_mutex;

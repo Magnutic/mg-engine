@@ -36,9 +36,9 @@ namespace Mg {
 /** Input to resource types' `load_resource()` member function. */
 class ResourceLoadingInput {
 public:
-    explicit ResourceLoadingInput(std::vector<std::byte> data,
-                                  ResourceCache&         owning_cache,
-                                  ResourceEntryBase&     resource_entry)
+    explicit ResourceLoadingInput(Array<std::byte>   data,
+                                  ResourceCache&     owning_cache,
+                                  ResourceEntryBase& resource_entry)
         : m_data(std::move(data)), m_owning_cache(&owning_cache), m_resource_entry(&resource_entry)
     {}
 
@@ -60,9 +60,9 @@ public:
 
 
 private:
-    std::vector<std::byte> m_data;
-    ResourceCache*         m_owning_cache;
-    ResourceEntryBase*     m_resource_entry;
+    Array<std::byte>   m_data;
+    ResourceCache*     m_owning_cache;
+    ResourceEntryBase* m_resource_entry;
 };
 
 

@@ -30,17 +30,15 @@
 
 #pragma once
 
+#include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_identifier.h"
-#include "mg/resources/mg_base_resource.h"
-#include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_pointer.h"
 
 #include <atomic>
 #include <chrono>
-#include <memory>
 #include <mutex>
 #include <shared_mutex>
-#include <vector>
 
 namespace Mg {
 
@@ -75,8 +73,7 @@ public:
     virtual const BaseResource& get_resource() const = 0;
 
     /** Make a new (empty) ResourceEntry of the same derived type as this one. */
-    virtual std::unique_ptr<ResourceEntryBase> new_entry(IFileLoader& loader,
-                                                         time_point   time_stamp) const = 0;
+    virtual Ptr<ResourceEntryBase> new_entry(IFileLoader& loader, time_point time_stamp) const = 0;
 
     /** Swap values. Requires that this and rhs are of the same derived type. */
     virtual void swap_entry(ResourceEntryBase& rhs) noexcept = 0;
@@ -108,7 +105,7 @@ public:
      * tracked when a dependency is loaded in a resource type's `load_resource()` function via
      * `ResourceLoadingInput::load_dependency()`.
      */
-    std::vector<Dependency> dependencies;
+    small_vector<Dependency, 2> dependencies;
 
     time_point last_access{};
 

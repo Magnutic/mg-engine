@@ -57,10 +57,9 @@ public:
     ResT&       get_resource() override { return m_resource.value(); }
     const ResT& get_resource() const override { return m_resource.value(); }
 
-    std::unique_ptr<ResourceEntryBase> new_entry(IFileLoader& loader,
-                                                 time_point   time_stamp) const override
+    Ptr<ResourceEntryBase> new_entry(IFileLoader& loader, time_point time_stamp) const override
     {
-        return std::make_unique<ResourceEntry>(resource_id(), loader, time_stamp, owning_cache());
+        return Ptr<ResourceEntry>::make(resource_id(), loader, time_stamp, owning_cache());
     }
 
     void swap_entry(ResourceEntryBase& rhs) noexcept override
@@ -71,7 +70,7 @@ public:
         MG_ASSERT(ref_count == 0 && other.ref_count == 0);
         MG_ASSERT(m_p_owning_cache == other.m_p_owning_cache);
 
-        swap(dependencies, other.dependencies);
+        dependencies.swap(other.dependencies);
         swap(last_access, other.last_access);
         swap(m_resource_id, other.m_resource_id);
         swap(m_time_stamp, other.m_time_stamp);

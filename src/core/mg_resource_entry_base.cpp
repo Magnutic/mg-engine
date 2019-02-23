@@ -23,9 +23,11 @@
 
 #include "mg/core/mg_resource_entry_base.h"
 
+#include "mg/containers/mg_array.h"
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_resource_exceptions.h"
 #include "mg/core/mg_resource_loading_input.h"
+#include "mg/resources/mg_base_resource.h"
 
 #include <fmt/core.h>
 
@@ -40,11 +42,11 @@ void ResourceEntryBase::load_resource()
 
     last_access = std::chrono::system_clock::now();
 
-    std::vector<std::byte> file_data;
-    file_data.resize(loader().file_size(resource_id()));
+    auto file_size = loader().file_size(resource_id());
+    auto file_data = Array<std::byte>::make(file_size);
 
     loader().load_file(resource_id(), file_data);
-    ResourceLoadingInput input{ file_data, owning_cache(), *this };
+    ResourceLoadingInput input{ std::move(file_data), owning_cache(), *this };
 
     LoadResourceResult result = create_resource().load_resource(input);
 
@@ -54,6 +56,7 @@ void ResourceEntryBase::load_resource()
                                       resource_id().str_view(),
                                       result.error_reason));
         throw ResourceDataError{};
+
     case LoadResourceResult::Success:
         break;
     }
