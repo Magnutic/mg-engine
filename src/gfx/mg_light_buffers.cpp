@@ -23,20 +23,26 @@
 
 #include "mg/gfx/mg_light_buffers.h"
 
-#include <cstdint>
-#include <cstring> // memset, memcpy
-#include <memory>
+#include "mg/core/mg_log.h"
+#include "mg/gfx/mg_camera.h"
+#include "mg/gfx/mg_light_grid.h"
 
 #include <glm/gtx/fast_square_root.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
-#include "mg/core/mg_log.h"
-#include "mg/gfx/mg_camera.h"
-#include "mg/gfx/mg_light_grid.h"
+#include <array>
+#include <cstdint>
+#include <cstring> // memset, memcpy
+#include <memory>
 
 namespace Mg::gfx {
+
+using LightBlock = std::array<Light, MG_MAX_NUM_LIGHTS>;
+
+// Keep below lower bound on max UBO size. TODO: split into multiple UBOs if too large?
+static_assert(sizeof(LightBlock) <= 16 * 1024);
 
 inline BufferTexture::Type light_index_tex_type()
 {

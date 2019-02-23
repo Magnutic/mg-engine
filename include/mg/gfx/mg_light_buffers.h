@@ -27,8 +27,6 @@
 
 #pragma once
 
-#include <array>
-
 #include "mg/gfx/mg_buffer_texture.h"
 #include "mg/gfx/mg_light.h"
 #include "mg/gfx/mg_uniform_buffer.h"
@@ -38,11 +36,6 @@ namespace Mg::gfx {
 
 class ICamera;
 class LightGrid;
-
-using LightBlock = std::array<Light, MG_MAX_NUM_LIGHTS>;
-
-// Keep below lower bound on max UBO size. TODO: split into multiple UBOs if too large?
-static_assert(sizeof(LightBlock) <= 16 * 1024);
 
 /* Collection of GPU data structures holding information on lights, used by renderers. */
 struct LightBuffers {
