@@ -27,13 +27,6 @@
 
 #pragma once
 
-#include <cstdint>
-#include <optional>
-#include <string>
-
-#include <glm/vec2.hpp>
-#include <glm/vec4.hpp>
-
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/core/mg_resource_handle.h"
@@ -42,6 +35,13 @@
 #include "mg/utils/mg_gsl.h"
 
 #include "mg/mg_defs.h"
+
+#include <glm/vec2.hpp>
+#include <glm/vec4.hpp>
+
+#include <cstdint>
+#include <optional>
+#include <string>
 
 namespace Mg {
 class ShaderResource;
@@ -138,7 +138,14 @@ private:
     // State of Options represented as a bit-field
     uint32_t m_option_flags{};
 
-    std::array<uint8_t, defs::k_material_parameters_buffer_size> m_parameter_data{};
+    struct ParamsBuffer {
+        uint8_t        buffer[defs::k_material_parameters_buffer_size];
+
+        const uint8_t* data() const { return &buffer[0]; }
+        size_t         size() const { return defs::k_material_parameters_buffer_size; }
+    };
+
+    ParamsBuffer m_parameter_data{};
 
     Identifier                     m_id{ "" };
     ResourceHandle<ShaderResource> m_shader;

@@ -205,7 +205,7 @@ void Material::_set_parameter_impl(Identifier name, glm::vec4 param, ShaderParam
     // Write data into local buffer
     const auto size = num_elems * sizeof(float);
     MG_ASSERT(offset + size <= m_parameter_data.size());
-    std::memcpy(&m_parameter_data[offset], &param, size);
+    std::memcpy(&m_parameter_data.buffer[offset], &param, size);
 }
 
 uint32_t Material::shader_hash() const

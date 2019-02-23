@@ -37,9 +37,8 @@
 
 namespace Mg::gfx {
 
-static const std::array<float, 12> quad_vertices{
-    { -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f }
-};
+static const float quad_vertices[] = { -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,
+                                       1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f };
 
 struct PostProcessRendererData {
     ShaderFactory shader_factory = make_post_process_shader_factory();
