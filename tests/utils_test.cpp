@@ -111,6 +111,6 @@ TEST_CASE("PointNormalPlane")
     auto sgn_dist = signed_distance_to_plane(p, point);
     auto dist     = distance_to_plane(p, point);
 
-    REQUIRE(sgn_dist == Approx(-1.0f / sqrt(2.0f)));
-    REQUIRE(dist == Approx(1.0f / sqrt(2.0f)));
+    REQUIRE(sgn_dist == Approx(-1.0f / std::sqrt(2.0f)));
+    REQUIRE(dist == Approx(1.0f / std::sqrt(2.0f)));
 }

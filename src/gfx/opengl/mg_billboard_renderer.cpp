@@ -312,7 +312,7 @@ void BillboardRenderer::render(const ICamera&             camera,
     internal::texture_node(texture_handle).texture.bind_to(TextureUnit(0));
 
     {
-        CameraBlock camera_block;
+        CameraBlock camera_block{};
         camera_block.VP = camera.view_proj_matrix();
         camera_block.P  = camera.proj_matrix();
         camera_block.cam_pos_xyz_aspect_ratio_w =

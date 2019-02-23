@@ -509,12 +509,8 @@ public:
         }
 
         switch (shader_type) {
-        case ShaderBlockType::Vertex:
-            vertex_includes.push_back(std::string(include_filename));
-            break;
-        case ShaderBlockType::Fragment:
-            fragment_includes.push_back(std::string(include_filename));
-            break;
+        case ShaderBlockType::Vertex: vertex_includes.emplace_back(include_filename); break;
+        case ShaderBlockType::Fragment: fragment_includes.emplace_back(include_filename); break;
         }
     }
 

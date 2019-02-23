@@ -19,7 +19,7 @@ TEST_CASE("ResourceCache test")
     {
         auto has_loader_with_name = [&](std::string_view name) {
             for (auto&& p_loader : cache.file_loaders()) {
-                if (p_loader->name() == name) return true;
+                if (p_loader->name() == name) { return true; }
             }
             return false;
         };

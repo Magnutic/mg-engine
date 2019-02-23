@@ -60,7 +60,7 @@ TextureHandle TextureRepository::create(const TextureResource& resource)
     auto [index, ptr] = m_impl->m_nodes.construct(Texture2D::from_texture_resource(resource));
     ptr->self_index   = index;
 
-    m_impl->m_node_map.push_back({ resource.resource_id(), ptr });
+    m_impl->m_node_map.emplace_back(resource.resource_id(), ptr);
 
     return make_texture_handle(ptr);
 }
