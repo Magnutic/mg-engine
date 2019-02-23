@@ -23,7 +23,6 @@
 
 #include "mg/gfx/mg_shader.h"
 
-#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -37,11 +36,6 @@
 #include "mg_glad.h"
 
 namespace Mg::gfx {
-
-inline auto alloc_message(int32_t msg_len)
-{
-    return std::make_unique<char[]>(narrow<size_t>(msg_len + 1));
-}
 
 inline GLenum shader_stage_to_gl_enum(ShaderStage stage)
 {
@@ -65,29 +59,29 @@ uint32_t create_shader(ShaderStage type, std::string_view code)
     auto code_str       = std::string(code);
     auto code_c_str     = code_str.c_str();
 
-    // Upload and compile shader
+    // Upload and compile shader.
     auto id = glCreateShader(gl_shader_type);
     glShaderSource(id, 1, &code_c_str, nullptr);
     glCompileShader(id);
 
-    // Check shader for compilation errors
+    // Check shader for compilation errors.
     int32_t result = GL_FALSE;
     int32_t log_length;
     glGetShaderiv(id, GL_COMPILE_STATUS, &result);
     glGetShaderiv(id, GL_INFO_LOG_LENGTH, &log_length);
 
-    std::unique_ptr<char[]> msg;
+    std::string msg;
 
-    // If there was a message, write to log
+    // If there was a message, write to log.
     if (log_length > 1) {
-        msg = alloc_message(log_length + 1);
-        glGetShaderInfoLog(id, log_length, nullptr, msg.get());
+        msg.resize(narrow<size_t>(log_length));
+        glGetShaderInfoLog(id, log_length, nullptr, msg.data());
 
         auto msg_type = result != 0 ? Log::Prio::Message : Log::Prio::Error;
-        g_log.write(msg_type, fmt::format("Shader compilation message: {}", msg.get()));
+        g_log.write(msg_type, fmt::format("Shader compilation message: {}", msg));
     }
 
-    // Check whether shader compiled successfully
+    // Check whether shader compiled successfully.
     if (result == GL_FALSE) {
         glDeleteShader(id);
         return 0;
@@ -113,23 +107,23 @@ static bool link_program(uint32_t program_id)
 {
     glLinkProgram(program_id);
 
-    // Check the program for linking errors
+    // Check the program for linking errors.
     int32_t result = GL_FALSE, log_length;
     glGetProgramiv(program_id, GL_LINK_STATUS, &result);
     glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &log_length);
 
-    std::unique_ptr<char[]> error_msg;
+    std::string msg;
 
-    // If there was a log message, write to Mg Engine log
+    // If there was log message, write to log.
     if (log_length > 1) {
-        error_msg = alloc_message(log_length + 1);
-        glGetProgramInfoLog(program_id, log_length, nullptr, error_msg.get());
+        msg.resize(narrow<size_t>(log_length));
+        glGetProgramInfoLog(program_id, log_length, nullptr, msg.data());
 
         auto msg_type = result != 0 ? Log::Prio::Message : Log::Prio::Error;
-        g_log.write(msg_type, fmt::format("Shader linking message: {}", error_msg.get()));
+        g_log.write(msg_type, fmt::format("Shader linking message: {}", msg));
     }
 
-    // Check whether shaders linked successfully
+    // Check whether shaders linked successfully.
     if (result == GL_FALSE) {
         glDeleteProgram(program_id);
         return false;
