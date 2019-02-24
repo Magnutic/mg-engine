@@ -12,6 +12,13 @@
 #define MG_SMALL_VECTOR_ASSERT(exp) assert(exp)
 #endif
 
+// Disable warning "[...] m_capacity maybe uninitialized in this function.".
+// (m_capacity is a union member which is managed manually).
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
 namespace Mg {
 
 namespace detail {
@@ -308,21 +315,10 @@ public:
         m_capacity        = size();
     }
 
-// Disable warning "[...] m_capacity maybe uninitialized in this function.".
-// (m_capacity is a union member which is managed manually).
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
-
     /** Returns the number of elements that this container is able to store without further memory
      * allocations.
      */
     size_type capacity() const noexcept { return uses_local_storage() ? local_size() : m_capacity; }
-
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
 
     // Modifiers
     // ---------------------------------------------------------------------------------------------
@@ -828,3 +824,7 @@ void swap(small_vector<T, num_local_elems_a>& a,
 }
 
 } // namespace Mg
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
