@@ -23,7 +23,8 @@
 
 #include "mg/gfx/mg_buffer_texture.h"
 
-#include <stdexcept>
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_runtime_error.h"
 
 #include "mg_gl_debug.h"
 #include "mg_glad.h"
@@ -191,7 +192,8 @@ uint32_t buffer_texture_type_to_gl_enums(BufferTexture::Type type)
         break;
     }
 
-    throw std::logic_error("Unexpected BufferTexture::Type.");
+    g_log.write_error("Unexpected BufferTexture::Type.");
+    throw RuntimeError();
 }
 
 BufferTexture::BufferTexture(Type type, size_t buffer_size) : m_buffer_size(buffer_size)

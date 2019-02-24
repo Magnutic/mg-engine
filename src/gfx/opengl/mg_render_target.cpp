@@ -23,11 +23,10 @@
 
 #include "mg/gfx/mg_render_target.h"
 
-#include <stdexcept>
-
 #include <fmt/core.h>
 
 #include "mg/core/mg_log.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg/core/mg_window.h"
 #include "mg/gfx/mg_texture2d.h"
 #include "mg/utils/mg_assert.h"
@@ -81,7 +80,7 @@ static void check_framebuffer()
     if (status != GL_FRAMEBUFFER_COMPLETE) {
         g_log.write_error(
             fmt::format("TextureRenderTarget incomplete with status code {:#x}", status));
-        throw std::logic_error{ "Created invalid TextureRenderTarget (framebuffer incomplete)." };
+        throw RuntimeError();
     }
 }
 

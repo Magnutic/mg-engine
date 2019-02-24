@@ -25,6 +25,7 @@
 
 #include "mg/core/mg_config.h"
 #include "mg/core/mg_log.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg/core/mg_window.h"
 #include "mg/gfx/mg_gfx_device.h"
 #include "mg/mg_defs.h"
@@ -32,8 +33,6 @@
 
 #include <chrono>
 #include <cstdlib>
-#include <exception>
-#include <stdexcept>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -78,7 +77,10 @@ Root::Root()
     // Create window
     {
         data().window = Window::make(WindowSettings{}, "Mg Engine");
-        if (data().window == nullptr) { throw std::runtime_error("Failed to open window."); }
+        if (data().window == nullptr) {
+            g_log.write_error("Failed to open window.");
+            throw RuntimeError();
+        }
     }
 
     // Create render context

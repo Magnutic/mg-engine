@@ -23,16 +23,17 @@
 
 #include "mg/gfx/mg_material.h"
 
-#include <cstring> // memcpy
-#include <sstream>
-
-#include <fmt/core.h>
-
 #include "mg/core/mg_log.h"
-#include "mg/core/mg_resource_cache.h"
+#include "mg/core/mg_resource_access_guard.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg/resources/mg_shader_resource.h"
 #include "mg/utils/mg_hash_combine.h"
 #include "mg/utils/mg_stl_helpers.h"
+
+#include <fmt/core.h>
+
+#include <cstring> // memcpy
+#include <sstream>
 
 namespace Mg::gfx {
 
@@ -70,10 +71,10 @@ void Material::set_sampler(Identifier name, TextureHandle texture)
         m_samplers[index].sampler = texture;
     }
     else {
-        throw std::runtime_error(
-            fmt::format("Material '{}': set_sampler(\"{}\", ...): no such sampler.",
-                        m_id.c_str(),
-                        name.c_str()));
+        g_log.write_error(fmt::format("Material '{}': set_sampler(\"{}\", ...): no such sampler.",
+                                      m_id.c_str(),
+                                      name.c_str()));
+        throw RuntimeError();
     }
 }
 
@@ -82,10 +83,10 @@ void Material::set_option(Identifier option, bool enabled)
     auto [found, index] = index_of(m_options, option);
 
     if (!found) {
-        throw std::runtime_error(
-            fmt::format("Material '{}': set_option(\"{}\", ...): no such option.",
-                        m_id.c_str(),
-                        option.c_str()));
+        g_log.write_error(fmt::format("Material '{}': set_option(\"{}\", ...): no such option.",
+                                      m_id.c_str(),
+                                      option.c_str()));
+        throw RuntimeError();
     }
 
     if (enabled) { m_option_flags |= (1u << index); }
@@ -99,9 +100,10 @@ bool Material::get_option(Identifier option) const
     auto [found, index] = index_of(m_options, option);
 
     if (!found) {
-        throw std::runtime_error(fmt::format("Material '{}': get_option(\"{}\"): no such option.",
-                                             m_id.c_str(),
-                                             option.c_str()));
+        g_log.write_error(fmt::format("Material '{}': get_option(\"{}\"): no such option.",
+                                      m_id.c_str(),
+                                      option.c_str()));
+        throw RuntimeError();
     }
 
     return (m_option_flags & (1u << index)) != 0;
@@ -140,7 +142,7 @@ static size_t offset_for_param_type(ShaderParameterType type)
     case ShaderParameterType::Float:
         return 4;
     }
-    throw "unreachable";
+    MG_ASSERT(false && "unreachable");
 }
 
 static size_t num_elems_for_param_type(ShaderParameterType type)
@@ -153,7 +155,7 @@ static size_t num_elems_for_param_type(ShaderParameterType type)
     case ShaderParameterType::Float:
         return 1;
     }
-    throw "unreachable";
+    MG_ASSERT(false && "unreachable");
 }
 
 // Print error message when the wrong type is passed into Material::set_parameter

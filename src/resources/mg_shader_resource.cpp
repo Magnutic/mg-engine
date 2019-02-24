@@ -24,8 +24,10 @@
 #include "mg/resources/mg_shader_resource.h"
 
 #include "mg/core/mg_file_loader.h"
+#include "mg/core/mg_log.h"
 #include "mg/core/mg_resource_exceptions.h"
 #include "mg/core/mg_resource_loading_input.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg/resources/mg_text_resource.h"
 #include "mg/utils/mg_stl_helpers.h"
 #include "mg/utils/mg_string_utils.h"
@@ -198,7 +200,8 @@ struct LexerState {
 
 inline void lex_error(LexerState& lex, std::string_view reason)
 {
-    throw std::runtime_error(fmt::format("Error parsing at line {}: {}", lex.line, reason));
+    g_log.write_error(fmt::format("Error parsing at line {}: {}", lex.line, reason));
+    throw RuntimeError();
 }
 
 inline size_t lexeme_length(LexerState& lex)
@@ -375,8 +378,9 @@ public:
 
     void parse_error(std::string_view reason, const Token& t)
     {
-        throw std::runtime_error(
+        g_log.write_error(
             fmt::format("Parse error at line {}: {} [parsing '{}']", t.line, reason, t.lexeme));
+        throw RuntimeError();
     }
 
     float parse_numeric()
@@ -587,7 +591,8 @@ public:
     const Token& peek_token()
     {
         if (m_current_token == m_tokens.end()) {
-            throw std::runtime_error("Parse error: unexpected end of file.");
+            g_log.write_error("Parse error: unexpected end of file.");
+            throw RuntimeError();
         }
         return *m_current_token;
     }

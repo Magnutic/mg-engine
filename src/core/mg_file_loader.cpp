@@ -48,6 +48,7 @@
 
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_log.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg/utils/mg_binary_io.h"
 
 #include <zip.h>
@@ -55,7 +56,6 @@
 #include <fmt/core.h>
 
 #include <filesystem>
-#include <stdexcept>
 
 namespace Mg {
 
@@ -129,7 +129,8 @@ void BasicFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
     BinaryFileReader reader{ path.u8string() };
 
     if (!reader.good()) {
-        throw std::runtime_error(fmt::format("Could not read file '{}'", path.c_str()));
+        g_log.write_error(fmt::format("Could not read file '{}'", path.c_str()));
+        throw RuntimeError();
     }
 
     auto size = reader.size();
@@ -163,13 +164,13 @@ void ZipFileLoader::open_zip_archive()
         zip_error_t error{};
         zip_error_init_with_code(&error, zip_error);
 
-        std::string msg = fmt::format("Failed to open archive '{}': {}",
+        g_log.write_error(fmt::format("Failed to open archive '{}': {}",
                                       m_archive_name,
-                                      zip_error_strerror(&error));
+                                      zip_error_strerror(&error)));
 
         zip_error_fini(&error);
 
-        throw std::runtime_error(msg);
+        throw RuntimeError();
     }
 }
 
@@ -221,8 +222,9 @@ struct zip_stat zip_stat_helper(zip_t* archive, Identifier file_path)
 
     if (zip_stat(archive, file_path.c_str(), 0, &sb) != -1) { return sb; }
 
-    throw std::runtime_error(
+    g_log.write_error(
         fmt::format("ZipFileLoader::file_size(): Could not find file '{}'", file_path.c_str()));
+    throw RuntimeError();
 }
 
 uintmax_t ZipFileLoader::file_size(Identifier file)
@@ -233,11 +235,12 @@ uintmax_t ZipFileLoader::file_size(Identifier file)
     auto sb = zip_stat_helper(m_archive_file, file);
 
     if ((sb.valid & ZIP_STAT_SIZE) == 0) {
-        throw std::runtime_error(
+        g_log.write_error(
             fmt::format("ZipFileLoader::file_size(): "
                         "Could not read size of file '{}' in zip archive '{}'",
                         file.c_str(),
                         m_archive_name));
+        throw RuntimeError();
     }
 
     return sb.size;
@@ -250,11 +253,13 @@ time_point ZipFileLoader::file_time_stamp(Identifier file)
 
     auto sb = zip_stat_helper(m_archive_file, file);
     if ((sb.valid & ZIP_STAT_MTIME) == 0) {
-        throw std::runtime_error(
+        g_log.write_error(
             fmt::format("ZipFileLoader::file_time_stamp(): "
                         "Could not read time stamp of file '{}' in zip archive '{}'",
                         file.c_str(),
                         m_archive_name));
+
+        throw RuntimeError();
     }
 
     return std::chrono::system_clock::from_time_t(sb.mtime);
@@ -280,10 +285,11 @@ void ZipFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
     auto index = zip_name_locate(m_archive_file, file.c_str(), ZIP_FL_NOCASE);
 
     auto error_throw = [&](std::string reason) {
-        throw std::runtime_error(fmt::format("Could not read file '{}' from archive '{}': {}",
-                                             file.c_str(),
-                                             m_archive_name,
-                                             reason));
+        g_log.write_error(fmt::format("Could not read file '{}' from archive '{}': {}",
+                                      file.c_str(),
+                                      m_archive_name,
+                                      reason));
+        throw RuntimeError();
     };
 
     if (index == -1) { error_throw("could not find file in archive"); }

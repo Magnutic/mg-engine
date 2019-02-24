@@ -23,26 +23,20 @@
 
 #include "mg/gfx/mg_gfx_device.h"
 
-#include "mg/utils/mg_stl_helpers.h"
-#include <cstdint>
-#include <stdexcept>
-
-#include "mg/core/mg_config.h"
 #include "mg/core/mg_log.h"
-#include "mg/core/mg_root.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg/core/mg_window.h"
 #include "mg/gfx/mg_material_repository.h"
 #include "mg/gfx/mg_mesh_repository.h"
 #include "mg/gfx/mg_texture_repository.h"
-#include "mg/resources/mg_mesh_resource.h"
-#include "mg/resources/mg_shader_resource.h"
-#include "mg/resources/mg_texture_resource.h"
 
 #include "mg_gl_debug.h"
 #include "mg_glad.h"
 
 #include <GLFW/glfw3.h>
 #include <fmt/core.h>
+
+#include <cstdint>
 
 namespace Mg::gfx {
 
@@ -73,7 +67,8 @@ struct GfxDeviceData {
 GfxDevice::GfxDevice(::Mg::Window& window)
 {
     if (p_gfx_device != nullptr) {
-        throw std::logic_error{ "Only one Mg::gfx::GfxDevice may be constructed at a time." };
+        g_log.write_error("Only one Mg::gfx::GfxDevice may be constructed at a time.");
+        throw RuntimeError();
     }
 
     p_gfx_device = this;
@@ -83,13 +78,14 @@ GfxDevice::GfxDevice(::Mg::Window& window)
 
     // Init GLAD
     if (gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)) == 0) { // NOLINT
-        throw std::runtime_error{ "Failed to initialise GLAD." };
+        g_log.write_error("Failed to initialise GLAD.");
+        throw RuntimeError();
     }
 
     // Check for errors.
     if (uint32_t error = glGetError(); error) {
-        throw std::runtime_error(
-            fmt::format("OpenGL initialisation: {}", gfx::gl_error_string(error)));
+        g_log.write_error(fmt::format("OpenGL initialisation: {}", gfx::gl_error_string(error)));
+        throw RuntimeError();
     }
 
 #ifndef NDEBUG
@@ -116,7 +112,8 @@ GfxDevice::GfxDevice(::Mg::Window& window)
 GfxDevice& GfxDevice::get()
 {
     if (p_gfx_device == nullptr) {
-        throw std::logic_error("Attempting to access GfxDevice outside of its lifetime.");
+        g_log.write_error("Attempting to access GfxDevice outside of its lifetime.");
+        throw RuntimeError();
     }
     return *p_gfx_device;
 }

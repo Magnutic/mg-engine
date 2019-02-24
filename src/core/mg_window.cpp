@@ -26,6 +26,7 @@
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_root.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg/gfx/mg_render_target.h"
 #include "mg/mg_defs.h"
 #include "mg/utils/mg_gsl.h"
@@ -37,7 +38,6 @@
 #undef GLFW_INCLUDE_NONE
 
 #include <mutex>
-#include <stdexcept>
 
 namespace Mg {
 
@@ -271,18 +271,22 @@ void Window::set_title(const std::string& title)
 // GLFW Callbacks
 //--------------------------------------------------------------------------------------------------
 
-static void glfw_error_callback(int error, const char* msg)
+static constexpr auto opengl_create_fail_msg =
+    "Failed to create OpenGL context.\n"
+    "This application requires an OpenGL 3.3 capable system. "
+    "Please make sure your system has an up-to-date graphics driver.\n"
+    "Error message: '{}'";
+
+static void glfw_error_callback(int error, const char* reason)
 {
     if (error == GLFW_VERSION_UNAVAILABLE || error == GLFW_API_UNAVAILABLE) {
-        throw std::runtime_error(
-            fmt::format("Failed to create OpenGL context.\n"
-                        "This application requires an OpenGL 3.3 capable system. "
-                        "Please make sure your system has an up-to-date graphics driver.\n"
-                        "Error message: '{}'",
-                        msg));
+        g_log.write_error(fmt::format(opengl_create_fail_msg, reason));
+    }
+    else {
+        g_log.write_error(fmt::format("GLFW error {}:\n%s", error, reason));
     }
 
-    throw std::runtime_error(fmt::format("GLFW error {}:\n%s", error, msg));
+    throw RuntimeError();
 }
 
 void Window::lock_cursor_to_window()

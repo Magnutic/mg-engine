@@ -23,12 +23,12 @@
 
 #include "mg/gfx/mg_texture2d.h"
 
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg/resources/mg_texture_resource.h"
 
 #include "mg_gl_debug.h"
 #include "mg_glad.h"
-
-#include <stdexcept>
 
 namespace Mg::gfx {
 
@@ -49,9 +49,8 @@ static GLint gl_internal_format_for_format(RenderTargetParams::Format format)
     case RenderTargetParams::Format::Depth24:
         return GL_DEPTH24_STENCIL8;
     default:
-        throw std::logic_error{
-            "gl_internal_format_for_format() undefined for given format type."
-        };
+        g_log.write_error("gl_internal_format_for_format() undefined for given format type.");
+        throw RuntimeError();
     }
 }
 
@@ -68,7 +67,8 @@ static uint32_t gl_format_for_format(RenderTargetParams::Format format)
     case RenderTargetParams::Format::Depth24:
         return GL_DEPTH_STENCIL;
     default:
-        throw std::logic_error{ "gl_type_for_format() undefined for given format type." };
+        g_log.write_error("gl_type_for_format() undefined for given format type.");
+        throw RuntimeError();
     }
 }
 
@@ -85,7 +85,8 @@ static uint32_t gl_type_for_format(RenderTargetParams::Format format)
     case RenderTargetParams::Format::Depth24:
         return GL_UNSIGNED_INT_24_8;
     default:
-        throw std::logic_error{ "gl_type_for_format() undefined for given format type." };
+        g_log.write_error("gl_type_for_format() undefined for given format type.");
+        throw RuntimeError();
     }
 }
 

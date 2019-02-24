@@ -23,17 +23,16 @@
 
 #include "mg/gfx/mg_shader.h"
 
-#include <stdexcept>
-#include <string>
-
-#include <fmt/core.h>
-
 #include "mg/core/mg_log.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
 
 #include "mg_gl_debug.h"
 #include "mg_glad.h"
+
+#include <fmt/core.h>
+
+#include <string>
 
 namespace Mg::gfx {
 
@@ -48,7 +47,7 @@ inline GLenum shader_stage_to_gl_enum(ShaderStage stage)
         return GL_GEOMETRY_SHADER;
     }
 
-    throw std::runtime_error("Reached unreachable code.");
+    MG_ASSERT(false && "unreachable");
 }
 
 namespace detail {
