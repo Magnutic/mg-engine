@@ -31,46 +31,40 @@
 
 namespace Mg {
 //--------------------------------------------------------------------------------------------------
-// Nifty counter-based lifetime management for dynamic string copy map.
-// Guarantees initialisation before first use, even during static initialisation of other
-// objects.
+// Nifty counter-based lifetime management for dynamic-string-copy map.
+// Guarantees initialisation before first use, even during static initialisation of other objects.
 // (This is the same pattern used to initialise std::cout, etc.)
 //--------------------------------------------------------------------------------------------------
 
 // This map stores copies of dynamic strings that have been used to initialise Identifiers.
-using DynamicStrMap = std::unordered_map<uint32_t, const std::string>;
+struct DynamicStrMap {
+    std::unordered_map<uint32_t, const std::string> map;
+    std::mutex                                      mutex;
+};
 
 static int nifty_counter;
 
-std::aligned_storage_t<sizeof(DynamicStrMap)> map_buf;
-std::aligned_storage_t<sizeof(std::mutex)>    mutex_buf;
+static std::aligned_storage_t<sizeof(DynamicStrMap)> map_buf;
 
 static DynamicStrMap* p_dynamic_str_map = nullptr;
-static std::mutex*    p_str_map_mutex   = nullptr;
 
 detail::StrMapInitialiser::StrMapInitialiser()
 {
-    if (nifty_counter++ == 0) {
-        p_dynamic_str_map = new (&map_buf) DynamicStrMap{}; // NOLINT
-        p_str_map_mutex   = new (&mutex_buf) std::mutex{};  // NOLINT
-    }
+    if (nifty_counter++ == 0) { p_dynamic_str_map = new (&map_buf) DynamicStrMap{}; }
 }
 
 detail::StrMapInitialiser::~StrMapInitialiser()
 {
-    if (--nifty_counter == 0) {
-        p_str_map_mutex->~mutex();
-        p_dynamic_str_map->~DynamicStrMap();
-    }
+    if (--nifty_counter == 0) { p_dynamic_str_map->~DynamicStrMap(); }
 }
 
 //--------------------------------------------------------------------------------------------------
 
 void Identifier::set_full_string(std::string_view str)
 {
-    std::unique_lock<std::mutex> lock{ *p_str_map_mutex };
+    std::unique_lock<std::mutex> lock{ p_dynamic_str_map->mutex };
 
-    auto& map = *p_dynamic_str_map;
+    auto& map = p_dynamic_str_map->map;
 
     if (auto it = map.find(m_hash); it == map.end()) {
         bool inserted;
