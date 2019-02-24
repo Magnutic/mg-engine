@@ -2,7 +2,6 @@
 
 // Only include smaller stdlib headers -- keeps preprocessed code size fairly small.
 #include <cstddef>
-#include <new>
 #include <type_traits>
 #include <utility>
 

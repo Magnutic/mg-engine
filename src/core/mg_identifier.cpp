@@ -25,7 +25,6 @@
 
 #include <iostream>
 #include <mutex>
-#include <new>
 #include <type_traits>
 #include <unordered_map>
 

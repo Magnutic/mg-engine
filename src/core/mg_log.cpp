@@ -30,7 +30,6 @@
 #include <ctime>
 #include <filesystem>
 #include <iostream>
-#include <new>
 
 #include <fmt/format.h>
 #include <fmt/time.h>
