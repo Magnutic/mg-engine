@@ -146,8 +146,8 @@ void Log::output(Prio prio, std::string_view str)
 //--------------------------------------------------------------------------------------------------
 
 // Nifty counter initialisation for engine log
-size_t                              nifty_counter;
-std::aligned_storage_t<sizeof(Log)> log_buf;
+static size_t                              nifty_counter;
+static std::aligned_storage_t<sizeof(Log)> log_buf;
 
 // GCC 7 helpfully warns against strict aliasing violations when using reinterpret_cast; but, as I
 // understand it, this case is actually well-defined, since g_log will only be accessed after
