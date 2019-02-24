@@ -45,7 +45,7 @@ public:
 
 inline ShaderFactory make_mesh_shader_factory()
 {
-    return ShaderFactory{ Ptr<MeshShaderProvider>::make() };
+    return ShaderFactory{ std::make_unique<MeshShaderProvider>() };
 }
 
 } // namespace Mg::gfx

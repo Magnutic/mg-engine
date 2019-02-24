@@ -54,9 +54,9 @@ public:
     ResT&       get_resource() override { return m_resource.value(); }
     const ResT& get_resource() const override { return m_resource.value(); }
 
-    Ptr<ResourceEntryBase> new_entry(IFileLoader& loader, time_point time_stamp) const override
+    std::unique_ptr<ResourceEntryBase> new_entry(IFileLoader& loader, time_point time_stamp) const override
     {
-        return Ptr<ResourceEntry>::make(resource_id(), loader, time_stamp, owning_cache());
+        return std::make_unique<ResourceEntry>(resource_id(), loader, time_stamp, owning_cache());
     }
 
     void swap_entry(ResourceEntryBase& rhs) noexcept override

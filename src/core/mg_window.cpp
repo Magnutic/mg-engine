@@ -148,7 +148,7 @@ static WindowSettings sanitise_settings(WindowSettings s)
 // Window implementation
 //--------------------------------------------------------------------------------------------------
 
-Ptr<Window> Window::make(WindowSettings settings, const std::string& title)
+std::unique_ptr<Window> Window::make(WindowSettings settings, const std::string& title)
 {
     // glfwInit() may be called multiple times
     if (glfwInit() == GLFW_FALSE) {
@@ -184,7 +184,7 @@ Ptr<Window> Window::make(WindowSettings settings, const std::string& title)
         window_from_glfw_handle(w).window_size_callback(width, height);
     });
 
-    auto window_handle = Ptr<Window>::make(ConstructKey{}, window, settings);
+    auto window_handle = std::make_unique<Window>(ConstructKey{}, window, settings);
     window_handle->apply_settings(settings);
     window_handle->set_title(title);
 

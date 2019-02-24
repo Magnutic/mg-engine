@@ -34,8 +34,8 @@
 #include "mg/core/mg_resource_handle.h"
 #include "mg/resources/mg_file_changed_event.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_pointer.h"
 
+#include <memory>
 #include <mutex>
 #include <shared_mutex>
 
@@ -75,7 +75,7 @@ public:
      *
      * In this case, the path to archive is given relative to current working directory.
      */
-    template<typename... LoaderTs> explicit ResourceCache(Ptr<LoaderTs>... file_loaders)
+    template<typename... LoaderTs> explicit ResourceCache(std::unique_ptr<LoaderTs>... file_loaders)
     {
         MG_ASSERT((... && (file_loaders != nullptr)) && "File loaders may not be nullptr.");
 
@@ -165,7 +165,7 @@ public:
      */
     bool unload_unused(bool unload_all_unused = false) const;
 
-    span<const Ptr<IFileLoader>> file_loaders() const noexcept
+    span<const std::unique_ptr<IFileLoader>> file_loaders() const noexcept
     {
         // No need to lock, since m_file_loaders never changes after construction.
         return m_file_loaders;
@@ -187,7 +187,7 @@ private:
         IFileLoader* loader;
 
         // ResourceEntry associated with this file. Nullptr if not loaded.
-        Ptr<ResourceEntryBase> entry;
+        std::unique_ptr<ResourceEntryBase> entry;
     };
 
     // Rebuilds resource-file-list data structures.
@@ -212,10 +212,10 @@ private:
 
             // Check again after locking, in case another thread did the same thing ahead of us.
             if (file_info.entry == nullptr) {
-                file_info.entry = Ptr<ResourceEntry<ResT>>::make(file_info.filename,
-                                                                 *file_info.loader,
-                                                                 file_info.time_stamp,
-                                                                 *this);
+                file_info.entry = std::make_unique<ResourceEntry<ResT>>(file_info.filename,
+                                                                        *file_info.loader,
+                                                                        file_info.time_stamp,
+                                                                        *this);
             }
         }
 
@@ -234,7 +234,7 @@ private:
     // --------------------------------------- Data members ----------------------------------------
 
     // Loaders for loading resource file data into memory.
-    small_vector<Ptr<IFileLoader>, 2> m_file_loaders;
+    small_vector<std::unique_ptr<IFileLoader>, 2> m_file_loaders;
 
     // List of resource files available through the resource loaders.
     // Always sorted by filename hash.

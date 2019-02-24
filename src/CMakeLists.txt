@@ -15,11 +15,12 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/core/mg_resource_cache.h
     ${MG_HEADER_DIR}/mg/core/mg_resource_loading_input.h
     ${MG_HEADER_DIR}/mg/core/mg_resource_exceptions.h
-    ${MG_HEADER_DIR}/mg/core/mg_resource_entry_base.h
     ${MG_HEADER_DIR}/mg/core/mg_resource_entry.h
+    ${MG_HEADER_DIR}/mg/core/mg_resource_entry_base.h
     ${MG_HEADER_DIR}/mg/core/mg_resource_handle.h
     ${MG_HEADER_DIR}/mg/core/mg_root.h
     ${MG_HEADER_DIR}/mg/core/mg_rotation.h
+    ${MG_HEADER_DIR}/mg/core/mg_runtime_error.h
     ${MG_HEADER_DIR}/mg/core/mg_thread_pool.h
     ${MG_HEADER_DIR}/mg/core/mg_transform.h
     ${MG_HEADER_DIR}/mg/core/mg_window.h

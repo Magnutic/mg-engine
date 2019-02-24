@@ -27,14 +27,14 @@
 
 #pragma once
 
+#include "mg/containers/mg_array.h"
 #include "mg/core/mg_window_settings.h"
 #include "mg/gfx/mg_render_target.h"
 #include "mg/input/mg_keyboard.h"
 #include "mg/input/mg_mouse.h"
-#include "mg/utils/mg_pointer.h"
-#include "mg/containers/mg_array.h"
 
 #include <cstdint>
+#include <memory>
 #include <string>
 
 struct GLFWwindow;
@@ -69,7 +69,7 @@ public:
     using FocusCallbackT = void (*)(bool);
 
     /** Create new window. */
-    static Ptr<Window> make(WindowSettings settings, const std::string& title);
+    static std::unique_ptr<Window> make(WindowSettings settings, const std::string& title);
 
     /** Restricted constructor (see Window::make()). */
     explicit Window(ConstructKey, GLFWwindow* handle, WindowSettings settings);

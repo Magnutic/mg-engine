@@ -29,10 +29,10 @@
 #include "mg/core/mg_window.h"
 #include "mg/gfx/mg_gfx_device.h"
 #include "mg/mg_defs.h"
-#include "mg/utils/mg_pointer.h"
 
 #include <chrono>
 #include <cstdlib>
+#include <memory>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -49,9 +49,9 @@ namespace Mg {
 struct RootData {
     std::chrono::high_resolution_clock::time_point start_time;
 
-    Ptr<Config>         config;
-    Ptr<Window>         window;
-    Ptr<gfx::GfxDevice> gfx_device;
+    std::unique_ptr<Config>         config;
+    std::unique_ptr<Window>         window;
+    std::unique_ptr<gfx::GfxDevice> gfx_device;
 };
 
 #ifdef _WIN32
@@ -72,7 +72,7 @@ Root::Root()
     g_log.write_message("Mg Engine initialising...");
 
     // Set up engine config
-    data().config = Ptr<Config>::make(defs::k_default_config_file_name);
+    data().config = std::make_unique<Config>(defs::k_default_config_file_name);
 
     // Create window
     {
@@ -84,7 +84,7 @@ Root::Root()
     }
 
     // Create render context
-    data().gfx_device = Ptr<gfx::GfxDevice>::make(*data().window);
+    data().gfx_device = std::make_unique<gfx::GfxDevice>(*data().window);
 }
 
 Root::~Root()

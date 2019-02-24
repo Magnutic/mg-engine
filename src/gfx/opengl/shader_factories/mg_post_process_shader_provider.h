@@ -57,7 +57,7 @@ public:
 
 inline ShaderFactory make_post_process_shader_factory()
 {
-    return ShaderFactory{ Ptr<PostProcessShaderProvider>::make() };
+    return ShaderFactory{ std::make_unique<PostProcessShaderProvider>() };
 }
 
 } // namespace Mg::gfx

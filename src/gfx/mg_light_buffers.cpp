@@ -26,7 +26,6 @@
 #include "mg/core/mg_log.h"
 #include "mg/gfx/mg_camera.h"
 #include "mg/gfx/mg_light_grid.h"
-#include "mg/utils/mg_pointer.h"
 
 #include <glm/gtx/fast_square_root.hpp>
 #include <glm/mat4x4.hpp>
@@ -36,6 +35,7 @@
 #include <array>
 #include <cstdint>
 #include <cstring> // memset, memcpy
+#include <memory>
 
 namespace Mg::gfx {
 
@@ -96,9 +96,9 @@ inline void add_light_to_cluster(size_t light_index, glm::uvec3 cluster, Cluster
     ++clusters[cluster_index].num_lights;
 }
 
-static Ptr clusters          = Ptr<ClusterArray>::make();
-static Ptr light_index_array = Ptr<LightIndexArray>::make();
-static Ptr light_grid_data   = Ptr<LightGridData>::make();
+static auto clusters          = std::make_unique<ClusterArray>();
+static auto light_index_array = std::make_unique<LightIndexArray>();
+static auto light_grid_data   = std::make_unique<LightGridData>();
 
 void update_light_data(LightBuffers&     light_data_out,
                        span<const Light> lights,
