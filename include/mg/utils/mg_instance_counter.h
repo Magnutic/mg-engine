@@ -28,8 +28,8 @@
 
 #pragma once
 
-#include <exception>
 #include <sstream>
+#include <stdexcept>
 
 namespace Mg {
 
@@ -160,8 +160,7 @@ private:
 
         if (error) {
             ss << "(this: " << this << ", rhs: " << &rhs << ")";
-            auto string = ss.str();
-            throw std::logic_error{ string.c_str() };
+            throw std::logic_error{ ss.str() };
         }
     }
 

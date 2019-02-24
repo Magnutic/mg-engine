@@ -27,12 +27,12 @@
 
 #pragma once
 
-#include <exception>
+#include "mg/core/mg_runtime_error.h"
 
 namespace Mg {
 
 /** Base of exceptions thrown on resource loading errors. */
-class ResourceError : public std::exception {};
+class ResourceError : public RuntimeError {};
 
 /** Exception thrown when a requested resource cannot be found. */
 class ResourceNotFound : public ResourceError {
