@@ -30,7 +30,6 @@
 
 #pragma once
 
-#include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_macros.h"
 
@@ -39,6 +38,7 @@
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
+#include <vector>
 
 namespace Mg {
 
@@ -106,7 +106,7 @@ public:
      * tracked when a dependency is loaded in a resource type's `load_resource()` function via
      * `ResourceLoadingInput::load_dependency()`.
      */
-    small_vector<Dependency, 2> dependencies;
+    std::vector<Dependency> dependencies;
 
     time_point last_access{};
 
