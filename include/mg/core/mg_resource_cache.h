@@ -38,6 +38,7 @@
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
+#include <vector>
 
 namespace Mg {
 
@@ -234,11 +235,11 @@ private:
     // --------------------------------------- Data members ----------------------------------------
 
     // Loaders for loading resource file data into memory.
-    small_vector<std::unique_ptr<IFileLoader>, 2> m_file_loaders;
+    std::vector<std::unique_ptr<IFileLoader>> m_file_loaders;
 
     // List of resource files available through the resource loaders.
     // Always sorted by filename hash.
-    small_vector<FileInfo, 1> m_file_list;
+    std::vector<FileInfo> m_file_list;
 
     // Shared mutex to allow multiple readers, single writer.
     mutable std::shared_mutex m_file_list_mutex;
