@@ -60,6 +60,16 @@ inline std::optional<ShaderProgram> compile_shader_program(ShaderCode code)
 
     if (!ovs.has_value() || !ofs.has_value()) { return std::nullopt; }
 
+    std::optional<GeometryShader> ogs;
+
+    if (!code.geometry_code.empty()) {
+        ogs = GeometryShader::make(code.geometry_code);
+
+        if (!ogs.has_value()) { return std::nullopt; }
+
+        return ShaderProgram::make(ovs.value(), ogs.value(), ofs.value());
+    }
+
     return ShaderProgram::make(ovs.value(), ofs.value());
 }
 

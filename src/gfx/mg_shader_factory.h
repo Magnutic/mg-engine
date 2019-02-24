@@ -47,6 +47,7 @@ namespace Mg::gfx {
 struct ShaderCode {
     std::string vertex_code;
     std::string fragment_code;
+    std::string geometry_code;
 };
 
 class Material;

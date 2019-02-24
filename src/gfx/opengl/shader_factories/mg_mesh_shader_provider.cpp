@@ -82,7 +82,7 @@ inline ShaderCode shader_code_stub()
     vertex_code += version_tag;
     fragment_code += version_tag;
 
-    return { vertex_code, fragment_code };
+    return { vertex_code, fragment_code, "" };
 }
 
 
