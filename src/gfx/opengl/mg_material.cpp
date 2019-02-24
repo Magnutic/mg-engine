@@ -258,15 +258,19 @@ std::string shader_interface_code(const Material& material)
     snippet.reserve(256);
 
     // Include definition of each paramater
-    snippet += "layout (std140) uniform MaterialParams {\n";
-    for (const Material::Parameter& p : material.parameters()) {
-        snippet += '\t';
-        snippet += shader_parameter_type_to_string(p.type);
-        snippet += " ";
-        snippet += p.name.str_view();
-        snippet += ";\n";
+    if (!material.parameters().empty()) {
+        snippet += "layout (std140) uniform MaterialParams {\n";
+
+        for (const Material::Parameter& p : material.parameters()) {
+            snippet += '\t';
+            snippet += shader_parameter_type_to_string(p.type);
+            snippet += " ";
+            snippet += p.name.str_view();
+            snippet += ";\n";
+        }
+
+        snippet += "} material_params;\n";
     }
-    snippet += "} material_params;\n";
 
     // Include definition of each sampler
     for (const Material::Sampler& s : material.samplers()) {
