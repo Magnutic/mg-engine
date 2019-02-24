@@ -23,7 +23,6 @@
 
 #include "mg/core/mg_identifier.h"
 
-#include <iostream>
 #include <mutex>
 #include <type_traits>
 #include <unordered_map>
@@ -83,11 +82,6 @@ void Identifier::set_full_string(std::string_view str)
         MG_ASSERT_DEBUG(it->second == str);
         m_str = it->second.c_str();
     }
-}
-
-std::ostream& operator<<(std::ostream& out, const Mg::Identifier& rhs)
-{
-    return out << rhs.str_view();
 }
 
 } // namespace Mg

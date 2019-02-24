@@ -219,20 +219,20 @@ uint32_t Material::shader_hash() const
 std::string Material::debug_print() const
 {
     std::ostringstream oss;
-    oss << "Material '" << id() << "': {";
+    oss << "Material '" << id().c_str() << "': {";
 
-    oss << "\n\tShaderResource: '" << m_shader.resource_id() << "'\n";
+    oss << "\n\tShaderResource: '" << m_shader.resource_id().c_str() << "'\n";
 
     oss << "\n\tOptions: {";
 
-    for (const Option& o : options()) { oss << "\n\t\t" << o << " = " << get_option(o); };
+    for (const Option& o : options()) { oss << "\n\t\t" << o.c_str() << " = " << get_option(o); };
 
     oss << (options().empty() ? "}" : "\n\t}");
 
     oss << "\n\tSamplers: {";
 
     for (const Sampler& s : samplers()) {
-        oss << "\n\t\t'" << s.name << "' : " << shader_sampler_type_to_string(s.type);
+        oss << "\n\t\t'" << s.name.c_str() << "' : " << shader_sampler_type_to_string(s.type);
     }
 
     oss << (samplers().empty() ? "}" : "\n\t}");
@@ -240,7 +240,8 @@ std::string Material::debug_print() const
     oss << "\n\tParameters: {";
 
     for (const Parameter& p : parameters()) {
-        oss << "\n\t\t'" << p.name << "' : " << shader_parameter_type_to_string(p.type) << " = ";
+        oss << "\n\t\t'" << p.name.c_str() << "' : " << shader_parameter_type_to_string(p.type)
+            << " = ";
         // TODO: fix
     }
 

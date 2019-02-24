@@ -697,19 +697,19 @@ std::string ShaderResource::debug_print() const
 {
     std::ostringstream oss;
 
-    oss << "ShaderResource '" << resource_id() << "'\n";
+    oss << "ShaderResource '" << resource_id().c_str() << "'\n";
 
     oss << "Options:\n";
-    for (auto&& o : options()) { oss << "\t" << o.name << "\n"; }
+    for (auto&& o : options()) { oss << "\t" << o.name.c_str() << "\n"; }
 
     oss << "Parameters:\n";
     for (auto&& p : parameters()) {
-        oss << "\t" << shader_parameter_type_to_string(p.type) << " " << p.name << "\n";
+        oss << "\t" << shader_parameter_type_to_string(p.type) << " " << p.name.c_str() << "\n";
     }
 
     oss << "Samplers:\n";
     for (auto&& s : samplers()) {
-        oss << "\t" << shader_sampler_type_to_string(s.type) << " " << s.name << "\n";
+        oss << "\t" << shader_sampler_type_to_string(s.type) << " " << s.name.c_str() << "\n";
     }
 
     return oss.str();

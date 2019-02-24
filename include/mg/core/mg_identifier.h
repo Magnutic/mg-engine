@@ -30,7 +30,6 @@
 #pragma once
 
 #include <cstdint>
-#include <iosfwd>
 #include <string_view>
 
 #include "mg/utils/mg_macros.h"
@@ -143,12 +142,6 @@ inline bool operator!=(const Identifier& lhs, const Identifier& rhs)
 {
     return !(lhs == rhs);
 }
-
-//--------------------------------------------------------------------------------------------------
-// Standard library support
-//--------------------------------------------------------------------------------------------------
-
-std::ostream& operator<<(std::ostream& out, const Identifier&);
 
 } // namespace Mg
 
