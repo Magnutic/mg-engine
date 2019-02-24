@@ -57,7 +57,7 @@ class ContractViolation {};
 #endif
 
 /** Function invoked on contract violation in e.g. MG_ASSERT */
-inline void contract_violation(const char* expr, const char* file, int line)
+[[noreturn]] inline void contract_violation(const char* expr, const char* file, int line)
 {
     fprintf(stderr, "Assertion failed: %s at %s:%d\n", expr, file, line);
 
