@@ -23,8 +23,7 @@
 
 #include "mg_mesh_shader_provider.h"
 
-#include "mg/core/mg_resource_cache.h"
-#include "mg/core/mg_root.h"
+#include "mg/core/mg_resource_access_guard.h"
 #include "mg/gfx/mg_camera.h"
 #include "mg/gfx/mg_light_grid.h"
 #include "mg/gfx/mg_material.h"

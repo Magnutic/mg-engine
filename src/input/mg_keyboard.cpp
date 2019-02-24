@@ -23,15 +23,13 @@
 
 #include "mg/input/mg_keyboard.h"
 
-#include <stdexcept>
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_window.h"
+#include "mg/utils/mg_gsl.h"
 
 #include <GLFW/glfw3.h>
 
 #include <fmt/core.h>
-
-#include "mg/core/mg_log.h"
-#include "mg/core/mg_window.h"
-#include "mg/utils/mg_gsl.h"
 
 namespace Mg::input {
 
