@@ -85,6 +85,12 @@ ShaderFactory::ShaderHandle ShaderFactory::make_shader(const Material& material)
     if (!opt_program.has_value()) {
         g_log.write_error(fmt::format("Failed to compile shader '{}'.", shader_name));
         g_log.write_message(fmt::format("Vertex code:\n{}", error_dump_code(code.vertex_code)));
+
+        if (!code.geometry_code.empty()) {
+            g_log.write_message(
+                fmt::format("Geometry code:\n{}", error_dump_code(code.vertex_code)));
+        }
+
         g_log.write_message(fmt::format("Fragment code:\n{}", error_dump_code(code.fragment_code)));
 
         g_log.write_message("Using error-fallback shader.");

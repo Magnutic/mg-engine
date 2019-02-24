@@ -68,8 +68,8 @@ struct Scene {
 
     std::vector<Model> scene_models;
 
-    Mg::gfx::Material*     post_material;
-    Mg::gfx::TextureHandle light_billboard_texture;
+    Mg::gfx::Material* post_material;
+    Mg::gfx::Material* billboard_material;
 
     double time       = 0.0;
     bool   exit       = false;

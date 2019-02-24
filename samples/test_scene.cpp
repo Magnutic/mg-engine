@@ -198,7 +198,15 @@ void init()
             "PostProcessMaterial", handle);
     }
 
-    g_scene->light_billboard_texture = load_texture("light_t");
+    // Create billboard material
+    {
+        auto handle = g_scene->resource_cache.resource_handle<ShaderResource>(
+            "shaders/simple_billboard.mgshader");
+        g_scene->billboard_material = g_scene->root.gfx_device().material_repository().create(
+            "SimpleBillboardMaterial", handle);
+
+        g_scene->billboard_material->set_sampler("sampler_diffuse", load_texture("light_t"));
+    }
 
     main_loop();
 }
@@ -335,7 +343,7 @@ void render_scene(double lerp_factor)
             Billboard& billboard = g_scene->billboard_render_list.add();
             billboard.pos        = pos;
             billboard.colour     = colour;
-            billboard.radius     = 0.1f;
+            billboard.radius     = 0.05f;
         }
 
         lights.push_back(make_point_light(pos, colour * 100.0f, k_light_radius));
@@ -352,8 +360,7 @@ void render_scene(double lerp_factor)
 
     g_scene->billboard_renderer.render(g_scene->camera,
                                        g_scene->billboard_render_list,
-                                       g_scene->light_billboard_texture,
-                                       BillboardSetting::A_TEST);
+                                       *g_scene->billboard_material);
 
     g_scene->root.window().render_target.bind();
     gfx.clear();

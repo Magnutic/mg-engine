@@ -23,36 +23,42 @@
 
 #include "mg/gfx/mg_billboard_renderer.h"
 
-#include <cstddef>
-#include <sstream>
-#include <string>
-#include <unordered_map>
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_resource_access_guard.h"
+#include "mg/gfx/mg_camera.h"
+#include "mg/gfx/mg_material.h"
+#include "mg/gfx/mg_uniform_buffer.h"
+#include "mg/resources/mg_shader_resource.h"
+#include "mg/utils/mg_object_id.h"
+#include "mg/utils/mg_stl_helpers.h"
+
+#include "../mg_shader_factory.h"
+#include "mg_opengl_shader.h"
+#include "mg_texture_node.h"
+
+#include "mg_glad.h"
 
 #include <glm/gtx/norm.hpp>
 #include <glm/mat4x4.hpp>
 
-#include "mg/containers/mg_small_vector.h"
-#include "mg/core/mg_log.h"
-#include "mg/gfx/mg_camera.h"
-#include "mg/gfx/mg_gfx_device.h"
-#include "mg/gfx/mg_uniform_buffer.h"
-#include "mg/utils/mg_object_id.h"
-#include "mg/utils/mg_stl_helpers.h"
+#include <fmt/core.h>
 
-#include "mg_opengl_shader.h"
-#include "mg_texture_node.h"
-#include "mg_glad.h"
+#include <cstddef>
+#include <string>
 
 namespace Mg::gfx {
 
-// Binding slot for CameraBlock UniformBufferObject.
+// Binding slots for UniformBufferObjects.
 static constexpr UniformBufferSlot k_camera_ubo_slot{ 0 };
+static constexpr UniformBufferSlot k_material_params_ubo_slot{ 1 };
 
 //--------------------------------------------------------------------------------------------------
 // Shader code for billboard rendering
 //--------------------------------------------------------------------------------------------------
 
-constexpr auto billboard_vertex_shader = R"(
+constexpr auto billboard_vertex_shader_preamble = R"(
+#version 330 core
+
 layout(location = 0) in vec3 v_position;
 layout(location = 1) in vec4 v_colour;
 layout(location = 2) in float v_radius;
@@ -68,47 +74,24 @@ layout(std140) uniform CameraBlock {
 
 out vec4 vs_out_colour;
 out vec2 vs_out_size;
-
-void main() {
-    vs_out_colour = v_colour;
-    float radius = v_radius;
-    gl_Position = VP * vec4(v_position, 1.0);
-
-#ifdef FADE_WHEN_CLOSE
-    vec3 diff = v_position - cam_pos;
-    float depth_sqr = dot(diff, diff);
-    float r_sqr = radius * radius * 4.0;
-    float fade = smoothstep(0.0, r_sqr, depth_sqr);
-    radius *= min(1.0, fade * 2.0);
-#else
-    const float fade = 1.0;
-#endif
-
-    vs_out_colour.a *= fade;
-
-#ifdef FIXED_SIZE
-    gl_Position /= gl_Position.w;
-    vs_out_size = vec2(radius / aspect_ratio, radius);
-#else
-    vs_out_size = (P * vec4(radius, radius, 0.0, 1.0)).xy;
-#endif
-}
 )";
 
 constexpr auto billboard_geometry_shader = R"(
+#version 330 core
+
 layout(points) in;
 layout(triangle_strip) out;
 layout(max_vertices = 4) out;
 
 in vec4 vs_out_colour[];
 in vec2 vs_out_size[];
-out vec4 gs_out_colour;
+out vec4 fs_in_colour;
 out vec2 tex_coord;
 
 void main() {
     if (vs_out_colour[0].a == 0) { return; }
 
-    gs_out_colour = vs_out_colour[0];
+    fs_in_colour = vs_out_colour[0];
 
     gl_Position = gl_in[0].gl_Position + vec4(-vs_out_size[0].x, -vs_out_size[0].y, 0.0, 0.0);
     tex_coord = vec2(0.0, 1.0);
@@ -130,57 +113,81 @@ void main() {
 }
 )";
 
-constexpr auto billboard_fragment_shader = R"(
+constexpr auto billboard_fragment_shader_preamble = R"(
+#version 330 core
+
 layout (location = 0) out vec4 frag_colour;
-uniform sampler2D sampler_diffuse;
 
-in vec4 gs_out_colour;
+in vec4 fs_in_colour;
 in vec2 tex_coord;
+)";
 
+constexpr auto billboard_vertex_shader_fallback = R"(
 void main() {
-   frag_colour = gs_out_colour * texture2D(sampler_diffuse, tex_coord);
-
-#ifdef A_TEST
-   if (frag_colour.a < 0.5) { discard; }
-#else
-   if (frag_colour.a == 0.0) { discard; }
-#endif
+    vs_out_colour = v_colour;
+    float radius = v_radius;
+    gl_Position = VP * vec4(v_position, 1.0);
+    vs_out_size = (P * vec4(radius, radius, 0.0, 1.0)).xy;
 }
 )";
 
+constexpr auto billboard_fragment_shader_fallback = R"(
+    void main() { frag_colour = vec4(1.0, 0.0, 1.0, 1.0); }
+)";
 
-static ShaderProgram make_billboard_shader_program(span<std::string_view> defines)
+class BillboardShaderProvider : public IShaderProvider {
+public:
+    ShaderCode on_error_shader_code() const override
+    {
+        ShaderCode code;
+        code.vertex_code = std::string(billboard_vertex_shader_preamble) +
+                           billboard_vertex_shader_fallback;
+        code.fragment_code = std::string(billboard_fragment_shader_preamble) +
+                             billboard_fragment_shader_fallback;
+        code.geometry_code = billboard_geometry_shader;
+        return code;
+    }
+
+    ShaderCode make_shader_code(const Material& material) const override
+    {
+        ShaderCode code;
+        code.vertex_code = billboard_vertex_shader_preamble;
+        code.vertex_code += shader_interface_code(material);
+        code.geometry_code = billboard_geometry_shader;
+        code.fragment_code = billboard_fragment_shader_preamble;
+        code.fragment_code += shader_interface_code(material);
+
+        // Access shader resource
+        {
+            ResourceAccessGuard shader_resource_access(material.shader());
+            code.vertex_code += shader_resource_access->vertex_code();
+            code.fragment_code += shader_resource_access->fragment_code();
+        }
+
+        return code;
+    }
+
+    void setup_shader_state(ShaderProgram& program, const Material& material) const override
+    {
+        using namespace opengl;
+
+        use_program(program);
+        set_uniform_block_binding(program, "CameraBlock", k_camera_ubo_slot);
+        set_uniform_block_binding(program, "MaterialParams", k_material_params_ubo_slot);
+
+        int32_t tex_unit = 0;
+
+        for (const Material::Sampler& sampler : material.samplers()) {
+            set_uniform(uniform_location(program, sampler.name.str_view()), tex_unit++);
+        }
+    }
+};
+
+inline ShaderFactory make_billboard_shader_factory()
 {
-    std::ostringstream oss;
-
-    oss << "#version 330 core\n";
-    for (auto&& define : defines) { oss << "#define " << define << "\n"; }
-    oss << "#line 1\n";
-
-    std::string prologue = oss.str();
-
-    g_log.write_message("Compiling billboard vertex shader");
-    oss << billboard_vertex_shader;
-    auto vs = VertexShader::make(oss.str()).value();
-
-    oss.str("");
-    g_log.write_message("Compiling billboard geometry shader");
-    oss << prologue << billboard_geometry_shader;
-    auto gs = GeometryShader::make(oss.str()).value();
-
-    oss.str("");
-    g_log.write_message("Compiling billboard fragment shader");
-    oss << prologue << billboard_fragment_shader;
-    auto fs = FragmentShader::make(oss.str()).value();
-
-    g_log.write_message("Linking billboard shader program");
-    auto program = ShaderProgram::make(vs, gs, fs).value();
-
-    opengl::use_program(program);
-    opengl::set_uniform(opengl::uniform_location(program, "sampler_diffuse"), 0);
-
-    return program;
+    return ShaderFactory{ std::make_unique<BillboardShaderProvider>() };
 }
+
 
 //--------------------------------------------------------------------------------------------------
 // BillboardRendererList implementation
@@ -208,13 +215,10 @@ struct CameraBlock {
 
 /** Internal data for BillboardRenderer. */
 struct BillboardRendererData {
+    UniformBuffer material_params_ubo{ defs::k_material_parameters_buffer_size };
     UniformBuffer camera_ubo{ sizeof(CameraBlock) };
 
-    // Shader program -- mapped by options-bitflag
-    std::unordered_map<uint8_t, ShaderProgram> programs;
-
-    // Currently active shader
-    ShaderProgram* shader = nullptr;
+    ShaderFactory shader_factory = make_billboard_shader_factory();
 
     // Size of VBO
     size_t vertex_buffer_size = 0;
@@ -241,30 +245,6 @@ inline void update_buffer(BillboardRendererData& data, span<const Billboard> bil
                  GL_STREAM_DRAW);
 }
 
-// Set shader as required by the flags.
-inline void set_shader(BillboardRendererData& data, uint8_t settings_flags)
-{
-    auto it = data.programs.find(settings_flags);
-
-    if (it == data.programs.end()) {
-        small_vector<std::string_view, 8> defines;
-
-        if ((settings_flags & BillboardSetting::A_TEST) != 0) { defines.emplace_back("A_TEST"); }
-        if ((settings_flags & BillboardSetting::FADE_WHEN_CLOSE) != 0) {
-            defines.emplace_back("FADE_WHEN_CLOSE");
-        }
-        if ((settings_flags & BillboardSetting::FIXED_SIZE) != 0) {
-            defines.emplace_back("FIXED_SIZE");
-        }
-
-        it = data.programs.emplace(settings_flags, make_billboard_shader_program(defines)).first;
-        opengl::set_uniform_block_binding(it->second, "CameraBlock", k_camera_ubo_slot);
-    }
-
-    data.shader = &it->second;
-    opengl::use_program(*data.shader);
-}
-
 BillboardRenderer::BillboardRenderer()
 {
     // Create and configure vertex buffer.
@@ -280,8 +260,12 @@ BillboardRenderer::BillboardRenderer()
 
     // Tell OpenGL how to interpret the vertex buffer.
     auto set_attrib_ptr = [&](GLint size) {
-        glVertexAttribPointer(
-            index, size, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<GLvoid*>(offset)); // NOLINT
+        glVertexAttribPointer(index,
+                              size,
+                              GL_FLOAT,
+                              GL_FALSE,
+                              stride,
+                              reinterpret_cast<GLvoid*>(offset)); // NOLINT
         glEnableVertexAttribArray(index);
         offset += size * 4;
         ++index;
@@ -302,16 +286,25 @@ BillboardRenderer::~BillboardRenderer()
 
 void BillboardRenderer::render(const ICamera&             camera,
                                const BillboardRenderList& render_list,
-                               TextureHandle              texture_handle,
-                               BillboardSetting::Value    settings_flags)
+                               const Material&            material)
 {
     if (render_list.view().empty()) { return; }
 
     const auto& billboards = render_list.view();
     update_buffer(data(), billboards);
 
-    set_shader(data(), settings_flags);
-    internal::texture_node(texture_handle).texture.bind_to(TextureUnit(0));
+    auto shader_handle = data().shader_factory.get_shader(material);
+
+    {
+        auto program_id = static_cast<GLuint>(shader_handle);
+        glUseProgram(program_id);
+
+        uint32_t tex_unit = 0;
+        for (const Material::Sampler& sampler : material.samplers()) {
+            auto& tex_node = internal::texture_node(sampler.sampler);
+            tex_node.texture.bind_to(TextureUnit{ tex_unit++ });
+        }
+    }
 
     {
         CameraBlock camera_block{};
@@ -322,6 +315,9 @@ void BillboardRenderer::render(const ICamera&             camera,
 
         data().camera_ubo.set_data(byte_representation(camera_block));
         data().camera_ubo.bind_to(k_camera_ubo_slot);
+
+        data().material_params_ubo.set_data(material.material_params_buffer());
+        data().material_params_ubo.bind_to(k_material_params_ubo_slot);
     }
 
     glBindVertexArray(data().vao.value);

@@ -27,18 +27,19 @@
 
 #pragma once
 
-#include <vector>
-
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
-
 #include "mg/gfx/mg_texture_handle.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_simple_pimpl.h"
 
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+
+#include <vector>
+
 namespace Mg::gfx {
 
 class ICamera;
+class Material;
 
 // TODO: implement support for different materials?
 // TODO: texture atlas for mixing billboard textures or animating.
@@ -93,10 +94,8 @@ public:
     MG_MAKE_NON_MOVABLE(BillboardRenderer);
     ~BillboardRenderer();
 
-    void render(const ICamera&             camera,
-                const BillboardRenderList& render_list,
-                TextureHandle              texture_handle,
-                BillboardSetting::Value    settings_flags);
+    void
+    render(const ICamera& camera, const BillboardRenderList& render_list, const Material& material);
 };
 
 } // namespace Mg::gfx

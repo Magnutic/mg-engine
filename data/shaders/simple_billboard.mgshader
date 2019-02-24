@@ -1,0 +1,21 @@
+TAGS {
+}
+
+OPTIONS {
+    A_TEST = true;
+    FIXED_SIZE = false;
+    FADE_WHEN_CLOSE = false;
+    SHRINK_WHEN_CLOSE = true;
+}
+
+PARAMETERS {
+    sampler2D sampler_diffuse;
+}
+
+VERTEX_CODE {
+#include "simple_billboard.vert"
+}
+
+FRAGMENT_CODE {
+#include "simple_billboard.frag"
+}
