@@ -25,11 +25,12 @@
  * Internal texture structure. @see TextureRepository
  */
 
-#include <cstring>
-#include <utility>
-
 #include "mg/gfx/mg_texture2d.h"
 #include "mg/gfx/mg_texture_handle.h"
+#include "mg/utils/mg_assert.h"
+
+#include <cstring>
+#include <utility>
 
 namespace Mg::gfx::internal {
 
@@ -53,6 +54,7 @@ inline TextureHandle make_texture_handle(const TextureNode* texture_node)
 /** Dereference texture handle. */
 inline const TextureNode& texture_node(TextureHandle handle)
 {
+    MG_ASSERT(handle != TextureHandle{ 0 });
     return *reinterpret_cast<const TextureNode*>(handle); // NOLINT
 }
 

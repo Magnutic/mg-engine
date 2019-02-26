@@ -27,14 +27,16 @@
 
 #pragma once
 
-#include <cstdint>
-#include <cstring>
-
-#include <glm/vec3.hpp>
-
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/gfx/mg_mesh_handle.h"
+
+#include "mg/utils/mg_assert.h"
+
+#include <glm/vec3.hpp>
+
+#include <cstdint>
+#include <cstring>
 
 namespace Mg::gfx::internal {
 
@@ -70,6 +72,7 @@ inline MeshHandle make_mesh_handle(const MeshInfo* mesh_info)
 /** Dereference mesh handle. */
 inline const MeshInfo& mesh_info(MeshHandle handle)
 {
+    MG_ASSERT(handle != MeshHandle{ 0 });
     return *reinterpret_cast<const MeshInfo*>(handle); // NOLINT
 }
 
