@@ -153,13 +153,13 @@ public:
      * @param rhs Object to insert.
      * @return A Slot_map_handle pointing to the object in the Slot_map.
      */
-    Slot_map_handle insert(const T& rhs);
+    Slot_map_handle insert(const T& rhs) { return emplace(rhs); }
 
     /** Insert element into this Slot_map.
      * @param rhs Object to insert.
      * @return A Slot_map_handle pointing to the object in the Slot_map.
      */
-    Slot_map_handle insert(T&& rhs);
+    Slot_map_handle insert(T&& rhs) { return emplace(std::move(rhs)); }
 
     /** Emplace element into this Slot_map.
      * @param args... Constructor parameters.
@@ -459,29 +459,19 @@ template<typename T> Slot_map<T>::Slot_map(Slot_map&& rhs) noexcept
     rhs.init(0);
 }
 
-// Copy insert
-template<typename T> auto Slot_map<T>::insert(const T& rhs) -> Slot_map_handle
-{
-    auto [pos, handle] = insert_helper();
-    construct_element_at(pos, rhs);
-    return handle;
-}
-
-// Move insert
-template<typename T> auto Slot_map<T>::insert(T&& rhs) -> Slot_map_handle
-{
-    auto [pos, handle] = insert_helper();
-    construct_element_at(pos, std::move_if_noexcept(rhs));
-    return handle;
-}
-
 // Emplace
 template<typename T>
 template<typename... Ts>
 auto Slot_map<T>::emplace(Ts&&... args) -> Slot_map_handle
 {
+    // This copy is usually redundant, but guards against the case where args refers to elements
+    // within this Slot_map and insert_helper has to resize the storage.
+    // TODO: The copy could be avoided by refactoring such that resizing the storage first allocates
+    // new buffers, constructs the new element there, and only then moves the old elements over.
+    T tmp(std::forward<Ts>(args)...);
+
     auto [pos, handle] = insert_helper();
-    construct_element_at(pos, std::forward<Ts>(args)...);
+    construct_element_at(pos, std::move(tmp));
     return handle;
 }
 
