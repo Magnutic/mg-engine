@@ -43,7 +43,7 @@ namespace Mg {
  *
  * Usage example:
  *
- *     void some_function_that_uses_a_resource(ResourceHandle resource_handle) {
+ *     void some_function_that_uses_a_resource(ResourceHandle<ResourceType> resource_handle) {
  *         ResourceAccessGuard<ResType> res_access{ resource_handle };
  *         auto something = res_access->something_in_the_resource;
  *         // etc. Resource can be safely accessed as long as `res_access` remains in scope.
@@ -55,13 +55,22 @@ namespace Mg {
  */
 template<typename ResT> class ResourceAccessGuard {
 public:
-    ResourceAccessGuard(ResourceHandle<ResT> handle)
+    ResourceAccessGuard(BaseResourceHandle handle)
         : m_entry(handle.m_p_entry), m_lock(handle.m_p_entry->mutex)
     {
         if (!m_entry->is_loaded()) { m_entry->load_resource(); }
         m_entry->last_access = std::chrono::system_clock::now();
         ++m_entry->ref_count;
+
+        MG_ASSERT(
+            _deref().type_id() == m_entry->resource_type_id() &&
+            "ResourceAccessGuard constructed using ResourceHandle to wrong type of resource.");
     }
+
+    // Constructor taking specific resource handle type allows argument deduction.
+    ResourceAccessGuard(ResourceHandle<ResT> handle)
+        : ResourceAccessGuard(BaseResourceHandle(handle))
+    {}
 
     ~ResourceAccessGuard() { --m_entry->ref_count; }
 
@@ -72,23 +81,14 @@ public:
 
     time_point file_time_stamp() const noexcept { return m_entry->time_stamp(); }
 
-    const ResT& operator*() const& noexcept { return *get(); }
-    const ResT* operator->() const& noexcept { return get(); }
+    const ResT& operator*() const& noexcept { return _deref(); }
+    const ResT* operator->() const& noexcept { return &_deref(); }
 
-    ResT& operator*() & noexcept { return *get(); }
-    ResT* operator->() & noexcept { return get(); }
+    ResT& operator*() & noexcept { return _deref(); }
+    ResT* operator->() & noexcept { return &_deref(); }
 
-    ResT* get() & noexcept
-    {
-        BaseResource* base_res = &m_entry->get_resource();
-        return static_cast<ResT*>(base_res);
-    }
-
-    const ResT* get() const& noexcept
-    {
-        const BaseResource* base_res = &m_entry->get_resource();
-        return static_cast<const ResT*>(base_res);
-    }
+    ResT*       get() & noexcept { return &_deref(); }
+    const ResT* get() const& noexcept { return &_deref(); }
 
     // Disallow dereferencing rvalue ResourceAccessGuard.
     // ResourceAccessGuard is intended to remain on the stack for the duration of the resource use,
@@ -103,6 +103,12 @@ public:
     const ResT* get() const&& = delete;
 
 private:
+    ResT& _deref() const noexcept
+    {
+        ResT& resource = static_cast<ResT&>(m_entry->get_resource());
+        return resource;
+    }
+
     ResourceEntryBase*                        m_entry = nullptr;
     std::shared_lock<std::shared_timed_mutex> m_lock;
 };

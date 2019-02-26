@@ -27,18 +27,20 @@
 
 #pragma once
 
+#include "mg/core/mg_resource_handle.h"
+
 #include <chrono>
 
 namespace Mg {
 
-class BaseResource;
 using time_point = std::chrono::system_clock::time_point;
 
 /** Event sent by ResourceCache to notify whether a resource file has changed.
  * @see ResourceCache::set_file_change_callback
  */
 struct FileChangedEvent {
-    BaseResource& resource;
-    time_point    time_stamp;
+    BaseResourceHandle resource;
+    Identifier         resource_type;
+    time_point         time_stamp;
 };
 } // namespace Mg

@@ -134,12 +134,12 @@ void init()
     }
 
     g_scene->resource_cache.set_resource_reload_callback([](const FileChangedEvent& event) {
-        switch (event.resource.type_id().hash()) {
-        case Identifier("TextureResource").hash():
-            g_scene->root.gfx_device().texture_repository().update(
-                static_cast<TextureResource&>(event.resource));
+        switch (event.resource_type.hash()) {
+        case Identifier("TextureResource").hash(): {
+            ResourceAccessGuard<TextureResource> access(event.resource);
+            g_scene->root.gfx_device().texture_repository().update(*access);
             break;
-
+        }
         case Identifier("ShaderResource").hash():
             g_scene->mesh_renderer.drop_shaders();
             g_scene->billboard_renderer.drop_shaders();

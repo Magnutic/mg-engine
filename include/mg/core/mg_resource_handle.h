@@ -34,23 +34,35 @@ namespace Mg {
 
 // Forward declarations.
 class ResourceCache;
+class ResourceEntryBase;
 template<typename ResT> class ResourceEntry;
 template<typename ResT> class ResourceAccessGuard;
+template<typename ResT> class ResourceHandle;
 
-/** Storable handle to a resource. */
-template<typename ResT> class ResourceHandle {
+/** ResourceHandle to unknown type of resource. */
+class BaseResourceHandle {
 public:
-    ResourceHandle() = default;
-    explicit ResourceHandle(Identifier id, ResourceEntry<ResT>& entry) : m_id(id), m_p_entry(&entry)
+    BaseResourceHandle() = default;
+    explicit BaseResourceHandle(Identifier id, ResourceEntryBase& entry)
+        : m_id(id), m_p_entry(&entry)
     {}
 
     Identifier resource_id() const noexcept { return m_id; }
 
-private:
-    friend class ResourceAccessGuard<ResT>;
+protected:
+    template<typename ResT> friend class ResourceAccessGuard;
 
-    Identifier           m_id      = "";
-    ResourceEntry<ResT>* m_p_entry = nullptr;
+    Identifier         m_id      = "";
+    ResourceEntryBase* m_p_entry = nullptr;
+};
+
+/** Storable handle to a resource. */
+template<typename ResT> class ResourceHandle : public BaseResourceHandle {
+public:
+    ResourceHandle() = default;
+    explicit ResourceHandle(Identifier id, ResourceEntry<ResT>& entry)
+        : BaseResourceHandle(id, entry)
+    {}
 };
 
 } // namespace Mg

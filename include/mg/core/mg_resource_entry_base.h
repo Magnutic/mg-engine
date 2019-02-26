@@ -31,6 +31,7 @@
 #pragma once
 
 #include "mg/core/mg_identifier.h"
+#include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_macros.h"
 
 #include <atomic>
@@ -72,13 +73,6 @@ public:
     virtual BaseResource&       get_resource()       = 0;
     virtual const BaseResource& get_resource() const = 0;
 
-    /** Make a new (empty) ResourceEntry of the same derived type as this one. */
-    virtual std::unique_ptr<ResourceEntryBase> new_entry(IFileLoader& loader,
-                                                         time_point   time_stamp) const = 0;
-
-    /** Swap values. Requires that this and rhs are of the same derived type. */
-    virtual void swap_entry(ResourceEntryBase& rhs) noexcept = 0;
-
     /** Load the resource. */
     void load_resource();
 
@@ -89,6 +83,19 @@ public:
     virtual void unload() = 0;
 
     Identifier resource_id() const { return m_resource_id; }
+
+    /** Get type-identifier (as given by `ResT::type_id()`) for the stored resource.
+     * Precondition: the resource must have been loaded at least once.
+     */
+    Identifier resource_type_id() const
+    {
+        // It may seem a bit arbitrary to require that the resource has been loaded at least once,
+        // but it simplifies the implementation of resource types, since it means they only need to
+        // have a virtual `type_id()` function, rather than that and a static constant type-id
+        // member variable.
+        MG_ASSERT(m_has_been_loaded);
+        return m_resource_type_id;
+    }
 
     time_point time_stamp() const { return m_time_stamp; }
 
@@ -117,7 +124,11 @@ protected:
     IFileLoader*   m_p_loader       = nullptr;
     ResourceCache* m_p_owning_cache = nullptr;
     Identifier     m_resource_id;
+    Identifier     m_resource_type_id = "<unset>";
     time_point     m_time_stamp{};
+
+    // Has the resource ever been loaded? (Only required for sanity checking.)
+    bool m_has_been_loaded = false;
 
     virtual BaseResource& create_resource() = 0;
 };

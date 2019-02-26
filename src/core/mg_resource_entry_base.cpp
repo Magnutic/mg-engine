@@ -42,13 +42,19 @@ void ResourceEntryBase::load_resource()
 
     last_access = std::chrono::system_clock::now();
 
+    // Load raw data.
     auto file_size = loader().file_size(resource_id());
     auto file_data = Array<std::byte>::make(file_size);
-
     loader().load_file(resource_id(), file_data);
+
+    // Structure providing interface needed for resources to load data.
     ResourceLoadingInput input{ std::move(file_data), owning_cache(), *this };
 
-    LoadResourceResult result = create_resource().load_resource(input);
+    // Init contained resource.
+    BaseResource& resource    = create_resource();
+    m_resource_type_id        = resource.type_id();
+    m_has_been_loaded         = true;
+    LoadResourceResult result = resource.load_resource(input);
 
     switch (result.result_code) {
     case LoadResourceResult::DataError:

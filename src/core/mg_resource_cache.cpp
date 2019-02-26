@@ -74,6 +74,7 @@ void ResourceCache::refresh()
 
     struct ReloadInfo {
         ResourceEntryBase& entry;
+        Identifier         resource_type_id;
         time_point         new_time_stamp;
         IFileLoader&       new_loader;
     };
@@ -83,36 +84,24 @@ void ResourceCache::refresh()
     {
         std::shared_lock lock{ m_file_list_mutex };
 
-        // Create list of files to reload (not doing it immediately to not have to hold the lock on
-        // the m_file_list_mutex during resource loading).
+        // Create list of files to reload and unload the resources.
         for (const FileInfo& file : m_file_list) {
             if (should_reload(file)) {
-                entries_to_reload.push_back({ *file.entry, file.time_stamp, *file.loader });
+                std::unique_lock entry_lock(file.entry->mutex);
+                entries_to_reload.push_back(ReloadInfo{ *file.entry,
+                                                        file.entry->resource_type_id(),
+                                                        file.time_stamp,
+                                                        *file.loader });
+                file.entry->unload();
             }
         }
     }
 
-    // Re-load any modified resources.
-    for (const auto& [entry, new_time_stamp, new_loader] : entries_to_reload) {
-        log_verbose(entry.resource_id(), "Resource was modified, re-loading...");
-
-        try {
-            // Create new ResourceEntry, load resource into that, then swap with the old entry.
-            auto p_new_entry = entry.new_entry(new_loader, new_time_stamp);
-            p_new_entry->load_resource();
-
-            {
-                std::unique_lock entry_lock{ entry.mutex };
-                entry.swap_entry(*p_new_entry);
-            }
-        }
-        catch (const ResourceError&) {
-            log_error(entry.resource_id(), "Resource was modified but re-loading failed.");
-            continue;
-        }
-
+    // Notify callbacks of file changes.
+    for (const auto& [entry, resource_type, new_time_stamp, new_loader] : entries_to_reload) {
         if (m_resource_reload_callback) {
-            m_resource_reload_callback(FileChangedEvent{ entry.get_resource(), new_time_stamp });
+            BaseResourceHandle handle(entry.resource_type_id(), entry);
+            m_resource_reload_callback(FileChangedEvent{ handle, resource_type, new_time_stamp });
         }
     }
 }
