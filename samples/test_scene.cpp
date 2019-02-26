@@ -142,6 +142,7 @@ void init()
 
         case Identifier("ShaderResource").hash():
             g_scene->mesh_renderer.drop_shaders();
+            g_scene->billboard_renderer.drop_shaders();
             break;
 
         default:

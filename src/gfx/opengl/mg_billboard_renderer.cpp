@@ -324,4 +324,9 @@ void BillboardRenderer::render(const ICamera&             camera,
     glDrawArrays(GL_POINTS, 0, narrow<GLint>(billboards.size()));
 }
 
+void BillboardRenderer::drop_shaders()
+{
+    data().shader_factory.drop_shaders();
+}
+
 } // namespace Mg::gfx

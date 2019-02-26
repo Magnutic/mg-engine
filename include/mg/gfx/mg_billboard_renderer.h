@@ -96,6 +96,8 @@ public:
 
     void
     render(const ICamera& camera, const BillboardRenderList& render_list, const Material& material);
+
+    void drop_shaders();
 };
 
 } // namespace Mg::gfx
