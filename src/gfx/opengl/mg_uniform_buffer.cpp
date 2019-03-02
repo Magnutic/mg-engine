@@ -78,12 +78,6 @@ void UniformBuffer::set_data(span<const std::byte> data)
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void UniformBuffer::bind_to(UniformBufferSlot slot) const
-{
-    auto gl_slot = static_cast<uint32_t>(slot);
-    glBindBufferBase(GL_UNIFORM_BUFFER, gl_slot, m_gl_ubo_id.value);
-}
-
 size_t UniformBuffer::max_size()
 {
     static GLint64 result = 0;

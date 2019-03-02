@@ -27,12 +27,12 @@
 
 #pragma once
 
-#include <cstddef>
-#include <cstdint>
-
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_object_id.h"
+
+#include <cstddef>
+#include <cstdint>
 
 namespace Mg::gfx {
 
@@ -56,9 +56,7 @@ enum class UniformBufferSlot : uint32_t;
  * Direct3D back-end, it would instead be necessary to specify the uniform buffer slot directly in
  * the shader code instead.
  *
- * And then, bind the UniformBuffer to the same slot:
- *
- *     UniformBuffer::bind_to(uniform_buffer_slot)
+ * Then, use the appropriate GfxDevice implementation to bind the UniformBuffer to the same slot.
  */
 class UniformBuffer {
 public:
@@ -75,11 +73,7 @@ public:
     /** Get the buffer's size in bytes. */
     size_t size() const { return m_size; }
 
-    /** Bind the uniform buffer to the given uniform buffer slot.
-     * Shader uniform blocks, which are bound to the same uniform buffer slot, will then use this
-     * buffer as data source.
-     */
-    void bind_to(UniformBufferSlot slot) const;
+    uint32_t internal_id() const { return m_gl_ubo_id.value; }
 
     /** Get the maximum size for a UBO on the present system. */
     static size_t max_size();

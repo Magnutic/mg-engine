@@ -27,10 +27,13 @@
 
 #pragma once
 
+#include "../../mg_shader_factory.h"
+
+#include "mg/gfx/mg_texture_related_types.h"
+#include "mg/gfx/mg_uniform_buffer.h"
+
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
-
-#include "../../mg_shader_factory.h"
 
 namespace Mg::gfx {
 
@@ -52,13 +55,13 @@ inline ShaderFactory make_mesh_shader_factory()
 
 namespace Mg::gfx::mesh_renderer {
 
-static constexpr uint32_t k_matrix_ubo_index{ 0 };
-static constexpr uint32_t k_frame_ubo_index{ 1 };
-static constexpr uint32_t k_light_ubo_index{ 2 };
-static constexpr uint32_t k_material_params_ubo_index{ 3 };
+static constexpr UniformBufferSlot k_matrix_ubo_slot{ 0 };
+static constexpr UniformBufferSlot k_frame_ubo_slot{ 1 };
+static constexpr UniformBufferSlot k_light_ubo_slot{ 2 };
+static constexpr UniformBufferSlot k_material_params_ubo_slot{ 3 };
 
-static constexpr int32_t k_sampler_tile_data_index   = 8;
-static constexpr int32_t k_sampler_light_index_index = 9; // Index of sampler for light indices.
+static constexpr TextureUnit k_sampler_tile_data_index{ 8 };
+static constexpr TextureUnit k_sampler_light_index_index{ 9 }; // Index of sampler for light indices
 
 /** Location of '_matrix_index' vertex attribute in shader code. */
 static constexpr uint32_t k_matrix_index_vertex_attrib_location = 8;

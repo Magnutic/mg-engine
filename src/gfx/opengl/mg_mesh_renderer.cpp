@@ -75,10 +75,13 @@ inline void set_shader(MeshRendererData& data, const Material& material)
 /** Set shader input to match the given material. */
 inline void set_material(MeshRendererData& data, const Material& material)
 {
+    using namespace opengl;
+    using namespace mesh_renderer;
+
     set_shader(data, material);
     MG_ASSERT(data.m_current_shader != ShaderFactory::ShaderHandle{});
 
-    auto& gfx_device = opengl::OpenGLGfxDevice::get();
+    auto& gfx_device = OpenGLGfxDevice::get();
 
     uint32_t tex_unit = 0;
     for (const Material::Sampler& sampler : material.samplers()) {
@@ -86,26 +89,30 @@ inline void set_material(MeshRendererData& data, const Material& material)
     }
 
     data.m_material_params_ubo.set_data(material.material_params_buffer());
-    data.m_material_params_ubo.bind_to(
-        UniformBufferSlot{ mesh_renderer::k_material_params_ubo_index });
+    gfx_device.bind_uniform_buffer(k_material_params_ubo_slot, data.m_material_params_ubo);
 }
 
 /** Upload frame-constant buffers to GPU. */
 inline void
 upload_frame_constant_buffers(MeshRendererData& data, const ICamera& cam, RenderParameters params)
 {
+    using namespace opengl;
     using namespace mesh_renderer;
+
+    auto& gfx_device = OpenGLGfxDevice::get();
 
     // Upload frame-global uniforms
     FrameBlock frame_block = mesh_renderer::make_frame_block(cam,
                                                              params.current_time,
                                                              params.camera_exposure);
     data.m_frame_ubo.set_data(byte_representation(frame_block));
-    data.m_frame_ubo.bind_to(UniformBufferSlot{ k_frame_ubo_index });
+    gfx_device.bind_uniform_buffer(k_frame_ubo_slot, data.m_frame_ubo);
+    gfx_device.bind_uniform_buffer(k_light_ubo_slot, data.m_light_buffers.light_data_buffer);
 
-    data.m_light_buffers.light_data_buffer.bind_to(UniformBufferSlot{ k_light_ubo_index });
-    data.m_light_buffers.tile_data_texture.bind(GL_TEXTURE0 + k_sampler_tile_data_index);
-    data.m_light_buffers.light_index_texture.bind(GL_TEXTURE0 + k_sampler_light_index_index);
+    gfx_device.bind_buffer_texture(k_sampler_tile_data_index,
+                                   data.m_light_buffers.tile_data_texture);
+    gfx_device.bind_buffer_texture(k_sampler_light_index_index,
+                                   data.m_light_buffers.light_index_texture);
 
     data.m_current_shader_hash = 0; // Reset to make sure that shader is set, in case current
     // shader has been changed in between invocations of this renderer's loop.
@@ -141,14 +148,15 @@ void MeshRenderer::render(const ICamera&           cam,
                           RenderParameters         params)
 {
     using namespace internal;
+    using namespace opengl;
+    using namespace mesh_renderer;
+
+    auto& gfx_device = OpenGLGfxDevice::get();
 
     auto            current_vao      = uint32_t(-1);
     const Material* current_material = nullptr;
 
-    {
-        UniformBufferSlot matrix_ubo_slot{ mesh_renderer::k_matrix_ubo_index };
-        data().m_matrix_uniform_handler.ubo().bind_to(matrix_ubo_slot);
-    }
+    gfx_device.bind_uniform_buffer(k_matrix_ubo_slot, data().m_matrix_uniform_handler.ubo());
 
     update_light_data(data().m_light_buffers, lights, cam, data().m_light_grid);
     upload_frame_constant_buffers(data(), cam, params);

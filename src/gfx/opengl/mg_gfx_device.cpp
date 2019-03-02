@@ -30,6 +30,7 @@
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/core/mg_window.h"
+#include "mg/gfx/mg_buffer_texture.h"
 #include "mg/gfx/mg_material_repository.h"
 #include "mg/gfx/mg_mesh_repository.h"
 #include "mg/gfx/mg_texture_repository.h"
@@ -215,11 +216,26 @@ void OpenGLGfxDevice::bind_texture(TextureUnit unit, TextureHandle texture)
     glBindTexture(GL_TEXTURE_2D, gl_texture_id);
 }
 
+void OpenGLGfxDevice::bind_buffer_texture(TextureUnit unit, const BufferTexture& texture)
+{
+    auto gl_texture_id = static_cast<GLuint>(texture.internal_texture_id());
+
+    glActiveTexture(GL_TEXTURE0 + unit.get());
+    glBindTexture(GL_TEXTURE_BUFFER, gl_texture_id);
+}
+
+void OpenGLGfxDevice::bind_uniform_buffer(UniformBufferSlot slot, const UniformBuffer& buffer)
+{
+    auto gl_slot = static_cast<uint32_t>(slot);
+    glBindBufferBase(GL_UNIFORM_BUFFER, gl_slot, buffer.internal_id());
+}
+
 } // namespace Mg::gfx::opengl
 
 namespace Mg::gfx {
 
-std::unique_ptr<GfxDevice> make_opengl_gfx_device(Mg::Window& window) {
+std::unique_ptr<GfxDevice> make_opengl_gfx_device(Mg::Window& window)
+{
     return std::make_unique<opengl::OpenGLGfxDevice>(window);
 }
 

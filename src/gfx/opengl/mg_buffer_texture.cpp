@@ -226,10 +226,4 @@ void BufferTexture::set_data(span<const std::byte> data)
     glBufferSubData(GL_TEXTURE_BUFFER, 0, GLsizeiptr(data.size_bytes()), data.data());
 }
 
-void BufferTexture::bind(uint32_t texture_unit) const
-{
-    glActiveTexture(texture_unit);
-    glBindTexture(GL_TEXTURE_BUFFER, m_tex_id.value);
-}
-
 } // namespace Mg::gfx

@@ -295,11 +295,11 @@ void BillboardRenderer::render(const ICamera&             camera,
 
     auto shader_handle = data().shader_factory.get_shader(material);
 
+    auto& gfx_device = opengl::OpenGLGfxDevice::get();
+
     {
         auto program_id = static_cast<GLuint>(shader_handle);
         glUseProgram(program_id);
-
-        auto& gfx_device = opengl::OpenGLGfxDevice::get();
 
         uint32_t tex_unit = 0;
         for (const Material::Sampler& sampler : material.samplers()) {
@@ -315,10 +315,10 @@ void BillboardRenderer::render(const ICamera&             camera,
                                                             camera.aspect_ratio());
 
         data().camera_ubo.set_data(byte_representation(camera_block));
-        data().camera_ubo.bind_to(k_camera_ubo_slot);
+        gfx_device.bind_uniform_buffer(k_camera_ubo_slot, data().camera_ubo);
 
         data().material_params_ubo.set_data(material.material_params_buffer());
-        data().material_params_ubo.bind_to(k_material_params_ubo_slot);
+        gfx_device.bind_uniform_buffer(k_material_params_ubo_slot, data().material_params_ubo);
     }
 
     glBindVertexArray(data().vao.value);

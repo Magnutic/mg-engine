@@ -63,8 +63,7 @@ public:
 
     size_t size() const { return m_buffer_size; }
 
-    /** Binds buffer texture to the texture buffer target. */
-    void bind(uint32_t texture_unit) const;
+    uint32_t internal_texture_id() const { return m_tex_id.value; }
 
 private:
     ObjectId m_tex_id;

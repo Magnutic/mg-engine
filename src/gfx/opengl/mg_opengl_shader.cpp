@@ -196,4 +196,9 @@ template<> void set_uniform<glm::mat4x3>(int32_t location, const glm::mat4x3& va
     glUniformMatrix4x3fv(location, 1, 0, &(value[0][0]));
 }
 
+void set_sampler_binding(int32_t location, TextureUnit unit)
+{
+    set_uniform(location, static_cast<int32_t>(unit.get()));
+}
+
 } // namespace Mg::gfx::opengl

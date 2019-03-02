@@ -31,6 +31,7 @@
 #include <string_view>
 
 #include "mg/gfx/mg_shader.h"
+#include "mg/gfx/mg_texture_related_types.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 
 /** OpenGL-backend-specific functionality. */
@@ -48,6 +49,15 @@ int32_t uniform_location(const ShaderProgram& program, std::string_view uniform_
  * Defined in mg_opengl_shader.cpp
  */
 template<typename T> void set_uniform(int32_t location, const T& value);
+
+/** Set texture unit to use for the given sampler uniform.
+ *
+ * This could be done directly using set_uniform, but OpenGL is a bit particular about types here: a
+ * texture unit from the application's side must be an unsigned integer, but the shader uniform must
+ * be a signed integer. Hence, this function will automatically ensure the correct type, making it
+ * preferable to use.
+ */
+void set_sampler_binding(int32_t location, TextureUnit unit);
 
 /** Bind Shader's block with name block_name to the given uniform buffer slot.
  * @return Whether successful (i.e. block_name corresponds to an active uniform block).

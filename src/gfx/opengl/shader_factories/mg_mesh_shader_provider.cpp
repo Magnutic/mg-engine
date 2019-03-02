@@ -146,32 +146,25 @@ ShaderCode MeshShaderProvider::make_shader_code(const Material& material) const
 
 void MeshShaderProvider::setup_shader_state(ShaderProgram& program, const Material& material) const
 {
-    opengl::use_program(program);
-    opengl::set_uniform_block_binding(program,
-                                      "MatrixBlock",
-                                      UniformBufferSlot{ mesh_renderer::k_matrix_ubo_index });
-    opengl::set_uniform_block_binding(program,
-                                      "FrameBlock",
-                                      UniformBufferSlot{ mesh_renderer::k_frame_ubo_index });
-    opengl::set_uniform_block_binding(program,
-                                      "LightBlock",
-                                      UniformBufferSlot{ mesh_renderer::k_light_ubo_index });
-    opengl::set_uniform_block_binding(program,
-                                      "MaterialParams",
-                                      UniformBufferSlot{
-                                          mesh_renderer::k_material_params_ubo_index });
+    using namespace opengl;
+    using namespace mesh_renderer;
 
-    int32_t tex_unit = 0;
+    use_program(program);
+    set_uniform_block_binding(program, "MatrixBlock", k_matrix_ubo_slot);
+    set_uniform_block_binding(program, "FrameBlock", k_frame_ubo_slot);
+    set_uniform_block_binding(program, "LightBlock", k_light_ubo_slot);
+    set_uniform_block_binding(program, "MaterialParams", k_material_params_ubo_slot);
+
+    uint32_t tex_unit = 0;
 
     for (const Material::Sampler& sampler : material.samplers()) {
-        opengl::set_uniform(opengl::uniform_location(program, sampler.name.str_view()), tex_unit++);
+        set_sampler_binding(uniform_location(program, sampler.name.str_view()),
+                            TextureUnit{ tex_unit++ });
     }
 
-    opengl::set_uniform(opengl::uniform_location(program, "_sampler_tile_data"),
-                        mesh_renderer::k_sampler_tile_data_index);
-
-    opengl::set_uniform(opengl::uniform_location(program, "_sampler_light_index"),
-                        mesh_renderer::k_sampler_light_index_index);
+    set_sampler_binding(uniform_location(program, "_sampler_tile_data"), k_sampler_tile_data_index);
+    set_sampler_binding(uniform_location(program, "_sampler_light_index"),
+                        k_sampler_light_index_index);
 }
 
 } // namespace Mg::gfx

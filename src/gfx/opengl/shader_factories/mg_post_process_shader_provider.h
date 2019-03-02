@@ -29,15 +29,19 @@
 
 #include "../../mg_shader_factory.h"
 
+#include "mg/gfx/mg_texture_related_types.h"
+#include "mg/gfx/mg_uniform_buffer.h"
+
 namespace Mg::gfx::post_renderer {
 
 // Texture units 0 & 1 are reserved for input colour and depth texture, respectively.
-static constexpr int32_t  k_input_colour_texture_unit   = 0;
-static constexpr int32_t  k_input_depth_texture_unit    = 1;
+static constexpr TextureUnit k_input_colour_texture_unit{ 0 };
+static constexpr TextureUnit k_input_depth_texture_unit{ 1 };
+
 static constexpr uint32_t k_material_texture_start_unit = 2;
 
-static constexpr uint32_t k_material_params_ubo_slot{ 0 };
-static constexpr uint32_t k_frame_block_ubo_slot{ 1 };
+static constexpr UniformBufferSlot k_material_params_ubo_slot{ 0 };
+static constexpr UniformBufferSlot k_frame_block_ubo_slot{ 1 };
 
 struct FrameBlock {
     float z_near;

@@ -100,27 +100,24 @@ ShaderCode PostProcessShaderProvider::make_shader_code(const Material& material)
 void PostProcessShaderProvider::setup_shader_state(ShaderProgram&  program,
                                                    const Material& material) const
 {
-    opengl::use_program(program);
+    using namespace post_renderer;
+    using namespace opengl;
+
+    use_program(program);
 
     // Set UBO index bindings
-    opengl::set_uniform_block_binding(program,
-                                      "MaterialParams",
-                                      UniformBufferSlot{
-                                          post_renderer::k_material_params_ubo_slot });
-    opengl::set_uniform_block_binding(program,
-                                      "FrameBlock",
-                                      UniformBufferSlot{ post_renderer::k_frame_block_ubo_slot });
+    set_uniform_block_binding(program, "MaterialParams", k_material_params_ubo_slot);
+    set_uniform_block_binding(program, "FrameBlock", k_frame_block_ubo_slot);
 
     // Set built-in sampler bindings
-    opengl::set_uniform(opengl::uniform_location(program, "sampler_colour"),
-                        post_renderer::k_input_colour_texture_unit);
-    opengl::set_uniform(opengl::uniform_location(program, "sampler_depth"),
-                        post_renderer::k_input_depth_texture_unit);
+    set_sampler_binding(uniform_location(program, "sampler_colour"), k_input_colour_texture_unit);
+    set_sampler_binding(uniform_location(program, "sampler_depth"), k_input_depth_texture_unit);
 
     // Set material-provided sampler bindings
-    uint32_t tex_unit = post_renderer::k_material_texture_start_unit;
+    uint32_t tex_unit = k_material_texture_start_unit;
     for (auto&& sampler : material.samplers()) {
-        opengl::set_uniform(opengl::uniform_location(program, sampler.name.str_view()), tex_unit);
+        set_sampler_binding(uniform_location(program, sampler.name.str_view()),
+                            TextureUnit{ tex_unit });
         ++tex_unit;
     }
 }
