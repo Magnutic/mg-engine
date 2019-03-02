@@ -59,8 +59,6 @@ public:
 
     ~Texture2D() { unload(); }
 
-    void bind_to(TextureUnit unit) const noexcept;
-
     ImageSize image_size() const noexcept { return m_image_size; }
 
     Identifier id() const noexcept { return m_id; }

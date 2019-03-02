@@ -84,7 +84,7 @@ Root::Root()
     }
 
     // Create render context
-    data().gfx_device = std::make_unique<gfx::GfxDevice>(*data().window);
+    data().gfx_device = gfx::make_opengl_gfx_device(*data().window);
 }
 
 Root::~Root()

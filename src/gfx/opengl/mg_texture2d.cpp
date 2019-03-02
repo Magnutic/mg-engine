@@ -399,18 +399,9 @@ Texture2D Texture2D::render_target(const RenderTargetParams& params)
     return tex;
 }
 
-void Texture2D::bind_to(TextureUnit unit) const noexcept
-{
-    auto tex_id = static_cast<uint32_t>(gfx_api_handle());
-
-    glActiveTexture(GL_TEXTURE0 + unit.get());
-    glBindTexture(GL_TEXTURE_2D, tex_id);
-}
-
 Texture2D::Texture2D(GfxApiHandle gfx_api_handle)
     : m_gfx_api_handle(static_cast<uint32_t>(gfx_api_handle))
 {}
-
 
 // Unload texture from OpenGL context
 void Texture2D::unload()

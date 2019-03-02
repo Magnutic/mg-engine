@@ -23,17 +23,17 @@
 
 #include "mg/gfx/mg_post_process.h"
 
+#include "shader_factories/mg_post_process_shader_provider.h"
+
+#include "mg_gl_debug.h"
+#include "mg_gl_gfx_device.h"
+#include "mg_glad.h"
+
 #include "mg/containers/mg_small_vector.h"
 #include "mg/gfx/mg_material.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/mg_defs.h"
 #include "mg/utils/mg_object_id.h"
-
-#include "mg_texture_node.h"
-#include "shader_factories/mg_post_process_shader_provider.h"
-
-#include "mg_gl_debug.h"
-#include "mg_glad.h"
 
 namespace Mg::gfx {
 
@@ -74,10 +74,11 @@ setup_material(PostProcessRendererData& data, const Material& material, float z_
     ShaderFactory::ShaderHandle shader = data.shader_factory.get_shader(material);
     glUseProgram(static_cast<GLuint>(shader));
 
+    auto& gfx_device = opengl::OpenGLGfxDevice::get();
+
     auto tex_unit = post_renderer::k_material_texture_start_unit;
     for (const Material::Sampler& sampler : material.samplers()) {
-        auto& tex_node = internal::texture_node(sampler.sampler);
-        tex_node.texture.bind_to(TextureUnit{ tex_unit++ });
+        gfx_device.bind_texture(TextureUnit{ tex_unit++ }, sampler.sampler);
     }
 
     data.material_params_ubo.set_data(material.material_params_buffer());
@@ -100,12 +101,14 @@ PostProcessRenderer::~PostProcessRenderer()
     if (data().vbo.value != 0) { glDeleteBuffers(1, &data().vbo.value); }
 }
 
-void PostProcessRenderer::post_process(const Material& material, const Texture2D& input_texture)
+void PostProcessRenderer::post_process(const Material& material, TextureHandle input_colour)
 {
+    using namespace post_renderer;
     setup_material(data(), material, 0.0f, 0.0f);
 
-    input_texture.bind_to(TextureUnit{ post_renderer::k_input_colour_texture_unit });
-    glActiveTexture(GL_TEXTURE0 + post_renderer::k_input_depth_texture_unit);
+    auto& gfx_device = opengl::OpenGLGfxDevice::get();
+    gfx_device.bind_texture(TextureUnit{ k_input_colour_texture_unit }, input_colour);
+    glActiveTexture(GL_TEXTURE0 + k_input_depth_texture_unit);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     glBindVertexArray(data().vao.value);
@@ -113,16 +116,18 @@ void PostProcessRenderer::post_process(const Material& material, const Texture2D
     MG_CHECK_GL_ERROR();
 }
 
-void PostProcessRenderer::post_process(const Material&  material,
-                                       const Texture2D& input_texture,
-                                       const Texture2D& input_depth,
-                                       float            z_near,
-                                       float            z_far)
+void PostProcessRenderer::post_process(const Material& material,
+                                       TextureHandle   input_colour,
+                                       TextureHandle   input_depth,
+                                       float           z_near,
+                                       float           z_far)
 {
+    using namespace post_renderer;
     setup_material(data(), material, z_near, z_far);
 
-    input_texture.bind_to(TextureUnit{ post_renderer::k_input_colour_texture_unit });
-    input_depth.bind_to(TextureUnit{ post_renderer::k_input_depth_texture_unit });
+    auto& gfx_device = opengl::OpenGLGfxDevice::get();
+    gfx_device.bind_texture(TextureUnit{ k_input_colour_texture_unit }, input_colour);
+    gfx_device.bind_texture(TextureUnit{ k_input_depth_texture_unit }, input_depth);
 
     glBindVertexArray(data().vao.value);
     glDrawArrays(GL_TRIANGLES, 0, 12);

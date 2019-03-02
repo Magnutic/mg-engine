@@ -23,19 +23,18 @@
 
 #include "mg/gfx/mg_mesh_renderer.h"
 
+#include "mg_gl_debug.h"
+#include "mg_gl_gfx_device.h"
+#include "mg_render_command_data.h"
+#include "shader_factories/mg_mesh_shader_provider.h"
+#include "mg_glad.h"
+
 #include "mg/gfx/mg_light_buffers.h"
 #include "mg/gfx/mg_light_grid.h"
 #include "mg/gfx/mg_material.h"
 #include "mg/gfx/mg_matrix_ubo.h"
 #include "mg/gfx/mg_render_command_list.h"
 #include "mg/gfx/mg_vertex.h"
-
-#include "mg_render_command_data.h"
-#include "mg_texture_node.h"
-#include "shader_factories/mg_mesh_shader_provider.h"
-
-#include "mg_gl_debug.h"
-#include "mg_glad.h"
 
 namespace Mg::gfx {
 
@@ -79,10 +78,11 @@ inline void set_material(MeshRendererData& data, const Material& material)
     set_shader(data, material);
     MG_ASSERT(data.m_current_shader != ShaderFactory::ShaderHandle{});
 
+    auto& gfx_device = opengl::OpenGLGfxDevice::get();
+
     uint32_t tex_unit = 0;
     for (const Material::Sampler& sampler : material.samplers()) {
-        auto& tex_node = internal::texture_node(sampler.sampler);
-        tex_node.texture.bind_to(TextureUnit(tex_unit++));
+        gfx_device.bind_texture(TextureUnit(tex_unit++), sampler.sampler);
     }
 
     data.m_material_params_ubo.set_data(material.material_params_buffer());

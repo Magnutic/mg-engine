@@ -113,9 +113,8 @@ public:
 
     ImageSize image_size() const final;
 
-    const Texture2D& colour_target() const;
-
-    const Texture2D& depth_target() const;
+    TextureHandle colour_target() const { return m_colour_target; }
+    TextureHandle depth_target() const { return m_depth_target; }
 
 private:
     TextureRenderTarget() = default;

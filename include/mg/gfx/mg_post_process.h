@@ -27,13 +27,13 @@
 
 #pragma once
 
+#include "mg/gfx/mg_texture_handle.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_simple_pimpl.h"
 
 namespace Mg::gfx {
 
 class Material;
-class Texture2D;
 
 struct PostProcessRendererData;
 
@@ -47,14 +47,14 @@ public:
     ~PostProcessRenderer();
 
     /** Post-process using only colour texture as input. */
-    void post_process(const Material& material, const Texture2D& input_texture);
+    void post_process(const Material& material, TextureHandle input_colour);
 
     /** Post-process using colour and depth textures. */
-    void post_process(const Material&  material,
-                      const Texture2D& input_texture,
-                      const Texture2D& input_depth,
-                      float            z_near,
-                      float            z_far);
+    void post_process(const Material& material,
+                      TextureHandle   input_colour,
+                      TextureHandle   input_depth,
+                      float           z_near,
+                      float           z_far);
 };
 
 } // namespace Mg::gfx

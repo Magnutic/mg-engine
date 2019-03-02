@@ -204,14 +204,4 @@ ImageSize TextureRenderTarget::image_size() const
     return internal::texture_node(m_colour_target).texture.image_size();
 }
 
-const Texture2D& TextureRenderTarget::colour_target() const
-{
-    return internal::texture_node(m_colour_target).texture;
-}
-
-const Texture2D& TextureRenderTarget::depth_target() const
-{
-    return internal::texture_node(m_depth_target).texture;
-}
-
 } // namespace Mg::gfx

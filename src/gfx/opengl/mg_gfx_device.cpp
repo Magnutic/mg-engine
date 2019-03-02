@@ -21,7 +21,11 @@
 //
 //**************************************************************************************************
 
-#include "mg/gfx/mg_gfx_device.h"
+#include "mg_gl_gfx_device.h"
+
+#include "mg_gl_debug.h"
+#include "mg_texture_node.h"
+#include "mg_glad.h"
 
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
@@ -30,15 +34,12 @@
 #include "mg/gfx/mg_mesh_repository.h"
 #include "mg/gfx/mg_texture_repository.h"
 
-#include "mg_gl_debug.h"
-#include "mg_glad.h"
-
 #include <GLFW/glfw3.h>
 #include <fmt/core.h>
 
 #include <cstdint>
 
-namespace Mg::gfx {
+namespace Mg::gfx::opengl {
 
 #ifndef NDEBUG
 /** Wrapper for calling convention (GLAPIENTRY) */
@@ -54,9 +55,9 @@ static void APIENTRY ogl_error_callback_wrapper(uint32_t      source,
 }
 #endif
 
-static GfxDevice* p_gfx_device = nullptr;
+static OpenGLGfxDevice* p_gfx_device = nullptr;
 
-struct GfxDeviceData {
+struct OpenGLGfxDeviceData {
     MeshRepository     mesh_repository;
     TextureRepository  texture_repository;
     MaterialRepository material_repository;
@@ -64,10 +65,10 @@ struct GfxDeviceData {
 
 //--------------------------------------------------------------------------------------------------
 
-GfxDevice::GfxDevice(::Mg::Window& window)
+OpenGLGfxDevice::OpenGLGfxDevice(::Mg::Window& window)
 {
     if (p_gfx_device != nullptr) {
-        g_log.write_error("Only one Mg::gfx::GfxDevice may be constructed at a time.");
+        g_log.write_error("Only one Mg::gfx::OpenGLGfxDevice may be constructed at a time.");
         throw RuntimeError();
     }
 
@@ -109,21 +110,21 @@ GfxDevice::GfxDevice(::Mg::Window& window)
     set_depth_test(DepthFunc::LESS);
 }
 
-GfxDevice& GfxDevice::get()
+OpenGLGfxDevice& OpenGLGfxDevice::get()
 {
     if (p_gfx_device == nullptr) {
-        g_log.write_error("Attempting to access GfxDevice outside of its lifetime.");
+        g_log.write_error("Attempting to access OpenGLGfxDevice outside of its lifetime.");
         throw RuntimeError();
     }
     return *p_gfx_device;
 }
 
-GfxDevice::~GfxDevice()
+OpenGLGfxDevice::~OpenGLGfxDevice()
 {
     p_gfx_device = nullptr;
 }
 
-void GfxDevice::set_blend_mode(BlendMode blend_mode)
+void OpenGLGfxDevice::set_blend_mode(BlendMode blend_mode)
 {
     auto col_mode = uint32_t(blend_mode.colour);
     auto a_mode   = uint32_t(blend_mode.alpha);
@@ -137,7 +138,7 @@ void GfxDevice::set_blend_mode(BlendMode blend_mode)
 }
 
 /** Enable/disable depth testing and set depth testing function. */
-void GfxDevice::set_depth_test(DepthFunc func)
+void OpenGLGfxDevice::set_depth_test(DepthFunc func)
 {
     if (func != DepthFunc::NONE) {
         glEnable(GL_DEPTH_TEST);
@@ -148,31 +149,31 @@ void GfxDevice::set_depth_test(DepthFunc func)
     }
 }
 
-void GfxDevice::set_depth_write(bool on)
+void OpenGLGfxDevice::set_depth_write(bool on)
 {
     glDepthMask(GLboolean(on));
 }
 
-void GfxDevice::set_colour_write(bool on)
+void OpenGLGfxDevice::set_colour_write(bool on)
 {
     auto gb_on = GLboolean(on);
     glColorMask(gb_on, gb_on, gb_on, gb_on);
 }
 
 /** Set colour & alpha to use when clearing render target. */
-void GfxDevice::set_clear_colour(float red, float green, float blue, float alpha)
+void OpenGLGfxDevice::set_clear_colour(float red, float green, float blue, float alpha)
 {
     glClearColor(red, green, blue, alpha);
 }
 
-void GfxDevice::clear(bool colour, bool depth, bool stencil)
+void OpenGLGfxDevice::clear(bool colour, bool depth, bool stencil)
 {
     glClear((colour ? GL_COLOR_BUFFER_BIT : 0u) | (depth ? GL_DEPTH_BUFFER_BIT : 0u) |
             (stencil ? GL_STENCIL_BUFFER_BIT : 0u));
 }
 
 /** Set which culling function to use. */
-void GfxDevice::set_culling(CullFunc culling)
+void OpenGLGfxDevice::set_culling(CullFunc culling)
 {
     if (culling == CullFunc::NONE) { glDisable(GL_CULL_FACE); }
     else {
@@ -182,7 +183,7 @@ void GfxDevice::set_culling(CullFunc culling)
 }
 
 /** Set whether to use blending when rendering to target. */
-void GfxDevice::set_use_blending(bool enable)
+void OpenGLGfxDevice::set_use_blending(bool enable)
 {
     if (enable) { glEnable(GL_BLEND); }
     else {
@@ -190,19 +191,36 @@ void GfxDevice::set_use_blending(bool enable)
     }
 }
 
-MeshRepository& GfxDevice::mesh_repository()
+MeshRepository& OpenGLGfxDevice::mesh_repository()
 {
     return data().mesh_repository;
 }
 
-TextureRepository& GfxDevice::texture_repository()
+TextureRepository& OpenGLGfxDevice::texture_repository()
 {
     return data().texture_repository;
 }
 
-MaterialRepository& GfxDevice::material_repository()
+MaterialRepository& OpenGLGfxDevice::material_repository()
 {
     return data().material_repository;
+}
+
+void OpenGLGfxDevice::bind_texture(TextureUnit unit, TextureHandle texture)
+{
+    auto handle        = internal::texture_node(texture).texture.gfx_api_handle();
+    auto gl_texture_id = static_cast<GLuint>(handle);
+
+    glActiveTexture(GL_TEXTURE0 + unit.get());
+    glBindTexture(GL_TEXTURE_2D, gl_texture_id);
+}
+
+} // namespace Mg::gfx::opengl
+
+namespace Mg::gfx {
+
+std::unique_ptr<GfxDevice> make_opengl_gfx_device(Mg::Window& window) {
+    return std::make_unique<opengl::OpenGLGfxDevice>(window);
 }
 
 } // namespace Mg::gfx

@@ -33,8 +33,8 @@
 #include "mg/utils/mg_stl_helpers.h"
 
 #include "../mg_shader_factory.h"
+#include "mg_gl_gfx_device.h"
 #include "mg_opengl_shader.h"
-#include "mg_texture_node.h"
 
 #include "mg_glad.h"
 
@@ -299,10 +299,11 @@ void BillboardRenderer::render(const ICamera&             camera,
         auto program_id = static_cast<GLuint>(shader_handle);
         glUseProgram(program_id);
 
+        auto& gfx_device = opengl::OpenGLGfxDevice::get();
+
         uint32_t tex_unit = 0;
         for (const Material::Sampler& sampler : material.samplers()) {
-            auto& tex_node = internal::texture_node(sampler.sampler);
-            tex_node.texture.bind_to(TextureUnit{ tex_unit++ });
+            gfx_device.bind_texture(TextureUnit{ tex_unit++ }, sampler.sampler);
         }
     }
 

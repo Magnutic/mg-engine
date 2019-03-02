@@ -103,7 +103,7 @@ Mg::gfx::TextureRenderTarget make_hdr_target(VideoMode mode)
     params.render_target_id = "HDR.colour";
     params.texture_format   = RenderTargetParams::Format::RGBA16F;
 
-    TextureRepository& tex_repo = GfxDevice::get().texture_repository();
+    TextureRepository& tex_repo = g_scene->root.gfx_device().texture_repository();
 
     TextureHandle colour_target = tex_repo.create_render_target(params);
 

@@ -1,7 +1,7 @@
 //**************************************************************************************************
 // Mg Engine
 //--------------------------------------------------------------------------------------------------
-// Copyright (c) 2018 Magnus Bergsten
+// Copyright (c) 2019 Magnus Bergsten
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -21,82 +21,76 @@
 //
 //**************************************************************************************************
 
-/** @file mg_gfx_device.h
- * Access to the graphics API's context.
+/** @file mg_gl_gfx_device.h
+ * OpenGL-specific implementation of and extensions to Mg::gfx::GfxDevice.
  */
 
 #pragma once
 
-#include "mg/gfx/mg_blend_modes.h"
-#include "mg/utils/mg_macros.h"
+#include "mg/gfx/mg_gfx_device.h"
+#include "mg/gfx/mg_texture_handle.h"
+#include "mg/gfx/mg_texture_related_types.h"
+#include "mg/gfx/mg_uniform_buffer.h"
+#include "mg/utils/mg_simple_pimpl.h"
 
-#include <memory>
-
-namespace Mg {
-class Window;
-class ShaderResource;
-} // namespace Mg
-
-/** Renderer and graphics utilities. */
 namespace Mg::gfx {
+class BufferTexture;
+}
 
-class TextureRepository;
-class MeshRepository;
-class MaterialRepository;
+namespace Mg::gfx::opengl {
 
-/** Types of comparison functions to use in depth testing. */
-enum class DepthFunc {
-    NONE     = 0,
-    LESS     = 0x201,
-    EQUAL    = 0x202,
-    LEQUAL   = 0x203,
-    GREATER  = 0x204,
-    NOTEQUAL = 0x205,
-    GEQUAL   = 0x206,
-};
+struct OpenGLGfxDeviceData;
 
-/** Types of functions to use in culling. */
-enum class CullFunc { NONE = 0, FRONT = 0x404, BACK = 0x405 };
-
-/** Provides access to the graphics context.
- * N.B. only one GfxDevice object exist at a time.
- */
-class GfxDevice {
+class OpenGLGfxDevice final : public GfxDevice, PimplMixin<OpenGLGfxDeviceData> {
 public:
-    MG_INTERFACE_BOILERPLATE(GfxDevice);
+    explicit OpenGLGfxDevice(Mg::Window& window);
+    ~OpenGLGfxDevice();
+
+    static OpenGLGfxDevice& get();
+
+    MG_MAKE_NON_MOVABLE(OpenGLGfxDevice);
+    MG_MAKE_NON_COPYABLE(OpenGLGfxDevice);
 
     /** Set depth testing function. DepthFunc::NONE disables depth testing.  */
-    virtual void set_depth_test(DepthFunc func) = 0;
+    void set_depth_test(DepthFunc func) override;
 
     /** Set whether to write depth when drawing to render target. */
-    virtual void set_depth_write(bool on) = 0;
+    void set_depth_write(bool on) override;
 
     /** Set whether to write colour when drawing to render target. */
-    virtual void set_colour_write(bool on) = 0;
+    void set_colour_write(bool on) override;
 
     /** Set colour & alpha to use when clearing render target. */
-    virtual void set_clear_colour(float red, float green, float blue, float alpha = 1.0f) = 0;
+    void set_clear_colour(float red, float green, float blue, float alpha = 1.0f) override;
 
     /** Clear the currently bound render target. */
-    virtual void clear(bool colour = true, bool depth = true, bool stencil = true) = 0;
+    void clear(bool colour = true, bool depth = true, bool stencil = true) override;
 
     /** Set which culling function to use. */
-    virtual void set_culling(CullFunc culling) = 0;
+    void set_culling(CullFunc culling) override;
 
     /** Set whether to use blending when rendering to target. */
-    virtual void set_use_blending(bool enable) = 0;
+    void set_use_blending(bool enable) override;
 
     /** Sets the blend mode to use during next frame.
      * Blending must be enabled through set_use_blending().
      * @param blend_mode Which blend mode to use. Some pre-defined ones are Mg::c_blend_mode_xxxxx
      */
-    virtual void set_blend_mode(BlendMode blend_mode) = 0;
+    void set_blend_mode(BlendMode blend_mode) override;
 
-    virtual MeshRepository&     mesh_repository()     = 0;
-    virtual TextureRepository&  texture_repository()  = 0;
-    virtual MaterialRepository& material_repository() = 0;
+    MeshRepository&     mesh_repository() override;
+    TextureRepository&  texture_repository() override;
+    MaterialRepository& material_repository() override;
+
+    //----------------------------------------------------------------------------------------------
+    // OpenGL-specific functionality
+    //----------------------------------------------------------------------------------------------
+
+    void bind_texture(TextureUnit unit, TextureHandle texture);
+
+    void bind_buffer_texture(TextureUnit unit, const BufferTexture& texture);
+
+    void bind_uniform_buffer(UniformBufferSlot slot, const UniformBuffer& buffer);
 };
 
-std::unique_ptr<GfxDevice> make_opengl_gfx_device(Mg::Window& window);
-
-} // namespace Mg::gfx
+} // namespace Mg::gfx::opengl
