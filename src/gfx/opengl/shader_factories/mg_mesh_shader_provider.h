@@ -28,6 +28,7 @@
 #pragma once
 
 #include "../../mg_shader_factory.h"
+#include "../mg_gl_gfx_device.h"
 
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/gfx/mg_uniform_buffer.h"
@@ -48,7 +49,8 @@ public:
 
 inline ShaderFactory make_mesh_shader_factory()
 {
-    return ShaderFactory{ std::make_unique<MeshShaderProvider>() };
+    return ShaderFactory{ opengl::OpenGLGfxDevice::get().shader_repository(),
+                          std::make_unique<MeshShaderProvider>() };
 }
 
 } // namespace Mg::gfx

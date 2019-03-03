@@ -52,17 +52,19 @@ void surface(const SurfaceInput s_in, out SurfaceParams s_out) {
 #endif
 
     vec4 spec_gloss = texture(sampler_specular, uv_coord.xy);
+    vec4 albedo_alpha = texture(sampler_diffuse, uv_coord.xy);
+    vec3 normal = unpack_normal(texture(sampler_normal, uv_coord.xy).xyz);
 
-    s_out.albedo   = texture(sampler_diffuse, uv_coord.xy).rgb;
+    s_out.albedo   = albedo_alpha.rgb;
     s_out.specular = spec_gloss.rgb;
     s_out.gloss    = spec_gloss.a;
-    s_out.normal   = unpack_normal(texture(sampler_normal, uv_coord.xy).xyz);
-    s_out.emission = s_out.albedo * material_params.ambient_colour.rgb;
+    s_out.normal   = normal;
+    s_out.emission = albedo_alpha.rgb * material_params.ambient_colour.rgb;
 
 #if RIM_LIGHT
-    float rim_factor = 1.0 - max(0.0, dot(s_in.view_direction, s_out.normal));
+    float rim_factor = 1.0 - max(0.0, dot(s_in.view_direction, normal));
     rim_factor       = pow(rim_factor, material_params.rim_power) * material_params.rim_intensity;
-    s_out.emission   += rim_factor * s_out.specular;
+    s_out.emission   += rim_factor * spec_gloss.rgb;
 #endif
 
     s_out.occlusion  = 0.0;

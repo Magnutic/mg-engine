@@ -32,6 +32,8 @@
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 
+#include "../mg_gl_gfx_device.h"
+
 namespace Mg::gfx::post_renderer {
 
 // Texture units 0 & 1 are reserved for input colour and depth texture, respectively.
@@ -61,7 +63,8 @@ public:
 
 inline ShaderFactory make_post_process_shader_factory()
 {
-    return ShaderFactory{ std::make_unique<PostProcessShaderProvider>() };
+    return ShaderFactory{ opengl::OpenGLGfxDevice::get().shader_repository(),
+                          std::make_unique<PostProcessShaderProvider>() };
 }
 
 } // namespace Mg::gfx

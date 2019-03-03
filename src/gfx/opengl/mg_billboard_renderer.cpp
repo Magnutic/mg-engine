@@ -185,7 +185,8 @@ public:
 
 inline ShaderFactory make_billboard_shader_factory()
 {
-    return ShaderFactory{ std::make_unique<BillboardShaderProvider>() };
+    return ShaderFactory{ opengl::OpenGLGfxDevice::get().shader_repository(),
+                          std::make_unique<BillboardShaderProvider>() };
 }
 
 
@@ -298,8 +299,8 @@ void BillboardRenderer::render(const ICamera&             camera,
     auto& gfx_device = opengl::OpenGLGfxDevice::get();
 
     {
-        auto program_id = static_cast<GLuint>(shader_handle);
-        glUseProgram(program_id);
+        auto program_id = access_shader_program(shader_handle).gfx_api_handle();
+        glUseProgram(static_cast<GLuint>(program_id));
 
         uint32_t tex_unit = 0;
         for (const Material::Sampler& sampler : material.samplers()) {

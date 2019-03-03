@@ -55,8 +55,8 @@ struct MeshRendererData {
 
     uint32_t m_num_lights = 0;
 
-    uint32_t                    m_current_shader_hash = 0;
-    ShaderFactory::ShaderHandle m_current_shader{};
+    uint32_t     m_current_shader_hash = 0;
+    ShaderHandle m_current_shader{};
 };
 
 /** Set current shader to the one required for the given material. */
@@ -69,7 +69,8 @@ inline void set_shader(MeshRendererData& data, const Material& material)
     data.m_current_shader_hash = new_shader_hash;
     data.m_current_shader      = data.shader_factory.get_shader(material);
 
-    glUseProgram(static_cast<GLuint>(data.m_current_shader));
+    glUseProgram(
+        static_cast<GLuint>(access_shader_program(data.m_current_shader).gfx_api_handle()));
 }
 
 /** Set shader input to match the given material. */
@@ -79,7 +80,7 @@ inline void set_material(MeshRendererData& data, const Material& material)
     using namespace mesh_renderer;
 
     set_shader(data, material);
-    MG_ASSERT(data.m_current_shader != ShaderFactory::ShaderHandle{});
+    MG_ASSERT(data.m_current_shader != ShaderHandle{});
 
     auto& gfx_device = OpenGLGfxDevice::get();
 

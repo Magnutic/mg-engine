@@ -46,6 +46,7 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/gfx/mg_render_command_list.h
     ${MG_HEADER_DIR}/mg/gfx/mg_render_target.h
     ${MG_HEADER_DIR}/mg/gfx/mg_shader.h
+    ${MG_HEADER_DIR}/mg/gfx/mg_shader_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_texture2d.h
     ${MG_HEADER_DIR}/mg/gfx/mg_texture_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_uniform_buffer.h
@@ -92,26 +93,27 @@ add_library(mg_engine
     gfx/mg_light_buffers.cpp
     gfx/mg_light_grid.cpp
     gfx/mg_material_repository.cpp
+    gfx/mg_shader_factory.cpp
     gfx/opengl/mg_billboard_renderer.cpp
     gfx/opengl/mg_buffer_texture.cpp
     gfx/opengl/mg_debug_renderer.cpp
     gfx/opengl/mg_gfx_device.cpp
     gfx/opengl/mg_gl_debug.cpp
-    gfx/opengl/mg_mesh_renderer.cpp
     gfx/opengl/mg_material.cpp
     gfx/opengl/mg_matrix_ubo.cpp
+    gfx/opengl/mg_mesh_renderer.cpp
     gfx/opengl/mg_mesh_repository.cpp
     gfx/opengl/mg_opengl_shader.cpp
     gfx/opengl/mg_post_process.cpp
     gfx/opengl/mg_render_command_list.cpp
     gfx/opengl/mg_render_target.cpp
     gfx/opengl/mg_shader.cpp
+    gfx/opengl/mg_shader_repository.cpp
     gfx/opengl/mg_texture2d.cpp
     gfx/opengl/mg_texture_repository.cpp
     gfx/opengl/mg_uniform_buffer.cpp
     gfx/opengl/shader_factories/mg_mesh_shader_provider.cpp
     gfx/opengl/shader_factories/mg_post_process_shader_provider.cpp
-    gfx/opengl/shader_factories/mg_shader_factory.cpp
     input/mg_input.cpp
     input/mg_joy.cpp
     input/mg_keyboard.cpp
