@@ -33,7 +33,7 @@
 #include "mg/gfx/mg_material.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/mg_defs.h"
-#include "mg/utils/mg_object_id.h"
+#include "mg/utils/mg_opaque_handle.h"
 
 namespace Mg::gfx {
 
@@ -46,18 +46,21 @@ struct PostProcessRendererData {
     UniformBuffer material_params_ubo{ defs::k_material_parameters_buffer_size };
     UniformBuffer frame_block_ubo{ sizeof(post_renderer::FrameBlock) };
 
-    ObjectId vbo;
-    ObjectId vao;
+    OpaqueHandle vbo;
+    OpaqueHandle vao;
 };
 
 static void init(PostProcessRendererData& data)
 {
-    // Create mesh
-    glGenVertexArrays(1, &data.vao.value);
-    glBindVertexArray(data.vao.value);
+    GLuint vao_id = 0;
+    GLuint vbo_id = 0;
 
-    glGenBuffers(1, &data.vbo.value);
-    glBindBuffer(GL_ARRAY_BUFFER, data.vbo.value);
+    // Create mesh
+    glGenVertexArrays(1, &vao_id);
+    glBindVertexArray(vao_id);
+
+    glGenBuffers(1, &vbo_id);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), &quad_vertices, GL_STATIC_DRAW);
 
@@ -66,6 +69,11 @@ static void init(PostProcessRendererData& data)
 
     glBindVertexArray(0);
     MG_CHECK_GL_ERROR();
+
+    // N.B. cannot directly use these as arguments to OpenGL functions, as they expect pointer to
+    // GLuint (uint32_t) whereas these are OpaqueHandle::Value (an opaque typedef of uint64_t).
+    data.vao = vao_id;
+    data.vbo = vao_id;
 }
 
 static void
@@ -98,8 +106,11 @@ PostProcessRenderer::PostProcessRenderer() : PimplMixin()
 
 PostProcessRenderer::~PostProcessRenderer()
 {
-    if (data().vao.value != 0) { glDeleteVertexArrays(1, &data().vao.value); }
-    if (data().vbo.value != 0) { glDeleteBuffers(1, &data().vbo.value); }
+    GLuint vao_id = static_cast<uint32_t>(data().vao.value);
+    GLuint vbo_id = static_cast<uint32_t>(data().vbo.value);
+
+    glDeleteVertexArrays(1, &vao_id);
+    glDeleteBuffers(1, &vbo_id);
 }
 
 void PostProcessRenderer::post_process(const Material& material, TextureHandle input_colour)
@@ -112,7 +123,9 @@ void PostProcessRenderer::post_process(const Material& material, TextureHandle i
     glActiveTexture(GL_TEXTURE0 + k_input_depth_texture_unit.get());
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    glBindVertexArray(data().vao.value);
+    GLuint vao_id = static_cast<uint32_t>(data().vao.value);
+
+    glBindVertexArray(vao_id);
     glDrawArrays(GL_TRIANGLES, 0, 12);
     MG_CHECK_GL_ERROR();
 }
@@ -130,7 +143,9 @@ void PostProcessRenderer::post_process(const Material& material,
     gfx_device.bind_texture(k_input_colour_texture_unit, input_colour);
     gfx_device.bind_texture(k_input_depth_texture_unit, input_depth);
 
-    glBindVertexArray(data().vao.value);
+    GLuint vao_id = static_cast<uint32_t>(data().vao.value);
+
+    glBindVertexArray(vao_id);
     glDrawArrays(GL_TRIANGLES, 0, 12);
     MG_CHECK_GL_ERROR();
 }
