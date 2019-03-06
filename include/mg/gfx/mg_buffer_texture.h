@@ -29,7 +29,7 @@
 
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_object_id.h"
+#include "mg/utils/mg_opaque_handle.h"
 
 // TODO: automagic double-buffering?
 
@@ -63,12 +63,12 @@ public:
 
     size_t size() const { return m_buffer_size; }
 
-    uint32_t internal_texture_id() const { return m_tex_id.value; }
+    OpaqueHandle::Value internal_texture_id() const { return m_tex_id.value; }
 
 private:
-    ObjectId m_tex_id;
-    ObjectId m_buf_id;
-    size_t   m_buffer_size = 0;
+    OpaqueHandle m_tex_id;
+    OpaqueHandle m_buf_id;
+    size_t       m_buffer_size = 0;
 };
 
 } // namespace Mg::gfx
