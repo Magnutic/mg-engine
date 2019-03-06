@@ -29,7 +29,7 @@
 
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_object_id.h"
+#include "mg/utils/mg_opaque_handle.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -73,14 +73,14 @@ public:
     /** Get the buffer's size in bytes. */
     size_t size() const { return m_size; }
 
-    uint32_t internal_id() const { return m_gl_ubo_id.value; }
+    OpaqueHandle::Value internal_id() const { return m_internal_ubo_id.value; }
 
     /** Get the maximum size for a UBO on the present system. */
     static size_t max_size();
 
 private:
-    ObjectId m_gl_ubo_id;
-    size_t   m_size = 0;
+    OpaqueHandle m_internal_ubo_id;
+    size_t       m_size = 0;
 };
 
 } // namespace Mg::gfx

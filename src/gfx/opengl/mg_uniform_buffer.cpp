@@ -37,20 +37,28 @@ namespace Mg::gfx {
 
 UniformBuffer::UniformBuffer(size_t size, void* data) : m_size(size)
 {
-    glGenBuffers(1, &m_gl_ubo_id.value);
-    glBindBuffer(GL_UNIFORM_BUFFER, m_gl_ubo_id.value);
+    GLuint ubo_id = 0;
+    glGenBuffers(1, &ubo_id);
+    glBindBuffer(GL_UNIFORM_BUFFER, ubo_id);
     glBufferData(GL_UNIFORM_BUFFER, GLsizeiptr(m_size), data, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    // N.B. cannot directly use this as an argument to glGenBuffers, as it expects pointer to GLuint
+    // (uint32_t) whereas this is OpaqueHandle::Value (an opaque typedef of uint64_t).
+    m_internal_ubo_id = ubo_id;
 }
 
 UniformBuffer::~UniformBuffer()
 {
-    glDeleteBuffers(1, &m_gl_ubo_id.value);
+    GLuint ubo_id = static_cast<uint32_t>(internal_id());
+    glDeleteBuffers(1, &ubo_id);
 }
 
 void UniformBuffer::set_data(span<const std::byte> data)
 {
-    if (m_gl_ubo_id.value == 0) {
+    GLuint ubo_id = static_cast<uint32_t>(internal_id());
+
+    if (ubo_id == 0) {
         g_log.write_warning("Attempting to write to uninitialised UBO");
         return;
     }
@@ -66,7 +74,7 @@ void UniformBuffer::set_data(span<const std::byte> data)
             m_size));
     }
 
-    glBindBuffer(GL_UNIFORM_BUFFER, m_gl_ubo_id.value);
+    glBindBuffer(GL_UNIFORM_BUFFER, ubo_id);
     GLvoid* p = glMapBufferRange(GL_UNIFORM_BUFFER,
                                  0,
                                  GLsizeiptr(size),
