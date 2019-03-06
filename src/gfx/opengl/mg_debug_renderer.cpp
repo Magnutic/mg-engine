@@ -26,7 +26,6 @@
 #include "mg/core/mg_rotation.h"
 #include "mg/gfx/mg_shader.h"
 #include "mg/utils/mg_assert.h"
-#include "mg/utils/mg_object_id.h"
 
 #include "mg_gl_debug.h"
 #include "mg_opengl_shader.h"
@@ -69,36 +68,40 @@ static const char fs_code[] = R"(
 )";
 
 // RAII owner for OpenGL mesh buffers
-class DebugMeshOwner {
+class DebugMesh {
 public:
-    ObjectId vao_id{};
-    ObjectId vbo_id{};
-    ObjectId ibo_id{};
+    GLuint vao_id = 0;
+    GLuint vbo_id = 0;
+    GLuint ibo_id = 0;
 
-    DebugMeshOwner() = default;
+    int32_t num_indices = 0;
 
-    MG_MAKE_NON_COPYABLE(DebugMeshOwner);
-    MG_MAKE_DEFAULT_MOVABLE(DebugMeshOwner);
+    DebugMesh() = default;
 
-    ~DebugMeshOwner()
+    MG_MAKE_NON_COPYABLE(DebugMesh);
+    MG_MAKE_NON_MOVABLE(DebugMesh);
+
+    ~DebugMesh()
     {
-        glDeleteVertexArrays(1, &vao_id.value);
-        glDeleteBuffers(1, &vbo_id.value);
-        glDeleteBuffers(1, &ibo_id.value);
+        glDeleteVertexArrays(1, &vao_id);
+        glDeleteBuffers(1, &vbo_id);
+        glDeleteBuffers(1, &ibo_id);
     }
 };
 
-static DebugMeshOwner generate_mesh(span<const glm::vec3> positions, span<const uint16_t> indices)
+static DebugMesh generate_mesh(span<const glm::vec3> positions, span<const uint16_t> indices)
 {
-    DebugMeshOwner mesh;
+    GLuint vao_id = 0;
+    GLuint vbo_id = 0;
+    GLuint ibo_id = 0;
 
-    glGenVertexArrays(1, &mesh.vao_id.value);
-    glGenBuffers(1, &mesh.vbo_id.value);
-    glGenBuffers(1, &mesh.ibo_id.value);
+    glGenVertexArrays(1, &vao_id);
+    glGenBuffers(1, &vbo_id);
+    glGenBuffers(1, &ibo_id);
 
-    glBindVertexArray(mesh.vao_id.value);
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo_id.value);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ibo_id.value);
+    glBindVertexArray(vao_id);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_id);
 
     glBufferData(GL_ARRAY_BUFFER,
                  GLsizeiptr(positions.size_bytes()),
@@ -115,7 +118,8 @@ static DebugMeshOwner generate_mesh(span<const glm::vec3> positions, span<const 
     glBindVertexArray(0);
 
     MG_CHECK_GL_ERROR();
-    return mesh;
+
+    return { vao_id, vbo_id, ibo_id, narrow<int32_t>(indices.size()) };
 }
 
 static const glm::vec3 box_vertices[] = {
@@ -232,8 +236,8 @@ static EllipsoidData generate_ellipsoid_verts(size_t steps)
 //--------------------------------------------------------------------------------------------------
 
 struct Sphere {
-    DebugMeshOwner mesh{};
-    int32_t        num_indices{};
+    Sphere(const EllipsoidData& data) : mesh{ generate_mesh(data.verts, data.indices) } {}
+    DebugMesh mesh;
 };
 
 struct DebugRendererData {
@@ -241,7 +245,7 @@ struct DebugRendererData {
                                                 FragmentShader::make(fs_code).value())
                                 .value();
 
-    DebugMeshOwner           box = generate_mesh(box_vertices, box_indices);
+    DebugMesh                box = generate_mesh(box_vertices, box_indices);
     std::map<size_t, Sphere> spheres;
 };
 
@@ -250,8 +254,7 @@ DebugRenderer::~DebugRenderer() = default;
 
 static void draw_primitive(ShaderProgram&                      program,
                            const ICamera&                      camera,
-                           const DebugMeshOwner&               mesh,
-                           int32_t                             num_indices,
+                           const DebugMesh&                    mesh,
                            DebugRenderer::PrimitiveDrawParams& params)
 {
     glm::mat4 M = glm::translate({}, params.centre) * params.orientation.to_matrix() *
@@ -261,7 +264,7 @@ static void draw_primitive(ShaderProgram&                      program,
     opengl::set_uniform(opengl::uniform_location(program, "colour"), params.colour);
     opengl::set_uniform(opengl::uniform_location(program, "MVP"), camera.view_proj_matrix() * M);
 
-    glBindVertexArray(mesh.vao_id.value);
+    glBindVertexArray(mesh.vao_id);
 
     GLint     old_poly_mode = 0;
     GLboolean old_culling   = 0;
@@ -273,7 +276,7 @@ static void draw_primitive(ShaderProgram&                      program,
         glDisable(GL_CULL_FACE);
     }
 
-    glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
+    glDrawElements(GL_TRIANGLES, mesh.num_indices, GL_UNSIGNED_SHORT, nullptr);
 
     if (params.wireframe) {
         glPolygonMode(GL_FRONT_AND_BACK, uint32_t(old_poly_mode));
@@ -285,28 +288,21 @@ static void draw_primitive(ShaderProgram&                      program,
 
 void DebugRenderer::draw_box(const ICamera& camera, BoxDrawParams params)
 {
-    draw_primitive(data().program, camera, data().box, 36, params);
+    draw_primitive(data().program, camera, data().box, params);
 }
 
 void DebugRenderer::draw_ellipsoid(const ICamera& camera, EllipsoidDrawParams params)
 {
     auto it = data().spheres.find(params.steps);
 
+    // If no sphere mesh with the required amount of steps was found, create it.
     if (it == data().spheres.end()) {
-        auto ellipsoid_data = generate_ellipsoid_verts(params.steps);
-
-        auto p = data().spheres.emplace(params.steps,
-                                        Sphere{ generate_mesh(ellipsoid_data.verts,
-                                                              ellipsoid_data.indices),
-                                                int32_t(ellipsoid_data.indices.size()) });
-
-        it = p.first;
+        auto p = data().spheres.emplace(params.steps, generate_ellipsoid_verts(params.steps));
+        it     = p.first;
     }
 
-    const auto& mesh        = it->second.mesh;
-    int32_t     num_indices = it->second.num_indices;
-
-    draw_primitive(data().program, camera, mesh, num_indices, params);
+    Sphere& sphere = it->second;
+    draw_primitive(data().program, camera, sphere.mesh, params);
 }
 
 } // namespace Mg::gfx
