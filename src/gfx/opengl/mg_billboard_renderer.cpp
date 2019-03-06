@@ -29,7 +29,7 @@
 #include "mg/gfx/mg_material.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/resources/mg_shader_resource.h"
-#include "mg/utils/mg_object_id.h"
+#include "mg/utils/mg_opaque_handle.h"
 #include "mg/utils/mg_stl_helpers.h"
 
 #include "../mg_shader_factory.h"
@@ -225,14 +225,14 @@ struct BillboardRendererData {
     size_t vertex_buffer_size = 0;
 
     // OpenGL object ids
-    ObjectId vbo;
-    ObjectId vao;
+    OpaqueHandle vbo;
+    OpaqueHandle vao;
 };
 
 // Update vertex buffer to match the new set of billboards
 inline void update_buffer(BillboardRendererData& data, span<const Billboard> billboards)
 {
-    glBindBuffer(GL_ARRAY_BUFFER, data.vbo.value);
+    glBindBuffer(GL_ARRAY_BUFFER, static_cast<GLuint>(data.vbo.value));
 
     // According to the following source, this should help reduce synchronisation overhead.
     // TODO: investigate further.
@@ -249,11 +249,13 @@ inline void update_buffer(BillboardRendererData& data, span<const Billboard> bil
 BillboardRenderer::BillboardRenderer()
 {
     // Create and configure vertex buffer.
-    glGenVertexArrays(1, &data().vao.value);
-    glBindVertexArray(data().vao.value);
+    GLuint vao_id = 0;
+    GLuint vbo_id = 0;
+    glGenVertexArrays(1, &vao_id);
+    glBindVertexArray(vao_id);
 
-    glGenBuffers(1, &data().vbo.value);
-    glBindBuffer(GL_ARRAY_BUFFER, data().vbo.value);
+    glGenBuffers(1, &vbo_id);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
 
     uint32_t      index  = 0;
     intptr_t      offset = 0;
@@ -277,12 +279,17 @@ BillboardRenderer::BillboardRenderer()
     set_attrib_ptr(1); // radius
 
     glBindVertexArray(0);
+
+    data().vao = vao_id;
+    data().vbo = vbo_id;
 }
 
 BillboardRenderer::~BillboardRenderer()
 {
-    if (data().vao.value != 0) { glDeleteVertexArrays(1, &data().vao.value); }
-    if (data().vbo.value != 0) { glDeleteBuffers(1, &data().vbo.value); }
+    GLuint vao_id = static_cast<GLuint>(data().vao.value);
+    GLuint vbo_id = static_cast<GLuint>(data().vbo.value);
+    glDeleteVertexArrays(1, &vao_id);
+    glDeleteBuffers(1, &vbo_id);
 }
 
 void BillboardRenderer::render(const ICamera&             camera,
@@ -322,7 +329,7 @@ void BillboardRenderer::render(const ICamera&             camera,
         gfx_device.bind_uniform_buffer(k_material_params_ubo_slot, data().material_params_ubo);
     }
 
-    glBindVertexArray(data().vao.value);
+    glBindVertexArray(static_cast<GLuint>(data().vao.value));
     glDrawArrays(GL_POINTS, 0, narrow<GLint>(billboards.size()));
 }
 
