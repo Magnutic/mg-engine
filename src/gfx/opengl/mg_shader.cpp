@@ -25,7 +25,6 @@
 
 #include "mg/core/mg_log.h"
 #include "mg/utils/mg_gsl.h"
-#include "mg/utils/mg_macros.h"
 
 #include "mg_gl_debug.h"
 #include "mg_glad.h"
@@ -89,10 +88,9 @@ uint32_t create_shader(ShaderStage type, std::string_view code)
     return id;
 }
 
-void delete_shader(uint32_t id)
+void delete_shader(OpaqueHandle::Value id)
 {
-    if (id == 0) { return; }
-    glDeleteShader(id);
+    glDeleteShader(static_cast<GLuint>(id));
 }
 
 } // namespace detail
@@ -134,18 +132,20 @@ static bool link_program(uint32_t program_id)
 /** RAII guard for attaching shader object to shader program. */
 class ShaderAttachGuard {
 public:
-    ShaderAttachGuard(uint32_t program, uint32_t shader) : _program(program), _shader(shader)
+    ShaderAttachGuard(GLuint program, OpaqueHandle::Value shader)
+        : m_program(program), m_shader(static_cast<GLuint>(shader))
     {
-        glAttachShader(program, shader);
+        glAttachShader(m_program, m_shader);
     }
 
     MG_MAKE_NON_COPYABLE(ShaderAttachGuard);
     MG_MAKE_NON_MOVABLE(ShaderAttachGuard);
 
-    ~ShaderAttachGuard() { glDetachShader(_program.value, _shader.value); }
+    ~ShaderAttachGuard() { glDetachShader(m_program, m_shader); }
 
-    ObjectId _program{};
-    ObjectId _shader{};
+private:
+    GLuint m_program{};
+    GLuint m_shader{};
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -188,7 +188,7 @@ ShaderProgram::make(const VertexShader& vs, const GeometryShader& gs, const Frag
 
 ShaderProgram::~ShaderProgram()
 {
-    glDeleteProgram(m_gfx_api_id.value);
+    glDeleteProgram(static_cast<GLuint>(m_gfx_api_id.value));
 }
 
 

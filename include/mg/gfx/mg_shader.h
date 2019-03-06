@@ -28,7 +28,7 @@
 #pragma once
 
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_object_id.h"
+#include "mg/utils/mg_opaque_handle.h"
 
 #include <optional>
 #include <string_view>
@@ -43,7 +43,7 @@ namespace detail {
 // Create shader and return its id, or 0 if construction failed.
 uint32_t create_shader(ShaderStage type, std::string_view code);
 // Delete shader with given id.
-void delete_shader(uint32_t id);
+void delete_shader(OpaqueHandle::Value id);
 } // namespace detail
 
 //--------------------------------------------------------------------------------------------------
@@ -66,12 +66,12 @@ public:
     ~Shader() { detail::delete_shader(m_gfx_api_id.value); }
 
     /** Get the identifier for the OpenGL object owned by this Shader. */
-    uint32_t shader_id() const { return m_gfx_api_id.value; }
+    OpaqueHandle::Value shader_id() const { return m_gfx_api_id.value; }
 
 private:
     Shader(uint32_t gfx_api_id) : m_gfx_api_id(gfx_api_id) {}
 
-    ObjectId m_gfx_api_id;
+    OpaqueHandle m_gfx_api_id;
 };
 
 using VertexShader   = Shader<ShaderStage::VERTEX>;
@@ -108,7 +108,7 @@ public:
 private:
     explicit ShaderProgram(uint32_t gfx_api_id) : m_gfx_api_id(gfx_api_id) {}
 
-    ObjectId m_gfx_api_id;
+    OpaqueHandle m_gfx_api_id;
 };
 
 } // namespace Mg::gfx
