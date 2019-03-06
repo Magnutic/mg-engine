@@ -91,7 +91,7 @@ static uint32_t gl_type_for_format(RenderTargetParams::Format format)
 }
 
 // Create a texture appropriate for use with the given rendertarget settings
-static Texture2D::GfxApiHandle generate_gl_render_target_texture(const RenderTargetParams& params)
+static OpaqueHandle generate_gl_render_target_texture(const RenderTargetParams& params)
 {
     uint32_t id;
     glGenTextures(1, &id);
@@ -131,7 +131,7 @@ static Texture2D::GfxApiHandle generate_gl_render_target_texture(const RenderTar
     MG_CHECK_GL_ERROR();
 
     glBindTexture(GL_TEXTURE_2D, 0);
-    return Texture2D::GfxApiHandle{ id };
+    return OpaqueHandle{ id };
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -329,7 +329,7 @@ static void upload_uncompressed_mip(bool     preallocated,
     MG_CHECK_GL_ERROR();
 }
 
-static Texture2D::GfxApiHandle generate_gl_texture_from(const TextureResource& texture_resource)
+static OpaqueHandle generate_gl_texture_from(const TextureResource& texture_resource)
 {
     GlTextureInfo info = gl_texture_info(texture_resource);
 
@@ -370,7 +370,7 @@ static Texture2D::GfxApiHandle generate_gl_texture_from(const TextureResource& t
     set_sampling_params(texture_resource.settings());
     MG_CHECK_GL_ERROR();
 
-    return Texture2D::GfxApiHandle{ texture_id };
+    return OpaqueHandle{ texture_id };
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -398,10 +398,6 @@ Texture2D Texture2D::render_target(const RenderTargetParams& params)
 
     return tex;
 }
-
-Texture2D::Texture2D(GfxApiHandle gfx_api_handle)
-    : m_gfx_api_handle(static_cast<uint32_t>(gfx_api_handle))
-{}
 
 // Unload texture from OpenGL context
 void Texture2D::unload()

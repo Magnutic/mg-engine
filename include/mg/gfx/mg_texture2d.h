@@ -31,7 +31,7 @@
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_object_id.h"
+#include "mg/utils/mg_opaque_handle.h"
 
 #include <cstdint>
 
@@ -45,9 +45,6 @@ namespace Mg::gfx {
 /** Constructs and owns the graphics API's texture object from a TextureResource resource. */
 class Texture2D {
 public:
-    /** Handle of a texture in the underlying graphics API. */
-    enum class GfxApiHandle : uintptr_t;
-
     /** Create a texture from the given resource. */
     static Texture2D from_texture_resource(const TextureResource& texture_resource);
 
@@ -63,14 +60,14 @@ public:
 
     Identifier id() const noexcept { return m_id; }
 
-    GfxApiHandle gfx_api_handle() const { return GfxApiHandle{ m_gfx_api_handle.value }; }
+    OpaqueHandle::Value gfx_api_handle() const { return m_gfx_api_handle.value; }
 
 private:
-    Texture2D(GfxApiHandle gfx_api_handle);
+    Texture2D(OpaqueHandle&& gfx_api_handle) : m_gfx_api_handle(std::move(gfx_api_handle)) {}
 
     void unload();
 
-    ObjectId m_gfx_api_handle{ 0u };
+    OpaqueHandle m_gfx_api_handle;
 
     ImageSize m_image_size{};
 
