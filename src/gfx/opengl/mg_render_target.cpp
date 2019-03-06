@@ -104,10 +104,11 @@ TextureRenderTarget TextureRenderTarget::with_colour_target(TextureHandle colour
     const auto& texture_node = internal::texture_node(colour_target);
 
     // Create frame buffer object (FBO)
-    glGenFramebuffers(1, &trt.m_fbo_id.value);
+    GLuint fbo_id = 0;
+    glGenFramebuffers(1, &fbo_id);
 
     FramebufferBindGuard fbg;
-    glBindFramebuffer(GL_FRAMEBUFFER, trt.m_fbo_id.value);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo_id);
 
     // Attach texture to FBO
     auto gl_tex_id = static_cast<GLuint>(texture_node.texture.gfx_api_handle());
@@ -116,17 +117,17 @@ TextureRenderTarget TextureRenderTarget::with_colour_target(TextureHandle colour
     // Attach depth/stencil renderbuffer to FBO
     switch (depth_type) {
     case DepthType::RenderBuffer:
-        trt.m_depth_buffer_id.value = create_depth_stencil_buffer(
-            texture_node.texture.image_size());
+        trt.m_depth_buffer_id = create_depth_stencil_buffer(texture_node.texture.image_size());
         glFramebufferRenderbuffer(GL_FRAMEBUFFER,
                                   GL_DEPTH_STENCIL_ATTACHMENT,
                                   GL_RENDERBUFFER,
-                                  trt.m_depth_buffer_id.value);
+                                  static_cast<uint32_t>(trt.m_depth_buffer_id.value));
         break;
     case DepthType::None:
         break; // Do nothing
     }
 
+    trt.m_fbo_id = fbo_id;
     check_framebuffer();
 
     return trt;
@@ -158,10 +159,11 @@ TextureRenderTarget TextureRenderTarget::with_colour_and_depth_targets(TextureHa
     trt.m_depth_target  = depth_target;
 
     // Create frame buffer object (FBO)
-    glGenFramebuffers(1, &trt.m_fbo_id.value);
+    GLuint fbo_id = 0;
+    glGenFramebuffers(1, &fbo_id);
 
     FramebufferBindGuard fbg;
-    glBindFramebuffer(GL_FRAMEBUFFER, trt.m_fbo_id.value);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo_id);
 
     // Attach texture to FBO
     auto colour_id = static_cast<GLuint>(colour_tex.gfx_api_handle());
@@ -171,6 +173,7 @@ TextureRenderTarget TextureRenderTarget::with_colour_and_depth_targets(TextureHa
     auto depth_id = static_cast<GLuint>(depth_tex.gfx_api_handle());
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth_id, 0);
 
+    trt.m_fbo_id = fbo_id;
     check_framebuffer();
 
     return trt;
@@ -182,16 +185,19 @@ TextureRenderTarget::~TextureRenderTarget()
     GLint current_binding;
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &current_binding);
 
-    if (uint32_t(current_binding) == m_fbo_id.value) { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
+    if (current_binding == static_cast<GLint>(m_fbo_id.value)) {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
 
     // Delete OpenGL objects
-    glDeleteFramebuffers(1, &m_fbo_id.value);
+    GLuint fbo_id = static_cast<GLuint>(m_fbo_id.value);
+    glDeleteFramebuffers(1, &fbo_id);
 }
 
 void TextureRenderTarget::bind()
 {
-    MG_ASSERT(m_fbo_id.value != 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo_id.value);
+    MG_ASSERT(m_fbo_id != 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, static_cast<GLuint>(m_fbo_id.value));
     uint32_t buffer = GL_COLOR_ATTACHMENT0;
     glDrawBuffers(1, &buffer);
 

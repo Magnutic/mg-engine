@@ -30,7 +30,7 @@
 #include "mg/gfx/mg_texture_handle.h"
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_object_id.h"
+#include "mg/utils/mg_opaque_handle.h"
 
 #include <cstdint>
 
@@ -122,9 +122,9 @@ private:
     TextureHandle m_colour_target{};
     TextureHandle m_depth_target{};
 
-    ObjectId m_depth_buffer_id{ 0 }; // Depth renderbuffer which may be used if
-                                     // depth target texture is not present.
-    ObjectId m_fbo_id{ 0 };
+    OpaqueHandle m_depth_buffer_id; // Depth renderbuffer which may be used if
+                                    // depth target texture is not present.
+    OpaqueHandle m_fbo_id;
 };
 
 } // namespace Mg::gfx
