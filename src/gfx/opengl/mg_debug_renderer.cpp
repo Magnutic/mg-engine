@@ -241,9 +241,11 @@ struct Sphere {
 };
 
 struct DebugRendererData {
-    ShaderProgram program = ShaderProgram::make(VertexShader::make(vs_code).value(),
-                                                FragmentShader::make(fs_code).value())
-                                .value();
+    ShaderProgram program = [] {
+        ShaderOwner vs = compile_vertex_shader(vs_code).value();
+        ShaderOwner fs = compile_fragment_shader(fs_code).value();
+        return ShaderProgram::make(vs.shader_handle(), fs.shader_handle()).value();
+    }();
 
     DebugMesh                box = generate_mesh(box_vertices, box_indices);
     std::map<size_t, Sphere> spheres;

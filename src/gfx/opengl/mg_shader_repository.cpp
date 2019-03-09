@@ -26,6 +26,8 @@
 #include "mg/containers/mg_pooling_vector.h"
 #include "mg/gfx/mg_shader.h"
 
+#include "mg_opengl_shader.h"
+
 namespace Mg::gfx {
 
 struct MakeShaderReturn {
@@ -39,21 +41,26 @@ static MakeShaderReturn make_shader_program(const ShaderCode& code)
         return MakeShaderReturn{ std::nullopt, enum_value };
     };
 
-    std::optional<VertexShader> ovs = VertexShader::make(code.vertex_code);
+    auto ovs = compile_vertex_shader(code.vertex_code);
     if (!ovs.has_value()) { return error_value(ShaderCompileResult::VertexShaderError); }
+    ShaderOwner vs = ovs.value();
 
-    std::optional<FragmentShader> ofs = FragmentShader::make(code.fragment_code);
+    auto ofs = compile_fragment_shader(code.fragment_code);
     if (!ofs.has_value()) { return error_value(ShaderCompileResult::FragmentShaderError); }
+    ShaderOwner fs = ofs.value();
 
-    std::optional<GeometryShader> ogs;
-    std::optional<ShaderProgram>  o_program;
+    std::optional<GeometryShaderHandle> ogs;
+    std::optional<ShaderProgram>        o_program;
 
-    if (code.geometry_code.empty()) { o_program = ShaderProgram::make(ovs.value(), ofs.value()); }
+    if (code.geometry_code.empty()) {
+        o_program = ShaderProgram::make(vs.shader_handle(), fs.shader_handle());
+    }
     else {
-        ogs = GeometryShader::make(code.geometry_code);
+        ogs = compile_geometry_shader(code.geometry_code);
         if (!ogs.has_value()) { return error_value(ShaderCompileResult::GeometryShaderError); }
+        ShaderOwner gs = ogs.value();
 
-        o_program = ShaderProgram::make(ovs.value(), ogs.value(), ofs.value());
+        o_program = ShaderProgram::make(vs.shader_handle(), gs.shader_handle(), fs.shader_handle());
     }
 
     if (!o_program.has_value()) { return error_value(ShaderCompileResult::LinkingError); }

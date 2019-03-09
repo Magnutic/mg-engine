@@ -1,7 +1,7 @@
 //**************************************************************************************************
 // Mg Engine
 //--------------------------------------------------------------------------------------------------
-// Copyright (c) 2018 Magnus Bergsten
+// Copyright (c) 2019 Magnus Bergsten
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -22,7 +22,7 @@
 //**************************************************************************************************
 
 /** @file mg_shader.h
- * Shader construction, lifetime management, and configuration wrapper.
+ * Types and functions for creating shaders.
  */
 
 #pragma once
@@ -31,69 +31,70 @@
 #include "mg/utils/mg_opaque_handle.h"
 
 #include <optional>
-#include <string_view>
+#include <string>
 
 namespace Mg::gfx {
 
-enum class ShaderStage { VERTEX, FRAGMENT, GEOMETRY };
+/** Handle to a shader (of any shader-stage). */
+struct ShaderId {
+    uint64_t value;
+}; // TODO: currently in the middle of major refactoring; this should
+   // be called ShaderHandle but that name is taken at the moment.
 
-//--------------------------------------------------------------------------------------------------
+/** Shader stage: which (programmable) part of the rendering pipeline the shader implements. */
+enum class ShaderStage { Vertex, Fragment, Geometry };
 
-namespace detail {
-// Create shader and return its id, or 0 if construction failed.
-uint32_t create_shader(ShaderStage type, std::string_view code);
-// Delete shader with given id.
-void delete_shader(OpaqueHandle::Value id);
-} // namespace detail
+/** Strongly typed handle to a shader of a particular shader stage. */
+template<ShaderStage> struct TypedShaderHandle : ShaderId {};
 
-//--------------------------------------------------------------------------------------------------
+/** Handle to a vertex shader. */
+using VertexShaderHandle = TypedShaderHandle<ShaderStage::Vertex>;
 
-/** Shader object, code controlling a stage in the rendering pipeline. */
-template<ShaderStage stage> class Shader {
+/** Handle to a geometry shader. */
+using GeometryShaderHandle = TypedShaderHandle<ShaderStage::Geometry>;
+
+/** Handle to a fragment shader. */
+using FragmentShaderHandle = TypedShaderHandle<ShaderStage::Fragment>;
+
+std::optional<VertexShaderHandle>   compile_vertex_shader(const std::string& code);
+std::optional<FragmentShaderHandle> compile_fragment_shader(const std::string& code);
+std::optional<GeometryShaderHandle> compile_geometry_shader(const std::string& code);
+
+void destroy_shader(ShaderId handle);
+
+/** RAII-owning wrapper for shader handles. */
+template<ShaderStage stage> class ShaderOwner {
 public:
-    /** Creates an shader using the supplied GLSL code. */
-    static std::optional<Shader> make(std::string_view shader_code)
-    {
-        auto shader_id = detail::create_shader(stage, shader_code);
-        if (shader_id == 0) return std::nullopt;
-        return Shader{ shader_id };
-    }
+    ShaderOwner(TypedShaderHandle<stage> handle) : m_handle(handle) {}
+    ~ShaderOwner() { destroy_shader(m_handle); }
 
-    // Allow moving but not copying as the object manages external state.
-    MG_MAKE_DEFAULT_MOVABLE(Shader);
-    MG_MAKE_NON_COPYABLE(Shader);
+    MG_MAKE_NON_COPYABLE(ShaderOwner);
+    MG_MAKE_DEFAULT_MOVABLE(ShaderOwner);
 
-    ~Shader() { detail::delete_shader(m_gfx_api_id.value); }
-
-    /** Get the identifier for the OpenGL object owned by this Shader. */
-    OpaqueHandle::Value shader_id() const { return m_gfx_api_id.value; }
+    TypedShaderHandle<stage> shader_handle() const { return m_handle; }
 
 private:
-    Shader(uint32_t gfx_api_id) : m_gfx_api_id(gfx_api_id) {}
-
-    OpaqueHandle m_gfx_api_id;
+    TypedShaderHandle<stage> m_handle;
 };
 
-using VertexShader   = Shader<ShaderStage::VERTEX>;
-using GeometryShader = Shader<ShaderStage::GEOMETRY>;
-using FragmentShader = Shader<ShaderStage::FRAGMENT>;
-
-//--------------------------------------------------------------------------------------------------
-
-/** ShaderProgram is a linked set of Shaders. This is what is used to render objects.  */
+/** ShaderProgram is a linked set of Shaders in the OpenGL back-end.  */
 class ShaderProgram {
 public:
-    enum class GfxApiHandle : uintptr_t;
-
     /** Construct a shader program with only a vertex shader. Useful for depth passes. */
-    static std::optional<ShaderProgram> make(const VertexShader& vs);
+    static std::optional<ShaderProgram> make(VertexShaderHandle vertex_shader);
 
     /** Construct a shader program by linking the supplied Shaders */
-    static std::optional<ShaderProgram> make(const VertexShader& vs, const FragmentShader& fs);
+    static std::optional<ShaderProgram> make(VertexShaderHandle   vertex_shader,
+                                             FragmentShaderHandle fragment_shader);
 
     /** Construct a shader program by linking the supplied Shaders */
-    static std::optional<ShaderProgram>
-    make(const VertexShader& vs, const GeometryShader& gs, const FragmentShader& fs);
+    static std::optional<ShaderProgram> make(VertexShaderHandle   vertex_shader,
+                                             GeometryShaderHandle geometry_shader,
+                                             FragmentShaderHandle fragment_shader);
+
+    /** Construct a shader program by linking the supplied Shaders */
+    static std::optional<ShaderProgram> make(VertexShaderHandle   vertex_shader,
+                                             GeometryShaderHandle geometry_shader);
 
     // Allow moving but not copying as the object manages external state.
     MG_MAKE_DEFAULT_MOVABLE(ShaderProgram);
@@ -103,7 +104,7 @@ public:
     ~ShaderProgram();
 
     /** Get opaque handle to shader in underlying graphics API. */
-    GfxApiHandle gfx_api_handle() const { return GfxApiHandle{ m_gfx_api_id.value }; }
+    OpaqueHandle::Value gfx_api_handle() const { return m_gfx_api_id.value; }
 
 private:
     explicit ShaderProgram(uint32_t gfx_api_id) : m_gfx_api_id(gfx_api_id) {}
@@ -112,3 +113,4 @@ private:
 };
 
 } // namespace Mg::gfx
+

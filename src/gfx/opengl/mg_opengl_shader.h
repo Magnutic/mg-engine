@@ -22,19 +22,19 @@
 //**************************************************************************************************
 
 /** @file mg_opengl_shader.h
- * Functions for Mg::gfx::ShaderProgram providing OpenGL-specific functionality.
+ * ShaderProgram, a linked set of shaders for the OpenGL back-end.
  */
 
 #pragma once
-
-#include <cstdint>
-#include <string_view>
 
 #include "mg/gfx/mg_shader.h"
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 
-/** OpenGL-backend-specific functionality. */
+#include <cstdint>
+#include <string_view>
+
+/** Functionality specific to the OpenGL backend. */
 namespace Mg::gfx::opengl {
 
 void use_program(const ShaderProgram& program);

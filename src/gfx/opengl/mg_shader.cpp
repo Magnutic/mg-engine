@@ -1,7 +1,7 @@
 //**************************************************************************************************
 // Mg Engine
 //--------------------------------------------------------------------------------------------------
-// Copyright (c) 2018 Magnus Bergsten
+// Copyright (c) 2019 Magnus Bergsten
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -23,39 +23,38 @@
 
 #include "mg/gfx/mg_shader.h"
 
-#include "mg/core/mg_log.h"
-#include "mg/utils/mg_gsl.h"
-
 #include "mg_gl_debug.h"
 #include "mg_glad.h"
 
-#include <fmt/core.h>
+#include "mg/core/mg_log.h"
+#include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_gsl.h"
 
-#include <string>
+#include <fmt/core.h>
 
 namespace Mg::gfx {
 
-inline GLenum shader_stage_to_gl_enum(ShaderStage stage)
+static constexpr GLenum shader_stage_to_gl_enum(ShaderStage stage)
 {
     switch (stage) {
-    case ShaderStage::VERTEX:
+    case ShaderStage::Vertex:
         return GL_VERTEX_SHADER;
-    case ShaderStage::FRAGMENT:
+    case ShaderStage::Fragment:
         return GL_FRAGMENT_SHADER;
-    case ShaderStage::GEOMETRY:
+    case ShaderStage::Geometry:
         return GL_GEOMETRY_SHADER;
     }
 
     MG_ASSERT(false && "unreachable");
 }
 
-namespace detail {
+static constexpr size_t k_shader_program_pool_size = 64;
 
-uint32_t create_shader(ShaderStage type, std::string_view code)
+template<ShaderStage stage>
+std::optional<TypedShaderHandle<stage>> compile_shader(const std::string& code)
 {
-    auto gl_shader_type = shader_stage_to_gl_enum(type);
-    auto code_str       = std::string(code);
-    auto code_c_str     = code_str.c_str();
+    auto gl_shader_type = shader_stage_to_gl_enum(stage);
+    auto code_c_str     = code.c_str();
 
     // Upload and compile shader.
     auto id = glCreateShader(gl_shader_type);
@@ -82,18 +81,31 @@ uint32_t create_shader(ShaderStage type, std::string_view code)
     // Check whether shader compiled successfully.
     if (result == GL_FALSE) {
         glDeleteShader(id);
-        return 0;
+        return std::nullopt;
     }
 
-    return id;
+    return TypedShaderHandle<stage>{ ShaderId{ id } };
 }
 
-void delete_shader(OpaqueHandle::Value id)
+std::optional<VertexShaderHandle> compile_vertex_shader(const std::string& code)
 {
-    glDeleteShader(static_cast<GLuint>(id));
+    return compile_shader<ShaderStage::Vertex>(code);
 }
 
-} // namespace detail
+std::optional<GeometryShaderHandle> compile_geometry_shader(const std::string& code)
+{
+    return compile_shader<ShaderStage::Geometry>(code);
+}
+
+std::optional<FragmentShaderHandle> compile_fragment_shader(const std::string& code)
+{
+    return compile_shader<ShaderStage::Fragment>(code);
+}
+
+void destroy_shader(ShaderId handle)
+{
+    glDeleteShader(static_cast<GLuint>(handle.value));
+}
 
 //--------------------------------------------------------------------------------------------------
 // Helpers for ShaderProgram implementation
@@ -132,54 +144,66 @@ static bool link_program(uint32_t program_id)
 /** RAII guard for attaching shader object to shader program. */
 class ShaderAttachGuard {
 public:
-    ShaderAttachGuard(GLuint program, OpaqueHandle::Value shader)
-        : m_program(program), m_shader(static_cast<GLuint>(shader))
+    ShaderAttachGuard(GLuint program, GLuint shader) : _program(program), _shader(shader)
     {
-        glAttachShader(m_program, m_shader);
+        glAttachShader(program, shader);
     }
 
     MG_MAKE_NON_COPYABLE(ShaderAttachGuard);
     MG_MAKE_NON_MOVABLE(ShaderAttachGuard);
 
-    ~ShaderAttachGuard() { glDetachShader(m_program, m_shader); }
+    ~ShaderAttachGuard() { glDetachShader(_program, _shader); }
 
-private:
-    GLuint m_program{};
-    GLuint m_shader{};
+    GLuint _program{};
+    GLuint _shader{};
 };
 
 //--------------------------------------------------------------------------------------------------
 // ShaderProgram implementation
 //--------------------------------------------------------------------------------------------------
 
-std::optional<ShaderProgram> ShaderProgram::make(const VertexShader& vs)
+std::optional<ShaderProgram> ShaderProgram::make(VertexShaderHandle vertex_shader)
 {
-    auto              program_id = glCreateProgram();
-    ShaderAttachGuard guard_vs(program_id, vs.shader_id());
+    GLuint            program_id = glCreateProgram();
+    ShaderAttachGuard guard_vs(program_id, static_cast<GLuint>(vertex_shader.value));
 
     if (link_program(program_id)) { return ShaderProgram(program_id); }
 
     return std::nullopt;
 }
 
-std::optional<ShaderProgram> ShaderProgram::make(const VertexShader& vs, const FragmentShader& fs)
+std::optional<ShaderProgram> ShaderProgram::make(VertexShaderHandle   vertex_shader,
+                                                 FragmentShaderHandle fragment_shader)
 {
-    auto              program_id = glCreateProgram();
-    ShaderAttachGuard guard_vs(program_id, vs.shader_id());
-    ShaderAttachGuard guard_fs(program_id, fs.shader_id());
+    GLuint            program_id = glCreateProgram();
+    ShaderAttachGuard guard_vs(program_id, static_cast<GLuint>(vertex_shader.value));
+    ShaderAttachGuard guard_fs(program_id, static_cast<GLuint>(fragment_shader.value));
 
     if (link_program(program_id)) { return ShaderProgram(program_id); }
 
     return std::nullopt;
 }
 
-std::optional<ShaderProgram>
-ShaderProgram::make(const VertexShader& vs, const GeometryShader& gs, const FragmentShader& fs)
+std::optional<ShaderProgram> ShaderProgram::make(VertexShaderHandle   vertex_shader,
+                                                 GeometryShaderHandle geometry_shader,
+                                                 FragmentShaderHandle fragment_shader)
 {
-    auto              program_id = glCreateProgram();
-    ShaderAttachGuard guard_vs(program_id, vs.shader_id());
-    ShaderAttachGuard guard_fs(program_id, fs.shader_id());
-    ShaderAttachGuard guard_gs(program_id, gs.shader_id());
+    GLuint            program_id = glCreateProgram();
+    ShaderAttachGuard guard_vs(program_id, static_cast<GLuint>(vertex_shader.value));
+    ShaderAttachGuard guard_fs(program_id, static_cast<GLuint>(fragment_shader.value));
+    ShaderAttachGuard guard_gs(program_id, static_cast<GLuint>(geometry_shader.value));
+
+    if (link_program(program_id)) { return ShaderProgram(program_id); }
+
+    return std::nullopt;
+}
+
+std::optional<ShaderProgram> ShaderProgram::make(VertexShaderHandle   vertex_shader,
+                                                 GeometryShaderHandle geometry_shader)
+{
+    GLuint            program_id = glCreateProgram();
+    ShaderAttachGuard guard_vs(program_id, static_cast<GLuint>(vertex_shader.value));
+    ShaderAttachGuard guard_gs(program_id, static_cast<GLuint>(geometry_shader.value));
 
     if (link_program(program_id)) { return ShaderProgram(program_id); }
 
@@ -188,8 +212,8 @@ ShaderProgram::make(const VertexShader& vs, const GeometryShader& gs, const Frag
 
 ShaderProgram::~ShaderProgram()
 {
-    glDeleteProgram(static_cast<GLuint>(m_gfx_api_id.value));
+    glDeleteProgram(static_cast<GLuint>(gfx_api_handle()));
 }
 
-
 } // namespace Mg::gfx
+

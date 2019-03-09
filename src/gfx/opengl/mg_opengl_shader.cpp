@@ -23,9 +23,13 @@
 
 #include "mg_opengl_shader.h"
 
-#include <optional>
+#include "mg_gl_debug.h"
+#include "mg_glad.h"
 
-#include <fmt/core.h>
+#include "mg/core/mg_log.h"
+#include "mg/gfx/mg_shader.h"
+#include "mg/gfx/mg_shader_repository.h"
+#include "mg/utils/mg_assert.h"
 
 #include <glm/mat2x2.hpp>
 #include <glm/mat2x3.hpp>
@@ -40,10 +44,9 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
-#include "mg/core/mg_log.h"
-#include "mg/utils/mg_assert.h"
+#include <fmt/core.h>
 
-#include "mg_glad.h"
+#include <optional>
 
 namespace Mg::gfx::opengl {
 
