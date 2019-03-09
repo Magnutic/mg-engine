@@ -65,7 +65,7 @@ void destroy_shader(ShaderId handle);
 /** RAII-owning wrapper for shader handles. */
 template<ShaderStage stage> class ShaderOwner {
 public:
-    ShaderOwner(TypedShaderHandle<stage> handle) : m_handle(handle) {}
+    explicit ShaderOwner(TypedShaderHandle<stage> handle) : m_handle(handle) {}
     ~ShaderOwner() { destroy_shader(m_handle); }
 
     MG_MAKE_NON_COPYABLE(ShaderOwner);
@@ -77,39 +77,38 @@ private:
     TypedShaderHandle<stage> m_handle;
 };
 
-/** ShaderProgram is a linked set of Shaders in the OpenGL back-end.  */
-class ShaderProgram {
+enum class ShaderHandle : uint64_t;
+
+/** Construct a shader program with only a vertex shader. Useful for depth passes. */
+std::optional<ShaderHandle> link_shader_program(VertexShaderHandle vertex_shader);
+
+/** Construct a shader program by linking the supplied Shaders */
+std::optional<ShaderHandle> link_shader_program(VertexShaderHandle   vertex_shader,
+                                                FragmentShaderHandle fragment_shader);
+
+/** Construct a shader program by linking the supplied Shaders */
+std::optional<ShaderHandle> link_shader_program(VertexShaderHandle   vertex_shader,
+                                                GeometryShaderHandle geometry_shader,
+                                                FragmentShaderHandle fragment_shader);
+
+/** Construct a shader program by linking the supplied Shaders */
+std::optional<ShaderHandle> link_shader_program(VertexShaderHandle   vertex_shader,
+                                                GeometryShaderHandle geometry_shader);
+
+void destroy_shader_program(ShaderHandle handle);
+
+class ShaderProgramOwner {
 public:
-    /** Construct a shader program with only a vertex shader. Useful for depth passes. */
-    static std::optional<ShaderProgram> make(VertexShaderHandle vertex_shader);
+    explicit ShaderProgramOwner(ShaderHandle handle) : m_handle(handle) {}
+    ~ShaderProgramOwner() { destroy_shader_program(m_handle); }
 
-    /** Construct a shader program by linking the supplied Shaders */
-    static std::optional<ShaderProgram> make(VertexShaderHandle   vertex_shader,
-                                             FragmentShaderHandle fragment_shader);
+    MG_MAKE_DEFAULT_MOVABLE(ShaderProgramOwner);
+    MG_MAKE_NON_COPYABLE(ShaderProgramOwner);
 
-    /** Construct a shader program by linking the supplied Shaders */
-    static std::optional<ShaderProgram> make(VertexShaderHandle   vertex_shader,
-                                             GeometryShaderHandle geometry_shader,
-                                             FragmentShaderHandle fragment_shader);
-
-    /** Construct a shader program by linking the supplied Shaders */
-    static std::optional<ShaderProgram> make(VertexShaderHandle   vertex_shader,
-                                             GeometryShaderHandle geometry_shader);
-
-    // Allow moving but not copying as the object manages external state.
-    MG_MAKE_DEFAULT_MOVABLE(ShaderProgram);
-    MG_MAKE_NON_COPYABLE(ShaderProgram);
-
-    /** Destroys OpenGL shader program as well on destruction. */
-    ~ShaderProgram();
-
-    /** Get opaque handle to shader in underlying graphics API. */
-    OpaqueHandle::Value gfx_api_handle() const { return m_gfx_api_id.value; }
+    ShaderHandle program_handle() const { return m_handle; }
 
 private:
-    explicit ShaderProgram(uint32_t gfx_api_id) : m_gfx_api_id(gfx_api_id) {}
-
-    OpaqueHandle m_gfx_api_id;
+    ShaderHandle m_handle;
 };
 
 } // namespace Mg::gfx

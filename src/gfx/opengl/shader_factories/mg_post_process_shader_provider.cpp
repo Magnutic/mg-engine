@@ -97,7 +97,7 @@ ShaderCode PostProcessShaderProvider::make_shader_code(const Material& material)
     return code;
 }
 
-void PostProcessShaderProvider::setup_shader_state(ShaderProgram&  program,
+void PostProcessShaderProvider::setup_shader_state(ShaderHandle    program,
                                                    const Material& material) const
 {
     using namespace post_renderer;

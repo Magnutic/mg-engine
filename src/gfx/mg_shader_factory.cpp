@@ -32,6 +32,51 @@
 
 namespace Mg::gfx {
 
+enum class ShaderCompileResult {
+    Success,
+    VertexShaderError,
+    FragmentShaderError,
+    GeometryShaderError,
+    LinkingError
+};
+
+struct MakeShaderReturn {
+    std::optional<ShaderHandle> opt_program;
+    ShaderCompileResult         return_code;
+};
+
+static MakeShaderReturn make_shader_program(const ShaderCode& code)
+{
+    auto error_value = [](ShaderCompileResult enum_value) {
+        return MakeShaderReturn{ std::nullopt, enum_value };
+    };
+
+    auto ovs = compile_vertex_shader(code.vertex_code);
+    if (!ovs.has_value()) { return error_value(ShaderCompileResult::VertexShaderError); }
+    ShaderOwner vs{ ovs.value() };
+
+    auto ofs = compile_fragment_shader(code.fragment_code);
+    if (!ofs.has_value()) { return error_value(ShaderCompileResult::FragmentShaderError); }
+    ShaderOwner fs{ ofs.value() };
+
+    std::optional<GeometryShaderHandle> ogs;
+    std::optional<ShaderHandle>         o_program;
+
+    if (code.geometry_code.empty()) {
+        o_program = link_shader_program(vs.shader_handle(), fs.shader_handle()).value();
+    }
+    else {
+        ogs = compile_geometry_shader(code.geometry_code);
+        if (!ogs.has_value()) { return error_value(ShaderCompileResult::GeometryShaderError); }
+        ShaderOwner gs{ ogs.value() };
+
+        o_program = link_shader_program(vs.shader_handle(), gs.shader_handle(), fs.shader_handle());
+    }
+
+    if (!o_program.has_value()) { return error_value(ShaderCompileResult::LinkingError); }
+
+    return { o_program.value(), ShaderCompileResult::Success };
+}
 // Dump code to log with line numbers
 inline std::string error_dump_code(std::string_view code)
 {
@@ -92,7 +137,7 @@ ShaderHandle ShaderFactory::make_shader(const Material& material)
         fmt::format("ShaderFactory: compiling variant of shader '{}'.", shader_name));
 
     const ShaderCode shader_code = m_shader_provider->make_shader_code(material);
-    auto [handle, return_code]   = shader_repository().create(shader_code);
+    auto [handle, return_code]   = make_shader_program(shader_code);
 
     if (return_code != ShaderCompileResult::Success) {
         g_log.write_error(fmt::format("Failed to compile shader '{}'.", shader_name));
@@ -100,21 +145,21 @@ ShaderHandle ShaderFactory::make_shader(const Material& material)
 
         g_log.write_message("Using error-fallback shader.");
         const auto fallback_code   = m_shader_provider->on_error_shader_code();
-        const auto fallback_result = shader_repository().create(fallback_code);
+        const auto fallback_result = make_shader_program(fallback_code);
 
-        handle = fallback_result.handle;
+        handle = std::move(fallback_result.opt_program);
         MG_ASSERT(fallback_result.return_code == ShaderCompileResult::Success);
     }
 
-    m_shader_handles.emplace_back(material.shader_hash(), handle);
-    m_shader_provider->setup_shader_state(access_shader_program(handle), material);
+    m_shader_handles.emplace_back(material.shader_hash(), handle.value());
+    m_shader_provider->setup_shader_state(handle.value(), material);
 
-    return handle;
+    return handle.value();
 }
 
 void ShaderFactory::drop_shaders()
 {
-    for (auto [hash, handle] : m_shader_handles) { shader_repository().destroy(handle); }
+    for (auto [hash, handle] : m_shader_handles) { destroy_shader_program(handle); }
     m_shader_handles.clear();
 }
 

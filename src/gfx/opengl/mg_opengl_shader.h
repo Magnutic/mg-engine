@@ -37,12 +37,12 @@
 /** Functionality specific to the OpenGL backend. */
 namespace Mg::gfx::opengl {
 
-void use_program(const ShaderProgram& program);
+void use_program(ShaderHandle program);
 
 /** Get the location for the given uniform.
  * @return Index number if uniform_name corresponds to an active uniform, -1 otherwise.
  */
-int32_t uniform_location(const ShaderProgram& program, std::string_view uniform_name);
+int32_t uniform_location(ShaderHandle program, std::string_view uniform_name);
 
 /** Type-safe wrapper for glUniform*.
  * Supports GLM vectors and matrices, int32_t, uint32_t, and float.
@@ -62,8 +62,8 @@ void set_sampler_binding(int32_t location, TextureUnit unit);
 /** Bind Shader's block with name block_name to the given uniform buffer slot.
  * @return Whether successful (i.e. block_name corresponds to an active uniform block).
  */
-bool set_uniform_block_binding(const ShaderProgram& program,
-                               std::string_view     block_name,
-                               UniformBufferSlot    slot);
+bool set_uniform_block_binding(ShaderHandle      program,
+                               std::string_view  block_name,
+                               UniformBufferSlot slot);
 
 } // namespace Mg::gfx::opengl

@@ -82,7 +82,7 @@ setup_material(PostProcessRendererData& data, const Material& material, float z_
     using namespace post_renderer;
 
     ShaderHandle shader = data.shader_factory.get_shader(material);
-    glUseProgram(static_cast<GLuint>(access_shader_program(shader).gfx_api_handle()));
+    glUseProgram(static_cast<GLuint>(shader));
 
     auto& gfx_device = opengl::OpenGLGfxDevice::get();
 

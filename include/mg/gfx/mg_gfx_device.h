@@ -43,7 +43,6 @@ namespace Mg::gfx {
 class TextureRepository;
 class MeshRepository;
 class MaterialRepository;
-class ShaderRepository;
 
 /** Types of comparison functions to use in depth testing. */
 enum class DepthFunc {
@@ -96,7 +95,6 @@ public:
     virtual MeshRepository&     mesh_repository()     = 0;
     virtual TextureRepository&  texture_repository()  = 0;
     virtual MaterialRepository& material_repository() = 0;
-    virtual ShaderRepository&   shader_repository()   = 0;
 };
 
 std::unique_ptr<GfxDevice> make_opengl_gfx_device(Mg::Window& window);

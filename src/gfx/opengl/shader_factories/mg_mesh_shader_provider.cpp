@@ -144,7 +144,7 @@ ShaderCode MeshShaderProvider::make_shader_code(const Material& material) const
     return code;
 }
 
-void MeshShaderProvider::setup_shader_state(ShaderProgram& program, const Material& material) const
+void MeshShaderProvider::setup_shader_state(ShaderHandle program, const Material& material) const
 {
     using namespace opengl;
     using namespace mesh_renderer;

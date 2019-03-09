@@ -28,7 +28,6 @@
 
 #include "mg/core/mg_log.h"
 #include "mg/gfx/mg_shader.h"
-#include "mg/gfx/mg_shader_repository.h"
 #include "mg/utils/mg_assert.h"
 
 #include <glm/mat2x2.hpp>
@@ -50,9 +49,9 @@
 
 namespace Mg::gfx::opengl {
 
-inline GLuint gl_program_id(const ShaderProgram& program)
+inline GLuint gl_program_id(ShaderHandle program)
 {
-    return static_cast<GLuint>(program.gfx_api_handle());
+    return static_cast<GLuint>(program);
 }
 
 inline std::optional<GLuint> uniform_block_index(GLuint ubo_id, std::string_view block_name)
@@ -61,21 +60,21 @@ inline std::optional<GLuint> uniform_block_index(GLuint ubo_id, std::string_view
     return block_index == GL_INVALID_INDEX ? std::nullopt : std::make_optional(block_index);
 }
 
-void use_program(const ShaderProgram& program)
+void use_program(ShaderHandle program)
 {
     MG_ASSERT(gl_program_id(program) != 0);
     glUseProgram(gl_program_id(program));
 }
 
-int32_t uniform_location(const ShaderProgram& program, std::string_view uniform_name)
+int32_t uniform_location(ShaderHandle program, std::string_view uniform_name)
 {
     auto ret_val = glGetUniformLocation(gl_program_id(program), std::string(uniform_name).c_str());
     return ret_val;
 }
 
-bool set_uniform_block_binding(const ShaderProgram& program,
-                               std::string_view     block_name,
-                               UniformBufferSlot    slot)
+bool set_uniform_block_binding(ShaderHandle      program,
+                               std::string_view  block_name,
+                               UniformBufferSlot slot)
 {
     auto block_index = uniform_block_index(gl_program_id(program), block_name);
     auto slot_index  = static_cast<GLuint>(slot);

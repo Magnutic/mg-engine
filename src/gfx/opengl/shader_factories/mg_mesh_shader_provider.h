@@ -44,13 +44,12 @@ class MeshShaderProvider : public IShaderProvider {
 public:
     ShaderCode on_error_shader_code() const override;
     ShaderCode make_shader_code(const Material& material) const override;
-    void       setup_shader_state(ShaderProgram& program, const Material& material) const override;
+    void       setup_shader_state(ShaderHandle program, const Material& material) const override;
 };
 
 inline ShaderFactory make_mesh_shader_factory()
 {
-    return ShaderFactory{ opengl::OpenGLGfxDevice::get().shader_repository(),
-                          std::make_unique<MeshShaderProvider>() };
+    return ShaderFactory{ std::make_unique<MeshShaderProvider>() };
 }
 
 } // namespace Mg::gfx

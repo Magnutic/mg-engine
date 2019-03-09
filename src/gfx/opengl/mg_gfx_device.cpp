@@ -33,7 +33,6 @@
 #include "mg/gfx/mg_buffer_texture.h"
 #include "mg/gfx/mg_material_repository.h"
 #include "mg/gfx/mg_mesh_repository.h"
-#include "mg/gfx/mg_shader_repository.h"
 #include "mg/gfx/mg_texture_repository.h"
 
 #include <GLFW/glfw3.h>
@@ -63,7 +62,6 @@ struct OpenGLGfxDeviceData {
     MeshRepository     mesh_repository;
     TextureRepository  texture_repository;
     MaterialRepository material_repository;
-    ShaderRepository   shader_repository;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -207,11 +205,6 @@ TextureRepository& OpenGLGfxDevice::texture_repository()
 MaterialRepository& OpenGLGfxDevice::material_repository()
 {
     return data().material_repository;
-}
-
-ShaderRepository& OpenGLGfxDevice::shader_repository()
-{
-    return data().shader_repository;
 }
 
 void OpenGLGfxDevice::bind_texture(TextureUnit unit, TextureHandle texture)

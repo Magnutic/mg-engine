@@ -167,7 +167,7 @@ public:
         return code;
     }
 
-    void setup_shader_state(ShaderProgram& program, const Material& material) const override
+    void setup_shader_state(ShaderHandle program, const Material& material) const override
     {
         using namespace opengl;
 
@@ -185,8 +185,7 @@ public:
 
 inline ShaderFactory make_billboard_shader_factory()
 {
-    return ShaderFactory{ opengl::OpenGLGfxDevice::get().shader_repository(),
-                          std::make_unique<BillboardShaderProvider>() };
+    return ShaderFactory{ std::make_unique<BillboardShaderProvider>() };
 }
 
 
@@ -306,8 +305,7 @@ void BillboardRenderer::render(const ICamera&             camera,
     auto& gfx_device = opengl::OpenGLGfxDevice::get();
 
     {
-        auto program_id = access_shader_program(shader_handle).gfx_api_handle();
-        glUseProgram(static_cast<GLuint>(program_id));
+        glUseProgram(static_cast<GLuint>(shader_handle));
 
         uint32_t tex_unit = 0;
         for (const Material::Sampler& sampler : material.samplers()) {

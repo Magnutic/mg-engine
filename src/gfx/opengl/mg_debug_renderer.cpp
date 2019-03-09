@@ -241,10 +241,11 @@ struct Sphere {
 };
 
 struct DebugRendererData {
-    ShaderProgram program = [] {
-        ShaderOwner vs = compile_vertex_shader(vs_code).value();
-        ShaderOwner fs = compile_fragment_shader(fs_code).value();
-        return ShaderProgram::make(vs.shader_handle(), fs.shader_handle()).value();
+    ShaderProgramOwner program = [] {
+        ShaderOwner vs{ compile_vertex_shader(vs_code).value() };
+        ShaderOwner fs{ compile_fragment_shader(fs_code).value() };
+        return ShaderProgramOwner(
+            link_shader_program(vs.shader_handle(), fs.shader_handle()).value());
     }();
 
     DebugMesh                box = generate_mesh(box_vertices, box_indices);
@@ -254,7 +255,7 @@ struct DebugRendererData {
 DebugRenderer::DebugRenderer()  = default;
 DebugRenderer::~DebugRenderer() = default;
 
-static void draw_primitive(ShaderProgram&                      program,
+static void draw_primitive(ShaderHandle                        program,
                            const ICamera&                      camera,
                            const DebugMesh&                    mesh,
                            DebugRenderer::PrimitiveDrawParams& params)
@@ -290,7 +291,7 @@ static void draw_primitive(ShaderProgram&                      program,
 
 void DebugRenderer::draw_box(const ICamera& camera, BoxDrawParams params)
 {
-    draw_primitive(data().program, camera, data().box, params);
+    draw_primitive(data().program.program_handle(), camera, data().box, params);
 }
 
 void DebugRenderer::draw_ellipsoid(const ICamera& camera, EllipsoidDrawParams params)
@@ -304,7 +305,7 @@ void DebugRenderer::draw_ellipsoid(const ICamera& camera, EllipsoidDrawParams pa
     }
 
     Sphere& sphere = it->second;
-    draw_primitive(data().program, camera, sphere.mesh, params);
+    draw_primitive(data().program.program_handle(), camera, sphere.mesh, params);
 }
 
 } // namespace Mg::gfx

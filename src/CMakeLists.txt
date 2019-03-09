@@ -46,7 +46,6 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/gfx/mg_render_command_list.h
     ${MG_HEADER_DIR}/mg/gfx/mg_render_target.h
     ${MG_HEADER_DIR}/mg/gfx/mg_shader.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_shader_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_texture2d.h
     ${MG_HEADER_DIR}/mg/gfx/mg_texture_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_uniform_buffer.h
@@ -108,7 +107,6 @@ add_library(mg_engine
     gfx/opengl/mg_render_command_list.cpp
     gfx/opengl/mg_render_target.cpp
     gfx/opengl/mg_shader.cpp
-    gfx/opengl/mg_shader_repository.cpp
     gfx/opengl/mg_texture2d.cpp
     gfx/opengl/mg_texture_repository.cpp
     gfx/opengl/mg_uniform_buffer.cpp

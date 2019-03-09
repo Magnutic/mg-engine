@@ -162,57 +162,57 @@ public:
 // ShaderProgram implementation
 //--------------------------------------------------------------------------------------------------
 
-std::optional<ShaderProgram> ShaderProgram::make(VertexShaderHandle vertex_shader)
+std::optional<ShaderHandle> link_shader_program(VertexShaderHandle vertex_shader)
 {
     GLuint            program_id = glCreateProgram();
     ShaderAttachGuard guard_vs(program_id, static_cast<GLuint>(vertex_shader.value));
 
-    if (link_program(program_id)) { return ShaderProgram(program_id); }
+    if (link_program(program_id)) { return ShaderHandle(program_id); }
 
     return std::nullopt;
 }
 
-std::optional<ShaderProgram> ShaderProgram::make(VertexShaderHandle   vertex_shader,
-                                                 FragmentShaderHandle fragment_shader)
+std::optional<ShaderHandle> link_shader_program(VertexShaderHandle   vertex_shader,
+                                                FragmentShaderHandle fragment_shader)
 {
     GLuint            program_id = glCreateProgram();
     ShaderAttachGuard guard_vs(program_id, static_cast<GLuint>(vertex_shader.value));
     ShaderAttachGuard guard_fs(program_id, static_cast<GLuint>(fragment_shader.value));
 
-    if (link_program(program_id)) { return ShaderProgram(program_id); }
+    if (link_program(program_id)) { return ShaderHandle(program_id); }
 
     return std::nullopt;
 }
 
-std::optional<ShaderProgram> ShaderProgram::make(VertexShaderHandle   vertex_shader,
-                                                 GeometryShaderHandle geometry_shader,
-                                                 FragmentShaderHandle fragment_shader)
+std::optional<ShaderHandle> link_shader_program(VertexShaderHandle   vertex_shader,
+                                                GeometryShaderHandle geometry_shader,
+                                                FragmentShaderHandle fragment_shader)
 {
     GLuint            program_id = glCreateProgram();
     ShaderAttachGuard guard_vs(program_id, static_cast<GLuint>(vertex_shader.value));
     ShaderAttachGuard guard_fs(program_id, static_cast<GLuint>(fragment_shader.value));
     ShaderAttachGuard guard_gs(program_id, static_cast<GLuint>(geometry_shader.value));
 
-    if (link_program(program_id)) { return ShaderProgram(program_id); }
+    if (link_program(program_id)) { return ShaderHandle(program_id); }
 
     return std::nullopt;
 }
 
-std::optional<ShaderProgram> ShaderProgram::make(VertexShaderHandle   vertex_shader,
-                                                 GeometryShaderHandle geometry_shader)
+std::optional<ShaderHandle> link_shader_program(VertexShaderHandle   vertex_shader,
+                                                GeometryShaderHandle geometry_shader)
 {
     GLuint            program_id = glCreateProgram();
     ShaderAttachGuard guard_vs(program_id, static_cast<GLuint>(vertex_shader.value));
     ShaderAttachGuard guard_gs(program_id, static_cast<GLuint>(geometry_shader.value));
 
-    if (link_program(program_id)) { return ShaderProgram(program_id); }
+    if (link_program(program_id)) { return ShaderHandle(program_id); }
 
     return std::nullopt;
 }
 
-ShaderProgram::~ShaderProgram()
+void destroy_shader_program(ShaderHandle handle)
 {
-    glDeleteProgram(static_cast<GLuint>(gfx_api_handle()));
+    glDeleteProgram(static_cast<GLuint>(handle));
 }
 
 } // namespace Mg::gfx

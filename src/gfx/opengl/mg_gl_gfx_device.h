@@ -81,7 +81,6 @@ public:
     MeshRepository&     mesh_repository() override;
     TextureRepository&  texture_repository() override;
     MaterialRepository& material_repository() override;
-    ShaderRepository&   shader_repository() override;
 
     //----------------------------------------------------------------------------------------------
     // OpenGL-specific functionality

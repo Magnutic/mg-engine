@@ -69,8 +69,7 @@ inline void set_shader(MeshRendererData& data, const Material& material)
     data.m_current_shader_hash = new_shader_hash;
     data.m_current_shader      = data.shader_factory.get_shader(material);
 
-    glUseProgram(
-        static_cast<GLuint>(access_shader_program(data.m_current_shader).gfx_api_handle()));
+    glUseProgram(static_cast<GLuint>(data.m_current_shader));
 }
 
 /** Set shader input to match the given material. */

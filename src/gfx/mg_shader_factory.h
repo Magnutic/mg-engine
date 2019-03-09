@@ -30,7 +30,6 @@
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_resource_handle.h"
 #include "mg/gfx/mg_shader.h"
-#include "mg/gfx/mg_shader_repository.h"
 #include "mg/utils/mg_macros.h"
 
 #include <cstdint>
@@ -45,6 +44,12 @@ class ShaderResource;
 namespace Mg::gfx {
 
 class Material;
+
+struct ShaderCode {
+    std::string vertex_code;
+    std::string fragment_code;
+    std::string geometry_code; // May be empty.
+};
 
 class IShaderProvider {
 public:
@@ -66,14 +71,13 @@ public:
     virtual ShaderCode make_shader_code(const Material& material) const = 0;
 
     /** Initialise state of the given ShaderProgram (e.g. setting up bindings for samplers). */
-    virtual void setup_shader_state(ShaderProgram& program, const Material& material) const = 0;
+    virtual void setup_shader_state(ShaderHandle program, const Material& material) const = 0;
 };
 
 class ShaderFactory {
 public:
-    explicit ShaderFactory(ShaderRepository&                shader_repository,
-                           std::unique_ptr<IShaderProvider> shader_provider)
-        : m_p_shader_repository(&shader_repository), m_shader_provider(std::move(shader_provider))
+    explicit ShaderFactory(std::unique_ptr<IShaderProvider> shader_provider)
+        : m_shader_provider(std::move(shader_provider))
     {}
 
     ShaderHandle get_shader(const Material& material);
@@ -81,12 +85,9 @@ public:
     void drop_shaders();
 
 private:
-    ShaderHandle      make_shader(const Material& material);
-    ShaderRepository& shader_repository() { return *m_p_shader_repository; }
+    ShaderHandle make_shader(const Material& material);
 
 private:
-    ShaderRepository* m_p_shader_repository;
-
     std::unique_ptr<IShaderProvider>               m_shader_provider;
     std::vector<std::pair<uint32_t, ShaderHandle>> m_shader_handles;
 };
