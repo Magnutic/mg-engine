@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "mg/core/mg_resource_entry_base.h"
+#include "mg/resource_cache/internal/mg_resource_entry_base.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_macros.h"
 

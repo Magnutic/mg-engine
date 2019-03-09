@@ -24,10 +24,10 @@
 #include "mg/gfx/mg_billboard_renderer.h"
 
 #include "mg/core/mg_log.h"
-#include "mg/core/mg_resource_access_guard.h"
 #include "mg/gfx/mg_camera.h"
 #include "mg/gfx/mg_material.h"
 #include "mg/gfx/mg_uniform_buffer.h"
+#include "mg/resource_cache/mg_resource_access_guard.h"
 #include "mg/resources/mg_shader_resource.h"
 #include "mg/utils/mg_opaque_handle.h"
 #include "mg/utils/mg_stl_helpers.h"

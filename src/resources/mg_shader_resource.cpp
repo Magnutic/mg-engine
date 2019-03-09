@@ -25,9 +25,9 @@
 
 #include "mg/core/mg_file_loader.h"
 #include "mg/core/mg_log.h"
-#include "mg/core/mg_resource_exceptions.h"
-#include "mg/core/mg_resource_loading_input.h"
 #include "mg/core/mg_runtime_error.h"
+#include "mg/resource_cache/mg_resource_exceptions.h"
+#include "mg/resource_cache/mg_resource_loading_input.h"
 #include "mg/resources/mg_text_resource.h"
 #include "mg/utils/mg_stl_helpers.h"
 #include "mg/utils/mg_string_utils.h"

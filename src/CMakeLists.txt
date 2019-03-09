@@ -11,13 +11,6 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/core/mg_file_loader.h
     ${MG_HEADER_DIR}/mg/core/mg_identifier.h
     ${MG_HEADER_DIR}/mg/core/mg_log.h
-    ${MG_HEADER_DIR}/mg/core/mg_resource_access_guard.h
-    ${MG_HEADER_DIR}/mg/core/mg_resource_cache.h
-    ${MG_HEADER_DIR}/mg/core/mg_resource_loading_input.h
-    ${MG_HEADER_DIR}/mg/core/mg_resource_exceptions.h
-    ${MG_HEADER_DIR}/mg/core/mg_resource_entry.h
-    ${MG_HEADER_DIR}/mg/core/mg_resource_entry_base.h
-    ${MG_HEADER_DIR}/mg/core/mg_resource_handle.h
     ${MG_HEADER_DIR}/mg/core/mg_root.h
     ${MG_HEADER_DIR}/mg/core/mg_rotation.h
     ${MG_HEADER_DIR}/mg/core/mg_runtime_error.h
@@ -37,10 +30,10 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/gfx/mg_light.h
     ${MG_HEADER_DIR}/mg/gfx/mg_light_buffers.h
     ${MG_HEADER_DIR}/mg/gfx/mg_light_grid.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_mesh_renderer.h
     ${MG_HEADER_DIR}/mg/gfx/mg_material.h
     ${MG_HEADER_DIR}/mg/gfx/mg_material_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_matrix_ubo.h
+    ${MG_HEADER_DIR}/mg/gfx/mg_mesh_renderer.h
     ${MG_HEADER_DIR}/mg/gfx/mg_mesh_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_post_process.h
     ${MG_HEADER_DIR}/mg/gfx/mg_render_command_list.h
@@ -56,13 +49,20 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/input/mg_keyboard.h
     ${MG_HEADER_DIR}/mg/input/mg_mouse.h
     ${MG_HEADER_DIR}/mg/mg_defs.h
+    ${MG_HEADER_DIR}/mg/resource_cache/internal/mg_resource_entry.h
+    ${MG_HEADER_DIR}/mg/resource_cache/internal/mg_resource_entry_base.h
+    ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_access_guard.h
+    ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_cache.h
+    ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_exceptions.h
+    ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_handle.h
+    ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_loading_input.h
     ${MG_HEADER_DIR}/mg/resources/mg_mesh_resource.h
     ${MG_HEADER_DIR}/mg/resources/mg_shader_enums.h
     ${MG_HEADER_DIR}/mg/resources/mg_shader_resource.h
     ${MG_HEADER_DIR}/mg/resources/mg_texture_resource.h
-    ${MG_HEADER_DIR}/mg/utils/mg_fopen_utf8.h
     ${MG_HEADER_DIR}/mg/utils/mg_assert.h
     ${MG_HEADER_DIR}/mg/utils/mg_binary_io.h
+    ${MG_HEADER_DIR}/mg/utils/mg_fopen_utf8.h
     ${MG_HEADER_DIR}/mg/utils/mg_gsl.h
     ${MG_HEADER_DIR}/mg/utils/mg_hash_combine.h
     ${MG_HEADER_DIR}/mg/utils/mg_instance_counter.h
@@ -82,8 +82,6 @@ add_library(mg_engine
     core/mg_file_loader.cpp
     core/mg_identifier.cpp
     core/mg_log.cpp
-    core/mg_resource_cache.cpp
-    core/mg_resource_entry_base.cpp
     core/mg_root.cpp
     core/mg_rotation.cpp
     core/mg_window.cpp
@@ -116,7 +114,9 @@ add_library(mg_engine
     input/mg_joy.cpp
     input/mg_keyboard.cpp
     input/mg_mouse.cpp
-    resources/mg_base_resource.cpp
+    resource_cache/internal/mg_resource_entry_base.cpp
+    resource_cache/mg_base_resource.cpp
+    resource_cache/mg_resource_cache.cpp
     resources/mg_mesh_resource.cpp
     resources/mg_raw_resource.cpp
     resources/mg_shader_resource.cpp

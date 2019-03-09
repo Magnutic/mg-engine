@@ -23,8 +23,8 @@
 
 #include "mg_post_process_shader_provider.h"
 
-#include "mg/core/mg_resource_access_guard.h"
 #include "mg/gfx/mg_material.h"
+#include "mg/resource_cache/mg_resource_access_guard.h"
 #include "mg/resources/mg_shader_resource.h"
 
 #include "../mg_opengl_shader.h"

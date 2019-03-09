@@ -24,7 +24,7 @@
 #include "mg/resources/mg_mesh_resource.h"
 
 #include "mg/core/mg_log.h"
-#include "mg/core/mg_resource_loading_input.h"
+#include "mg/resource_cache/mg_resource_loading_input.h"
 #include "mg/utils/mg_gsl.h"
 
 #include <glm/common.hpp>

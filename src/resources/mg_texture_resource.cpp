@@ -25,7 +25,7 @@
 
 #include "mg/core/mg_file_loader.h"
 #include "mg/core/mg_log.h"
-#include "mg/core/mg_resource_loading_input.h"
+#include "mg/resource_cache/mg_resource_loading_input.h"
 
 #include <fmt/core.h>
 

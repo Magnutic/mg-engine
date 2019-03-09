@@ -28,7 +28,7 @@
 #pragma once
 
 #include "mg/core/mg_identifier.h"
-#include "mg/core/mg_resource_handle.h"
+#include "mg/resource_cache/mg_resource_handle.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_simple_pimpl.h"
 

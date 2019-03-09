@@ -24,8 +24,8 @@
 #include "mg/gfx/mg_material.h"
 
 #include "mg/core/mg_log.h"
-#include "mg/core/mg_resource_access_guard.h"
 #include "mg/core/mg_runtime_error.h"
+#include "mg/resource_cache/mg_resource_access_guard.h"
 #include "mg/resources/mg_shader_resource.h"
 #include "mg/utils/mg_hash_combine.h"
 #include "mg/utils/mg_stl_helpers.h"

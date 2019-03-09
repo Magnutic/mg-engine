@@ -1,6 +1,6 @@
 #include "catch.hpp"
 
-#include <mg/core/mg_resource_cache.h>
+#include <mg/resource_cache/mg_resource_cache.h>
 #include <mg/resources/mg_text_resource.h>
 
 TEST_CASE("ResourceCache test")

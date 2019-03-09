@@ -30,8 +30,8 @@
 
 #pragma once
 
-#include "mg/core/mg_resource_entry.h"
-#include "mg/core/mg_resource_handle.h"
+#include "mg/resource_cache/internal/mg_resource_entry.h"
+#include "mg/resource_cache/mg_resource_handle.h"
 #include "mg/utils/mg_macros.h"
 
 namespace Mg {

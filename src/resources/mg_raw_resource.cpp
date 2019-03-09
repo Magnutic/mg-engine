@@ -23,7 +23,7 @@
 
 #include "mg/resources/mg_raw_resource.h"
 
-#include "mg/core/mg_resource_loading_input.h"
+#include "mg/resource_cache/mg_resource_loading_input.h"
 
 namespace Mg {
 

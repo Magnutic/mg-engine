@@ -21,13 +21,13 @@
 //
 //**************************************************************************************************
 
-#include "mg/core/mg_resource_entry_base.h"
+#include "mg/resource_cache/internal/mg_resource_entry_base.h"
 
 #include "mg/containers/mg_array.h"
 #include "mg/core/mg_log.h"
-#include "mg/core/mg_resource_exceptions.h"
-#include "mg/core/mg_resource_loading_input.h"
-#include "mg/resources/mg_base_resource.h"
+#include "mg/resource_cache/mg_base_resource.h"
+#include "mg/resource_cache/mg_resource_exceptions.h"
+#include "mg/resource_cache/mg_resource_loading_input.h"
 
 #include <fmt/core.h>
 

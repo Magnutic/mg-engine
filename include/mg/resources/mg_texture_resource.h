@@ -28,7 +28,7 @@
 #pragma once
 
 #include "mg/containers/mg_array.h"
-#include "mg/resources/mg_base_resource.h"
+#include "mg/resource_cache/mg_base_resource.h"
 #include "mg/utils/mg_gsl.h"
 
 #include <cstdint>

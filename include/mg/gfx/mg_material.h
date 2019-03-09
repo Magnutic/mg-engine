@@ -29,7 +29,7 @@
 
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_identifier.h"
-#include "mg/core/mg_resource_handle.h"
+#include "mg/resource_cache/mg_resource_handle.h"
 #include "mg/gfx/mg_texture_handle.h"
 #include "mg/resources/mg_shader_enums.h"
 #include "mg/utils/mg_gsl.h"

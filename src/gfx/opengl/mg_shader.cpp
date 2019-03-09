@@ -216,4 +216,3 @@ void destroy_shader_program(ShaderHandle handle)
 }
 
 } // namespace Mg::gfx
-

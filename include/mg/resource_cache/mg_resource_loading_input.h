@@ -29,7 +29,7 @@
 
 #pragma once
 
-#include "mg/core/mg_resource_cache.h"
+#include "mg/resource_cache/mg_resource_cache.h"
 
 namespace Mg {
 
