@@ -29,10 +29,15 @@
 
 #pragma once
 
+#include "mg/utils/mg_macros.h"
+
 #include <cstdint>
 #include <string_view>
+#include <type_traits>
 
-#include "mg/utils/mg_macros.h"
+#ifndef MG_IDENTIFIER_REPORT_HASH_COLLISION
+#    define MG_IDENTIFIER_REPORT_HASH_COLLISION 1
+#endif
 
 namespace Mg::detail {
 
@@ -113,7 +118,7 @@ private:
     void set_full_string(std::string_view str);
 
     const char* m_str;
-    uint32_t    m_hash; // Hash value
+    uint32_t    m_hash;
 };
 
 // Identifier should be trivially copyable (for performance reasons and to allow memcpy-aliasing).
@@ -129,13 +134,34 @@ static struct StrMapInitialiser {
     StrMapInitialiser();
     ~StrMapInitialiser();
 } str_map_initialiser;
+
+void report_hash_collision(std::string_view first, std::string_view second);
+
 } // namespace detail
 
 //--------------------------------------------------------------------------------------------------
 
 inline bool operator==(const Identifier& lhs, const Identifier& rhs)
 {
-    return lhs.hash() == rhs.hash();
+    const bool hash_equal = lhs.hash() == rhs.hash();
+
+    // Note the comparison of C-string pointers: the pointers themselves are being compared. This is
+    // intentional: if the Identifiers were created from the same string literal or were both
+    // created at run-time, then the pointers would refer to the same address.
+    // Thus, the second half of the comparison (actual string comparison) only has to be run in the
+    // relatively uncommon case of two identical compile-time strings which were not merged by the
+    // linker.
+    const bool string_equal = (hash_equal ? (lhs.c_str() == rhs.c_str() ||
+                                             lhs.str_view() == rhs.str_view())
+                                          : false);
+
+#if MG_IDENTIFIER_REPORT_HASH_COLLISION
+    if (hash_equal != string_equal) {
+        detail::report_hash_collision(lhs.str_view(), rhs.str_view());
+    }
+#endif
+
+    return string_equal;
 }
 
 inline bool operator!=(const Identifier& lhs, const Identifier& rhs)
@@ -147,8 +173,8 @@ inline bool operator!=(const Identifier& lhs, const Identifier& rhs)
 
 namespace std {
 
-// We need to specialise std::hash in order to use Mg::Identifier in e.g.
-// std::unordered_map. This just returns the pre-calculated hash value.
+// We need to specialise std::hash in order to use Mg::Identifier in e.g. std::unordered_map. This
+// just returns the pre-calculated hash value.
 template<> struct hash<Mg::Identifier> {
     std::size_t operator()(const Mg::Identifier& rhs) const noexcept { return rhs.hash(); }
 };

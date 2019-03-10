@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 
+#define MG_CONTRACT_VIOLATION_THROWS 1 // Allow MG_ASSERT-failures to throw exceptions.
 #include <mg/core/mg_identifier.h>
 
 static uint32_t testFNV1a(const char* str)
@@ -21,15 +22,6 @@ static uint32_t testFNV1a(const char* str)
 
 TEST_CASE("String hash test")
 {
-    // The following lines are intended for manually investigating the
-    // generated assembly, i.e. that hashes were calculated at compile-time.
-    // How to automate that?
-    printf("%u\n", Mg::Identifier{ "Hello I'm a string" }.hash());
-    printf("%u\n", Mg::Identifier{ "This is a string" }.hash());
-
-    std::string str{ "a string" };
-    printf("%u\n", Mg::Identifier::from_runtime_string(str).hash());
-
     auto pre_hashed = Mg::Identifier("a string").hash();
     auto preHashed2 = Mg::Identifier("This is a string");
 
@@ -56,4 +48,44 @@ TEST_CASE("String hash test")
     id2 = "id0";
     REQUIRE(id2.str_view() == "id0");
     REQUIRE(id2.str_view() == "id0");
+
+    std::string    long_string = "a string that is long enough to not be subject to SSO";
+    Mg::Identifier dynamic_long_identifier = Mg::Identifier::from_runtime_string(long_string);
+
+    REQUIRE(dynamic_long_identifier ==
+            Mg::Identifier{ "a string that is long enough to not be subject to SSO" });
+}
+
+TEST_CASE("Hash collisions")
+{
+    // Identifier should work correctly even in the presence of hash collisions.
+    // Hash collisions for FNV-1a found here:
+    // https://softwareengineering.stackexchange.com/questions/49550/which-hashing-algorithm-is-best-for-uniqueness-and-speed#145633
+
+    Mg::Identifier altarage = "altarage";
+    Mg::Identifier zinke    = "zinke";
+    REQUIRE(altarage != zinke);
+
+    Mg::Identifier costarring = "costarring";
+    Mg::Identifier liquid     = "liquid";
+    REQUIRE(costarring != liquid);
+
+    Mg::Identifier declinate = "declinate";
+    Mg::Identifier macallums = "macallums";
+    REQUIRE(declinate != macallums);
+
+    Mg::Identifier other_altarage = "altarage";
+    auto           runtime_zinke  = Mg::Identifier::from_runtime_string(std::string("zin") + "ke");
+    REQUIRE(other_altarage != zinke);
+    REQUIRE(altarage != runtime_zinke);
+
+    // It should be possible to create colliding runtime Identifiers;
+    auto runtime_altarage = Mg::Identifier::from_runtime_string(std::string("altar") + "age");
+
+    REQUIRE(runtime_altarage.str_view() == altarage.str_view());
+    REQUIRE(runtime_zinke.str_view() == zinke.str_view());
+
+    REQUIRE(runtime_altarage == altarage);
+    REQUIRE(runtime_altarage != runtime_zinke);
+    REQUIRE(runtime_zinke == zinke);
 }
