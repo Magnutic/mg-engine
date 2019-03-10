@@ -25,10 +25,15 @@
 
 #include "mg/core/mg_log.h"
 #include "mg/gfx/mg_material.h"
+#include "mg/resource_cache/mg_resource_access_guard.h"
 #include "mg/resources/mg_shader_resource.h"
 #include "mg/utils/mg_stl_helpers.h"
 
+#include "opengl/mg_opengl_shader.h"
+
 #include <fmt/core.h>
+
+#include <set>
 
 namespace Mg::gfx {
 
@@ -78,6 +83,7 @@ static MakeShaderReturn make_shader_program(const ShaderCode& code)
 
     return { o_program.value(), ShaderCompileResult::Success };
 }
+
 // Dump code to log with line numbers
 inline std::string error_dump_code(std::string_view code)
 {

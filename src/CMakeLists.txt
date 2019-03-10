@@ -36,6 +36,8 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/gfx/mg_mesh_renderer.h
     ${MG_HEADER_DIR}/mg/gfx/mg_mesh_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_post_process.h
+    ${MG_HEADER_DIR}/mg/gfx/mg_pipeline.h
+    ${MG_HEADER_DIR}/mg/gfx/mg_pipeline_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_render_command_list.h
     ${MG_HEADER_DIR}/mg/gfx/mg_render_target.h
     ${MG_HEADER_DIR}/mg/gfx/mg_shader.h
@@ -102,6 +104,8 @@ add_library(mg_engine
     gfx/opengl/mg_mesh_repository.cpp
     gfx/opengl/mg_opengl_shader.cpp
     gfx/opengl/mg_post_process.cpp
+    gfx/opengl/mg_pipeline.cpp
+    gfx/opengl/mg_pipeline_repository.cpp
     gfx/opengl/mg_render_command_list.cpp
     gfx/opengl/mg_render_target.cpp
     gfx/opengl/mg_shader.cpp

@@ -28,8 +28,9 @@
 #pragma once
 
 #include "mg/containers/mg_small_vector.h"
-#include "mg/resource_cache/mg_resource_handle.h"
+#include "mg/gfx/mg_pipeline.h"
 #include "mg/gfx/mg_shader.h"
+#include "mg/resource_cache/mg_resource_handle.h"
 #include "mg/utils/mg_macros.h"
 
 #include <cstdint>
