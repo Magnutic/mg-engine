@@ -144,66 +144,40 @@ static bool link_program(uint32_t program_id)
 /** RAII guard for attaching shader object to shader program. */
 class ShaderAttachGuard {
 public:
-    ShaderAttachGuard(GLuint program, GLuint shader) : _program(program), _shader(shader)
+    ShaderAttachGuard(GLuint program, std::optional<ShaderId> handle)
+        : _program(program), _shader(handle)
     {
-        glAttachShader(program, shader);
+        if (_shader.has_value()) {
+            glAttachShader(_program, static_cast<GLuint>(_shader.value().value));
+        }
     }
 
     MG_MAKE_NON_COPYABLE(ShaderAttachGuard);
     MG_MAKE_NON_MOVABLE(ShaderAttachGuard);
 
-    ~ShaderAttachGuard() { glDetachShader(_program, _shader); }
+    ~ShaderAttachGuard()
+    {
+        if (_shader.has_value()) {
+            glDetachShader(_program, static_cast<GLuint>(_shader.value().value));
+        }
+    }
 
-    GLuint _program{};
-    GLuint _shader{};
+    GLuint                  _program{};
+    std::optional<ShaderId> _shader{};
 };
 
 //--------------------------------------------------------------------------------------------------
 // ShaderProgram implementation
 //--------------------------------------------------------------------------------------------------
 
-std::optional<ShaderHandle> link_shader_program(VertexShaderHandle vertex_shader)
+std::optional<ShaderHandle> link_shader_program(VertexShaderHandle                  vertex_shader,
+                                                std::optional<GeometryShaderHandle> geometry_shader,
+                                                std::optional<FragmentShaderHandle> fragment_shader)
 {
     GLuint            program_id = glCreateProgram();
-    ShaderAttachGuard guard_vs(program_id, static_cast<GLuint>(vertex_shader.value));
-
-    if (link_program(program_id)) { return ShaderHandle(program_id); }
-
-    return std::nullopt;
-}
-
-std::optional<ShaderHandle> link_shader_program(VertexShaderHandle   vertex_shader,
-                                                FragmentShaderHandle fragment_shader)
-{
-    GLuint            program_id = glCreateProgram();
-    ShaderAttachGuard guard_vs(program_id, static_cast<GLuint>(vertex_shader.value));
-    ShaderAttachGuard guard_fs(program_id, static_cast<GLuint>(fragment_shader.value));
-
-    if (link_program(program_id)) { return ShaderHandle(program_id); }
-
-    return std::nullopt;
-}
-
-std::optional<ShaderHandle> link_shader_program(VertexShaderHandle   vertex_shader,
-                                                GeometryShaderHandle geometry_shader,
-                                                FragmentShaderHandle fragment_shader)
-{
-    GLuint            program_id = glCreateProgram();
-    ShaderAttachGuard guard_vs(program_id, static_cast<GLuint>(vertex_shader.value));
-    ShaderAttachGuard guard_fs(program_id, static_cast<GLuint>(fragment_shader.value));
-    ShaderAttachGuard guard_gs(program_id, static_cast<GLuint>(geometry_shader.value));
-
-    if (link_program(program_id)) { return ShaderHandle(program_id); }
-
-    return std::nullopt;
-}
-
-std::optional<ShaderHandle> link_shader_program(VertexShaderHandle   vertex_shader,
-                                                GeometryShaderHandle geometry_shader)
-{
-    GLuint            program_id = glCreateProgram();
-    ShaderAttachGuard guard_vs(program_id, static_cast<GLuint>(vertex_shader.value));
-    ShaderAttachGuard guard_gs(program_id, static_cast<GLuint>(geometry_shader.value));
+    ShaderAttachGuard guard_vs(program_id, vertex_shader);
+    ShaderAttachGuard guard_gs(program_id, geometry_shader);
+    ShaderAttachGuard guard_fs(program_id, fragment_shader);
 
     if (link_program(program_id)) { return ShaderHandle(program_id); }
 

@@ -63,7 +63,8 @@ static MakeShaderReturn make_shader_program(const ShaderCode& code)
     std::optional<ShaderHandle>         o_program;
 
     if (code.geometry_code.empty()) {
-        o_program = link_shader_program(vs.shader_handle(), fs.shader_handle()).value();
+        o_program = link_shader_program(vs.shader_handle(), std::nullopt, fs.shader_handle())
+                        .value();
     }
     else {
         ogs = compile_geometry_shader(code.geometry_code);

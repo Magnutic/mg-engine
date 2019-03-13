@@ -79,21 +79,11 @@ private:
 
 enum class ShaderHandle : uint64_t;
 
-/** Construct a shader program with only a vertex shader. Useful for depth passes. */
-std::optional<ShaderHandle> link_shader_program(VertexShaderHandle vertex_shader);
-
 /** Construct a shader program by linking the supplied Shaders */
-std::optional<ShaderHandle> link_shader_program(VertexShaderHandle   vertex_shader,
-                                                FragmentShaderHandle fragment_shader);
-
-/** Construct a shader program by linking the supplied Shaders */
-std::optional<ShaderHandle> link_shader_program(VertexShaderHandle   vertex_shader,
-                                                GeometryShaderHandle geometry_shader,
-                                                FragmentShaderHandle fragment_shader);
-
-/** Construct a shader program by linking the supplied Shaders */
-std::optional<ShaderHandle> link_shader_program(VertexShaderHandle   vertex_shader,
-                                                GeometryShaderHandle geometry_shader);
+std::optional<ShaderHandle>
+link_shader_program(VertexShaderHandle                  vertex_shader,
+                    std::optional<GeometryShaderHandle> geometry_shader,
+                    std::optional<FragmentShaderHandle> fragment_shader);
 
 void destroy_shader_program(ShaderHandle handle);
 
