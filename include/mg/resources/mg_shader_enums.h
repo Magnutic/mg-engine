@@ -28,6 +28,7 @@
 #pragma once
 
 #include "mg/utils/mg_optional.h"
+#include "mg/utils/mg_assert.h"
 
 #include <string_view>
 
@@ -43,7 +44,7 @@ inline std::string_view shader_sampler_type_to_string(ShaderSamplerType type)
     case ShaderSamplerType::SamplerCube:
         return "samplerCube";
     }
-    throw "unreachable";
+    MG_ASSERT(false && "unreachable");
 }
 
 inline Opt<ShaderSamplerType> string_to_shader_sampler_type(std::string_view str)
@@ -65,7 +66,7 @@ inline std::string_view shader_parameter_type_to_string(ShaderParameterType type
     case ShaderParameterType::Vec4:
         return "vec4";
     }
-    throw "unreachable";
+    MG_ASSERT(false && "unreachable");
 }
 
 inline Opt<ShaderParameterType> string_to_shader_parameter_type(std::string_view str)
