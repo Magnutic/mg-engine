@@ -27,16 +27,17 @@
 
 #pragma once
 
+#include "mg/utils/mg_optional.h"
+
 #include <fstream>
-#include <optional>
 #include <string>
 #include <string_view>
 
 namespace Mg::io {
 
-std::optional<std::ofstream> make_output_filestream(std::string_view filepath, bool overwrite);
+Opt<std::ofstream> make_output_filestream(std::string_view filepath, bool overwrite);
 
-std::optional<std::ifstream> make_input_filestream(std::string_view filepath);
+Opt<std::ifstream> make_input_filestream(std::string_view filepath);
 
 std::string all_text(std::istream& stream);
 

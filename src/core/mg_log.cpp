@@ -25,6 +25,7 @@
 
 #include "mg/mg_defs.h"
 #include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_text_file_io.h"
 
 #include <ctime>
@@ -50,8 +51,8 @@ struct LogData {
     Log::Prio console_verbosity  = Log::Prio::Verbose;
     Log::Prio log_file_verbosity = Log::Prio::Verbose;
 
-    std::string                  file_path;
-    std::optional<std::ofstream> writer;
+    std::string        file_path;
+    Opt<std::ofstream> writer;
 };
 
 Log::Log(std::string_view file_path, Prio console_verbosity, Prio log_file_verbosity)
@@ -153,14 +154,14 @@ static std::aligned_storage_t<sizeof(Log)> log_buf;
 // understand it, this case is actually well-defined, since g_log will only be accessed after
 // placement-new in LogInitialiser's constructor.
 #ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif
 
 Log& g_log = reinterpret_cast<Log&>(log_buf); // NOLINT
 
 #ifdef __GNUC__
-#pragma GCC diagnostic pop
+#    pragma GCC diagnostic pop
 #endif
 
 detail::LogInitialiser::LogInitialiser()

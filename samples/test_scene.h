@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <mg/resource_cache/mg_resource_cache.h>
 #include <mg/core/mg_root.h>
 #include <mg/core/mg_window.h>
 #include <mg/gfx/mg_billboard_renderer.h>
@@ -17,6 +16,8 @@
 #include <mg/gfx/mg_render_target.h>
 #include <mg/input/mg_input.h>
 #include <mg/input/mg_keyboard.h>
+#include <mg/resource_cache/mg_resource_cache.h>
+#include <mg/utils/mg_optional.h>
 
 static const double k_time_step             = 1.0 / 60.0;
 static const double k_accumulator_max_steps = 10;
@@ -51,7 +52,7 @@ struct Scene {
     Mg::gfx::RenderCommandList   render_list;
     Mg::gfx::BillboardRenderList billboard_render_list;
 
-    std::optional<Mg::gfx::TextureRenderTarget> hdr_target; // Optional to defer initialisation
+    Mg::Opt<Mg::gfx::TextureRenderTarget> hdr_target; // Optional to defer initialisation
 
     Mg::gfx::Camera camera;
 

@@ -29,6 +29,7 @@
 #include "mg/resource_cache/mg_resource_exceptions.h"
 #include "mg/resource_cache/mg_resource_loading_input.h"
 #include "mg/resources/mg_text_resource.h"
+#include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_stl_helpers.h"
 #include "mg/utils/mg_string_utils.h"
 
@@ -36,7 +37,6 @@
 
 #include <filesystem>
 #include <functional>
-#include <optional>
 #include <string>
 #include <variant>
 #include <vector>
@@ -163,12 +163,12 @@ constexpr std::array<std::pair<std::string_view, TokenType>, 18> keywords{ {
     { "DEFINES_VERTEX_PREPROCESS", TokenType::DEFINES_VERTEX_PREPROCESS },
 } };
 
-inline std::optional<TokenType> get_keyword_type(std::string_view lexeme)
+inline Opt<TokenType> get_keyword_type(std::string_view lexeme)
 {
     for (auto&& [str, token_type] : keywords) {
         if (str == lexeme) { return token_type; }
     }
-    return std::nullopt;
+    return nullopt;
 }
 
 struct Token {
@@ -597,8 +597,8 @@ public:
         return *m_current_token;
     }
 
-    const Token& expect_next(TokenType                       expected_type,
-                             std::optional<std::string_view> additional_message = std::nullopt)
+    const Token& expect_next(TokenType             expected_type,
+                             Opt<std::string_view> additional_message = nullopt)
     {
         auto& t = next_token();
         if (t.type != expected_type) {

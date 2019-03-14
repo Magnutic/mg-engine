@@ -34,6 +34,7 @@
 #include "mg/gfx/mg_texture_handle.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_opaque_handle.h"
+#include "mg/utils/mg_optional.h"
 
 #include <cstdint>
 
@@ -100,14 +101,14 @@ struct PipelinePrototype {
 class Pipeline {
 public:
     struct CreationParameters {
-        VertexShaderHandle                  vertex_shader;
-        std::optional<GeometryShaderHandle> geometry_shader;
-        std::optional<FragmentShaderHandle> fragment_shader;
-        const PipelineInputLayout&          additional_input_layout;
-        const PipelinePrototype&            prototype;
+        VertexShaderHandle         vertex_shader;
+        Opt<GeometryShaderHandle>  geometry_shader;
+        Opt<FragmentShaderHandle>  fragment_shader;
+        const PipelineInputLayout& additional_input_layout;
+        const PipelinePrototype&   prototype;
     };
 
-    static std::optional<Pipeline> make(const CreationParameters& params);
+    static Opt<Pipeline> make(const CreationParameters& params);
 
     ~Pipeline();
 

@@ -34,21 +34,21 @@ namespace Mg::io {
 // std::string-taking constructor fails on Windows; using UTF-16 wstring is the only solution (until
 // all standard library implementations provide fstream constructors taking filesystem::path).
 
-std::optional<std::ofstream> make_output_filestream(std::string_view filepath, bool overwrite)
+Opt<std::ofstream> make_output_filestream(std::string_view filepath, bool overwrite)
 {
     std::ios::openmode mode = std::ios::out;
     mode |= overwrite ? std::ios::trunc : std::ios::app;
 
-    auto writer = std::make_optional<std::ofstream>(widen_if_msvc(filepath), mode);
+    auto writer = Mg::make_optional<std::ofstream>(widen_if_msvc(filepath), mode);
 
     if (!writer->good()) { return {}; }
 
     return writer;
 }
 
-std::optional<std::ifstream> make_input_filestream(std::string_view filepath)
+Opt<std::ifstream> make_input_filestream(std::string_view filepath)
 {
-    auto writer = std::make_optional<std::ifstream>(widen_if_msvc(filepath));
+    auto writer = Mg::make_optional<std::ifstream>(widen_if_msvc(filepath));
 
     if (!writer->good()) { return {}; }
 

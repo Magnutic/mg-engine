@@ -245,7 +245,7 @@ struct DebugRendererData {
         ShaderOwner vs{ compile_vertex_shader(vs_code).value() };
         ShaderOwner fs{ compile_fragment_shader(fs_code).value() };
         return ShaderProgramOwner(
-            link_shader_program(vs.shader_handle(), std::nullopt, fs.shader_handle()).value());
+            link_shader_program(vs.shader_handle(), nullopt, fs.shader_handle()).value());
     }();
 
     DebugMesh                box = generate_mesh(box_vertices, box_indices);

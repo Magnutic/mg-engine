@@ -29,8 +29,8 @@
 
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_opaque_handle.h"
+#include "mg/utils/mg_optional.h"
 
-#include <optional>
 #include <string>
 
 namespace Mg::gfx {
@@ -56,9 +56,9 @@ using GeometryShaderHandle = TypedShaderHandle<ShaderStage::Geometry>;
 /** Handle to a fragment shader. */
 using FragmentShaderHandle = TypedShaderHandle<ShaderStage::Fragment>;
 
-std::optional<VertexShaderHandle>   compile_vertex_shader(const std::string& code);
-std::optional<FragmentShaderHandle> compile_fragment_shader(const std::string& code);
-std::optional<GeometryShaderHandle> compile_geometry_shader(const std::string& code);
+Opt<VertexShaderHandle>   compile_vertex_shader(const std::string& code);
+Opt<FragmentShaderHandle> compile_fragment_shader(const std::string& code);
+Opt<GeometryShaderHandle> compile_geometry_shader(const std::string& code);
 
 void destroy_shader(ShaderId handle);
 
@@ -80,10 +80,9 @@ private:
 enum class ShaderHandle : uint64_t;
 
 /** Construct a shader program by linking the supplied Shaders */
-std::optional<ShaderHandle>
-link_shader_program(VertexShaderHandle                  vertex_shader,
-                    std::optional<GeometryShaderHandle> geometry_shader,
-                    std::optional<FragmentShaderHandle> fragment_shader);
+Opt<ShaderHandle> link_shader_program(VertexShaderHandle        vertex_shader,
+                                      Opt<GeometryShaderHandle> geometry_shader,
+                                      Opt<FragmentShaderHandle> fragment_shader);
 
 void destroy_shader_program(ShaderHandle handle);
 

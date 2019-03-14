@@ -46,14 +46,14 @@ enum class ShaderCompileResult {
 };
 
 struct MakeShaderReturn {
-    std::optional<ShaderHandle> opt_program;
-    ShaderCompileResult         return_code;
+    Opt<ShaderHandle>   opt_program;
+    ShaderCompileResult return_code;
 };
 
 static MakeShaderReturn make_shader_program(const ShaderCode& code)
 {
     auto error_value = [](ShaderCompileResult enum_value) {
-        return MakeShaderReturn{ std::nullopt, enum_value };
+        return MakeShaderReturn{ nullopt, enum_value };
     };
 
     auto ovs = compile_vertex_shader(code.vertex_code);
@@ -64,12 +64,11 @@ static MakeShaderReturn make_shader_program(const ShaderCode& code)
     if (!ofs.has_value()) { return error_value(ShaderCompileResult::FragmentShaderError); }
     ShaderOwner fs{ ofs.value() };
 
-    std::optional<GeometryShaderHandle> ogs;
-    std::optional<ShaderHandle>         o_program;
+    Opt<GeometryShaderHandle> ogs;
+    Opt<ShaderHandle>         o_program;
 
     if (code.geometry_code.empty()) {
-        o_program = link_shader_program(vs.shader_handle(), std::nullopt, fs.shader_handle())
-                        .value();
+        o_program = link_shader_program(vs.shader_handle(), nullopt, fs.shader_handle()).value();
     }
     else {
         ogs = compile_geometry_shader(code.geometry_code);

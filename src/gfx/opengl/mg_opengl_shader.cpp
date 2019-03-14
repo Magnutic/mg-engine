@@ -29,6 +29,7 @@
 #include "mg/core/mg_log.h"
 #include "mg/gfx/mg_shader.h"
 #include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_optional.h"
 
 #include <glm/mat2x2.hpp>
 #include <glm/mat2x3.hpp>
@@ -45,8 +46,6 @@
 
 #include <fmt/core.h>
 
-#include <optional>
-
 namespace Mg::gfx::opengl {
 
 inline GLuint gl_program_id(ShaderHandle program)
@@ -54,10 +53,10 @@ inline GLuint gl_program_id(ShaderHandle program)
     return static_cast<GLuint>(program);
 }
 
-inline std::optional<GLuint> uniform_block_index(GLuint ubo_id, std::string_view block_name)
+inline Opt<GLuint> uniform_block_index(GLuint ubo_id, std::string_view block_name)
 {
     auto block_index = glGetUniformBlockIndex(ubo_id, std::string(block_name).c_str());
-    return block_index == GL_INVALID_INDEX ? std::nullopt : std::make_optional(block_index);
+    return block_index == GL_INVALID_INDEX ? nullopt : make_optional(block_index);
 }
 
 void use_program(ShaderHandle program)

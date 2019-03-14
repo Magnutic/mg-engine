@@ -50,8 +50,7 @@ static GLenum shader_stage_to_gl_enum(ShaderStage stage)
 
 static constexpr size_t k_shader_program_pool_size = 64;
 
-template<ShaderStage stage>
-std::optional<TypedShaderHandle<stage>> compile_shader(const std::string& code)
+template<ShaderStage stage> Opt<TypedShaderHandle<stage>> compile_shader(const std::string& code)
 {
     auto gl_shader_type = shader_stage_to_gl_enum(stage);
     auto code_c_str     = code.c_str();
@@ -81,23 +80,23 @@ std::optional<TypedShaderHandle<stage>> compile_shader(const std::string& code)
     // Check whether shader compiled successfully.
     if (result == GL_FALSE) {
         glDeleteShader(id);
-        return std::nullopt;
+        return nullopt;
     }
 
     return TypedShaderHandle<stage>{ ShaderId{ id } };
 }
 
-std::optional<VertexShaderHandle> compile_vertex_shader(const std::string& code)
+Opt<VertexShaderHandle> compile_vertex_shader(const std::string& code)
 {
     return compile_shader<ShaderStage::Vertex>(code);
 }
 
-std::optional<GeometryShaderHandle> compile_geometry_shader(const std::string& code)
+Opt<GeometryShaderHandle> compile_geometry_shader(const std::string& code)
 {
     return compile_shader<ShaderStage::Geometry>(code);
 }
 
-std::optional<FragmentShaderHandle> compile_fragment_shader(const std::string& code)
+Opt<FragmentShaderHandle> compile_fragment_shader(const std::string& code)
 {
     return compile_shader<ShaderStage::Fragment>(code);
 }
@@ -144,8 +143,7 @@ static bool link_program(uint32_t program_id)
 /** RAII guard for attaching shader object to shader program. */
 class ShaderAttachGuard {
 public:
-    ShaderAttachGuard(GLuint program, std::optional<ShaderId> handle)
-        : _program(program), _shader(handle)
+    ShaderAttachGuard(GLuint program, Opt<ShaderId> handle) : _program(program), _shader(handle)
     {
         if (_shader.has_value()) {
             glAttachShader(_program, static_cast<GLuint>(_shader.value().value));
@@ -162,17 +160,17 @@ public:
         }
     }
 
-    GLuint                  _program{};
-    std::optional<ShaderId> _shader{};
+    GLuint        _program{};
+    Opt<ShaderId> _shader{};
 };
 
 //--------------------------------------------------------------------------------------------------
 // ShaderProgram implementation
 //--------------------------------------------------------------------------------------------------
 
-std::optional<ShaderHandle> link_shader_program(VertexShaderHandle                  vertex_shader,
-                                                std::optional<GeometryShaderHandle> geometry_shader,
-                                                std::optional<FragmentShaderHandle> fragment_shader)
+Opt<ShaderHandle> link_shader_program(VertexShaderHandle        vertex_shader,
+                                      Opt<GeometryShaderHandle> geometry_shader,
+                                      Opt<FragmentShaderHandle> fragment_shader)
 {
     GLuint            program_id = glCreateProgram();
     ShaderAttachGuard guard_vs(program_id, vertex_shader);
@@ -181,7 +179,7 @@ std::optional<ShaderHandle> link_shader_program(VertexShaderHandle              
 
     if (link_program(program_id)) { return ShaderHandle(program_id); }
 
-    return std::nullopt;
+    return nullopt;
 }
 
 void destroy_shader_program(ShaderHandle handle)

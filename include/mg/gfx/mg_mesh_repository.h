@@ -29,10 +29,10 @@
 
 #include "mg/gfx/mg_mesh_handle.h"
 #include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_simple_pimpl.h"
 
 #include <cstddef>
-#include <optional>
 
 namespace Mg {
 class MeshResource;
@@ -57,8 +57,8 @@ public:
     enum class ReturnCode { Success, Vertex_buffer_full, Index_buffer_full };
 
     struct CreateReturn {
-        std::optional<MeshHandle> opt_mesh;
-        ReturnCode                return_code;
+        Opt<MeshHandle> opt_mesh;
+        ReturnCode      return_code;
     };
 
     CreateReturn create(const MeshResource& resource);

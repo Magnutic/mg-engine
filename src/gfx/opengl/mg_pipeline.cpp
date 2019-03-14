@@ -92,9 +92,9 @@ void PipelinePrototypeContext::bind_pipeline(const Pipeline& pipeline)
     MG_CHECK_GL_ERROR();
 }
 
-std::optional<Pipeline> Pipeline::make(const CreationParameters& params)
+Opt<Pipeline> Pipeline::make(const CreationParameters& params)
 {
-    std::optional<ShaderHandle> shader_program;
+    Opt<ShaderHandle> shader_program;
 
     shader_program = link_shader_program(params.vertex_shader,
                                          params.geometry_shader,
@@ -106,7 +106,7 @@ std::optional<Pipeline> Pipeline::make(const CreationParameters& params)
                         params.additional_input_layout);
     }
 
-    return std::nullopt;
+    return nullopt;
 }
 
 Pipeline::Pipeline(OpaqueHandle               internal_handle,

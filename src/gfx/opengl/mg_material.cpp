@@ -109,13 +109,13 @@ bool Material::get_option(Identifier option) const
     return (m_option_flags & (1u << index)) != 0;
 }
 
-std::optional<size_t> Material::sampler_index(Identifier name)
+Opt<size_t> Material::sampler_index(Identifier name)
 {
     for (size_t i = 0; i < m_samplers.size(); ++i) {
         auto&& sampler = m_samplers[i];
         if (sampler.name == name) { return i; }
     }
-    return std::nullopt;
+    return nullopt;
 }
 
 void Material::set_parameter(Identifier name, float param)

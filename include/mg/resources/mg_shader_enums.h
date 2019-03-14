@@ -27,7 +27,8 @@
 
 #pragma once
 
-#include <optional>
+#include "mg/utils/mg_optional.h"
+
 #include <string_view>
 
 namespace Mg {
@@ -45,11 +46,11 @@ inline std::string_view shader_sampler_type_to_string(ShaderSamplerType type)
     throw "unreachable";
 }
 
-inline std::optional<ShaderSamplerType> string_to_shader_sampler_type(std::string_view str)
+inline Opt<ShaderSamplerType> string_to_shader_sampler_type(std::string_view str)
 {
     if (str == "sampler2D") return ShaderSamplerType::Sampler2D;
     if (str == "samplerCube") return ShaderSamplerType::SamplerCube;
-    return std::nullopt;
+    return nullopt;
 }
 
 enum class ShaderParameterType { Float, Vec2, Vec4 }; // Order matters, used for sorting
@@ -67,12 +68,12 @@ inline std::string_view shader_parameter_type_to_string(ShaderParameterType type
     throw "unreachable";
 }
 
-inline std::optional<ShaderParameterType> string_to_shader_parameter_type(std::string_view str)
+inline Opt<ShaderParameterType> string_to_shader_parameter_type(std::string_view str)
 {
     if (str == "float") return ShaderParameterType::Float;
     if (str == "vec2") return ShaderParameterType::Vec2;
     if (str == "vec4") return ShaderParameterType::Vec4;
-    return std::nullopt;
+    return nullopt;
 }
 
 namespace ShaderTag {

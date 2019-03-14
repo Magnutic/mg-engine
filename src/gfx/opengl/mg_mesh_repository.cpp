@@ -262,11 +262,11 @@ public:
     MeshBuffer::CreateReturn create(const MeshResource& resource)
     {
         if (resource.vertices().size_bytes() + m_vbo_offset > m_vbo_size) {
-            return { std::nullopt, MeshBuffer::ReturnCode::Vertex_buffer_full };
+            return { nullopt, MeshBuffer::ReturnCode::Vertex_buffer_full };
         }
 
         if (resource.indices().size_bytes() + m_ibo_offset > m_ibo_size) {
-            return { std::nullopt, MeshBuffer::ReturnCode::Index_buffer_full };
+            return { nullopt, MeshBuffer::ReturnCode::Index_buffer_full };
         }
 
         MeshHandle mesh = m_mesh_repository->_make_mesh(resource,

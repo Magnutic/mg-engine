@@ -27,6 +27,7 @@
 #include "mg/gfx/mg_material.h"
 #include "mg/resource_cache/mg_resource_access_guard.h"
 #include "mg/resources/mg_shader_resource.h"
+#include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_stl_helpers.h"
 
 #include <fmt/core.h>
@@ -124,10 +125,10 @@ inline std::string shader_input_layout_code(const Material& material)
 }
 
 struct ShaderCompileResult {
-    std::optional<VertexShaderHandle>   opt_vs;
-    std::optional<GeometryShaderHandle> opt_gs;
-    std::optional<FragmentShaderHandle> opt_fs;
-    ShaderErrorFlags::Value             error_flags = 0;
+    Opt<VertexShaderHandle>   opt_vs;
+    Opt<GeometryShaderHandle> opt_gs;
+    Opt<FragmentShaderHandle> opt_fs;
+    ShaderErrorFlags::Value   error_flags = 0;
 };
 
 inline ShaderCompileResult compile_shader(const ShaderCode& code)
@@ -209,7 +210,7 @@ PipelineRepository::PipelineNode& PipelineRepository::make_pipeline(const Materi
                                                     additional_input_layout,
                                                     m_config.pipeline_prototype };
 
-        std::optional<Pipeline> opt_pipeline = Pipeline::make(create_params);
+        Opt<Pipeline> opt_pipeline = Pipeline::make(create_params);
         if (!opt_pipeline) {
             log_shader_link_error();
 

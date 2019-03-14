@@ -29,10 +29,11 @@
 
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_identifier.h"
-#include "mg/resource_cache/mg_resource_handle.h"
 #include "mg/gfx/mg_texture_handle.h"
+#include "mg/resource_cache/mg_resource_handle.h"
 #include "mg/resources/mg_shader_enums.h"
 #include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_optional.h"
 
 #include "mg/mg_defs.h"
 
@@ -40,7 +41,6 @@
 #include <glm/vec4.hpp>
 
 #include <cstdint>
-#include <optional>
 #include <string>
 
 namespace Mg {
@@ -100,7 +100,7 @@ public:
 
     void set_sampler(Identifier name, TextureHandle texture);
 
-    std::optional<size_t> sampler_index(Identifier name);
+    Opt<size_t> sampler_index(Identifier name);
 
     void set_parameter(Identifier name, float param);
     void set_parameter(Identifier name, glm::vec2 param);
@@ -139,7 +139,7 @@ private:
     uint32_t m_option_flags{};
 
     struct ParamsBuffer {
-        uint8_t        buffer[defs::k_material_parameters_buffer_size];
+        uint8_t buffer[defs::k_material_parameters_buffer_size];
 
         const uint8_t* data() const { return &buffer[0]; }
         size_t         size() const { return defs::k_material_parameters_buffer_size; }

@@ -34,8 +34,7 @@
 #include "mg/resource_cache/internal/mg_resource_entry_base.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_macros.h"
-
-#include <optional>
+#include "mg/utils/mg_optional.h"
 
 namespace Mg {
 
@@ -67,7 +66,7 @@ protected:
     ResT& create_resource() override { return m_resource.emplace(resource_id()); }
 
 private:
-    std::optional<ResT> m_resource;
+    Opt<ResT> m_resource;
 };
 
 } // namespace Mg
