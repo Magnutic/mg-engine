@@ -65,17 +65,16 @@ Material::Material(Identifier material_id, ResourceHandle<ShaderResource> shader
 void Material::set_sampler(Identifier name, TextureHandle texture)
 {
     auto opt_index = sampler_index(name);
-    if (opt_index.has_value()) {
-        auto index                = opt_index.value();
-        m_samplers[index].name    = name;
-        m_samplers[index].sampler = texture;
-    }
-    else {
+
+    if (!opt_index.has_value()) {
         g_log.write_error(fmt::format("Material '{}': set_sampler(\"{}\", ...): no such sampler.",
                                       m_id.c_str(),
                                       name.c_str()));
         throw RuntimeError();
     }
+
+    m_samplers[*opt_index].name    = name;
+    m_samplers[*opt_index].sampler = texture;
 }
 
 void Material::set_option(Identifier option, bool enabled)

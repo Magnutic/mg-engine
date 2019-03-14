@@ -259,10 +259,8 @@ inline void identifier(LexerState& lex)
     auto lexeme         = lex.stream.data.substr(lex.token_start, lexeme_length(lex));
     auto opt_token_type = get_keyword_type(lexeme);
 
-    if (opt_token_type.has_value()) { add_token(lex, *opt_token_type); }
-    else {
-        add_token(lex, TokenType::IDENTIFIER, lexeme);
-    }
+    opt_token_type.map_or_else([&](TokenType type) { add_token(lex, type); },
+                               [&] { add_token(lex, TokenType::IDENTIFIER, lexeme); });
 }
 
 inline void next_token(LexerState& lex)
@@ -601,14 +599,19 @@ public:
                              Opt<std::string_view> additional_message = nullopt)
     {
         auto& t = next_token();
+
         if (t.type != expected_type) {
-            if (additional_message.has_value()) {
-                parse_error(fmt::format("Expected {} ({})",
-                                        token_type_to_str(expected_type),
-                                        *additional_message),
-                            t);
-            }
-            parse_error(fmt::format("Expected {}.", token_type_to_str(expected_type)), t);
+            auto expected_type_str = token_type_to_str(expected_type);
+
+            auto make_detail_error_msg = [&](std::string_view m) {
+                return fmt::format("Expected {} ({})", expected_type_str, m);
+            };
+            auto make_error_msg = [&] { return fmt::format("Expected {}.", expected_type_str); };
+
+            auto msg_string =
+                additional_message.map(make_detail_error_msg).or_else(make_error_msg).value();
+
+            parse_error(msg_string, t);
         }
 
         return t;

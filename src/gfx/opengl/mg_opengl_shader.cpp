@@ -75,19 +75,23 @@ bool set_uniform_block_binding(ShaderHandle      program,
                                std::string_view  block_name,
                                UniformBufferSlot slot)
 {
-    auto block_index = uniform_block_index(gl_program_id(program), block_name);
-    auto slot_index  = static_cast<GLuint>(slot);
+    const Opt<GLuint> opt_block_index = uniform_block_index(gl_program_id(program), block_name);
+    const auto        slot_index      = static_cast<GLuint>(slot);
 
-    if (!block_index.has_value()) {
-        g_log.write_warning(fmt::format(
-            "set_uniform_block_binding(\"{}\"): no such active uniform block in shader.",
-            block_name));
+    auto bind = [&](GLuint block_index) {
+        glUniformBlockBinding(gl_program_id(program), block_index, slot_index);
+        return true;
+    };
 
+    auto log_no_such_block = [&] {
+        static const auto msg =
+            "set_uniform_block_binding(\"{}\"): "
+            "no such active uniform block in shader.";
+        g_log.write_warning(fmt::format(msg, block_name));
         return false;
-    }
+    };
 
-    glUniformBlockBinding(gl_program_id(program), *block_index, slot_index);
-    return true;
+    return opt_block_index.map(bind).or_else(log_no_such_block).value();
 }
 
 //--------------------------------------------------------------------------------------------------

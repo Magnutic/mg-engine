@@ -94,19 +94,17 @@ void PipelinePrototypeContext::bind_pipeline(const Pipeline& pipeline)
 
 Opt<Pipeline> Pipeline::make(const CreationParameters& params)
 {
-    Opt<ShaderHandle> shader_program;
+    Opt<ShaderHandle> opt_program_handle = link_shader_program(params.vertex_shader,
+                                                               params.geometry_shader,
+                                                               params.fragment_shader);
 
-    shader_program = link_shader_program(params.vertex_shader,
-                                         params.geometry_shader,
-                                         params.fragment_shader);
-
-    if (shader_program.has_value()) {
-        return Pipeline(OpaqueHandle{ static_cast<uint64_t>(shader_program.value()) },
+    auto make_pipeline = [&params](ShaderHandle sh) {
+        return Pipeline(OpaqueHandle{ static_cast<uint64_t>(sh) },
                         params.prototype,
                         params.additional_input_layout);
-    }
+    };
 
-    return nullopt;
+    return opt_program_handle.map(make_pipeline);
 }
 
 Pipeline::Pipeline(OpaqueHandle               internal_handle,

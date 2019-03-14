@@ -52,35 +52,39 @@ struct MakeShaderReturn {
 
 static MakeShaderReturn make_shader_program(const ShaderCode& code)
 {
-    auto error_value = [](ShaderCompileResult enum_value) {
-        return MakeShaderReturn{ nullopt, enum_value };
-    };
+    Opt<const std::string&> geometry_code;
+    if (!code.geometry_code.empty()) { geometry_code = code.geometry_code; }
 
-    auto ovs = compile_vertex_shader(code.vertex_code);
-    if (!ovs.has_value()) { return error_value(ShaderCompileResult::VertexShaderError); }
-    ShaderOwner vs{ ovs.value() };
+    using VSOwner = ShaderOwner<ShaderStage::Vertex>;
+    using FSOwner = ShaderOwner<ShaderStage::Fragment>;
+    using GSOwner = ShaderOwner<ShaderStage::Geometry>;
 
-    auto ofs = compile_fragment_shader(code.fragment_code);
-    if (!ofs.has_value()) { return error_value(ShaderCompileResult::FragmentShaderError); }
-    ShaderOwner fs{ ofs.value() };
+    try {
+        VSOwner vs{ compile_vertex_shader(code.vertex_code)
+                        .or_else([] { throw ShaderCompileResult::VertexShaderError; })
+                        .value() };
 
-    Opt<GeometryShaderHandle> ogs;
-    Opt<ShaderHandle>         o_program;
+        FSOwner fs{ compile_fragment_shader(code.fragment_code)
+                        .or_else([] { throw ShaderCompileResult::FragmentShaderError; })
+                        .value() };
 
-    if (code.geometry_code.empty()) {
-        o_program = link_shader_program(vs.shader_handle(), nullopt, fs.shader_handle()).value();
+        auto make_gs = [](auto&& gs_code) {
+            return GSOwner{ compile_geometry_shader(gs_code)
+                                .or_else([] { throw ShaderCompileResult::GeometryShaderError; })
+                                .value() };
+        };
+        Opt<GSOwner> ogs = geometry_code.map(make_gs);
+
+        Opt<ShaderHandle> o_program = link_shader_program(vs.shader_handle(),
+                                                          ogs.map(&GSOwner::shader_handle),
+                                                          fs.shader_handle());
+
+        if (!o_program) { throw ShaderCompileResult::LinkingError; }
+        return MakeShaderReturn{ *o_program, ShaderCompileResult::Success };
     }
-    else {
-        ogs = compile_geometry_shader(code.geometry_code);
-        if (!ogs.has_value()) { return error_value(ShaderCompileResult::GeometryShaderError); }
-        ShaderOwner gs{ ogs.value() };
-
-        o_program = link_shader_program(vs.shader_handle(), gs.shader_handle(), fs.shader_handle());
+    catch (ShaderCompileResult result) {
+        return MakeShaderReturn{ nullopt, result };
     }
-
-    if (!o_program.has_value()) { return error_value(ShaderCompileResult::LinkingError); }
-
-    return { o_program.value(), ShaderCompileResult::Success };
 }
 
 // Dump code to log with line numbers

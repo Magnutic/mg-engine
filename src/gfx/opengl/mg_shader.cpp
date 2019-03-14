@@ -145,9 +145,7 @@ class ShaderAttachGuard {
 public:
     ShaderAttachGuard(GLuint program, Opt<ShaderId> handle) : _program(program), _shader(handle)
     {
-        if (_shader.has_value()) {
-            glAttachShader(_program, static_cast<GLuint>(_shader.value().value));
-        }
+        _shader.map([&](ShaderId id) { glAttachShader(_program, static_cast<GLuint>(id.value)); });
     }
 
     MG_MAKE_NON_COPYABLE(ShaderAttachGuard);
@@ -155,9 +153,7 @@ public:
 
     ~ShaderAttachGuard()
     {
-        if (_shader.has_value()) {
-            glDetachShader(_program, static_cast<GLuint>(_shader.value().value));
-        }
+        _shader.map([&](ShaderId id) { glDetachShader(_program, static_cast<GLuint>(id.value)); });
     }
 
     GLuint        _program{};
