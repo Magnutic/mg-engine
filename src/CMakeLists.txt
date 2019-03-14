@@ -71,6 +71,7 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/utils/mg_macros.h
     ${MG_HEADER_DIR}/mg/utils/mg_math_utils.h
     ${MG_HEADER_DIR}/mg/utils/mg_opaque_handle.h
+    ${MG_HEADER_DIR}/mg/utils/mg_optional.h
     ${MG_HEADER_DIR}/mg/utils/mg_ptr_math.h
     ${MG_HEADER_DIR}/mg/utils/mg_string_utils.h
     ${MG_HEADER_DIR}/mg/utils/mg_text_file_io.h
