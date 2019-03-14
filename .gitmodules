@@ -10,3 +10,6 @@
 [submodule "external/fmt"]
 	path = external/fmt
 	url = https://github.com/fmtlib/fmt
+[submodule "external/optional"]
+	path = external/optional
+	url = https://github.com/tartanllama/optional

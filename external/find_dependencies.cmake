@@ -42,6 +42,8 @@ function(add_header_only_library LIBRARY INCLUDE_DIR SUB_DIR_TO_INSTALL)
         DIRECTORY ${INCLUDE_DIR}/${SUB_DIR_TO_INSTALL}
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
+
+    install(TARGETS ${LIBRARY} EXPORT mg_engine_targets DESTINATION "${MG_LIB_INSTALL_PATH}")
 endfunction()
 
 ####################################################################################################
@@ -179,3 +181,10 @@ if (NOT glm_FOUND)
     option(GLM_TEST_ENABLE "" OFF)
     use_bundled_library(glm)
 endif()
+
+####################################################################################################
+# optional
+# Implementation of std::optional with additional features.
+
+init_library_submodule(optional)
+add_header_only_library(optional "${CMAKE_CURRENT_LIST_DIR}/optional" tl)
