@@ -56,7 +56,7 @@ inline GLuint gl_program_id(ShaderHandle program)
 inline Opt<GLuint> uniform_block_index(GLuint ubo_id, std::string_view block_name)
 {
     auto block_index = glGetUniformBlockIndex(ubo_id, std::string(block_name).c_str());
-    return block_index == GL_INVALID_INDEX ? nullopt : make_optional(block_index);
+    return block_index == GL_INVALID_INDEX ? nullopt : make_opt(block_index);
 }
 
 void use_program(ShaderHandle program)

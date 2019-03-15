@@ -39,7 +39,7 @@ Opt<std::ofstream> make_output_filestream(std::string_view filepath, bool overwr
     std::ios::openmode mode = std::ios::out;
     mode |= overwrite ? std::ios::trunc : std::ios::app;
 
-    auto writer = Mg::make_optional<std::ofstream>(widen_if_msvc(filepath), mode);
+    auto writer = make_opt<std::ofstream>(widen_if_msvc(filepath), mode);
 
     if (!writer->good()) { return {}; }
 
@@ -48,7 +48,7 @@ Opt<std::ofstream> make_output_filestream(std::string_view filepath, bool overwr
 
 Opt<std::ifstream> make_input_filestream(std::string_view filepath)
 {
-    auto writer = Mg::make_optional<std::ifstream>(widen_if_msvc(filepath));
+    auto writer = make_opt<std::ifstream>(widen_if_msvc(filepath));
 
     if (!writer->good()) { return {}; }
 
