@@ -34,7 +34,7 @@
 
 namespace Mg::gfx {
 
-static constexpr GLenum shader_stage_to_gl_enum(ShaderStage stage)
+static GLenum shader_stage_to_gl_enum(ShaderStage stage)
 {
     switch (stage) {
     case ShaderStage::Vertex:
