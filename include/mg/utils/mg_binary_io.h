@@ -25,6 +25,8 @@
  * Binary file io utilities.
  */
 
+#pragma once
+
 #include <cstdint>
 #include <cstdio>
 #include <string>
@@ -189,4 +191,5 @@ template<typename T> size_t BinaryFileWriter::write_array(const span<T> values)
     auto size_written = std::fwrite(&values[0], sizeof(T), values.size(), m_file);
     return size_written;
 }
+
 } // namespace Mg

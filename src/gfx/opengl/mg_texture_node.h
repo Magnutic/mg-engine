@@ -25,6 +25,8 @@
  * Internal texture structure. @see TextureRepository
  */
 
+#pragma once
+
 #include "mg/gfx/mg_texture2d.h"
 #include "mg/gfx/mg_texture_handle.h"
 #include "mg/utils/mg_assert.h"

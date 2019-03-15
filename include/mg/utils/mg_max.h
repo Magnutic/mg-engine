@@ -25,6 +25,8 @@
  * std::max()-equivalent.
  */
 
+#pragma once
+
 namespace Mg {
 
 /** Equivalent to std::max. Re-implemented here because std::max resides in the very heavy
