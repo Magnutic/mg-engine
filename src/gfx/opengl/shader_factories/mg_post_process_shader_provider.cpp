@@ -44,7 +44,7 @@ void main() {
 }
 )";
 
-static constexpr const char* post_process_fs = R"(
+static constexpr const char* post_process_fs_preamble = R"(
 #version 330 core
 
 layout (location = 0) out vec4 frag_out;
@@ -68,58 +68,33 @@ float linearise_depth(float depth) {
 }
 )";
 
+static constexpr const char* post_process_fs_fallback =
+    R"(void main() { frag_out = vec4(1.0, 0.0, 1.0, 1.0); })";
+
 } // namespace Mg::gfx::post_renderer
 
 namespace Mg::gfx {
 
-ShaderCode PostProcessShaderProvider::on_error_shader_code() const
+experimental::PipelineRepository make_post_process_pipeline_repository()
 {
-    ShaderCode code{ post_renderer::post_process_vs, post_renderer::post_process_fs, "" };
-    code.fragment_code += "void main() { frag_out = vec4(1.0, 0.0, 1.0, 1.0); }";
-    return code;
-}
-
-ShaderCode PostProcessShaderProvider::make_shader_code(const Material& material) const
-{
-    ShaderCode code{ post_renderer::post_process_vs, post_renderer::post_process_fs, "" };
-
-    // Include sampler, parameter, and enabled-option definitions
-    code.vertex_code += shader_interface_code(material);
-    code.fragment_code += shader_interface_code(material);
-
-    // Access shader resource
-    {
-        ResourceAccessGuard shader_resource_access(material.shader());
-        code.vertex_code += shader_resource_access->vertex_code();
-        code.fragment_code += shader_resource_access->fragment_code();
-    }
-
-    return code;
-}
-
-void PostProcessShaderProvider::setup_shader_state(ShaderHandle    program,
-                                                   const Material& material) const
-{
+    using namespace experimental;
     using namespace post_renderer;
-    using namespace opengl;
 
-    use_program(program);
+    PipelineRepository::Config config{};
 
-    // Set UBO index bindings
-    set_uniform_block_binding(program, "MaterialParams", k_material_params_ubo_slot);
-    set_uniform_block_binding(program, "FrameBlock", k_frame_block_ubo_slot);
+    config.preamble_shader_code = { VertexShaderCode{ post_process_vs },
+                                    {},
+                                    FragmentShaderCode{ post_process_fs_preamble } };
 
-    // Set built-in sampler bindings
-    set_sampler_binding(uniform_location(program, "sampler_colour"), k_input_colour_texture_unit);
-    set_sampler_binding(uniform_location(program, "sampler_depth"), k_input_depth_texture_unit);
+    config.on_error_shader_code = { {}, {}, FragmentShaderCode{ post_process_fs_fallback } };
 
-    // Set material-provided sampler bindings
-    uint32_t tex_unit = k_material_texture_start_unit;
-    for (auto&& sampler : material.samplers()) {
-        set_sampler_binding(uniform_location(program, sampler.name.str_view()),
-                            TextureUnit{ tex_unit });
-        ++tex_unit;
-    }
+    config.pipeline_prototype.common_input_layout =
+        { { "MaterialParams", PipelineInputType::UniformBuffer, k_material_params_ubo_slot },
+          { "FrameBlock", PipelineInputType::UniformBuffer, k_frame_block_ubo_slot },
+          { "sampler_colour", PipelineInputType::Sampler2D, k_input_colour_texture_unit },
+          { "samler_depth", PipelineInputType::Sampler2D, k_input_depth_texture_unit } };
+
+    return experimental::PipelineRepository(config);
 }
 
 } // namespace Mg::gfx

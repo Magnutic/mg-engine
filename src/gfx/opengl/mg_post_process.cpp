@@ -26,7 +26,6 @@
 #include "shader_factories/mg_post_process_shader_provider.h"
 
 #include "mg_gl_debug.h"
-#include "mg_gl_gfx_device.h"
 #include "mg_glad.h"
 
 #include "mg/containers/mg_small_vector.h"
@@ -41,7 +40,7 @@ static const float quad_vertices[] = { -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,
                                        1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f };
 
 struct PostProcessRendererData {
-    ShaderFactory shader_factory = make_post_process_shader_factory();
+    experimental::PipelineRepository pipeline_repository = make_post_process_pipeline_repository();
 
     UniformBuffer material_params_ubo{ defs::k_material_parameters_buffer_size };
     UniformBuffer frame_block_ubo{ sizeof(post_renderer::FrameBlock) };
@@ -81,22 +80,22 @@ setup_material(PostProcessRendererData& data, const Material& material, float z_
 {
     using namespace post_renderer;
 
-    ShaderHandle shader = data.shader_factory.get_shader(material);
-    glUseProgram(static_cast<GLuint>(shader));
-
-    auto& gfx_device = opengl::OpenGLGfxDevice::get();
-
-    auto tex_unit = k_material_texture_start_unit;
-    for (const Material::Sampler& sampler : material.samplers()) {
-        gfx_device.bind_texture(TextureUnit{ tex_unit++ }, sampler.sampler);
-    }
-
     data.material_params_ubo.set_data(material.material_params_buffer());
-    gfx_device.bind_uniform_buffer(k_material_params_ubo_slot, data.material_params_ubo);
 
     FrameBlock frame_block{ z_near, z_far };
     data.frame_block_ubo.set_data(byte_representation(frame_block));
-    gfx_device.bind_uniform_buffer(k_frame_block_ubo_slot, data.frame_block_ubo);
+
+    small_vector<PipelineInputBinding, 10> input_bindings = { { k_frame_block_ubo_slot,
+                                                                data.frame_block_ubo },
+                                                              { k_material_params_ubo_slot,
+                                                                data.material_params_ubo } };
+
+    uint32_t sampler_index = 0;
+    for (const Material::Sampler& sampler : material.samplers()) {
+        input_bindings.emplace_back(sampler_index++, sampler.sampler);
+    }
+
+    bind_pipeline_input_set(input_bindings);
 }
 
 PostProcessRenderer::PostProcessRenderer() : PimplMixin()
@@ -116,14 +115,17 @@ PostProcessRenderer::~PostProcessRenderer()
 void PostProcessRenderer::post_process(const Material& material, TextureHandle input_colour)
 {
     using namespace post_renderer;
+
+    Pipeline&                pipeline = data().pipeline_repository.get_pipeline(material);
+    PipelinePrototypeContext context(pipeline.prototype());
+    context.bind_pipeline(pipeline);
+
+    PipelineInputBinding input_colour_binding(k_input_colour_texture_unit, input_colour);
+    bind_pipeline_input_set({ &input_colour_binding, 1 });
+
     setup_material(data(), material, 0.0f, 0.0f);
 
-    auto& gfx_device = opengl::OpenGLGfxDevice::get();
-    gfx_device.bind_texture(k_input_colour_texture_unit, input_colour);
-    glActiveTexture(GL_TEXTURE0 + k_input_depth_texture_unit.get());
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    GLuint vao_id = static_cast<uint32_t>(data().vao.value);
+    GLuint vao_id = static_cast<GLuint>(data().vao.value);
 
     glBindVertexArray(vao_id);
     glDrawArrays(GL_TRIANGLES, 0, 12);
@@ -137,13 +139,19 @@ void PostProcessRenderer::post_process(const Material& material,
                                        float           z_far)
 {
     using namespace post_renderer;
+
+    Pipeline&                pipeline = data().pipeline_repository.get_pipeline(material);
+    PipelinePrototypeContext context(pipeline.prototype());
+    context.bind_pipeline(pipeline);
+
+    std::array input_bindings = { PipelineInputBinding(k_input_colour_texture_unit, input_colour),
+                                  PipelineInputBinding(k_input_depth_texture_unit, input_depth) };
+
+    bind_pipeline_input_set(input_bindings);
+
     setup_material(data(), material, z_near, z_far);
 
-    auto& gfx_device = opengl::OpenGLGfxDevice::get();
-    gfx_device.bind_texture(k_input_colour_texture_unit, input_colour);
-    gfx_device.bind_texture(k_input_depth_texture_unit, input_depth);
-
-    GLuint vao_id = static_cast<uint32_t>(data().vao.value);
+    GLuint vao_id = static_cast<GLuint>(data().vao.value);
 
     glBindVertexArray(vao_id);
     glDrawArrays(GL_TRIANGLES, 0, 12);

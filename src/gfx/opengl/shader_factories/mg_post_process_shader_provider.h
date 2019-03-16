@@ -27,23 +27,16 @@
 
 #pragma once
 
-#include "../../mg_shader_factory.h"
-
-#include "mg/gfx/mg_texture_related_types.h"
-#include "mg/gfx/mg_uniform_buffer.h"
-
-#include "../mg_gl_gfx_device.h"
+#include "mg/gfx/mg_pipeline_repository.h"
 
 namespace Mg::gfx::post_renderer {
 
-// Texture units 0 & 1 are reserved for input colour and depth texture, respectively.
-static constexpr TextureUnit k_input_colour_texture_unit{ 0 };
-static constexpr TextureUnit k_input_depth_texture_unit{ 1 };
+// Texture units 8 & 9 are reserved for input colour and depth texture, respectively.
+static constexpr uint32_t k_input_colour_texture_unit = 8;
+static constexpr uint32_t k_input_depth_texture_unit  = 9;
 
-static constexpr uint32_t k_material_texture_start_unit = 2;
-
-static constexpr UniformBufferSlot k_material_params_ubo_slot{ 0 };
-static constexpr UniformBufferSlot k_frame_block_ubo_slot{ 1 };
+static constexpr uint32_t k_material_params_ubo_slot = 0;
+static constexpr uint32_t k_frame_block_ubo_slot     = 1;
 
 struct FrameBlock {
     float z_near;
@@ -54,16 +47,6 @@ struct FrameBlock {
 
 namespace Mg::gfx {
 
-class PostProcessShaderProvider : public IShaderProvider {
-public:
-    ShaderCode on_error_shader_code() const override;
-    ShaderCode make_shader_code(const Material& material) const override;
-    void       setup_shader_state(ShaderHandle program, const Material& material) const override;
-};
-
-inline ShaderFactory make_post_process_shader_factory()
-{
-    return ShaderFactory{ std::make_unique<PostProcessShaderProvider>() };
-}
+experimental::PipelineRepository make_post_process_pipeline_repository();
 
 } // namespace Mg::gfx
