@@ -93,7 +93,6 @@ add_library(mg_engine
     gfx/mg_light_buffers.cpp
     gfx/mg_light_grid.cpp
     gfx/mg_material_repository.cpp
-    gfx/mg_shader_factory.cpp
     gfx/opengl/mg_billboard_renderer.cpp
     gfx/opengl/mg_buffer_texture.cpp
     gfx/opengl/mg_debug_renderer.cpp
