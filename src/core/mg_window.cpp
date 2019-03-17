@@ -41,7 +41,101 @@
 
 namespace Mg {
 
-static void glfw_error_callback(int error, const char* msg);
+// Implementation details with internal linkage.
+namespace {
+
+//--------------------------------------------------------------------------------------------------
+// GLFW Callbacks
+//--------------------------------------------------------------------------------------------------
+
+constexpr auto opengl_create_fail_msg =
+    "Failed to create OpenGL context.\n"
+    "This application requires an OpenGL 3.3 capable system. "
+    "Please make sure your system has an up-to-date graphics driver.\n"
+    "Error message: '{}'";
+
+void glfw_error_callback(int error, const char* reason)
+{
+    if (error == GLFW_VERSION_UNAVAILABLE || error == GLFW_API_UNAVAILABLE) {
+        g_log.write_error(fmt::format(opengl_create_fail_msg, reason));
+    }
+    else {
+        g_log.write_error(fmt::format("GLFW error {}:\n%s", error, reason));
+    }
+
+    throw RuntimeError();
+}
+
+// GLFW callbacks provide the GLFW window handle, but we must forward to the appropriate instance
+// of Mg::Window. For simplicity, we only support one window for now.
+Window* s_window;
+
+Window& window_from_glfw_handle(GLFWwindow* handle)
+{
+    MG_ASSERT(s_window != nullptr);
+    MG_ASSERT(s_window->glfw_window() == handle);
+    return *s_window;
+}
+
+// Creates window with given video mode settings
+GLFWwindow* create_window()
+{
+    g_log.write_verbose("Creating window");
+
+#ifndef NDEBUG
+    // Enabling OpenGL debug context enables the application to receive debug /
+    // error messages from the OpenGL implementation.
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
+#endif
+
+    glfwWindowHint(GLFW_SAMPLES, 0);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_RESIZABLE, 0);
+    // Supposedly necessary for OSX:
+    // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_REFRESH_RATE, GLFW_DONT_CARE); // 'Don't care' -> use highest available
+
+    // These settings are all temporary and will be overridden
+    return glfwCreateWindow(1024, 768, "", nullptr, nullptr);
+}
+
+// Set whether to use VSync for the graphics context associated with this Window.
+void set_vsync(GLFWwindow* window, bool enable)
+{
+    // Update vsync settings, which is part of OpenGL context
+    // Make context current for this thread and then switch back
+    GLFWwindow* context = glfwGetCurrentContext();
+    if (context != window) { glfwMakeContextCurrent(window); }
+
+    g_log.write_message(fmt::format("{} vsync.", enable ? "Enabling" : "Disabling"));
+    glfwSwapInterval(enable ? 1 : 0);
+
+    if (context != window) { glfwMakeContextCurrent(context); }
+}
+
+// Make sure settings are reasonable (fall back to defaults for invalid settings).
+WindowSettings sanitise_settings(WindowSettings s)
+{
+    if (s.video_mode.width <= 0 || s.video_mode.height <= 0) {
+        if (s.fullscreen && defs::k_default_to_desktop_res_in_fullscreen) {
+            g_log.write_verbose("Mg::Window: no resolution specified, using desktop resolution.");
+            s.video_mode = current_monitor_video_mode();
+        }
+        else {
+            g_log.write_verbose("Mg::Window: no resolution specified, using defaults.");
+            s.video_mode.width  = defs::k_default_res_x;
+            s.video_mode.height = defs::k_default_res_y;
+        }
+    }
+
+    return s;
+}
+
+} // namespace
+
+//--------------------------------------------------------------------------------------------------
 
 /** Get video mode of primary monitor. */
 VideoMode current_monitor_video_mode()
@@ -76,76 +170,6 @@ Array<VideoMode> find_available_video_modes()
     return Array<VideoMode>::make_copy(res);
 }
 
-// GLFW callbacks provide the GLFW window handle, but we must forward to the appropriate instance
-// of Mg::Window. For simplicity, we only support one window for now.
-
-static Window* s_window;
-
-static Window& window_from_glfw_handle(GLFWwindow* handle)
-{
-    MG_ASSERT(s_window != nullptr);
-    MG_ASSERT(s_window->glfw_window() == handle);
-    return *s_window;
-}
-
-// Creates window with given video mode settings
-static GLFWwindow* create_window()
-{
-    g_log.write_verbose("Creating window");
-
-#ifndef NDEBUG
-    // Enabling OpenGL debug context enables the application to receive debug /
-    // error messages from the OpenGL implementation.
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
-#endif
-
-    glfwWindowHint(GLFW_SAMPLES, 0);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_RESIZABLE, 0);
-    // Supposedly necessary for OSX:
-    // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_REFRESH_RATE, GLFW_DONT_CARE); // 'Don't care' -> use highest available
-
-    // These settings are all temporary and will be overridden
-    return glfwCreateWindow(1024, 768, "", nullptr, nullptr);
-}
-
-// Set whether to use VSync for the graphics context associated with this Window.
-static void set_vsync(GLFWwindow* window, bool enable)
-{
-    // Update vsync settings, which is part of OpenGL context
-    // Make context current for this thread and then switch back
-    GLFWwindow* context = glfwGetCurrentContext();
-    if (context != window) { glfwMakeContextCurrent(window); }
-
-    g_log.write_message(fmt::format("{} vsync.", enable ? "Enabling" : "Disabling"));
-    glfwSwapInterval(enable ? 1 : 0);
-
-    if (context != window) { glfwMakeContextCurrent(context); }
-}
-
-// Make sure settings are reasonable (fall back to defaults for invalid settings).
-static WindowSettings sanitise_settings(WindowSettings s)
-{
-    if (s.video_mode.width <= 0 || s.video_mode.height <= 0) {
-        if (s.fullscreen && defs::k_default_to_desktop_res_in_fullscreen) {
-            g_log.write_verbose("Mg::Window: no resolution specified, using desktop resolution.");
-            s.video_mode = current_monitor_video_mode();
-        }
-        else {
-            g_log.write_verbose("Mg::Window: no resolution specified, using defaults.");
-            s.video_mode.width  = defs::k_default_res_x;
-            s.video_mode.height = defs::k_default_res_y;
-        }
-    }
-
-    return s;
-}
-
-//--------------------------------------------------------------------------------------------------
-// Window implementation
 //--------------------------------------------------------------------------------------------------
 
 std::unique_ptr<Window> Window::make(WindowSettings settings, const std::string& title)
@@ -265,28 +289,6 @@ void Window::reset()
 void Window::set_title(const std::string& title)
 {
     glfwSetWindowTitle(m_window, title.c_str());
-}
-
-//--------------------------------------------------------------------------------------------------
-// GLFW Callbacks
-//--------------------------------------------------------------------------------------------------
-
-static constexpr auto opengl_create_fail_msg =
-    "Failed to create OpenGL context.\n"
-    "This application requires an OpenGL 3.3 capable system. "
-    "Please make sure your system has an up-to-date graphics driver.\n"
-    "Error message: '{}'";
-
-static void glfw_error_callback(int error, const char* reason)
-{
-    if (error == GLFW_VERSION_UNAVAILABLE || error == GLFW_API_UNAVAILABLE) {
-        g_log.write_error(fmt::format(opengl_create_fail_msg, reason));
-    }
-    else {
-        g_log.write_error(fmt::format("GLFW error {}:\n%s", error, reason));
-    }
-
-    throw RuntimeError();
 }
 
 void Window::lock_cursor_to_window()

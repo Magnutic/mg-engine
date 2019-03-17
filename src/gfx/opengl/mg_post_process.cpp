@@ -35,22 +35,24 @@
 
 namespace Mg::gfx {
 
-static const float quad_vertices[] = { -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,
-                                       1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f };
+namespace {
+
+const float quad_vertices[] = { -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,
+                                1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f };
 
 // Texture units 8 & 9 are reserved for input colour and depth texture, respectively.
-static constexpr uint32_t k_input_colour_texture_unit = 8;
-static constexpr uint32_t k_input_depth_texture_unit  = 9;
+constexpr uint32_t k_input_colour_texture_unit = 8;
+constexpr uint32_t k_input_depth_texture_unit  = 9;
 
-static constexpr uint32_t k_material_params_ubo_slot = 0;
-static constexpr uint32_t k_frame_block_ubo_slot     = 1;
+constexpr uint32_t k_material_params_ubo_slot = 0;
+constexpr uint32_t k_frame_block_ubo_slot     = 1;
 
 struct FrameBlock {
     float z_near;
     float z_far;
 };
 
-static constexpr const char* post_process_vs = R"(
+constexpr const char* post_process_vs = R"(
 #version 330 core
 
 layout (location = 0) in vec2 v_pos;
@@ -63,7 +65,7 @@ void main() {
 }
 )";
 
-static constexpr const char* post_process_fs_preamble = R"(
+constexpr const char* post_process_fs_preamble = R"(
 #version 330 core
 
 layout (location = 0) out vec4 frag_out;
@@ -87,7 +89,7 @@ float linearise_depth(float depth) {
 }
 )";
 
-static constexpr const char* post_process_fs_fallback =
+constexpr const char* post_process_fs_fallback =
     R"(void main() { frag_out = vec4(1.0, 0.0, 1.0, 1.0); })";
 
 experimental::PipelineRepository make_post_process_pipeline_repository()
@@ -111,6 +113,8 @@ experimental::PipelineRepository make_post_process_pipeline_repository()
     return experimental::PipelineRepository(config);
 }
 
+} // namespace
+
 struct PostProcessRendererData {
     experimental::PipelineRepository pipeline_repository = make_post_process_pipeline_repository();
 
@@ -121,7 +125,9 @@ struct PostProcessRendererData {
     OpaqueHandle vao;
 };
 
-static void init(PostProcessRendererData& data)
+namespace {
+
+void init(PostProcessRendererData& data)
 {
     GLuint vao_id = 0;
     GLuint vbo_id = 0;
@@ -147,8 +153,10 @@ static void init(PostProcessRendererData& data)
     data.vbo = vao_id;
 }
 
-static void
-setup_material(PostProcessRendererData& data, const Material& material, float z_near, float z_far)
+void setup_material(PostProcessRendererData& data,
+                    const Material&          material,
+                    float                    z_near,
+                    float                    z_far)
 {
     data.material_params_ubo.set_data(material.material_params_buffer());
 
@@ -167,6 +175,8 @@ setup_material(PostProcessRendererData& data, const Material& material, float z_
 
     bind_pipeline_input_set(input_bindings);
 }
+
+} // namespace
 
 PostProcessRenderer::PostProcessRenderer() : PimplMixin()
 {

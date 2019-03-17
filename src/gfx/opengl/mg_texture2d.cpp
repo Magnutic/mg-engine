@@ -32,12 +32,14 @@
 
 namespace Mg::gfx {
 
+namespace {
+
 //--------------------------------------------------------------------------------------------------
 // render_target helper functions
 //--------------------------------------------------------------------------------------------------
 
 // Helper function to get appropriate texture internal_format for a given render-target format
-static GLint gl_internal_format_for_format(RenderTargetParams::Format format)
+GLint gl_internal_format_for_format(RenderTargetParams::Format format)
 {
     switch (format) {
     case RenderTargetParams::Format::RGBA8:
@@ -55,7 +57,7 @@ static GLint gl_internal_format_for_format(RenderTargetParams::Format format)
 }
 
 // Helper function to get appropriate texture format for a given render-target format
-static uint32_t gl_format_for_format(RenderTargetParams::Format format)
+uint32_t gl_format_for_format(RenderTargetParams::Format format)
 {
     switch (format) {
     case RenderTargetParams::Format::RGBA8:
@@ -73,7 +75,7 @@ static uint32_t gl_format_for_format(RenderTargetParams::Format format)
 }
 
 // Helper function to get appropriate texture data type for a given render-target format
-static uint32_t gl_type_for_format(RenderTargetParams::Format format)
+uint32_t gl_type_for_format(RenderTargetParams::Format format)
 {
     switch (format) {
     case RenderTargetParams::Format::RGBA8:
@@ -91,7 +93,7 @@ static uint32_t gl_type_for_format(RenderTargetParams::Format format)
 }
 
 // Create a texture appropriate for use with the given rendertarget settings
-static OpaqueHandle generate_gl_render_target_texture(const RenderTargetParams& params)
+OpaqueHandle generate_gl_render_target_texture(const RenderTargetParams& params)
 {
     uint32_t id;
     glGenTextures(1, &id);
@@ -149,7 +151,7 @@ struct GlTextureInfo {
 };
 
 // Get texture format info as required by OpenGL
-static GlTextureInfo gl_texture_info(const TextureResource& texture)
+GlTextureInfo gl_texture_info(const TextureResource& texture)
 {
     GlTextureInfo info{};
 
@@ -213,13 +215,13 @@ static GlTextureInfo gl_texture_info(const TextureResource& texture)
     return info;
 }
 
-static void allocate_texture_storage(const GlTextureInfo& info)
+void allocate_texture_storage(const GlTextureInfo& info)
 {
     glTexStorage2D(GL_TEXTURE_2D, info.mip_levels, info.internal_format, info.width, info.height);
 }
 
 // Set up texture sampling parameters for currently bound texture
-static void set_sampling_params(const TextureResource::Settings& settings)
+void set_sampling_params(const TextureResource::Settings& settings)
 {
     GLint edge_sampling = 0;
 
@@ -274,14 +276,14 @@ static void set_sampling_params(const TextureResource::Settings& settings)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
 }
 
-static void upload_compressed_mip(bool    preallocated,
-                                  int32_t mip_index,
-                                  uint32_t /* format */,
-                                  uint32_t      internal_format,
-                                  int32_t       width,
-                                  int32_t       height,
-                                  int32_t       size,
-                                  const GLvoid* data)
+void upload_compressed_mip(bool    preallocated,
+                           int32_t mip_index,
+                           uint32_t /* format */,
+                           uint32_t      internal_format,
+                           int32_t       width,
+                           int32_t       height,
+                           int32_t       size,
+                           const GLvoid* data)
 {
     if (preallocated) {
         // N.B. OpenGL docs are misleading about the 'format' param, it
@@ -298,14 +300,14 @@ static void upload_compressed_mip(bool    preallocated,
     MG_CHECK_GL_ERROR();
 }
 
-static void upload_uncompressed_mip(bool     preallocated,
-                                    int32_t  mip_index,
-                                    uint32_t format,
-                                    uint32_t internal_format,
-                                    int32_t  width,
-                                    int32_t  height,
-                                    int32_t /* size */,
-                                    const GLvoid* data)
+void upload_uncompressed_mip(bool     preallocated,
+                             int32_t  mip_index,
+                             uint32_t format,
+                             uint32_t internal_format,
+                             int32_t  width,
+                             int32_t  height,
+                             int32_t /* size */,
+                             const GLvoid* data)
 {
     if (preallocated) {
         glTexSubImage2D(
@@ -329,7 +331,7 @@ static void upload_uncompressed_mip(bool     preallocated,
     MG_CHECK_GL_ERROR();
 }
 
-static OpaqueHandle generate_gl_texture_from(const TextureResource& texture_resource)
+OpaqueHandle generate_gl_texture_from(const TextureResource& texture_resource)
 {
     GlTextureInfo info = gl_texture_info(texture_resource);
 
@@ -372,6 +374,8 @@ static OpaqueHandle generate_gl_texture_from(const TextureResource& texture_reso
 
     return OpaqueHandle{ texture_id };
 }
+
+} // namespace
 
 //--------------------------------------------------------------------------------------------------
 // Texture2D implementation

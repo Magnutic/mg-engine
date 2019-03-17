@@ -43,7 +43,9 @@
 
 namespace Mg::gfx {
 
-static const char vs_code[] = R"(
+namespace {
+
+const char vs_code[] = R"(
     #version 330 core
     layout(location = 0) in vec3 vert_position;
 
@@ -55,7 +57,7 @@ static const char vs_code[] = R"(
     }
 )";
 
-static const char fs_code[] = R"(
+const char fs_code[] = R"(
     #version 330 core
     uniform vec4 colour;
 
@@ -89,7 +91,7 @@ public:
     }
 };
 
-static DebugMesh generate_mesh(span<const glm::vec3> positions, span<const uint16_t> indices)
+DebugMesh generate_mesh(span<const glm::vec3> positions, span<const uint16_t> indices)
 {
     GLuint vao_id = 0;
     GLuint vbo_id = 0;
@@ -122,29 +124,29 @@ static DebugMesh generate_mesh(span<const glm::vec3> positions, span<const uint1
     return { vao_id, vbo_id, ibo_id, narrow<int32_t>(indices.size()) };
 }
 
-static const glm::vec3 box_vertices[] = {
+const glm::vec3 box_vertices[] = {
     { -0.5, -0.5, 0.5 },  { 0.5, -0.5, 0.5 },  { 0.5, 0.5, 0.5 },  { -0.5, 0.5, 0.5 },
     { -0.5, -0.5, -0.5 }, { 0.5, -0.5, -0.5 }, { 0.5, 0.5, -0.5 }, { -0.5, 0.5, -0.5 },
 };
 
-static const uint16_t box_indices[] = { 0, 1, 2, 2, 3, 0,
+const uint16_t box_indices[] = { 0, 1, 2, 2, 3, 0,
 
-                                        4, 5, 1, 1, 0, 4,
+                                 4, 5, 1, 1, 0, 4,
 
-                                        5, 6, 2, 2, 1, 5,
+                                 5, 6, 2, 2, 1, 5,
 
-                                        6, 7, 3, 3, 2, 6,
+                                 6, 7, 3, 3, 2, 6,
 
-                                        7, 4, 0, 0, 3, 7,
+                                 7, 4, 0, 0, 3, 7,
 
-                                        7, 6, 5, 5, 4, 7 };
+                                 7, 6, 5, 5, 4, 7 };
 
 struct EllipsoidData {
     std::vector<glm::vec3> verts;
     std::vector<uint16_t>  indices;
 };
 
-static EllipsoidData generate_ellipsoid_verts(size_t steps)
+EllipsoidData generate_ellipsoid_verts(size_t steps)
 {
     MG_ASSERT(steps > 3);
     EllipsoidData data;
@@ -231,14 +233,16 @@ static EllipsoidData generate_ellipsoid_verts(size_t steps)
     return data;
 }
 
-//--------------------------------------------------------------------------------------------------
-// DebugRenderer implementation
-//--------------------------------------------------------------------------------------------------
-
 struct Sphere {
     Sphere(const EllipsoidData& data) : mesh{ generate_mesh(data.verts, data.indices) } {}
     DebugMesh mesh;
 };
+
+} // namespace
+
+//--------------------------------------------------------------------------------------------------
+// DebugRenderer implementation
+//--------------------------------------------------------------------------------------------------
 
 struct DebugRendererData {
     ShaderProgramOwner program = [] {

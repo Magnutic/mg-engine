@@ -50,6 +50,8 @@ namespace fs = std::filesystem;
 
 namespace Mg {
 
+namespace {
+
 enum class TokenType {
     // Symbols
     COMMA,
@@ -93,7 +95,7 @@ enum class TokenType {
     END_OF_FILE,
 };
 
-static std::string_view token_type_to_str(TokenType type)
+std::string_view token_type_to_str(TokenType type)
 {
     // clang-format off
     switch (type) {
@@ -163,7 +165,7 @@ constexpr std::array<std::pair<std::string_view, TokenType>, 18> keywords{ {
     { "DEFINES_VERTEX_PREPROCESS", TokenType::DEFINES_VERTEX_PREPROCESS },
 } };
 
-inline Opt<TokenType> get_keyword_type(std::string_view lexeme)
+Opt<TokenType> get_keyword_type(std::string_view lexeme)
 {
     for (auto&& [str, token_type] : keywords) {
         if (str == lexeme) { return token_type; }
@@ -183,7 +185,7 @@ float numeric_value(const Token& token)
     return std::get<float>(token.literal_value);
 }
 
-inline std::string_view string_value(const Token& token)
+std::string_view string_value(const Token& token)
 {
     return std::get<std::string_view>(token.literal_value);
 }
@@ -198,25 +200,24 @@ struct LexerState {
     size_t token_start = 0;
 };
 
-inline void lex_error(LexerState& lex, std::string_view reason)
+void lex_error(LexerState& lex, std::string_view reason)
 {
     g_log.write_error(fmt::format("Error parsing at line {}: {}", lex.line, reason));
     throw RuntimeError();
 }
 
-inline size_t lexeme_length(LexerState& lex)
+size_t lexeme_length(LexerState& lex)
 {
     return lex.stream.pos - lex.token_start;
 }
 
-template<typename T = float>
-inline void add_token(LexerState& lex, TokenType type, T literal_value = {})
+template<typename T = float> void add_token(LexerState& lex, TokenType type, T literal_value = {})
 {
     std::string_view lexeme = lex.stream.data.substr(lex.token_start, lexeme_length(lex));
     lex.tokens.push_back({ type, lexeme, literal_value, lex.line });
 }
 
-inline void string_literal(LexerState& lex)
+void string_literal(LexerState& lex)
 {
     while (lex.stream.peek() != '"' && !lex.stream.is_at_end()) {
         if (lex.stream.peek() == '\n') {
@@ -232,17 +233,17 @@ inline void string_literal(LexerState& lex)
               lex.stream.data.substr(lex.token_start + 1, lexeme_length(lex) - 2));
 }
 
-inline bool is_digit(char c)
+bool is_digit(char c)
 {
     return (c >= '0' && c <= '9');
 }
 
-inline bool is_alphanumeric(char c)
+bool is_alphanumeric(char c)
 {
     return ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_' || is_digit(c));
 }
 
-inline void numeric_literal(LexerState& lex)
+void numeric_literal(LexerState& lex)
 {
     while (is_digit(lex.stream.peek()) || lex.stream.peek() == '.') { lex.stream.advance(); }
 
@@ -252,7 +253,7 @@ inline void numeric_literal(LexerState& lex)
     add_token(lex, TokenType::NUMERIC_LITERAL, value);
 }
 
-inline void identifier(LexerState& lex)
+void identifier(LexerState& lex)
 {
     while (is_alphanumeric(lex.stream.peek())) { lex.stream.advance(); }
 
@@ -263,7 +264,7 @@ inline void identifier(LexerState& lex)
                                [&] { add_token(lex, TokenType::IDENTIFIER, lexeme); });
 }
 
-inline void next_token(LexerState& lex)
+void next_token(LexerState& lex)
 {
     char c = lex.stream.advance();
     switch (c) {
@@ -322,7 +323,7 @@ inline void next_token(LexerState& lex)
     }
 }
 
-inline std::vector<Token> lex(std::string_view code)
+std::vector<Token> lex(std::string_view code)
 {
     LexerState lex{ SimpleInputStream{ code }, {} };
 
@@ -640,9 +641,9 @@ static constexpr auto k_delimiter_comment = R"(
 )";
 
 // Helper for ShaderResource::load_resource. Assemble shader code by loading included code files.
-inline std::string assemble_shader_code(const fs::path&             include_directory,
-                                        span<std::string>           include_files,
-                                        const ResourceLoadingInput& input)
+std::string assemble_shader_code(const fs::path&             include_directory,
+                                 span<std::string>           include_files,
+                                 const ResourceLoadingInput& input)
 {
     std::string code;
     code.reserve(1024);
@@ -663,6 +664,8 @@ inline std::string assemble_shader_code(const fs::path&             include_dire
 
     return code;
 }
+
+} // namespace
 
 LoadResourceResult ShaderResource::load_resource_impl(const ResourceLoadingInput& input)
 {

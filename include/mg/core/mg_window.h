@@ -39,9 +39,9 @@
 
 struct GLFWwindow;
 
-//--------------------------------------------------------------------------------------------------
-
 namespace Mg {
+
+//--------------------------------------------------------------------------------------------------
 
 /* Find all available screen resolutions.
  * This could be useful for e.g. listing choices in a display options menu.

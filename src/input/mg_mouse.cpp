@@ -32,13 +32,15 @@
 
 namespace Mg::input {
 
+namespace {
+
 //--------------------------------------------------------------------------------------------------
 // Convert between mouse input type enums and internal integral representation.
 //--------------------------------------------------------------------------------------------------
 
 enum class MouseType { Button, Axis };
 
-static MouseType type(InputSource::Id id)
+MouseType type(InputSource::Id id)
 {
     MG_ASSERT(id < Mouse::k_max_mouse_input_id);
 
@@ -47,49 +49,34 @@ static MouseType type(InputSource::Id id)
     return MouseType::Axis;
 }
 
-static InputSource::Id to_input_id(Mouse::Button button)
+InputSource::Id to_input_id(Mouse::Button button)
 {
     return InputSource::Id(button);
 }
 
-static Mouse::Button to_button(InputSource::Id id)
+Mouse::Button to_button(InputSource::Id id)
 {
     MG_ASSERT_DEBUG(type(id) == MouseType::Button);
     return static_cast<Mouse::Button>(id);
 }
 
-static InputSource::Id to_input_id(Mouse::Axis axis)
+InputSource::Id to_input_id(Mouse::Axis axis)
 {
     return InputSource::Id(axis) + Mouse::k_num_buttons;
 }
 
-static Mouse::Axis to_axis(InputSource::Id id)
+Mouse::Axis to_axis(InputSource::Id id)
 {
     MG_ASSERT_DEBUG(type(id) == MouseType::Axis);
     return static_cast<Mouse::Axis>(id - Mouse::k_num_buttons);
 }
 
-//--------------------------------------------------------------------------------------------------
-// Mouse implementation
-//--------------------------------------------------------------------------------------------------
-
-
-InputSource Mouse::button(Button button) const
-{
-    return InputSource{ *this, to_input_id(button) };
-}
-
-InputSource Mouse::axis(Axis axis) const
-{
-    return InputSource{ *this, to_input_id(axis) };
-}
-
-static std::string button_description(Mouse::Button button)
+std::string button_description(Mouse::Button button)
 {
     return fmt::format("Mouse button {}", int(button) + 1);
 }
 
-static std::string axis_description(Mouse::Axis axis)
+std::string axis_description(Mouse::Axis axis)
 {
     switch (axis) {
     case Mouse::Axis::pos_x:
@@ -104,6 +91,23 @@ static std::string axis_description(Mouse::Axis axis)
         MG_ASSERT(false);
         return "";
     }
+}
+
+} // namespace
+
+//--------------------------------------------------------------------------------------------------
+// Mouse implementation
+//--------------------------------------------------------------------------------------------------
+
+
+InputSource Mouse::button(Button button) const
+{
+    return InputSource{ *this, to_input_id(button) };
+}
+
+InputSource Mouse::axis(Axis axis) const
+{
+    return InputSource{ *this, to_input_id(axis) };
 }
 
 std::string Mouse::description(InputSource::Id id) const

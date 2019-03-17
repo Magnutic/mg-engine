@@ -39,12 +39,14 @@
 
 namespace Mg::gfx {
 
+namespace {
+
 using LightBlock = std::array<Light, MG_MAX_NUM_LIGHTS>;
 
 // Keep below lower bound on max UBO size. TODO: split into multiple UBOs if too large?
 static_assert(sizeof(LightBlock) <= 16 * 1024);
 
-inline BufferTexture::Type light_index_tex_type()
+BufferTexture::Type light_index_tex_type()
 {
     BufferTexture::Type type{};
     type.channels  = BufferTexture::Channels::R; // red: light index
@@ -53,7 +55,7 @@ inline BufferTexture::Type light_index_tex_type()
     return type;
 }
 
-inline BufferTexture::Type light_grid_tex_type()
+BufferTexture::Type light_grid_tex_type()
 {
     BufferTexture::Type type{};
     type.channels  = BufferTexture::Channels::RG; // red: offset, green: amount.
@@ -75,13 +77,7 @@ static_assert(std::is_trivially_copyable_v<ClusterArray>);
 static_assert(std::is_trivially_copyable_v<LightIndexArray>);
 static_assert(std::is_trivially_copyable_v<LightGridData>);
 
-LightBuffers::LightBuffers()
-    : light_data_buffer{ sizeof(LightBlock) }
-    , light_index_texture{ light_index_tex_type(), sizeof(LightIndexArray) }
-    , tile_data_texture{ light_grid_tex_type(), sizeof(LightGridData) }
-{}
-
-inline void add_light_to_cluster(size_t light_index, glm::uvec3 cluster, ClusterArray& clusters)
+void add_light_to_cluster(size_t light_index, glm::uvec3 cluster, ClusterArray& clusters)
 {
     auto cluster_index = MG_LIGHT_GRID_WIDTH * (MG_LIGHT_GRID_HEIGHT * cluster.z + cluster.y) +
                          cluster.x;
@@ -96,9 +92,23 @@ inline void add_light_to_cluster(size_t light_index, glm::uvec3 cluster, Cluster
     ++clusters[cluster_index].num_lights;
 }
 
-static auto clusters          = std::make_unique<ClusterArray>();
-static auto light_index_array = std::make_unique<LightIndexArray>();
-static auto light_grid_data   = std::make_unique<LightGridData>();
+// Reserve memory for the temporary buffers within which update_light_data creates the data to
+// upload to the GPU. These are reserved and re-used between invocations of update_light_data to
+// avoid costly large dynamic memory allocations -- putting them on the stack would not work, as the
+// required memory is too large.
+auto clusters          = std::make_unique<ClusterArray>();
+auto light_index_array = std::make_unique<LightIndexArray>();
+auto light_grid_data   = std::make_unique<LightGridData>();
+
+} // namespace
+
+//--------------------------------------------------------------------------------------------------
+
+LightBuffers::LightBuffers()
+    : light_data_buffer{ sizeof(LightBlock) }
+    , light_index_texture{ light_index_tex_type(), sizeof(LightIndexArray) }
+    , tile_data_texture{ light_grid_tex_type(), sizeof(LightGridData) }
+{}
 
 void update_light_data(LightBuffers&     light_data_out,
                        span<const Light> lights,

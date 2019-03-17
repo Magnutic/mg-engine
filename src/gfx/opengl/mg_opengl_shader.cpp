@@ -48,16 +48,20 @@
 
 namespace Mg::gfx::opengl {
 
-inline GLuint gl_program_id(ShaderHandle program)
+namespace {
+
+GLuint gl_program_id(ShaderHandle program)
 {
     return static_cast<GLuint>(program);
 }
 
-inline Opt<GLuint> uniform_block_index(GLuint ubo_id, std::string_view block_name)
+Opt<GLuint> uniform_block_index(GLuint ubo_id, std::string_view block_name)
 {
     auto block_index = glGetUniformBlockIndex(ubo_id, std::string(block_name).c_str());
     return block_index == GL_INVALID_INDEX ? nullopt : make_opt(block_index);
 }
+
+} // namespace
 
 void use_program(ShaderHandle program)
 {

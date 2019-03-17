@@ -34,7 +34,9 @@
 
 namespace Mg::gfx {
 
-static GLenum shader_stage_to_gl_enum(ShaderStage stage)
+namespace {
+
+GLenum shader_stage_to_gl_enum(ShaderStage stage)
 {
     switch (stage) {
     case ShaderStage::Vertex:
@@ -47,8 +49,6 @@ static GLenum shader_stage_to_gl_enum(ShaderStage stage)
 
     MG_ASSERT(false && "unreachable");
 }
-
-static constexpr size_t k_shader_program_pool_size = 64;
 
 template<ShaderStage stage> Opt<TypedShaderHandle<stage>> compile_shader(const std::string& code)
 {
@@ -86,6 +86,8 @@ template<ShaderStage stage> Opt<TypedShaderHandle<stage>> compile_shader(const s
     return TypedShaderHandle<stage>{ ShaderId{ id } };
 }
 
+} // namespace
+
 Opt<VertexShaderHandle> compile_vertex_shader(const std::string& code)
 {
     return compile_shader<ShaderStage::Vertex>(code);
@@ -110,8 +112,10 @@ void destroy_shader(ShaderId handle)
 // Helpers for ShaderProgram implementation
 //--------------------------------------------------------------------------------------------------
 
+namespace {
+
 // Links the given shader program, returning whether linking was successful.
-static bool link_program(uint32_t program_id)
+bool link_program(uint32_t program_id)
 {
     glLinkProgram(program_id);
 
@@ -159,6 +163,8 @@ public:
     GLuint        _program{};
     Opt<ShaderId> _shader{};
 };
+
+} // namespace
 
 //--------------------------------------------------------------------------------------------------
 // ShaderProgram implementation

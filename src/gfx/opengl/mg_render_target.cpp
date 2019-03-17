@@ -58,8 +58,10 @@ void WindowRenderTarget::update_viewport()
 // TextureRenderTarget implementation
 //--------------------------------------------------------------------------------------------------
 
+namespace {
+
 // Create a depth/stencil renderbuffer appropriate for use with the given rendertarget settings
-static uint32_t create_depth_stencil_buffer(ImageSize size)
+uint32_t create_depth_stencil_buffer(ImageSize size)
 {
     uint32_t id = 0;
     glGenRenderbuffers(1, &id);
@@ -72,7 +74,7 @@ static uint32_t create_depth_stencil_buffer(ImageSize size)
     return id;
 }
 
-static void check_framebuffer()
+void check_framebuffer()
 {
     MG_CHECK_GL_ERROR();
     auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -94,6 +96,8 @@ public:
 
     GLint old_binding{};
 };
+
+} // namespace
 
 TextureRenderTarget TextureRenderTarget::with_colour_target(TextureHandle colour_target,
                                                             DepthType     depth_type)

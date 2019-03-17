@@ -33,11 +33,13 @@
 
 namespace Mg::input {
 
+namespace {
+
 // Name look-up cache
-static std::array<const char*, Keyboard::k_num_keys> key_names;
+std::array<const char*, Keyboard::k_num_keys> key_names;
 
 // Map from Keyboard::Key enum values to GLFW key codes.
-static constexpr std::array<int, Keyboard::k_num_keys> k_glfw_key_codes{ {
+constexpr std::array<int, Keyboard::k_num_keys> k_glfw_key_codes{ {
     32, // Space
 
     39, // Apostrophe
@@ -158,11 +160,13 @@ static constexpr std::array<int, Keyboard::k_num_keys> k_glfw_key_codes{ {
     348  // Menu
 } };
 
-static int glfw_key_code(Keyboard::Key key)
+int glfw_key_code(Keyboard::Key key)
 {
     // Slightly evil enum to index cast, relies on k_glfw_key_codes having same layout as Key enum.
     return k_glfw_key_codes.at(static_cast<size_t>(key));
 }
+
+} // namespace
 
 std::string Keyboard::description(InputSource::Id id) const
 {

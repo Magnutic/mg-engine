@@ -34,13 +34,15 @@
 
 namespace Mg::gfx::experimental {
 
+namespace {
+
 namespace ShaderErrorFlags {
 using Value = uint32_t;
 enum Flags { VertexShader = 0x1, FragmentShader = 0x1 << 1, GeometryShader = 0x1 << 2 };
 } // namespace ShaderErrorFlags
 
 // Dump code to log with line numbers
-inline std::string error_dump_code(std::string_view code)
+std::string error_dump_code(std::string_view code)
 {
     std::string str;
     str.reserve(1024);
@@ -59,7 +61,7 @@ inline std::string error_dump_code(std::string_view code)
 }
 
 // Write details on shader compilation error to log.
-inline void log_shader_error(const ShaderCode& code, ShaderErrorFlags::Value error_flags)
+void log_shader_error(const ShaderCode& code, ShaderErrorFlags::Value error_flags)
 {
     if ((error_flags & ShaderErrorFlags::VertexShader) != 0) {
         g_log.write_error("Error compiling vertex shader");
@@ -87,7 +89,7 @@ inline ShaderCode append_shader_code(const ShaderCode& first, const ShaderCode& 
     return code;
 }
 
-inline std::string shader_input_layout_code(const Material& material)
+std::string shader_input_layout_code(const Material& material)
 {
     std::string snippet;
     snippet.reserve(256);
@@ -131,7 +133,7 @@ struct ShaderCompileResult {
     ShaderErrorFlags::Value   error_flags = 0;
 };
 
-inline ShaderCompileResult compile_shader(const ShaderCode& code)
+ShaderCompileResult compile_shader(const ShaderCode& code)
 {
     ShaderCompileResult result;
 
@@ -152,6 +154,8 @@ inline ShaderCompileResult compile_shader(const ShaderCode& code)
 
     return result;
 }
+
+} // namespace
 
 Pipeline& PipelineRepository::get_pipeline(const Material& material)
 {

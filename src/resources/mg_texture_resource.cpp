@@ -33,6 +33,8 @@
 
 namespace Mg {
 
+namespace {
+
 //--------------------------------------------------------------------------------------------------
 // DDS format helpers
 //--------------------------------------------------------------------------------------------------
@@ -110,7 +112,7 @@ struct PixelFormatResult {
     TextureResource::PixelFormat format;
 };
 /** Determine pixel format of DDS file. Nullopt if format is unsupported. */
-static PixelFormatResult dds_pf_to_pixel_format(const DDS_PIXELFORMAT& pf)
+PixelFormatResult dds_pf_to_pixel_format(const DDS_PIXELFORMAT& pf)
 {
     if ((pf.dwFlags & DDPF_FOURCC) != 0) {
         switch (pf.dwFourCC) {
@@ -143,7 +145,7 @@ static PixelFormatResult dds_pf_to_pixel_format(const DDS_PIXELFORMAT& pf)
     return { false, {} };
 }
 
-inline size_t block_size_by_format(TextureResource::PixelFormat pixel_format)
+size_t block_size_by_format(TextureResource::PixelFormat pixel_format)
 {
     switch (pixel_format) {
     case TextureResource::PixelFormat::DXT1:
@@ -164,10 +166,12 @@ inline size_t block_size_by_format(TextureResource::PixelFormat pixel_format)
 }
 
 /** Get the number of blocks in a mipmap of given dimensions. */
-inline size_t num_blocks_by_img_size(TextureResource::DimT width, TextureResource::DimT height)
+size_t num_blocks_by_img_size(TextureResource::DimT width, TextureResource::DimT height)
 {
     return ((width + 3) / 4) * ((height + 3) / 4);
 }
+
+} // namespace
 
 //--------------------------------------------------------------------------------------------------
 // TextureResource implementation

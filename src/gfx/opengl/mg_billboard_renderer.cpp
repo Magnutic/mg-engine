@@ -46,9 +46,11 @@
 
 namespace Mg::gfx {
 
+namespace {
+
 // Binding slots for UniformBufferObjects.
-static constexpr uint32_t k_camera_ubo_slot          = 0;
-static constexpr uint32_t k_material_params_ubo_slot = 1;
+constexpr uint32_t k_camera_ubo_slot          = 0;
+constexpr uint32_t k_material_params_ubo_slot = 1;
 
 //--------------------------------------------------------------------------------------------------
 // Shader code for billboard rendering
@@ -133,7 +135,7 @@ constexpr auto billboard_fragment_shader_fallback = R"(
     void main() { frag_colour = vec4(1.0, 0.0, 1.0, 1.0); }
 )";
 
-inline experimental::PipelineRepository make_billboard_pipeline_factory()
+experimental::PipelineRepository make_billboard_pipeline_factory()
 {
     using namespace experimental;
 
@@ -154,6 +156,7 @@ inline experimental::PipelineRepository make_billboard_pipeline_factory()
     return experimental::PipelineRepository(config);
 }
 
+} // namespace
 
 //--------------------------------------------------------------------------------------------------
 // BillboardRendererList implementation

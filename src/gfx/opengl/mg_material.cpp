@@ -130,8 +130,10 @@ void Material::set_parameter(Identifier name, glm::vec4 param)
     _set_parameter_impl(name, param, ShaderParameterType::Vec4);
 }
 
+namespace {
+
 // How far to advance in to parameters buffer for each type.
-static size_t offset_for_param_type(ShaderParameterType type)
+size_t offset_for_param_type(ShaderParameterType type)
 {
     switch (type) {
     case ShaderParameterType::Vec4:
@@ -144,7 +146,7 @@ static size_t offset_for_param_type(ShaderParameterType type)
     MG_ASSERT(false && "unreachable");
 }
 
-static size_t num_elems_for_param_type(ShaderParameterType type)
+size_t num_elems_for_param_type(ShaderParameterType type)
 {
     switch (type) {
     case ShaderParameterType::Vec4:
@@ -158,10 +160,10 @@ static size_t num_elems_for_param_type(ShaderParameterType type)
 }
 
 // Print error message when the wrong type is passed into Material::set_parameter
-static void wrong_type_error(Identifier          material_id,
-                             Identifier          param_id,
-                             ShaderParameterType expected,
-                             ShaderParameterType actual)
+void wrong_type_error(Identifier          material_id,
+                      Identifier          param_id,
+                      ShaderParameterType expected,
+                      ShaderParameterType actual)
 {
     auto error_msg = fmt::format(
         "Material '{}': set_parameter(\"{}\", ...): wrong type, expected {}, got {}.",
@@ -172,6 +174,8 @@ static void wrong_type_error(Identifier          material_id,
 
     g_log.write_error(error_msg);
 }
+
+} // namespace
 
 void Material::_set_parameter_impl(Identifier name, glm::vec4 param, ShaderParameterType enum_v)
 {

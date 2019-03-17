@@ -34,6 +34,9 @@
 #include <unordered_map>
 
 namespace Mg {
+
+namespace {
+
 //--------------------------------------------------------------------------------------------------
 // Nifty counter-based lifetime management for dynamic-string-copy map.
 // Guarantees initialisation before first use, even during static initialisation of other objects.
@@ -58,11 +61,11 @@ struct DynamicStrMap {
     std::mutex                                mutex;
 };
 
-static int nifty_counter;
+int                                           nifty_counter;
+std::aligned_storage_t<sizeof(DynamicStrMap)> map_buf;
+DynamicStrMap*                                p_dynamic_str_map = nullptr;
 
-static std::aligned_storage_t<sizeof(DynamicStrMap)> map_buf;
-
-static DynamicStrMap* p_dynamic_str_map = nullptr;
+} // namespace
 
 detail::StrMapInitialiser::StrMapInitialiser()
 {
