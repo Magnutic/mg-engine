@@ -26,15 +26,32 @@
 #include "mg/gfx/mg_camera.h"
 #include "mg/gfx/mg_light_grid.h"
 #include "mg/gfx/mg_material.h"
-#include "mg/resource_cache/mg_resource_access_guard.h"
-#include "mg/resources/mg_shader_resource.h"
 
-#include "../mg_opengl_shader.h"
 #include "../mg_glad.h"
 
 #include "shader_code/mg_mesh_framework_shader_code.h"
 
 namespace Mg::gfx::mesh_renderer {
+
+static constexpr const char* mesh_fs_fallback = R"(
+float attenuate(float distance_sqr, float range_sqr_reciprocal) { return 1.0; }
+
+vec3 light(const LightInput light, const SurfaceParams surface, const vec3 view_direction) {
+    return vec3(0.0);
+}
+
+void final_colour(const SurfaceInput s_in, const SurfaceParams s, inout vec4 colour) {}
+
+void surface(const SurfaceInput s_in, out SurfaceParams s_out) {
+    s_out.albedo    = vec3(0.0);
+    s_out.specular  = vec3(0.0);
+    s_out.gloss     = 0.0;
+    s_out.normal    = vec3(0.0);
+    s_out.emission  = vec3(100.0, 0.0, 100.0);
+    s_out.occlusion = 0.0;
+    s_out.alpha     = 1.0;
+}
+)";
 
 FrameBlock make_frame_block(const ICamera& camera, float current_time, float camera_exposure)
 {
@@ -67,104 +84,28 @@ FrameBlock make_frame_block(const ICamera& camera, float current_time, float cam
 
 namespace Mg::gfx {
 
-static constexpr size_t     code_reservation_size = 5 * 1024;
-static constexpr const char version_tag[]         = "#version 330 core\n";
-
-inline ShaderCode shader_code_stub()
+experimental::PipelineRepository make_mesh_pipeline_repository()
 {
-    std::string vertex_code;
-    vertex_code.reserve(code_reservation_size);
-
-    std::string fragment_code;
-    fragment_code.reserve(code_reservation_size);
-
-    // GLSL version tag
-    vertex_code += version_tag;
-    fragment_code += version_tag;
-
-    return { vertex_code, fragment_code, "" };
-}
-
-
-ShaderCode MeshShaderProvider::on_error_shader_code() const
-{
-    ShaderCode code = shader_code_stub();
-
-    // Include framework shader code.
-    code.vertex_code += k_lit_mesh_framework_vertex_code;
-    code.fragment_code += k_lit_mesh_framework_fragment_code;
-
-    code.fragment_code += R"(
-float attenuate(float distance_sqr, float range_sqr_reciprocal) { return 1.0; }
-
-vec3 light(const LightInput light, const SurfaceParams surface, const vec3 view_direction) {
-    return vec3(0.0);
-}
-
-void final_colour(const SurfaceInput s_in, const SurfaceParams s, inout vec4 colour) {}
-
-void surface(const SurfaceInput s_in, out SurfaceParams s_out) {
-    s_out.albedo    = vec3(0.0);
-    s_out.specular  = vec3(0.0);
-    s_out.gloss     = 0.0;
-    s_out.normal    = vec3(0.0);
-    s_out.emission  = vec3(100.0, 0.0, 100.0);
-    s_out.occlusion = 0.0;
-    s_out.alpha     = 1.0;
-}
-    )";
-
-    return code;
-}
-
-ShaderCode MeshShaderProvider::make_shader_code(const Material& material) const
-{
-    ShaderCode code = shader_code_stub();
-
-    // Access shader resource
-    ResourceAccessGuard shader_resource_access(material.shader());
-
-    // If there is a vertex-preprocess function, then include the corresponding #define
-    if ((shader_resource_access->tags() & ShaderTag::DEFINES_VERTEX_PREPROCESS) != 0) {
-        code.vertex_code += "#define VERTEX_PREPROCESS_ENABLED 1";
-    }
-
-    // Include framework shader code.
-    code.vertex_code += k_lit_mesh_framework_vertex_code;
-    code.fragment_code += k_lit_mesh_framework_fragment_code;
-
-    // Include sampler, parameter, and enabled-option definitions.
-    code.vertex_code += shader_interface_code(material);
-    code.fragment_code += shader_interface_code(material);
-
-    // Include resource-defined shader code.
-    code.vertex_code += shader_resource_access->vertex_code();
-    code.fragment_code += shader_resource_access->fragment_code();
-
-    return code;
-}
-
-void MeshShaderProvider::setup_shader_state(ShaderHandle program, const Material& material) const
-{
-    using namespace opengl;
+    using namespace experimental;
     using namespace mesh_renderer;
 
-    use_program(program);
-    set_uniform_block_binding(program, "MatrixBlock", k_matrix_ubo_slot);
-    set_uniform_block_binding(program, "FrameBlock", k_frame_ubo_slot);
-    set_uniform_block_binding(program, "LightBlock", k_light_ubo_slot);
-    set_uniform_block_binding(program, "MaterialParams", k_material_params_ubo_slot);
+    PipelineRepository::Config config{};
+    config.preamble_shader_code = { VertexShaderCode{ k_lit_mesh_framework_vertex_code },
+                                    {},
+                                    FragmentShaderCode{ k_lit_mesh_framework_fragment_code } };
 
-    uint32_t tex_unit = 0;
+    config.on_error_shader_code = { {}, {}, FragmentShaderCode{ mesh_fs_fallback } };
 
-    for (const Material::Sampler& sampler : material.samplers()) {
-        set_sampler_binding(uniform_location(program, sampler.name.str_view()),
-                            TextureUnit{ tex_unit++ });
-    }
+    config.pipeline_prototype.common_input_layout = {
+        { "MatrixBlock", PipelineInputType::UniformBuffer, k_matrix_ubo_slot },
+        { "FrameBlock", PipelineInputType::UniformBuffer, k_frame_ubo_slot },
+        { "LightBlock", PipelineInputType::UniformBuffer, k_light_ubo_slot },
+        { "MaterialParams", PipelineInputType::UniformBuffer, k_material_params_ubo_slot },
+        { "_sampler_tile_data", PipelineInputType::BufferTexture, k_sampler_tile_data_index },
+        { "_sampler_light_index", PipelineInputType::BufferTexture, k_sampler_light_index_index }
+    };
 
-    set_sampler_binding(uniform_location(program, "_sampler_tile_data"), k_sampler_tile_data_index);
-    set_sampler_binding(uniform_location(program, "_sampler_light_index"),
-                        k_sampler_light_index_index);
+    return PipelineRepository(config);
 }
 
 } // namespace Mg::gfx

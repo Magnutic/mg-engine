@@ -239,6 +239,12 @@ ShaderCode PipelineRepository::assemble_shader_code(const Material& material)
     // Access shader resource
     {
         ResourceAccessGuard shader_resource_access(material.shader());
+
+        // If there is a vertex-preprocess function, then include the corresponding #define
+        if ((shader_resource_access->tags() & ShaderTag::DEFINES_VERTEX_PREPROCESS) != 0) {
+            code.vertex.code += "#define VERTEX_PREPROCESS_ENABLED 1";
+        }
+
         code.vertex.code += shader_resource_access->vertex_code();
         code.fragment.code += shader_resource_access->fragment_code();
     }

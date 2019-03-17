@@ -27,11 +27,7 @@
 
 #pragma once
 
-#include "../../mg_shader_factory.h"
-#include "../mg_gl_gfx_device.h"
-
-#include "mg/gfx/mg_texture_related_types.h"
-#include "mg/gfx/mg_uniform_buffer.h"
+#include "mg/gfx/mg_pipeline_repository.h"
 
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
@@ -40,29 +36,19 @@ namespace Mg::gfx {
 
 class ICamera;
 
-class MeshShaderProvider : public IShaderProvider {
-public:
-    ShaderCode on_error_shader_code() const override;
-    ShaderCode make_shader_code(const Material& material) const override;
-    void       setup_shader_state(ShaderHandle program, const Material& material) const override;
-};
-
-inline ShaderFactory make_mesh_shader_factory()
-{
-    return ShaderFactory{ std::make_unique<MeshShaderProvider>() };
-}
+experimental::PipelineRepository make_mesh_pipeline_repository();
 
 } // namespace Mg::gfx
 
 namespace Mg::gfx::mesh_renderer {
 
-static constexpr UniformBufferSlot k_matrix_ubo_slot{ 0 };
-static constexpr UniformBufferSlot k_frame_ubo_slot{ 1 };
-static constexpr UniformBufferSlot k_light_ubo_slot{ 2 };
-static constexpr UniformBufferSlot k_material_params_ubo_slot{ 3 };
+static constexpr uint32_t k_matrix_ubo_slot          = 0;
+static constexpr uint32_t k_frame_ubo_slot           = 1;
+static constexpr uint32_t k_light_ubo_slot           = 2;
+static constexpr uint32_t k_material_params_ubo_slot = 3;
 
-static constexpr TextureUnit k_sampler_tile_data_index{ 8 };
-static constexpr TextureUnit k_sampler_light_index_index{ 9 }; // Index of sampler for light indices
+static constexpr uint32_t k_sampler_tile_data_index   = 8;
+static constexpr uint32_t k_sampler_light_index_index = 9; // Index of sampler for light indices
 
 /** Location of '_matrix_index' vertex attribute in shader code. */
 static constexpr uint32_t k_matrix_index_vertex_attrib_location = 8;

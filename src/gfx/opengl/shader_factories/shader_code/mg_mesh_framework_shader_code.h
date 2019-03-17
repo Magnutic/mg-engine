@@ -47,6 +47,8 @@
 #define MATRIX_UBO_ARRAY_SIZE_STR MG_STRINGISE(MATRIX_UBO_ARRAY_SIZE)
 
 static constexpr const char k_lit_mesh_framework_vertex_code[] = R"(
+#version 330 core
+
 #define MATRIX_ARRAY_SIZE )" MATRIX_UBO_ARRAY_SIZE_STR R"(
 
 layout(location = 0) in vec3 vert_position;
@@ -163,6 +165,8 @@ void main()
 )";
 
 static constexpr const char k_lit_mesh_framework_fragment_code[] = R"(
+#version 330 core
+
 #define LIGHT_GRID_WIDTH )" LIGHT_GRID_WIDTH_STR R"(
 #define LIGHT_GRID_HEIGHT )" LIGHT_GRID_HEIGHT_STR R"(
 #define LIGHT_GRID_DEPTH )" LIGHT_GRID_DEPTH_STR R"(
