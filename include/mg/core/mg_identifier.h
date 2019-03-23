@@ -21,10 +21,10 @@
 //
 //**************************************************************************************************
 
-/** @file mg_string_hash.h
- * Identifier based on FNV-1a String hashing.
- * Usage: Mg::Identifier id("String to hash"); or if you just want the hash
- * uint32_t hash = Mg::hash_fnv1a("String to hash");
+/** @file mg_identifier.h
+ * Identifier based on FNV-1a string hashing.
+ * Usage: `Mg::Identifier id("String to hash");` or, if you just want the hash:
+ * `uint32_t hash = Mg::hash_fnv1a("String to hash");`
  */
 
 #pragma once
