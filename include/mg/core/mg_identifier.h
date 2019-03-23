@@ -35,6 +35,9 @@
 #include <string_view>
 #include <type_traits>
 
+/** Whether hash collisions should be logged whenever they are detected. Note that Mg::Identifier
+ * works correctly even in the presence of hash collisions.
+ */
 #ifndef MG_IDENTIFIER_REPORT_HASH_COLLISION
 #    define MG_IDENTIFIER_REPORT_HASH_COLLISION 1
 #endif
@@ -83,7 +86,10 @@ MG_INLINE MG_USES_UNSIGNED_OVERFLOW constexpr uint32_t hash_fnv1a(std::string_vi
  * key). Identifier objects contain only a 32-bit hash of the string from which they were created
  * and a char pointer to the original string.
  *
- * N.B. the string hashing does not guarantee the absence of collisions.
+ * The string hashing does not guarantee the absence of collisions, but collisions are correctly
+ * handled in the sense that comparisons will not consider Identifiers with the same hash but
+ * created from different strings to be the same (at the cost of some overhead), and in that the
+ * c_str() and str_view() member functions will return the correct strings.
  */
 class Identifier {
 public:
@@ -124,12 +130,9 @@ private:
 // Identifier should be trivially copyable (for performance reasons and to allow memcpy-aliasing).
 static_assert(std::is_trivially_copyable_v<Identifier>);
 
-//--------------------------------------------------------------------------------------------------
-// Static storage for dynamic string copies
-//--------------------------------------------------------------------------------------------------
-
 namespace detail {
 
+// Static storage for dynamic string copies
 static struct StrMapInitialiser {
     StrMapInitialiser();
     ~StrMapInitialiser();
@@ -150,7 +153,7 @@ inline bool operator==(const Identifier& lhs, const Identifier& rhs)
     // created at run-time, then the pointers would refer to the same address.
     // Thus, the second half of the comparison (actual string comparison) only has to be run in the
     // relatively uncommon case of two identical compile-time strings which were not merged by the
-    // linker.
+    // compiler or linker.
     const bool string_equal = (hash_equal ? (lhs.c_str() == rhs.c_str() ||
                                              lhs.str_view() == rhs.str_view())
                                           : false);

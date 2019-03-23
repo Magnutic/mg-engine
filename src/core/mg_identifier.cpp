@@ -43,22 +43,38 @@ namespace {
 // (This is the same pattern used to initialise std::cout, etc.)
 //--------------------------------------------------------------------------------------------------
 
-// Strings are stored in an unordered_map of linked lists. This means that the strings can never
-// move, and thus pointers to string data will not be invalidated, while also supporting multiple
-// strings with the same hash.
+// Strings are stored in linked list, with a map from hash to iterator pair of strings matching that
+// hash. This means that the strings will never move, and thus pointers to string data will not be
+// invalidated, while also supporting multiple strings with the same hash.
 //
-// It is also a remarkably inefficient storage method, and should probably be replaced with
-// something leaner, if need arises. Probably store string data using a bump allocator along with an
-// auxiliary hashmap to look up strings by hash.
+// It is also a fairly inefficient storage method, and should perhaps be replaced with something
+// leaner, if need arises. Probably store string data using a bump allocator along with an auxiliary
+// hashmap to look up strings by hash.
+
+using StringList = std::forward_list<std::string>;
 
 // Stores the string(s) matching a given hash. In the vast majority of cases, there should be only
 // one element, but in the case of a hash collision, there may be more.
-using StringStore = std::forward_list<std::string>;
+class PerHashStrings {
+public:
+    PerHashStrings(StringList::iterator begin, StringList::iterator end)
+        : m_begin(begin), m_end(end)
+    {}
+
+    StringList::iterator begin() const { return m_begin; }
+    StringList::iterator end() const { return m_end; }
+
+private:
+    StringList::iterator m_begin;
+    StringList::iterator m_end;
+};
 
 // This map stores copies of dynamic strings that have been used to initialise Identifiers.
 struct DynamicStrMap {
-    std::unordered_map<uint32_t, StringStore> map;
-    std::mutex                                mutex;
+    StringList string_list;
+
+    std::unordered_map<uint32_t, PerHashStrings> map;
+    std::mutex                                   mutex;
 };
 
 int                                           nifty_counter;
@@ -89,33 +105,37 @@ void Identifier::set_full_string(std::string_view str)
 {
     std::unique_lock<std::mutex> lock{ p_dynamic_str_map->mutex };
 
-    auto& map = p_dynamic_str_map->map;
+    auto& map         = p_dynamic_str_map->map;
+    auto& string_list = p_dynamic_str_map->string_list;
 
     // Find element corresponding to the hash in the dynamic string map.
     auto it = map.find(m_hash);
 
     if (it == map.end()) {
         // Hash not found in map; insert the string.
-        std::tie(it, std::ignore) = map.insert({ m_hash, { std::string(str) } });
-        StringStore& string_store = it->second;
-        m_str                     = string_store.front().c_str();
+        string_list.push_front(std::string(str));
+        const StringList::iterator it_begin = string_list.begin();
+        const StringList::iterator it_end   = std::next(it_begin);
+
+        std::tie(it, std::ignore) = map.insert({ m_hash, { it_begin, it_end } });
+        m_str                     = it_begin->c_str();
         return;
     }
 
-    StringStore& string_store = it->second;
+    PerHashStrings& per_hash_strings = it->second;
 
-    if (string_store.front() == str) {
+    if (*per_hash_strings.begin() == str) {
         // The first string in the string store matches the sought one.
-        m_str = string_store.front().c_str();
+        m_str = per_hash_strings.begin()->c_str();
     }
     else {
         // There was a hash collision.
 #if MG_IDENTIFIER_REPORT_HASH_COLLISION
-        detail::report_hash_collision(string_store.front(), str);
+        detail::report_hash_collision(*per_hash_strings.begin(), str);
 #endif
 
         // See if this string is stored elsewhere in the same StringStore.
-        for (auto&& stored_str : string_store) {
+        for (auto&& stored_str : per_hash_strings) {
             if (stored_str == str) {
                 m_str = stored_str.c_str();
                 return;
@@ -123,7 +143,8 @@ void Identifier::set_full_string(std::string_view str)
         }
 
         // If not, insert it.
-        m_str = string_store.emplace_front(str).c_str();
+        auto new_string_it = string_list.insert_after(per_hash_strings.begin(), std::string(str));
+        m_str              = new_string_it->c_str();
     }
 }
 
