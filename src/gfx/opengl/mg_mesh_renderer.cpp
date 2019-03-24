@@ -140,6 +140,8 @@ experimental::PipelineRepository make_mesh_pipeline_repository()
         { "_sampler_light_index", PipelineInputType::BufferTexture, k_sampler_light_index_index }
     };
 
+    config.material_params_ubo_slot = k_material_params_ubo_slot;
+
     return PipelineRepository(config);
 }
 
@@ -154,77 +156,31 @@ struct MeshRendererData {
     // Frame-global uniform buffer
     UniformBuffer m_frame_ubo{ sizeof(FrameBlock) };
 
-    // Material parameters uniform buffer
-    UniformBuffer m_material_params_ubo{ defs::k_material_parameters_buffer_size };
-
     LightBuffers m_light_buffers;
     LightGrid    m_light_grid;
 
     uint32_t m_num_lights = 0;
-
-    uint32_t  m_current_shader_hash = 0;
-    Pipeline* m_current_pipeline{};
 };
 
 namespace {
 
-/** Set current pipeline to the one required for the given material. */
-void bind_pipeline(MeshRendererData&         data,
-                   const Material&           material,
-                   PipelinePrototypeContext& pipeline_prototype_context)
-{
-    const auto new_shader_hash = material.shader_hash();
-
-    if (new_shader_hash == data.m_current_shader_hash) { return; }
-
-    data.m_current_shader_hash = new_shader_hash;
-    data.m_current_pipeline    = &data.pipeline_repository.get_pipeline(material);
-
-    pipeline_prototype_context.bind_pipeline(*data.m_current_pipeline);
-}
-
-/** Set pipeline input to match the given material. */
-void set_material(MeshRendererData&         data,
-                  const Material&           material,
-                  PipelinePrototypeContext& pipeline_prototype_context)
-{
-    bind_pipeline(data, material, pipeline_prototype_context);
-    MG_ASSERT(data.m_current_pipeline != nullptr);
-
-    data.m_material_params_ubo.set_data(material.material_params_buffer());
-
-    small_vector<PipelineInputBinding, 8> input_bindings = {};
-
-    uint32_t sampler_index = 0;
-    for (const Material::Sampler& sampler : material.samplers()) {
-        input_bindings.emplace_back(sampler_index++, sampler.sampler);
-    }
-
-    bind_pipeline_input_set(input_bindings);
-}
-
 /** Upload frame-constant buffers to GPU. */
-void upload_frame_constant_buffers(MeshRendererData& data,
-                                   const ICamera&    cam,
-                                   RenderParameters  params)
+experimental::PipelineRepository::BindingContext
+make_binding_context(MeshRendererData& data, const ICamera& cam, RenderParameters params)
 {
     // Upload frame-global uniforms
     FrameBlock frame_block = make_frame_block(cam, params.current_time, params.camera_exposure);
     data.m_frame_ubo.set_data(byte_representation(frame_block));
 
-    std::array input_bindings =
+    std::array shared_bindings =
         { PipelineInputBinding{ k_matrix_ubo_slot, data.m_matrix_uniform_handler.ubo() },
-          PipelineInputBinding{ k_material_params_ubo_slot, data.m_material_params_ubo },
           PipelineInputBinding{ k_frame_ubo_slot, data.m_frame_ubo },
           PipelineInputBinding{ k_light_ubo_slot, data.m_light_buffers.light_data_buffer },
           PipelineInputBinding{ k_sampler_tile_data_index, data.m_light_buffers.tile_data_texture },
           PipelineInputBinding{ k_sampler_light_index_index,
                                 data.m_light_buffers.light_index_texture } };
 
-    bind_pipeline_input_set(input_bindings);
-
-    data.m_current_shader_hash = 0; // Reset to make sure that shader is set, in case current
-    // shader has been changed in between invocations of this renderer's loop.
+    return data.pipeline_repository.binding_context(shared_bindings);
 }
 
 void draw_elements(size_t num_elements, size_t starting_element)
@@ -264,11 +220,11 @@ void MeshRenderer::render(const ICamera&           cam,
     const Material* current_material = nullptr;
 
     update_light_data(data().m_light_buffers, lights, cam, data().m_light_grid);
-    upload_frame_constant_buffers(data(), cam, params);
 
-    PipelinePrototypeContext pipeline_prototype_context{
-        data().pipeline_repository.pipeline_prototype()
-    };
+
+    experimental::PipelineRepository::BindingContext binding_context = make_binding_context(data(),
+                                                                                            cam,
+                                                                                            params);
 
     size_t next_matrix_update_index = 0;
 
@@ -293,7 +249,7 @@ void MeshRenderer::render(const ICamera&           cam,
 
         // Set up material state
         if (current_material != material) {
-            set_material(data(), *material, pipeline_prototype_context);
+            data().pipeline_repository.bind_pipeline(*material, binding_context);
             current_material = material;
         }
 
