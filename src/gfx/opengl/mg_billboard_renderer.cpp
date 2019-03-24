@@ -141,9 +141,9 @@ experimental::PipelineRepository make_billboard_pipeline_factory()
 
     PipelineRepository::Config config{};
 
-    config.pipeline_prototype.common_input_layout =
-        { { "CameraBlock", PipelineInputType::UniformBuffer, k_camera_ubo_slot },
-          { "MaterialParams", PipelineInputType::UniformBuffer, k_material_params_ubo_slot } };
+    config.pipeline_prototype.common_input_layout = {
+        { "CameraBlock", PipelineInputType::UniformBuffer, k_camera_ubo_slot }
+    };
 
     config.preamble_shader_code = { VertexShaderCode{ billboard_vertex_shader_preamble },
                                     GeometryShaderCode{ billboard_geometry_shader },
@@ -152,6 +152,8 @@ experimental::PipelineRepository make_billboard_pipeline_factory()
     config.on_error_shader_code = { VertexShaderCode{ billboard_vertex_shader_fallback },
                                     GeometryShaderCode{ "" },
                                     FragmentShaderCode{ billboard_fragment_shader_fallback } };
+
+    config.material_params_ubo_slot = k_material_params_ubo_slot;
 
     return experimental::PipelineRepository(config);
 }
@@ -184,7 +186,6 @@ struct CameraBlock {
 
 /** Internal data for BillboardRenderer. */
 struct BillboardRendererData {
-    UniformBuffer material_params_ubo{ defs::k_material_parameters_buffer_size };
     UniformBuffer camera_ubo{ sizeof(CameraBlock) };
 
     experimental::PipelineRepository pipeline_repository = make_billboard_pipeline_factory();
@@ -269,11 +270,6 @@ void BillboardRenderer::render(const ICamera&             camera,
     const auto& billboards = render_list.view();
     update_buffer(data(), billboards);
 
-    Pipeline& pipeline = data().pipeline_repository.get_pipeline(material);
-
-    PipelinePrototypeContext context{ data().pipeline_repository.pipeline_prototype() };
-    context.bind_pipeline(pipeline);
-
     {
         CameraBlock camera_block{};
         camera_block.VP                         = camera.view_proj_matrix();
@@ -282,20 +278,14 @@ void BillboardRenderer::render(const ICamera&             camera,
                                                             camera.aspect_ratio());
 
         data().camera_ubo.set_data(byte_representation(camera_block));
-        data().material_params_ubo.set_data(material.material_params_buffer());
-
-        small_vector<PipelineInputBinding, 10> input_bindings = { { k_camera_ubo_slot,
-                                                                    data().camera_ubo },
-                                                                  { k_material_params_ubo_slot,
-                                                                    data().material_params_ubo } };
-
-        uint32_t location = 0;
-        for (const Material::Sampler& sampler : material.samplers()) {
-            input_bindings.push_back({ location++, sampler.sampler });
-        }
-
-        bind_pipeline_input_set(input_bindings);
     }
+
+    std::array shared_inputs = { PipelineInputBinding(k_camera_ubo_slot, data().camera_ubo) };
+
+    experimental::PipelineRepository::BindingContext binding_context =
+        data().pipeline_repository.binding_context(shared_inputs);
+
+    data().pipeline_repository.bind_pipeline(material, binding_context);
 
     glBindVertexArray(static_cast<GLuint>(data().vao.value));
     glDrawArrays(GL_POINTS, 0, narrow<GLint>(billboards.size()));
