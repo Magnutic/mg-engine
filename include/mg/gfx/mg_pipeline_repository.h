@@ -97,10 +97,6 @@ public:
         }
     }
 
-    const PipelinePrototype& pipeline_prototype() const { return m_config.pipeline_prototype; }
-
-    Pipeline& get_pipeline(const Material& material);
-
     /** Create a PipelinePrototypeContext -- the shared binding state for all Pipelines of this
      * PipelineRepository.
      */
@@ -118,6 +114,7 @@ public:
     void drop_pipelines() { m_pipelines.clear(); }
 
 private:
+    Pipeline&     get_or_make_pipeline(const Material& material);
     PipelineNode& make_pipeline(const Material& material);
     ShaderCode    assemble_shader_code(const Material& material);
 

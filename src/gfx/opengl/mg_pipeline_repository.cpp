@@ -157,18 +157,9 @@ ShaderCompileResult compile_shader(const ShaderCode& code)
 
 } // namespace
 
-Pipeline& PipelineRepository::get_pipeline(const Material& material)
-{
-    uint32_t hash = material.shader_hash();
-
-    auto it = find_if(m_pipelines, [hash](auto& elem) { return elem.hash == hash; });
-    if (it == m_pipelines.end()) { return make_pipeline(material).pipeline; }
-    return it->pipeline;
-}
-
 void PipelineRepository::bind_pipeline(const Material& material, BindingContext& binding_context)
 {
-    Pipeline& pipeline = get_pipeline(material);
+    Pipeline& pipeline = get_or_make_pipeline(material);
 
     if (&pipeline != binding_context.currently_bound_pipeline) {
         binding_context.prototype_context.bind_pipeline(pipeline);
@@ -187,6 +178,15 @@ void PipelineRepository::bind_pipeline(const Material& material, BindingContext&
     }
 
     bind_pipeline_input_set(material_input_bindings);
+}
+
+Pipeline& PipelineRepository::get_or_make_pipeline(const Material& material)
+{
+    uint32_t hash = material.shader_hash();
+
+    auto it = find_if(m_pipelines, [hash](auto& elem) { return elem.hash == hash; });
+    if (it == m_pipelines.end()) { return make_pipeline(material).pipeline; }
+    return it->pipeline;
 }
 
 PipelineRepository::PipelineNode& PipelineRepository::make_pipeline(const Material& material)
