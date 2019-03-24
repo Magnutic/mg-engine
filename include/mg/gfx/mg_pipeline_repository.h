@@ -29,6 +29,8 @@
 
 #include "mg/gfx/mg_pipeline.h"
 #include "mg/gfx/mg_shader.h"
+#include "mg/gfx/mg_uniform_buffer.h"
+#include "mg/mg_defs.h"
 
 #include <vector>
 
@@ -60,11 +62,21 @@ public:
         PipelinePrototype pipeline_prototype;
         ShaderCode        preamble_shader_code;
         ShaderCode        on_error_shader_code;
+        uint32_t          material_params_ubo_slot;
     };
 
     struct PipelineNode {
         Pipeline pipeline;
         uint32_t hash;
+    };
+
+    class BindingContext {
+    private:
+        friend class PipelineRepository;
+        BindingContext(PipelinePrototype& prototype) : prototype_context(prototype) {}
+
+        PipelinePrototypeContext prototype_context;
+        const Pipeline*          currently_bound_pipeline = nullptr;
     };
 
     MG_MAKE_NON_COPYABLE(PipelineRepository);
@@ -89,6 +101,20 @@ public:
 
     Pipeline& get_pipeline(const Material& material);
 
+    /** Create a PipelinePrototypeContext -- the shared binding state for all Pipelines of this
+     * PipelineRepository.
+     */
+    BindingContext binding_context(span<const PipelineInputBinding> shared_inputs)
+    {
+        bind_pipeline_input_set(shared_inputs);
+        return { m_config.pipeline_prototype };
+    }
+
+    /** Binds the pipeline corresponding the the given material. Requires that you create a
+     * PipelinePrototypeContext first, see `binding_context()`.
+     */
+    void bind_pipeline(const Material& material, BindingContext& binding_context);
+
     void drop_pipelines() { m_pipelines.clear(); }
 
 private:
@@ -98,6 +124,7 @@ private:
 private:
     Config                    m_config;
     std::vector<PipelineNode> m_pipelines;
+    UniformBuffer             m_material_params_ubo{ defs::k_material_parameters_buffer_size };
 };
 
 } // namespace Mg::gfx::experimental

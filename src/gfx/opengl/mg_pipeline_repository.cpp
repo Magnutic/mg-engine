@@ -166,6 +166,29 @@ Pipeline& PipelineRepository::get_pipeline(const Material& material)
     return it->pipeline;
 }
 
+void PipelineRepository::bind_pipeline(const Material& material, BindingContext& binding_context)
+{
+    Pipeline& pipeline = get_pipeline(material);
+
+    if (&pipeline != binding_context.currently_bound_pipeline) {
+        binding_context.prototype_context.bind_pipeline(pipeline);
+        binding_context.currently_bound_pipeline = &pipeline;
+    }
+
+    m_material_params_ubo.set_data(material.material_params_buffer());
+
+    small_vector<PipelineInputBinding, 9> material_input_bindings = {
+        { m_config.material_params_ubo_slot, m_material_params_ubo }
+    };
+
+    uint32_t sampler_location = 0;
+    for (const Material::Sampler& sampler : material.samplers()) {
+        material_input_bindings.push_back({ sampler_location++, sampler.sampler });
+    }
+
+    bind_pipeline_input_set(material_input_bindings);
+}
+
 PipelineRepository::PipelineNode& PipelineRepository::make_pipeline(const Material& material)
 {
     const std::string_view shader_name = material.shader().resource_id().str_view();
