@@ -110,6 +110,8 @@ experimental::PipelineRepository make_post_process_pipeline_repository()
           { "sampler_colour", PipelineInputType::Sampler2D, k_input_colour_texture_unit },
           { "samler_depth", PipelineInputType::Sampler2D, k_input_depth_texture_unit } };
 
+    config.material_params_ubo_slot = k_material_params_ubo_slot;
+
     return experimental::PipelineRepository(config);
 }
 
@@ -118,7 +120,6 @@ experimental::PipelineRepository make_post_process_pipeline_repository()
 struct PostProcessRendererData {
     experimental::PipelineRepository pipeline_repository = make_post_process_pipeline_repository();
 
-    UniformBuffer material_params_ubo{ defs::k_material_parameters_buffer_size };
     UniformBuffer frame_block_ubo{ sizeof(FrameBlock) };
 
     OpaqueHandle vbo;
@@ -153,27 +154,29 @@ void init(PostProcessRendererData& data)
     data.vbo = vao_id;
 }
 
-void setup_material(PostProcessRendererData& data,
-                    const Material&          material,
-                    float                    z_near,
-                    float                    z_far)
+void setup_render_pipeline(PostProcessRendererData& data,
+                           const Material&          material,
+                           TextureHandle            input_colour,
+                           Opt<TextureHandle>       input_depth,
+                           float                    z_near,
+                           float                    z_far)
 {
-    data.material_params_ubo.set_data(material.material_params_buffer());
-
     FrameBlock frame_block{ z_near, z_far };
     data.frame_block_ubo.set_data(byte_representation(frame_block));
 
-    small_vector<PipelineInputBinding, 10> input_bindings = { { k_frame_block_ubo_slot,
-                                                                data.frame_block_ubo },
-                                                              { k_material_params_ubo_slot,
-                                                                data.material_params_ubo } };
+    small_vector<PipelineInputBinding, 3> input_bindings = { { k_frame_block_ubo_slot,
+                                                               data.frame_block_ubo },
+                                                             { k_input_colour_texture_unit,
+                                                               input_colour } };
 
-    uint32_t sampler_index = 0;
-    for (const Material::Sampler& sampler : material.samplers()) {
-        input_bindings.emplace_back(sampler_index++, sampler.sampler);
+    if (input_depth.has_value()) {
+        input_bindings.push_back({ k_input_depth_texture_unit, input_depth.value() });
     }
 
-    bind_pipeline_input_set(input_bindings);
+    experimental::PipelineRepository::BindingContext binding_context =
+        data.pipeline_repository.binding_context(input_bindings);
+
+    data.pipeline_repository.bind_pipeline(material, binding_context);
 }
 
 } // namespace
@@ -194,14 +197,7 @@ PostProcessRenderer::~PostProcessRenderer()
 
 void PostProcessRenderer::post_process(const Material& material, TextureHandle input_colour)
 {
-    Pipeline&                pipeline = data().pipeline_repository.get_pipeline(material);
-    PipelinePrototypeContext context(pipeline.prototype());
-    context.bind_pipeline(pipeline);
-
-    PipelineInputBinding input_colour_binding(k_input_colour_texture_unit, input_colour);
-    bind_pipeline_input_set({ &input_colour_binding, 1 });
-
-    setup_material(data(), material, 0.0f, 0.0f);
+    setup_render_pipeline(data(), material, input_colour, nullopt, 0.0f, 0.0f);
 
     GLuint vao_id = static_cast<GLuint>(data().vao.value);
 
@@ -216,16 +212,7 @@ void PostProcessRenderer::post_process(const Material& material,
                                        float           z_near,
                                        float           z_far)
 {
-    Pipeline&                pipeline = data().pipeline_repository.get_pipeline(material);
-    PipelinePrototypeContext context(pipeline.prototype());
-    context.bind_pipeline(pipeline);
-
-    std::array input_bindings = { PipelineInputBinding(k_input_colour_texture_unit, input_colour),
-                                  PipelineInputBinding(k_input_depth_texture_unit, input_depth) };
-
-    bind_pipeline_input_set(input_bindings);
-
-    setup_material(data(), material, z_near, z_far);
+    setup_render_pipeline(data(), material, input_colour, input_depth, z_near, z_far);
 
     GLuint vao_id = static_cast<GLuint>(data().vao.value);
 
