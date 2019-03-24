@@ -90,13 +90,14 @@ struct PipelineSettings {
     bool enable_blending : 1;
 };
 
+/** PipelinePrototype represents shared configuration for a set of similar pipelines. */
 struct PipelinePrototype {
     PipelineSettings    settings;
     PipelineInputLayout common_input_layout;
 };
 
 /** A rendering pipeline: a configuration specifying which rendering parameters and shaders to use
- * when rendering a * set of objects.
+ * when rendering a set of objects.
  */
 class Pipeline {
 public:
@@ -128,6 +129,11 @@ private:
     const PipelinePrototype* m_p_prototype;
 };
 
+/** A `PipelinePrototypeContext` is an object which sets up the state required to bind `Pipelines`
+ * of a shared `PipelinePrototype`. Hence, to bind a `Pipeline`, you must first create a
+ * `PipelinePrototypeContext` using the `PipelinePrototype` corresponding to the `Pipeline` first.
+ * The individual `Pipeline`s can then be bound using `PipelinePrototypeContext::bind_pipeline()`.
+ */
 class PipelinePrototypeContext {
 public:
     PipelinePrototypeContext(const PipelinePrototype& prototype);
