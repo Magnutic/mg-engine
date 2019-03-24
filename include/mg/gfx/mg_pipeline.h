@@ -141,7 +141,7 @@ public:
     MG_MAKE_NON_COPYABLE(PipelinePrototypeContext);
     MG_MAKE_NON_MOVABLE(PipelinePrototypeContext);
 
-    void bind_pipeline(const Pipeline& pipeline);
+    void bind_pipeline(const Pipeline& pipeline) const;
 
     const PipelinePrototype& bound_prototype;
 };
@@ -172,6 +172,6 @@ private:
 /** Bind the set of input resources as input to pipelines. A binding remains valid even if the
  * pipeline changes, as long as the pipelines share input layout.
  */
-void bind_pipeline_input_set(span<PipelineInputBinding> bindings);
+void bind_pipeline_input_set(span<const PipelineInputBinding> bindings);
 
 } // namespace Mg::gfx

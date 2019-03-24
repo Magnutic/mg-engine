@@ -81,7 +81,7 @@ PipelinePrototypeContext::PipelinePrototypeContext(const PipelinePrototype& prot
     MG_CHECK_GL_ERROR();
 }
 
-void PipelinePrototypeContext::bind_pipeline(const Pipeline& pipeline)
+void PipelinePrototypeContext::bind_pipeline(const Pipeline& pipeline) const
 {
     MG_ASSERT(&pipeline.prototype() == &bound_prototype &&
               "Pipeline bound to a PipelinePrototypeContext for a different PipelinePrototype.");
@@ -160,7 +160,7 @@ PipelineInputBinding::PipelineInputBinding(uint32_t location, const UniformBuffe
     : PipelineInputBinding(location, ubo.internal_id(), PipelineInputType::UniformBuffer)
 {}
 
-void bind_pipeline_input_set(span<PipelineInputBinding> bindings)
+void bind_pipeline_input_set(span<const PipelineInputBinding> bindings)
 {
     for (const PipelineInputBinding& binding : bindings) {
         const auto     gl_object_id = static_cast<GLuint>(binding.gfx_resource_handle());
