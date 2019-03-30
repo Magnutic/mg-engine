@@ -221,4 +221,8 @@ void PostProcessRenderer::post_process(const Material& material,
     MG_CHECK_GL_ERROR();
 }
 
+void PostProcessRenderer::drop_shaders() {
+    data().pipeline_repository.drop_pipelines();
+}
+
 } // namespace Mg::gfx

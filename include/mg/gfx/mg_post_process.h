@@ -55,6 +55,8 @@ public:
                       TextureHandle   input_depth,
                       float           z_near,
                       float           z_far);
+
+    void drop_shaders();
 };
 
 } // namespace Mg::gfx
