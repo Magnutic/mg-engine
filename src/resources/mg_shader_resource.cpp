@@ -29,11 +29,14 @@
 #include "mg/resource_cache/mg_resource_exceptions.h"
 #include "mg/resource_cache/mg_resource_loading_input.h"
 #include "mg/resources/mg_text_resource.h"
+#include "mg/utils/mg_math_utils.h"
 #include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_stl_helpers.h"
 #include "mg/utils/mg_string_utils.h"
 
 #include <fmt/core.h>
+
+#include <glm/vec4.hpp>
 
 #include <filesystem>
 #include <functional>
@@ -72,6 +75,7 @@ enum class TokenType {
     // Data types
     SAMPLER2D,
     SAMPLERCUBE,
+    INT,
     FLOAT,
     VEC2,
     VEC4,
@@ -112,6 +116,7 @@ std::string_view token_type_to_str(TokenType type)
     // Data types
     case TokenType::SAMPLER2D: return "sampler2D";
     case TokenType::SAMPLERCUBE: return "samplerCube";
+    case TokenType::INT: return "int";
     case TokenType::FLOAT: return "float";
     case TokenType::VEC2: return "vec2";
     case TokenType::VEC4: return "vec4";
@@ -146,6 +151,7 @@ std::string_view token_type_to_str(TokenType type)
 }
 
 constexpr std::array<std::pair<std::string_view, TokenType>, 18> keywords{ {
+    { "int", TokenType::INT },
     { "float", TokenType::FLOAT },
     { "vec2", TokenType::VEC2 },
     { "vec4", TokenType::VEC4 },
@@ -451,35 +457,52 @@ public:
         ShaderResource::Parameter p{};
         p.name = Identifier::from_runtime_string(id);
 
+        glm::vec4 value{ 0.0f };
+
         switch (type_token.type) {
+        case TokenType::INT:
+            p.type  = ShaderParameterType::Int;
+            value.x = parse_numeric();
+            break;
         case TokenType::FLOAT:
-            p.type    = ShaderParameterType::Float;
-            p.value.x = parse_numeric();
+            p.type  = ShaderParameterType::Float;
+            value.x = parse_numeric();
             break;
         case TokenType::VEC2:
             p.type = ShaderParameterType::Vec2;
             expect_next(TokenType::VEC2);
             expect_next(TokenType::PARENTHESIS_LEFT);
-            p.value.x = parse_numeric();
+            value.x = parse_numeric();
             expect_next(TokenType::COMMA);
-            p.value.y = parse_numeric();
+            value.y = parse_numeric();
             expect_next(TokenType::PARENTHESIS_RIGHT);
             break;
         case TokenType::VEC4:
             p.type = ShaderParameterType::Vec4;
             expect_next(TokenType::VEC4);
             expect_next(TokenType::PARENTHESIS_LEFT);
-            p.value.x = parse_numeric();
+            value.x = parse_numeric();
             expect_next(TokenType::COMMA);
-            p.value.y = parse_numeric();
+            value.y = parse_numeric();
             expect_next(TokenType::COMMA);
-            p.value.z = parse_numeric();
+            value.z = parse_numeric();
             expect_next(TokenType::COMMA);
-            p.value.w = parse_numeric();
+            value.w = parse_numeric();
             expect_next(TokenType::PARENTHESIS_RIGHT);
             break;
         default:
-            parse_error("Unexpected token, expected parameter type (float|vec2|vec4).", type_token);
+            parse_error("Unexpected token, expected parameter type (int|float|vec2|vec4).",
+                        type_token);
+        }
+
+        // If the required type is an integer, round the given value to nearest int.
+        // TODO: a better solution would be to parse as int to begin with.
+        if (p.type == ShaderParameterType::Int) {
+            std::array<int32_t, 4> int_value = { round<int32_t>(value.x), 0, 0, 0 };
+            std::memcpy(&p.value, &int_value, sizeof(p.value));
+        }
+        else {
+            std::memcpy(&p.value, &value, sizeof(p.value));
         }
 
         expect_next(TokenType::SEMICOLON);

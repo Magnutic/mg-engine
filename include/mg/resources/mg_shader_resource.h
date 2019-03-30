@@ -32,8 +32,8 @@
 #include "mg/resources/mg_shader_enums.h"
 #include "mg/utils/mg_gsl.h"
 
-#include <glm/vec4.hpp>
-
+#include <array>
+#include <cstddef>
 #include <string>
 #include <string_view>
 
@@ -49,9 +49,11 @@ public:
     };
 
     struct Parameter {
-        Identifier          name{ "" };
-        ShaderParameterType type{};
-        glm::vec4           value{};
+        static constexpr size_t k_max_size = 4 * sizeof(float);
+
+        Identifier                        name{ "" };
+        ShaderParameterType               type{};
+        std::array<std::byte, k_max_size> value{};
     };
 
     struct Option {

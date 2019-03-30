@@ -27,8 +27,8 @@
 
 #pragma once
 
-#include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_optional.h"
 
 #include <string_view>
 
@@ -54,11 +54,13 @@ inline Opt<ShaderSamplerType> string_to_shader_sampler_type(std::string_view str
     return nullopt;
 }
 
-enum class ShaderParameterType { Float, Vec2, Vec4 }; // Order matters, used for sorting
+enum class ShaderParameterType { Int, Float, Vec2, Vec4 }; // Order matters, used for sorting
 
 inline std::string_view shader_parameter_type_to_string(ShaderParameterType type)
 {
     switch (type) {
+    case ShaderParameterType::Int:
+        return "int";
     case ShaderParameterType::Float:
         return "float";
     case ShaderParameterType::Vec2:
@@ -71,6 +73,7 @@ inline std::string_view shader_parameter_type_to_string(ShaderParameterType type
 
 inline Opt<ShaderParameterType> string_to_shader_parameter_type(std::string_view str)
 {
+    if (str == "int") return ShaderParameterType::Int;
     if (str == "float") return ShaderParameterType::Float;
     if (str == "vec2") return ShaderParameterType::Vec2;
     if (str == "vec4") return ShaderParameterType::Vec4;

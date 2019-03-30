@@ -102,6 +102,7 @@ public:
 
     Opt<size_t> sampler_index(Identifier name);
 
+    void set_parameter(Identifier name, int param);
     void set_parameter(Identifier name, float param);
     void set_parameter(Identifier name, glm::vec2 param);
     void set_parameter(Identifier name, glm::vec4 param);
@@ -128,7 +129,9 @@ public:
     }
 
 private:
-    void _set_parameter_impl(Identifier name, glm::vec4 param, ShaderParameterType enum_v);
+    void _set_parameter_impl(Identifier            name,
+                             span<const std::byte> param_value,
+                             ShaderParameterType   param_type);
 
 private:
     Samplers   m_samplers{};

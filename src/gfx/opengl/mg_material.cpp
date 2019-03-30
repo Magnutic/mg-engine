@@ -47,12 +47,11 @@ Material::Material(Identifier material_id, ResourceHandle<ShaderResource> shader
     uint32_t opt_index = 0;
     for (const ShaderResource::Option& o : shader_resource_access->options()) {
         m_options.push_back(o.name);
-        m_option_flags |= (uint32_t(o.default_value) << opt_index);
+        m_option_flags |= (static_cast<uint32_t>(o.default_value) << opt_index);
         ++opt_index;
     }
 
     for (const ShaderResource::Parameter& p : shader_resource_access->parameters()) {
-        // TODO handle value
         m_params.push_back({ p.name, p.type });
         _set_parameter_impl(p.name, p.value, p.type);
     };
@@ -60,6 +59,21 @@ Material::Material(Identifier material_id, ResourceHandle<ShaderResource> shader
     for (const ShaderResource::Sampler& s : shader_resource_access->samplers()) {
         m_samplers.push_back({ s.name, s.type, {} });
     }
+}
+
+size_t num_elems_for_param_type(ShaderParameterType type)
+{
+    switch (type) {
+    case ShaderParameterType::Vec4:
+        return 4;
+    case ShaderParameterType::Vec2:
+        return 2;
+    case ShaderParameterType::Float:
+        return 1;
+    case ShaderParameterType::Int:
+        return 1;
+    }
+    MG_ASSERT(false && "unreachable");
 }
 
 void Material::set_sampler(Identifier name, TextureHandle texture)
@@ -117,17 +131,21 @@ Opt<size_t> Material::sampler_index(Identifier name)
     return nullopt;
 }
 
+void Material::set_parameter(Identifier name, int param)
+{
+    _set_parameter_impl(name, byte_representation(param), ShaderParameterType::Int);
+}
 void Material::set_parameter(Identifier name, float param)
 {
-    _set_parameter_impl(name, glm::vec4(param), ShaderParameterType::Float);
+    _set_parameter_impl(name, byte_representation(param), ShaderParameterType::Float);
 }
 void Material::set_parameter(Identifier name, glm::vec2 param)
 {
-    _set_parameter_impl(name, glm::vec4(param, 0.f, 0.f), ShaderParameterType::Vec2);
+    _set_parameter_impl(name, byte_representation(param), ShaderParameterType::Vec2);
 }
 void Material::set_parameter(Identifier name, glm::vec4 param)
 {
-    _set_parameter_impl(name, param, ShaderParameterType::Vec4);
+    _set_parameter_impl(name, byte_representation(param), ShaderParameterType::Vec4);
 }
 
 namespace {
@@ -142,19 +160,8 @@ size_t offset_for_param_type(ShaderParameterType type)
         return 8;
     case ShaderParameterType::Float:
         return 4;
-    }
-    MG_ASSERT(false && "unreachable");
-}
-
-size_t num_elems_for_param_type(ShaderParameterType type)
-{
-    switch (type) {
-    case ShaderParameterType::Vec4:
+    case ShaderParameterType::Int:
         return 4;
-    case ShaderParameterType::Vec2:
-        return 2;
-    case ShaderParameterType::Float:
-        return 1;
     }
     MG_ASSERT(false && "unreachable");
 }
@@ -177,10 +184,11 @@ void wrong_type_error(Identifier          material_id,
 
 } // namespace
 
-void Material::_set_parameter_impl(Identifier name, glm::vec4 param, ShaderParameterType enum_v)
+void Material::_set_parameter_impl(Identifier            name,
+                                   span<const std::byte> param_value,
+                                   ShaderParameterType   param_type)
 {
-    size_t     num_elems = num_elems_for_param_type(enum_v);
-    Parameter* p_param   = nullptr;
+    Parameter* p_param = nullptr;
 
     // Determine where in the buffer the parameter data should go.
     // N.B. offset calculation assumes that params are sorted in order for optimal packing (i.e.
@@ -196,21 +204,23 @@ void Material::_set_parameter_impl(Identifier name, glm::vec4 param, ShaderParam
     }
 
     if (p_param == nullptr) {
-        fmt::format("Material '{}': set_parameter(\"{}\", ...): no such parameter.",
-                    id().c_str(),
-                    name.c_str());
+        g_log.write_warning(
+            fmt::format("Material '{}': set_parameter(\"{}\", ...): no such parameter.",
+                        id().c_str(),
+                        name.c_str()));
         return;
     }
 
-    if (p_param->type != enum_v) {
-        wrong_type_error(id(), p_param->name, p_param->type, enum_v);
+    if (p_param->type != param_type) {
+        wrong_type_error(id(), p_param->name, p_param->type, param_type);
         return;
     }
 
     // Write data into local buffer
-    const auto size = num_elems * sizeof(float);
+    const auto size = 4 * num_elems_for_param_type(param_type);
     MG_ASSERT(offset + size <= m_parameter_data.size());
-    std::memcpy(&m_parameter_data.buffer[offset], &param, size);
+    MG_ASSERT(param_value.size_bytes() >= size);
+    std::memcpy(&m_parameter_data.buffer[offset], param_value.data(), size);
 }
 
 uint32_t Material::shader_hash() const
