@@ -96,8 +96,7 @@ void TextureRepository::destroy(TextureHandle handle)
     data().nodes.destroy(texture_node.self_index);
 
     auto it = find_if(data().node_map, [&](auto& pair) { return pair.second == &texture_node; });
-    MG_ASSERT(it != data().node_map.end());
-    data().node_map.erase(it);
+    if (it != data().node_map.end()) { data().node_map.erase(it); }
 }
 
 } // namespace Mg::gfx
