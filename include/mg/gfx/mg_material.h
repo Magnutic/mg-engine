@@ -151,9 +151,4 @@ private:
     ResourceHandle<ShaderResource> m_shader;
 };
 
-/** Generate shader code snippet defining samplers, paramaters, and options as needed for this
- * material.
- */
-std::string shader_interface_code(const Material& material);
-
 } // namespace Mg::gfx

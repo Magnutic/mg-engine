@@ -255,41 +255,4 @@ std::string Material::debug_print() const
     return oss.str();
 }
 
-std::string shader_interface_code(const Material& material)
-{
-    std::string snippet;
-    snippet.reserve(256);
-
-    // Include definition of each paramater
-    if (!material.parameters().empty()) {
-        snippet += "layout (std140) uniform MaterialParams {\n";
-
-        for (const Material::Parameter& p : material.parameters()) {
-            snippet += '\t';
-            snippet += shader_parameter_type_to_string(p.type);
-            snippet += " ";
-            snippet += p.name.str_view();
-            snippet += ";\n";
-        }
-
-        snippet += "} material_params;\n";
-    }
-
-    // Include definition of each sampler
-    for (const Material::Sampler& s : material.samplers()) {
-        snippet += "uniform ";
-        snippet += shader_sampler_type_to_string(s.type);
-        snippet += " ";
-        snippet += s.name.str_view();
-        snippet += ";\n";
-    }
-
-    // Include pre-processor #defines for each enabled option
-    for (const Material::Option& o : material.options()) {
-        snippet += fmt::format("#define {} {:d}\n", o.c_str(), material.get_option(o));
-    }
-
-    return snippet;
-}
-
 } // namespace Mg::gfx
