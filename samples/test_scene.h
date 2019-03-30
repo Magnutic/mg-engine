@@ -19,10 +19,10 @@
 #include <mg/resource_cache/mg_resource_cache.h>
 #include <mg/utils/mg_optional.h>
 
-static const double k_time_step             = 1.0 / 60.0;
-static const double k_accumulator_max_steps = 10;
-static const size_t k_num_lights            = 256;
-static const float  k_light_radius          = 1.5f;
+constexpr double k_time_step             = 1.0 / 60.0;
+constexpr double k_accumulator_max_steps = 10;
+constexpr size_t k_num_lights            = 64;
+constexpr float  k_light_radius          = 3.5f;
 
 struct Model {
     Mg::Transform                                  transform;
@@ -52,7 +52,8 @@ struct Scene {
     Mg::gfx::RenderCommandList   render_list;
     Mg::gfx::BillboardRenderList billboard_render_list;
 
-    Mg::Opt<Mg::gfx::TextureRenderTarget> hdr_target; // Optional to defer initialisation
+    Mg::Opt<Mg::gfx::TextureRenderTarget>     hdr_target; // Optional to defer initialisation
+    std::vector<Mg::gfx::TextureRenderTarget> bloom_targets;
 
     Mg::gfx::Camera camera;
 
@@ -70,6 +71,7 @@ struct Scene {
     std::vector<Model> scene_models;
 
     Mg::gfx::Material* post_material;
+    Mg::gfx::Material* bloom_material;
     Mg::gfx::Material* billboard_material;
 
     double time       = 0.0;

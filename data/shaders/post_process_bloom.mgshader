@@ -1,0 +1,5 @@
+TAGS {}
+OPTIONS { HORIZONTAL = true; }
+PARAMETERS {}
+VERTEX_CODE {}
+FRAGMENT_CODE { #include "bloom.glsl" }

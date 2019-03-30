@@ -94,6 +94,23 @@ inline InputMap make_input_map(Window& w)
     return input;
 }
 
+Mg::gfx::TextureRenderTarget make_bloom_target(size_t i)
+{
+    RenderTargetParams params{};
+    params.filter_mode      = TextureFilterMode::Linear;
+    params.width            = 640 >> i;
+    params.height           = 360 >> i;
+    params.render_target_id = "Bloom.colour";
+    params.texture_format   = RenderTargetParams::Format::RGBA16F;
+
+    TextureRepository& tex_repo = g_scene->root.gfx_device().texture_repository();
+
+    TextureHandle colour_target = tex_repo.create_render_target(params);
+
+    return TextureRenderTarget::with_colour_target(colour_target,
+                                                   TextureRenderTarget::DepthType::None);
+}
+
 Mg::gfx::TextureRenderTarget make_hdr_target(VideoMode mode)
 {
     RenderTargetParams params{};
@@ -143,6 +160,7 @@ void init()
         case Identifier("ShaderResource").hash():
             g_scene->mesh_renderer.drop_shaders();
             g_scene->billboard_renderer.drop_shaders();
+            g_scene->post_renderer.drop_shaders();
             break;
 
         default:
@@ -152,6 +170,10 @@ void init()
     });
 
     g_scene->hdr_target = make_hdr_target(window.settings().video_mode);
+
+    for (size_t i = 0; i < 8; ++i) {
+        g_scene->bloom_targets.emplace_back(make_bloom_target(i / 2));
+    }
 
     g_scene->root.gfx_device().set_clear_colour(0.0125f, 0.01275f, 0.025f);
 
@@ -197,6 +219,11 @@ void init()
             "shaders/post_process_test.mgshader");
         g_scene->post_material = g_scene->root.gfx_device().material_repository().create(
             "PostProcessMaterial", handle);
+
+        auto bloom_handle = g_scene->resource_cache.resource_handle<ShaderResource>(
+            "shaders/post_process_bloom.mgshader");
+        g_scene->bloom_material = g_scene->root.gfx_device().material_repository().create(
+            "BloomMaterial", bloom_handle);
     }
 
     // Create billboard material
@@ -285,7 +312,12 @@ void time_step()
         s.video_mode     = {}; // reset resolution etc. to defaults
         window.apply_settings(s);
         camera.set_aspect_ratio(window.aspect_ratio());
+
+        auto& texture_repository = g_scene->root.gfx_device().texture_repository();
+        texture_repository.destroy(g_scene->hdr_target->colour_target());
+        texture_repository.destroy(g_scene->hdr_target->depth_target());
         g_scene->hdr_target = make_hdr_target(window.settings().video_mode);
+
         window.release_cursor();
     }
 
@@ -343,8 +375,9 @@ void render_scene(double lerp_factor)
         {
             Billboard& billboard = g_scene->billboard_render_list.add();
             billboard.pos        = pos;
-            billboard.colour     = colour;
-            billboard.radius     = 0.05f;
+            billboard.colour     = colour * 10.0f;
+            billboard.colour.a /= 10.0f;
+            billboard.radius = 0.05f;
         }
 
         lights.push_back(make_point_light(pos, colour * 100.0f, k_light_radius));
@@ -363,8 +396,29 @@ void render_scene(double lerp_factor)
                                        g_scene->billboard_render_list,
                                        *g_scene->billboard_material);
 
+    TextureRenderTarget* src_target = &g_scene->hdr_target.value();
+    bool                 horizontal = true;
+
+    for (TextureRenderTarget& bloom_target : g_scene->bloom_targets) {
+        bloom_target.bind();
+        gfx.clear();
+
+        g_scene->bloom_material->set_option("HORIZONTAL", horizontal);
+        g_scene->post_renderer.post_process(*g_scene->bloom_material, src_target->colour_target());
+
+        horizontal = !horizontal;
+        src_target = &bloom_target;
+    }
+
     g_scene->root.window().render_target.bind();
     gfx.clear();
+
+    g_scene->post_material->set_sampler("sampler_bloom_large",
+                                        g_scene->bloom_targets[7].colour_target());
+    g_scene->post_material->set_sampler("sampler_bloom_medium",
+                                        g_scene->bloom_targets[5].colour_target());
+    g_scene->post_material->set_sampler("sampler_bloom_small",
+                                        g_scene->bloom_targets[3].colour_target());
 
     g_scene->post_renderer.post_process(*g_scene->post_material,
                                         g_scene->hdr_target->colour_target(),
