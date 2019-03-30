@@ -92,7 +92,10 @@ public:
     MG_MAKE_NON_MOVABLE(FramebufferBindGuard);
 
     FramebufferBindGuard() { glGetIntegerv(GL_FRAMEBUFFER_BINDING, &old_binding); }
-    ~FramebufferBindGuard() { glBindFramebuffer(GL_FRAMEBUFFER, uint32_t(old_binding)); }
+    ~FramebufferBindGuard()
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, static_cast<uint32_t>(old_binding));
+    }
 
     GLint old_binding{};
 };
@@ -100,7 +103,8 @@ public:
 } // namespace
 
 TextureRenderTarget TextureRenderTarget::with_colour_target(TextureHandle colour_target,
-                                                            DepthType     depth_type)
+                                                            DepthType     depth_type,
+                                                            int32_t       mip_level)
 {
     TextureRenderTarget trt;
     trt.m_colour_target = colour_target;
@@ -116,7 +120,11 @@ TextureRenderTarget TextureRenderTarget::with_colour_target(TextureHandle colour
 
     // Attach texture to FBO
     auto gl_tex_id = static_cast<GLuint>(texture_node.texture.gfx_api_handle());
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gl_tex_id, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER,
+                           GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D,
+                           gl_tex_id,
+                           mip_level);
 
     // Attach depth/stencil renderbuffer to FBO
     switch (depth_type) {
@@ -137,8 +145,10 @@ TextureRenderTarget TextureRenderTarget::with_colour_target(TextureHandle colour
     return trt;
 }
 
-TextureRenderTarget TextureRenderTarget::with_colour_and_depth_targets(TextureHandle colour_target,
-                                                                       TextureHandle depth_target)
+TextureRenderTarget
+TextureRenderTarget::with_colour_and_depth_targets(TextureHandle colour_target,
+                                                   TextureHandle depth_target,
+                                                   int32_t       colour_target_mip_level)
 {
     MG_ASSERT(colour_target != depth_target);
     const auto& colour_tex = internal::texture_node(colour_target).texture;
@@ -171,7 +181,11 @@ TextureRenderTarget TextureRenderTarget::with_colour_and_depth_targets(TextureHa
 
     // Attach texture to FBO
     auto colour_id = static_cast<GLuint>(colour_tex.gfx_api_handle());
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colour_id, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER,
+                           GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D,
+                           colour_id,
+                           colour_target_mip_level);
 
     // Attach depth/stencil renderbuffer to FBO
     auto depth_id = static_cast<GLuint>(depth_tex.gfx_api_handle());

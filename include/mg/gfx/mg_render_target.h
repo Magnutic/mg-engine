@@ -89,7 +89,7 @@ class TextureRenderTarget : public IRenderTarget {
     // https://www.opengl.org/wiki/Framebuffer#Multisampling_Considerations
 
     // TODO: support multiple render targets, i.e. more than one colour_target.
-    // (probably small_vector<std::shared_ptr<TargetTexture>, 3>)
+    // (probably small_vector<TextureHandle, 3>)
 public:
     /** Type of depth buffer to use when a depth target texture has not been provided. */
     enum class DepthType {
@@ -99,11 +99,12 @@ public:
                        a sampler later on. */
     };
 
-    static TextureRenderTarget with_colour_target(TextureHandle colour_target,
-                                                  DepthType     depth_type);
+    static TextureRenderTarget
+    with_colour_target(TextureHandle colour_target, DepthType depth_type, int32_t mip_level = 0);
 
     static TextureRenderTarget with_colour_and_depth_targets(TextureHandle colour_target,
-                                                             TextureHandle depth_target);
+                                                             TextureHandle depth_target,
+                                                             int32_t colour_target_mip_level = 0);
 
     MG_MAKE_DEFAULT_MOVABLE(TextureRenderTarget);
     MG_MAKE_NON_COPYABLE(TextureRenderTarget);
