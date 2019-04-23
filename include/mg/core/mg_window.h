@@ -157,10 +157,10 @@ private:
     void lock_cursor_to_window();
 
 private:
-    FocusCallbackT m_focus_callback;
+    FocusCallbackT m_focus_callback{};
     WindowSettings m_settings;
 
-    GLFWwindow* m_window;
+    GLFWwindow* m_window = nullptr;
 
     CursorLockMode m_cursor_lock_mode = CursorLockMode::UNLOCKED;
     bool           m_is_cursor_locked = false;
