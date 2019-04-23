@@ -9,21 +9,7 @@ vec3 lotteTonemap(vec3 colour) {
     return z / vec3(pow(z, vec3(d)) * b + c);
 }
 
-const float large_factor = 0.02;
-const float medium_factor = 0.02;
-const float small_factor = 0.03;
-
 void main() {
-    vec3 bloom_large = texture(sampler_bloom_large, tex_coord).rgb;
-    vec3 bloom_medium = texture(sampler_bloom_medium, tex_coord).rgb;
-    vec3 bloom_small = texture(sampler_bloom_small, tex_coord).rgb;
-
-    vec3 colour = vec3(0.0f) + texture(sampler_colour, tex_coord).rgb
-        + bloom_large * large_factor
-        + bloom_medium * medium_factor
-        + bloom_small * small_factor
-        ;
-
-
+    vec3 colour = texture(sampler_colour, tex_coord).rgb;
     frag_out = vec4(lotteTonemap(colour), 1.0);
 }

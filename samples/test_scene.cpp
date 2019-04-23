@@ -8,37 +8,42 @@
 #include <mg/resources/mg_mesh_resource.h>
 #include <mg/resources/mg_shader_resource.h>
 #include <mg/resources/mg_texture_resource.h>
+#include <mg/utils/mg_max.h>
 
 #include <fmt/core.h>
+
+namespace {
 
 using namespace Mg;
 using namespace Mg::gfx;
 using namespace Mg::input;
 
+void main_loop();
+
 // Global scene pointer. Since this is just a small sample, I feel okay with using a global.
 Scene* g_scene;
 
-inline void setup_config()
+void setup_config()
 {
     auto& cfg = g_scene->root.config();
     cfg.set_default_value("mouse_sensitivity_x", 0.002f);
     cfg.set_default_value("mouse_sensitivity_y", 0.002f);
 }
 
-inline Mg::gfx::MeshHandle load_mesh(Identifier file)
+Mg::gfx::MeshHandle load_mesh(Identifier file)
 {
     auto access = g_scene->resource_cache.access_resource<MeshResource>(file);
     return g_scene->root.gfx_device().mesh_repository().create(*access);
 }
 
-inline Mg::gfx::TextureHandle load_texture(std::string_view file)
+Mg::gfx::TextureHandle load_texture(std::string_view file)
 {
     auto file_name = Identifier::from_runtime_string(fmt::format("textures/{}.dds", file));
     auto access    = g_scene->resource_cache.access_resource<TextureResource>(file_name);
     return g_scene->root.gfx_device().texture_repository().create(*access);
 }
 
-inline Mg::gfx::Material* load_material(Identifier file, std::initializer_list<Identifier> options)
+Mg::gfx::Material* load_material(Identifier file, std::initializer_list<Identifier> options)
 {
     auto handle = g_scene->resource_cache.resource_handle<ShaderResource>(
         "shaders/default.mgshader");
@@ -53,9 +58,9 @@ inline Mg::gfx::Material* load_material(Identifier file, std::initializer_list<I
     return m;
 }
 
-inline Model load_model(Identifier                        mesh_file,
-                        span<const MaterialAssignment>    material_files,
-                        std::initializer_list<Identifier> options)
+Model load_model(Identifier                        mesh_file,
+                 span<const MaterialAssignment>    material_files,
+                 std::initializer_list<Identifier> options)
 {
     Model model;
 
@@ -69,7 +74,7 @@ inline Model load_model(Identifier                        mesh_file,
     return model;
 }
 
-inline InputMap make_input_map(Window& w)
+InputMap make_input_map(Window& w)
 {
     const auto& kb    = w.keyboard;
     const auto& mouse = w.mouse;
@@ -94,21 +99,42 @@ inline InputMap make_input_map(Window& w)
     return input;
 }
 
-Mg::gfx::TextureRenderTarget make_bloom_target(size_t i)
+BlurTargets make_blur_targets(VideoMode video_mode)
 {
-    RenderTargetParams params{};
-    params.filter_mode      = TextureFilterMode::Linear;
-    params.width            = 640 >> i;
-    params.height           = 360 >> i;
-    params.render_target_id = "Bloom.colour";
-    params.texture_format   = RenderTargetParams::Format::RGBA16F;
+    static constexpr int32_t k_num_mip_levels = 4;
 
-    TextureRepository& tex_repo = g_scene->root.gfx_device().texture_repository();
+    BlurTargets blur_targets;
 
-    TextureHandle colour_target = tex_repo.create_render_target(params);
+    {
+        RenderTargetParams params{};
+        params.filter_mode    = TextureFilterMode::Linear;
+        params.width          = video_mode.width >> 2;
+        params.height         = video_mode.height >> 2;
+        params.num_mip_levels = k_num_mip_levels;
+        params.texture_format = RenderTargetParams::Format::RGBA16F;
 
-    return TextureRenderTarget::with_colour_target(colour_target,
-                                                   TextureRenderTarget::DepthType::None);
+        TextureRepository& tex_repo = g_scene->root.gfx_device().texture_repository();
+
+        params.render_target_id              = "Blur_horizontal";
+        blur_targets.hor_pass_target_texture = tex_repo.create_render_target(params);
+
+        params.render_target_id               = "Blur_vertical";
+        blur_targets.vert_pass_target_texture = tex_repo.create_render_target(params);
+    }
+
+    for (int32_t mip_level = 0; mip_level < k_num_mip_levels; ++mip_level) {
+        blur_targets.hor_pass_targets.emplace_back(
+            TextureRenderTarget::with_colour_target(blur_targets.hor_pass_target_texture,
+                                                    TextureRenderTarget::DepthType::None,
+                                                    mip_level));
+
+        blur_targets.vert_pass_targets.emplace_back(
+            TextureRenderTarget::with_colour_target(blur_targets.vert_pass_target_texture,
+                                                    TextureRenderTarget::DepthType::None,
+                                                    mip_level));
+    }
+
+    return blur_targets;
 }
 
 Mg::gfx::TextureRenderTarget make_hdr_target(VideoMode mode)
@@ -169,11 +195,8 @@ void init()
         }
     });
 
-    g_scene->hdr_target = make_hdr_target(window.settings().video_mode);
-
-    for (size_t i = 0; i < 8; ++i) {
-        g_scene->bloom_targets.emplace_back(make_bloom_target(i / 2));
-    }
+    g_scene->hdr_target   = make_hdr_target(window.settings().video_mode);
+    g_scene->blur_targets = make_blur_targets(window.settings().video_mode);
 
     g_scene->root.gfx_device().set_clear_colour(0.0125f, 0.01275f, 0.025f);
 
@@ -197,46 +220,82 @@ void init()
         g_scene->scene_models.emplace_back(
             load_model("meshes/misc/test_scene_2.mgm", scene_mats, { "PARALLAX" }));
 
-        {
-            Model& hest_model = g_scene->scene_models.emplace_back(
-                load_model("meshes/misc/hestdraugr.mgm", hest_mats, { "RIM_LIGHT" }));
+        Model hest_model = load_model("meshes/misc/hestdraugr.mgm", hest_mats, { "RIM_LIGHT" });
+        hest_model.transform.position.x += 2.0f;
+        g_scene->scene_models.push_back(hest_model);
 
-            hest_model.transform.position.x = 3.0f;
-        }
+        Model& narmask_model = g_scene->scene_models.emplace_back(
+            load_model("meshes/misc/narmask.mgm", narmask_mats, { "RIM_LIGHT" }));
 
-        {
-            Model& narmask_model = g_scene->scene_models.emplace_back(
-                load_model("meshes/misc/narmask.mgm", narmask_mats, { "RIM_LIGHT" }));
-
-            narmask_model.transform.position.x -= 2.0f;
-            narmask_model.transform.rotation.yaw(glm::half_pi<float>());
-        }
+        narmask_model.transform.position.x -= 2.0f;
+        narmask_model.transform.rotation.yaw(glm::half_pi<float>());
     }
 
-    // Create post-process material
     {
-        auto handle = g_scene->resource_cache.resource_handle<ShaderResource>(
-            "shaders/post_process_test.mgshader");
-        g_scene->post_material = g_scene->root.gfx_device().material_repository().create(
-            "PostProcessMaterial", handle);
+        auto& material_repo = g_scene->root.gfx_device().material_repository();
+        auto& res_cache     = g_scene->resource_cache;
 
-        auto bloom_handle = g_scene->resource_cache.resource_handle<ShaderResource>(
+        // Create post-process materials
+        auto bloom_handle = res_cache.resource_handle<ShaderResource>(
             "shaders/post_process_bloom.mgshader");
-        g_scene->bloom_material = g_scene->root.gfx_device().material_repository().create(
-            "BloomMaterial", bloom_handle);
-    }
+        g_scene->bloom_material = material_repo.create("bloom_material", bloom_handle);
 
-    // Create billboard material
-    {
+        auto blur_handle = res_cache.resource_handle<ShaderResource>(
+            "shaders/post_process_blur.mgshader");
+        g_scene->blur_material = material_repo.create("blur_material", blur_handle);
+
+        auto tonemap_handle = g_scene->resource_cache.resource_handle<ShaderResource>(
+            "shaders/post_process_test.mgshader");
+        g_scene->tonemap_material = material_repo.create("tonemap_material", tonemap_handle);
+
+        // Create billboard material
         auto handle = g_scene->resource_cache.resource_handle<ShaderResource>(
             "shaders/simple_billboard.mgshader");
-        g_scene->billboard_material = g_scene->root.gfx_device().material_repository().create(
-            "SimpleBillboardMaterial", handle);
-
+        g_scene->billboard_material = material_repo.create("billboard_material", handle);
         g_scene->billboard_material->set_sampler("sampler_diffuse", load_texture("light_t"));
     }
 
+    // Create a lot of random lights
+    // I know rand / srand is not much good but this is just a little sample.
+    std::srand(222);
+
+    for (size_t i = 0; i < k_num_lights; ++i) {
+        auto pos = glm::vec3(rand(), rand(), 0.0f);
+        pos /= RAND_MAX;
+        pos -= glm::vec3(0.5f, 0.5f, 0.0f);
+        pos *= 15.0f;
+        pos.z += 1.125f;
+
+        glm::vec4 light_colour(rand(), rand(), rand(), RAND_MAX);
+        light_colour /= RAND_MAX;
+
+        float s = float(sin(i * 0.2f));
+
+        pos.z += s;
+
+        // Draw a billboard sprite for each light
+        {
+            Billboard& billboard = g_scene->billboard_render_list.add();
+            billboard.pos        = pos;
+            billboard.colour     = light_colour * 10.0f;
+            billboard.colour.a   = 1.0f;
+            billboard.radius     = 0.05f;
+        }
+
+        g_scene->scene_lights.push_back(
+            make_point_light(pos, light_colour * 100.0f, k_light_radius));
+    }
+
     main_loop();
+}
+
+std::array<float, 3> camera_acceleration(InputMap& input_map)
+{
+    auto forward_acc = camera_acc * (input_map.is_held("forward") - input_map.is_held("backward"));
+    auto right_acc   = camera_acc * (input_map.is_held("right") - input_map.is_held("left"));
+    auto up_acc      = camera_acc * (input_map.is_held("up") - input_map.is_held("down"));
+
+    return { forward_acc, right_acc, up_acc };
 }
 
 void time_step()
@@ -269,6 +328,7 @@ void time_step()
     float cam_pitch = state.cam_rotation.pitch() - mouse_delta_y;
     float cam_yaw   = state.cam_rotation.yaw() - mouse_delta_x;
 
+    // Set rotation from euler angles, clamping pitch between straight down & straight up.
     state.cam_rotation = Rotation{
         { glm::clamp(cam_pitch, -glm::half_pi<float>() + 0.0001f, glm::half_pi<float>() - 0.0001f),
           0.0f,
@@ -276,31 +336,25 @@ void time_step()
     };
 
     // Camera movement
-    glm::vec3 vec_forward = camera.rotation.forward();
-    glm::vec3 vec_right   = camera.rotation.right();
-    glm::vec3 vec_up      = camera.rotation.up();
+    auto const [forward_acc, right_acc, up_acc] = camera_acceleration(input);
 
-    auto max_vel  = 0.2f;
-    auto acc      = 0.01f;
-    auto friction = 0.005f;
-
-    auto forward_acc = acc * (input.is_held("forward") - input.is_held("backward"));
-    auto right_acc   = acc * (input.is_held("right") - input.is_held("left"));
-    auto up_acc      = acc * (input.is_held("up") - input.is_held("down"));
-
-    if (glm::distance(state.cam_velocity, {}) > friction) {
-        state.cam_velocity -= glm::normalize(state.cam_velocity) * friction;
+    if (glm::distance(state.cam_velocity, {}) > camera_friction) {
+        state.cam_velocity -= glm::normalize(state.cam_velocity) * camera_friction;
     }
     else {
         state.cam_velocity = {};
     }
 
+    const glm::vec3 vec_forward = camera.rotation.forward();
+    const glm::vec3 vec_right   = camera.rotation.right();
+    const glm::vec3 vec_up      = camera.rotation.up();
+
     state.cam_velocity += vec_forward * forward_acc;
     state.cam_velocity += vec_right * right_acc;
     state.cam_velocity += vec_up * up_acc;
 
-    if (auto vel = glm::distance(state.cam_velocity, {}); vel > max_vel) {
-        state.cam_velocity = glm::normalize(state.cam_velocity) * max_vel;
+    if (auto vel = glm::distance(state.cam_velocity, {}); vel > camera_max_vel) {
+        state.cam_velocity = glm::normalize(state.cam_velocity) * camera_max_vel;
     }
 
     state.cam_position += state.cam_velocity;
@@ -313,10 +367,17 @@ void time_step()
         window.apply_settings(s);
         camera.set_aspect_ratio(window.aspect_ratio());
 
-        auto& texture_repository = g_scene->root.gfx_device().texture_repository();
-        texture_repository.destroy(g_scene->hdr_target->colour_target());
-        texture_repository.destroy(g_scene->hdr_target->depth_target());
-        g_scene->hdr_target = make_hdr_target(window.settings().video_mode);
+        // Dispose of old render target textures. TODO: RAII
+        {
+            auto& texture_repository = g_scene->root.gfx_device().texture_repository();
+            texture_repository.destroy(g_scene->hdr_target->colour_target());
+            texture_repository.destroy(g_scene->hdr_target->depth_target());
+            texture_repository.destroy(g_scene->blur_targets.hor_pass_target_texture);
+            texture_repository.destroy(g_scene->blur_targets.vert_pass_target_texture);
+        }
+
+        g_scene->hdr_target   = make_hdr_target(window.settings().video_mode);
+        g_scene->blur_targets = make_blur_targets(window.settings().video_mode);
 
         window.release_cursor();
     }
@@ -324,7 +385,7 @@ void time_step()
     if (input.was_pressed("toggle_debug_vis")) { g_scene->draw_debug = !g_scene->draw_debug; }
 }
 
-inline Scene::State lerp(const Scene::State& fst, const Scene::State& snd, double x)
+Scene::State lerp(const Scene::State& fst, const Scene::State& snd, double x)
 {
     Scene::State output;
     output.cam_position = glm::mix(fst.cam_position, snd.cam_position, x);
@@ -333,9 +394,64 @@ inline Scene::State lerp(const Scene::State& fst, const Scene::State& snd, doubl
     return output;
 }
 
-inline void add_to_render_list(const Model& model, RenderCommandList& renderlist)
+void add_to_render_list(const Model& model, RenderCommandList& renderlist)
 {
     renderlist.add_mesh(model.mesh, model.transform, model.material_bindings);
+}
+
+void render_bloom()
+{
+    constexpr size_t k_num_blur_iterations = 3;
+    const size_t     num_blur_targets      = g_scene->blur_targets.hor_pass_targets.size();
+
+    for (size_t mip_i = 0; mip_i < num_blur_targets; ++mip_i) {
+        TextureRenderTarget& hor_target  = g_scene->blur_targets.hor_pass_targets[mip_i];
+        TextureRenderTarget& vert_target = g_scene->blur_targets.vert_pass_targets[mip_i];
+
+        // Source mip-level will be [0, 0, 1, 2, 3, ...]
+        auto source_mipmap = max(0, static_cast<int>(mip_i) - 1);
+        g_scene->blur_material->set_parameter("source_mip_level", source_mipmap);
+
+        // For the first mip level, we read from the HDR target, then from previous blur-target mip
+        // level.
+        TextureHandle blur_input = (mip_i == 0) ? g_scene->hdr_target->colour_target()
+                                                : vert_target.colour_target();
+
+        // Render gaussian blur in separate horizontal and vertical passes.
+        for (size_t u = 0; u < k_num_blur_iterations; ++u) {
+            hor_target.bind();
+            g_scene->blur_material->set_option("HORIZONTAL", true);
+            g_scene->post_renderer.post_process(*g_scene->blur_material, blur_input);
+
+            vert_target.bind();
+            g_scene->blur_material->set_option("HORIZONTAL", false);
+            g_scene->post_renderer.post_process(*g_scene->blur_material,
+                                                hor_target.colour_target());
+            blur_input = vert_target.colour_target();
+
+            source_mipmap = static_cast<int>(mip_i);
+            g_scene->blur_material->set_parameter("source_mip_level", source_mipmap);
+        }
+    }
+}
+
+void render_light_debug_geometry()
+{
+    auto& gfx = g_scene->root.gfx_device();
+
+    gfx.set_depth_test(DepthFunc::NONE);
+
+    for (const Light& light : g_scene->scene_lights) {
+        if (light.vector.w == 0.0) { continue; }
+        DebugRenderer::EllipsoidDrawParams params;
+        params.centre     = glm::vec3(light.vector);
+        params.colour     = glm::vec4(normalize(light.colour), 0.5f);
+        params.dimensions = glm::vec3(std::sqrt(light.range_sqr));
+        params.wireframe  = true;
+        g_scene->debug_renderer.draw_ellipsoid(g_scene->camera, params);
+    }
+
+    gfx.set_depth_test(DepthFunc::LESS);
 }
 
 void render_scene(double lerp_factor)
@@ -347,100 +463,42 @@ void render_scene(double lerp_factor)
     g_scene->camera.rotation  = render_state.cam_rotation;
 
     // Draw meshes
-    RenderCommandList& render_list = g_scene->render_list;
-    render_list.clear();
-    for (auto&& model : g_scene->scene_models) { add_to_render_list(model, render_list); }
+    {
+        RenderCommandList& render_list = g_scene->render_list;
+        render_list.clear();
+        for (auto&& model : g_scene->scene_models) { add_to_render_list(model, render_list); }
 
-    std::vector<Light> lights;
+        render_list.frustum_cull_draw_list(g_scene->camera);
+        render_list.sort_draw_list(g_scene->camera, SortFunc::NEAR_TO_FAR);
 
-    // Create a lot of random lights
-    // I know rand / srand is not much good but this is just a little sample...
-    std::srand(222);
-    g_scene->billboard_render_list.clear();
-    for (size_t i = 0; i < k_num_lights; ++i) {
-        auto pos = glm::vec3(rand(), rand(), 0.0f);
-        pos /= RAND_MAX;
-        pos -= glm::vec3(0.5f, 0.5f, 0.0f);
-        pos *= 15.0f;
-        pos.z += 1.125f;
-
-        glm::vec4 colour(rand(), rand(), rand(), RAND_MAX);
-        colour /= RAND_MAX;
-
-        float offset = float(rand()) / RAND_MAX * 7.0f;
-        float s      = float(sin(g_scene->time * 0.5 + offset));
-
-        pos.z += s;
-
-        {
-            Billboard& billboard = g_scene->billboard_render_list.add();
-            billboard.pos        = pos;
-            billboard.colour     = colour * 10.0f;
-            billboard.colour.a /= 10.0f;
-            billboard.radius = 0.05f;
-        }
-
-        lights.push_back(make_point_light(pos, colour * 100.0f, k_light_radius));
-    }
-
-    render_list.frustum_cull_draw_list(g_scene->camera);
-    render_list.sort_draw_list(g_scene->camera, SortFunc::NEAR_TO_FAR);
-
-    g_scene->hdr_target->bind();
-    gfx.clear();
-
-    auto time = float(g_scene->root.time_since_init());
-    g_scene->mesh_renderer.render(g_scene->camera, render_list, lights, { time, -6.0 });
-
-    g_scene->billboard_renderer.render(g_scene->camera,
-                                       g_scene->billboard_render_list,
-                                       *g_scene->billboard_material);
-
-    TextureRenderTarget* src_target = &g_scene->hdr_target.value();
-    bool                 horizontal = true;
-
-    for (TextureRenderTarget& bloom_target : g_scene->bloom_targets) {
-        bloom_target.bind();
+        g_scene->hdr_target->bind();
         gfx.clear();
 
-        g_scene->bloom_material->set_option("HORIZONTAL", horizontal);
-        g_scene->post_renderer.post_process(*g_scene->bloom_material, src_target->colour_target());
+        auto time = static_cast<float>(g_scene->root.time_since_init());
+        g_scene->mesh_renderer.render(g_scene->camera,
+                                      render_list,
+                                      g_scene->scene_lights,
+                                      { time, -6.0 });
 
-        horizontal = !horizontal;
-        src_target = &bloom_target;
+        g_scene->billboard_renderer.render(g_scene->camera,
+                                           g_scene->billboard_render_list,
+                                           *g_scene->billboard_material);
     }
 
-    g_scene->root.window().render_target.bind();
-    gfx.clear();
+    render_bloom();
 
-    g_scene->post_material->set_sampler("sampler_bloom_large",
-                                        g_scene->bloom_targets[7].colour_target());
-    g_scene->post_material->set_sampler("sampler_bloom_medium",
-                                        g_scene->bloom_targets[5].colour_target());
-    g_scene->post_material->set_sampler("sampler_bloom_small",
-                                        g_scene->bloom_targets[3].colour_target());
-
-    g_scene->post_renderer.post_process(*g_scene->post_material,
-                                        g_scene->hdr_target->colour_target(),
-                                        g_scene->hdr_target->depth_target(),
-                                        g_scene->camera.depth_range().near(),
-                                        g_scene->camera.depth_range().far());
-
-    if (g_scene->draw_debug) {
-        gfx.set_depth_test(DepthFunc::NONE);
-
-        for (const Light& light : lights) {
-            if (light.vector.w == 0.0) { continue; }
-            DebugRenderer::EllipsoidDrawParams params;
-            params.centre     = glm::vec3(light.vector);
-            params.colour     = glm::vec4(normalize(light.colour), 0.5f);
-            params.dimensions = glm::vec3(std::sqrt(light.range_sqr));
-            params.wireframe  = true;
-            g_scene->debug_renderer.draw_ellipsoid(g_scene->camera, params);
-        }
-
-        gfx.set_depth_test(DepthFunc::LESS);
+    // Apply tonemap and render to window render target.
+    {
+        g_scene->bloom_material->set_sampler("sampler_bloom",
+                                             g_scene->blur_targets.vert_pass_target_texture);
+        g_scene->root.window().render_target.bind();
+        gfx.clear();
+        g_scene->post_renderer.post_process(*g_scene->bloom_material,
+                                            g_scene->hdr_target->colour_target());
     }
+
+    // Debug geometry
+    if (g_scene->draw_debug) { render_light_debug_geometry(); }
 
     g_scene->root.window().refresh();
 }
@@ -474,6 +532,8 @@ void main_loop()
         render_scene(accumulator / k_time_step);
     }
 }
+
+} // namespace
 
 int main(int /*argc*/, char* /*argv*/ [])
 {

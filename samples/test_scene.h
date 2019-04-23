@@ -1,4 +1,4 @@
-// This test scene ties many components together to create a simple scene. As more features become
+// This test scene ties many components together to create a simple scene. The more features become
 // properly integrated into the engine, the smaller this sample becomes.
 
 #pragma once
@@ -21,8 +21,12 @@
 
 constexpr double k_time_step             = 1.0 / 60.0;
 constexpr double k_accumulator_max_steps = 10;
-constexpr size_t k_num_lights            = 64;
-constexpr float  k_light_radius          = 3.5f;
+constexpr size_t k_num_lights            = 128;
+constexpr float  k_light_radius          = 3.0f;
+
+constexpr auto camera_max_vel  = 0.2f;
+constexpr auto camera_acc      = 0.01f;
+constexpr auto camera_friction = 0.005f;
 
 struct Model {
     Mg::Transform                                  transform;
@@ -40,6 +44,14 @@ inline Mg::ResourceCache setup_resource_cache()
     return Mg::ResourceCache{ std::make_unique<Mg::BasicFileLoader>("../data") };
 }
 
+struct BlurTargets {
+    std::vector<Mg::gfx::TextureRenderTarget> hor_pass_targets;
+    std::vector<Mg::gfx::TextureRenderTarget> vert_pass_targets;
+
+    Mg::gfx::TextureHandle hor_pass_target_texture;
+    Mg::gfx::TextureHandle vert_pass_target_texture;
+};
+
 struct Scene {
     Mg::Root          root;
     Mg::ResourceCache resource_cache = setup_resource_cache();
@@ -52,8 +64,8 @@ struct Scene {
     Mg::gfx::RenderCommandList   render_list;
     Mg::gfx::BillboardRenderList billboard_render_list;
 
-    Mg::Opt<Mg::gfx::TextureRenderTarget>     hdr_target; // Optional to defer initialisation
-    std::vector<Mg::gfx::TextureRenderTarget> bloom_targets;
+    Mg::Opt<Mg::gfx::TextureRenderTarget> hdr_target; // Optional to defer initialisation
+    BlurTargets                           blur_targets;
 
     Mg::gfx::Camera camera;
 
@@ -68,9 +80,11 @@ struct Scene {
     State prev_state;
     State current_state;
 
-    std::vector<Model> scene_models;
+    std::vector<Model>          scene_models;
+    std::vector<Mg::gfx::Light> scene_lights;
 
-    Mg::gfx::Material* post_material;
+    Mg::gfx::Material* tonemap_material;
+    Mg::gfx::Material* blur_material;
     Mg::gfx::Material* bloom_material;
     Mg::gfx::Material* billboard_material;
 
@@ -78,11 +92,3 @@ struct Scene {
     bool   exit       = false;
     bool   draw_debug = false;
 };
-
-void init();
-
-void render_scene(double lerp_factor);
-
-void time_step();
-
-void main_loop();

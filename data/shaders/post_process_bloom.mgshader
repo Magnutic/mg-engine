@@ -1,5 +1,5 @@
 TAGS {}
-OPTIONS { HORIZONTAL = true; }
-PARAMETERS {}
+OPTIONS {}
+PARAMETERS { sampler2D sampler_bloom; }
 VERTEX_CODE {}
 FRAGMENT_CODE { #include "bloom.glsl" }

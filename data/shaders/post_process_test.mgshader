@@ -12,9 +12,6 @@ OPTIONS {
 // vec2, vec3, and vec4.
 // Samplers may be of type sampler2D or samplerCube.
 PARAMETERS {
-    sampler2D sampler_bloom_large;
-    sampler2D sampler_bloom_medium;
-    sampler2D sampler_bloom_small;
 }
 
 // Vertex code block. Consists of #include-directives and GLSL-code-literals.
