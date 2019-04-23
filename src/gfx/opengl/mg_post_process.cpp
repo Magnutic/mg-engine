@@ -108,7 +108,7 @@ experimental::PipelineRepository make_post_process_pipeline_repository()
         { { "MaterialParams", PipelineInputType::UniformBuffer, k_material_params_ubo_slot },
           { "FrameBlock", PipelineInputType::UniformBuffer, k_frame_block_ubo_slot },
           { "sampler_colour", PipelineInputType::Sampler2D, k_input_colour_texture_unit },
-          { "samler_depth", PipelineInputType::Sampler2D, k_input_depth_texture_unit } };
+          { "sampler_depth", PipelineInputType::Sampler2D, k_input_depth_texture_unit } };
 
     config.material_params_ubo_slot = k_material_params_ubo_slot;
 
