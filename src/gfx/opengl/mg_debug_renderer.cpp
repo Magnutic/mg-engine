@@ -264,8 +264,8 @@ static void draw_primitive(ShaderHandle                        program,
                            const DebugMesh&                    mesh,
                            DebugRenderer::PrimitiveDrawParams& params)
 {
-    glm::mat4 M = glm::translate({}, params.centre) * params.orientation.to_matrix() *
-                  glm::scale(params.dimensions);
+    glm::mat4 M = glm::translate(glm::mat4{ 1.0f }, params.centre) *
+                  params.orientation.to_matrix() * glm::scale(params.dimensions);
 
     opengl::use_program(program);
     opengl::set_uniform(opengl::uniform_location(program, "colour"), params.colour);
