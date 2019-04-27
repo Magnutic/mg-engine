@@ -72,13 +72,13 @@ struct Scene {
     Mg::input::InputMap input_map;
 
     struct State {
-        glm::vec3    cam_position;
-        Mg::Rotation cam_rotation;
-        glm::vec3    cam_velocity;
+        glm::vec3    cam_position{};
+        Mg::Rotation cam_rotation{};
+        glm::vec3    cam_velocity{};
     };
 
-    State prev_state;
-    State current_state;
+    State prev_state{};
+    State current_state{};
 
     std::vector<Model>          scene_models;
     std::vector<Mg::gfx::Light> scene_lights;
