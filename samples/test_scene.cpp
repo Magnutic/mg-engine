@@ -244,10 +244,6 @@ void init()
             "shaders/post_process_blur.mgshader");
         g_scene->blur_material = material_repo.create("blur_material", blur_handle);
 
-        auto tonemap_handle = g_scene->resource_cache.resource_handle<ShaderResource>(
-            "shaders/post_process_test.mgshader");
-        g_scene->tonemap_material = material_repo.create("tonemap_material", tonemap_handle);
-
         // Create billboard material
         auto handle = g_scene->resource_cache.resource_handle<ShaderResource>(
             "shaders/simple_billboard.mgshader");

@@ -83,7 +83,6 @@ struct Scene {
     std::vector<Model>          scene_models;
     std::vector<Mg::gfx::Light> scene_lights;
 
-    Mg::gfx::Material* tonemap_material;
     Mg::gfx::Material* blur_material;
     Mg::gfx::Material* bloom_material;
     Mg::gfx::Material* billboard_material;
