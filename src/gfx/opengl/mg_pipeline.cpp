@@ -146,7 +146,7 @@ Pipeline::~Pipeline()
 
 PipelineInputBinding::PipelineInputBinding(uint32_t location, const BufferTexture& buffer_texture)
     : PipelineInputBinding(location,
-                           buffer_texture.internal_texture_id(),
+                           buffer_texture.gfx_api_handle(),
                            PipelineInputType::BufferTexture)
 {}
 

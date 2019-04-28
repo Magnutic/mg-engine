@@ -63,7 +63,7 @@ public:
 
     size_t size() const { return m_buffer_size; }
 
-    OpaqueHandle::Value internal_texture_id() const { return m_tex_id.value; }
+    OpaqueHandle::Value gfx_api_handle() const { return m_tex_id.value; }
 
 private:
     OpaqueHandle m_tex_id;

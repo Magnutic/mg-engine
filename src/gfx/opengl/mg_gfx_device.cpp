@@ -226,7 +226,7 @@ void OpenGLGfxDevice::bind_texture(TextureUnit unit, TextureHandle texture)
 
 void OpenGLGfxDevice::bind_buffer_texture(TextureUnit unit, const BufferTexture& texture)
 {
-    auto gl_texture_id = static_cast<GLuint>(texture.internal_texture_id());
+    auto gl_texture_id = static_cast<GLuint>(texture.gfx_api_handle());
 
     glActiveTexture(GL_TEXTURE0 + unit.get());
     glBindTexture(GL_TEXTURE_BUFFER, gl_texture_id);
