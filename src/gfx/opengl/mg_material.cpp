@@ -27,7 +27,6 @@
 #include "mg/core/mg_runtime_error.h"
 #include "mg/resource_cache/mg_resource_access_guard.h"
 #include "mg/resources/mg_shader_resource.h"
-#include "mg/utils/mg_hash_combine.h"
 #include "mg/utils/mg_stl_helpers.h"
 
 #include <fmt/core.h>
@@ -223,10 +222,9 @@ void Material::_set_parameter_impl(Identifier            name,
     std::memcpy(&m_parameter_data.buffer[offset], param_value.data(), size);
 }
 
-uint32_t Material::shader_hash() const
+PipelineIdentifier Material::pipeline_identifier() const
 {
-    // TODO: this is not a good hash
-    return hash_combine(m_shader.resource_id().hash(), m_option_flags);
+    return { m_shader.resource_id(), m_option_flags };
 }
 
 std::string Material::debug_print() const

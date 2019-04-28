@@ -29,6 +29,7 @@
 
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_identifier.h"
+#include "mg/gfx/mg_pipeline_identifier.h"
 #include "mg/gfx/mg_texture_handle.h"
 #include "mg/resource_cache/mg_resource_handle.h"
 #include "mg/resources/mg_shader_enums.h"
@@ -111,10 +112,10 @@ public:
 
     void set_id(Identifier id) { m_id = id; }
 
-    /** Hash based on the aspects of the material that affect the corresponding shader program.
-     * Used to allow multiple materials to re-use the same shader program.
+    /** Identifier based on the aspects of the material that affect the corresponding rendering
+     * pipeline. Used to allow multiple materials to re-use the same pipeline when applicable.
      */
-    uint32_t shader_hash() const;
+    PipelineIdentifier pipeline_identifier() const;
 
     ResourceHandle<ShaderResource> shader() const { return m_shader; }
 

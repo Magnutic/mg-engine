@@ -37,6 +37,7 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/gfx/mg_mesh_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_post_process.h
     ${MG_HEADER_DIR}/mg/gfx/mg_pipeline.h
+    ${MG_HEADER_DIR}/mg/gfx/mg_pipeline_identifier.h
     ${MG_HEADER_DIR}/mg/gfx/mg_pipeline_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_render_command_list.h
     ${MG_HEADER_DIR}/mg/gfx/mg_render_target.h

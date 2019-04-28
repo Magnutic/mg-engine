@@ -28,6 +28,7 @@
 #pragma once
 
 #include "mg/gfx/mg_pipeline.h"
+#include "mg/gfx/mg_pipeline_identifier.h"
 #include "mg/gfx/mg_shader.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/mg_defs.h"
@@ -110,8 +111,8 @@ public:
 
 private:
     struct PipelineNode {
-        Pipeline pipeline;
-        uint32_t hash;
+        Pipeline           pipeline;
+        PipelineIdentifier id;
     };
 
     Pipeline&     get_or_make_pipeline(const Material& material);
