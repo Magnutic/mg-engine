@@ -215,30 +215,6 @@ MaterialRepository& OpenGLGfxDevice::material_repository()
     return data().material_repository;
 }
 
-void OpenGLGfxDevice::bind_texture(TextureUnit unit, TextureHandle texture)
-{
-    auto handle        = internal::texture_node(texture).texture.gfx_api_handle();
-    auto gl_texture_id = static_cast<GLuint>(handle);
-
-    glActiveTexture(GL_TEXTURE0 + unit.get());
-    glBindTexture(GL_TEXTURE_2D, gl_texture_id);
-}
-
-void OpenGLGfxDevice::bind_buffer_texture(TextureUnit unit, const BufferTexture& texture)
-{
-    auto gl_texture_id = static_cast<GLuint>(texture.gfx_api_handle());
-
-    glActiveTexture(GL_TEXTURE0 + unit.get());
-    glBindTexture(GL_TEXTURE_BUFFER, gl_texture_id);
-}
-
-void OpenGLGfxDevice::bind_uniform_buffer(UniformBufferSlot slot, const UniformBuffer& buffer)
-{
-    auto   gl_slot = static_cast<uint32_t>(slot);
-    GLuint ubo_id  = static_cast<uint32_t>(buffer.gfx_api_handle());
-    glBindBufferBase(GL_UNIFORM_BUFFER, gl_slot, ubo_id);
-}
-
 } // namespace Mg::gfx::opengl
 
 namespace Mg::gfx {

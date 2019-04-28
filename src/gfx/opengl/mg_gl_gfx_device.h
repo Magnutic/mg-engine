@@ -86,16 +86,6 @@ public:
     MeshRepository&     mesh_repository() override;
     TextureRepository&  texture_repository() override;
     MaterialRepository& material_repository() override;
-
-    //----------------------------------------------------------------------------------------------
-    // OpenGL-specific functionality
-    //----------------------------------------------------------------------------------------------
-
-    void bind_texture(TextureUnit unit, TextureHandle texture);
-
-    void bind_buffer_texture(TextureUnit unit, const BufferTexture& texture);
-
-    void bind_uniform_buffer(UniformBufferSlot slot, const UniformBuffer& buffer);
 };
 
 } // namespace Mg::gfx::opengl
