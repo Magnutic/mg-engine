@@ -32,7 +32,7 @@
 
 #include <fmt/core.h>
 
-namespace Mg::gfx::experimental {
+namespace Mg::gfx {
 
 namespace {
 
@@ -279,5 +279,5 @@ ShaderCode PipelineRepository::assemble_shader_code(const Material& material)
     return code;
 }
 
-} // namespace Mg::gfx::experimental
+} // namespace Mg::gfx
 

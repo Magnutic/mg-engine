@@ -135,10 +135,8 @@ constexpr auto billboard_fragment_shader_fallback = R"(
     void main() { frag_colour = vec4(1.0, 0.0, 1.0, 1.0); }
 )";
 
-experimental::PipelineRepository make_billboard_pipeline_factory()
+PipelineRepository make_billboard_pipeline_factory()
 {
-    using namespace experimental;
-
     PipelineRepository::Config config{};
 
     config.pipeline_prototype.common_input_layout = {
@@ -155,7 +153,7 @@ experimental::PipelineRepository make_billboard_pipeline_factory()
 
     config.material_params_ubo_slot = k_material_params_ubo_slot;
 
-    return experimental::PipelineRepository(config);
+    return PipelineRepository(config);
 }
 
 } // namespace
@@ -188,7 +186,7 @@ struct CameraBlock {
 struct BillboardRendererData {
     UniformBuffer camera_ubo{ sizeof(CameraBlock) };
 
-    experimental::PipelineRepository pipeline_repository = make_billboard_pipeline_factory();
+    PipelineRepository pipeline_repository = make_billboard_pipeline_factory();
 
     // Size of VBO
     size_t vertex_buffer_size = 0;
@@ -282,8 +280,8 @@ void BillboardRenderer::render(const ICamera&             camera,
 
     std::array shared_inputs = { PipelineInputBinding(k_camera_ubo_slot, data().camera_ubo) };
 
-    experimental::PipelineRepository::BindingContext binding_context =
-        data().pipeline_repository.binding_context(shared_inputs);
+    PipelineRepository::BindingContext binding_context = data().pipeline_repository.binding_context(
+        shared_inputs);
 
     data().pipeline_repository.bind_pipeline(material, binding_context);
 

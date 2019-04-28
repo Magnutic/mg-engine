@@ -120,10 +120,8 @@ FrameBlock make_frame_block(const ICamera& camera, float current_time, float cam
     return frame_block;
 }
 
-experimental::PipelineRepository make_mesh_pipeline_repository()
+PipelineRepository make_mesh_pipeline_repository()
 {
-    using namespace experimental;
-
     PipelineRepository::Config config{};
     config.preamble_shader_code = { VertexShaderCode{ k_lit_mesh_framework_vertex_code },
                                     {},
@@ -149,7 +147,7 @@ experimental::PipelineRepository make_mesh_pipeline_repository()
 
 /** MeshRenderer's state. */
 struct MeshRendererData {
-    experimental::PipelineRepository pipeline_repository = make_mesh_pipeline_repository();
+    PipelineRepository pipeline_repository = make_mesh_pipeline_repository();
 
     MatrixUniformHandler m_matrix_uniform_handler;
 
@@ -165,7 +163,7 @@ struct MeshRendererData {
 namespace {
 
 /** Upload frame-constant buffers to GPU. */
-experimental::PipelineRepository::BindingContext
+PipelineRepository::BindingContext
 make_binding_context(MeshRendererData& data, const ICamera& cam, RenderParameters params)
 {
     // Upload frame-global uniforms
@@ -222,9 +220,7 @@ void MeshRenderer::render(const ICamera&           cam,
     update_light_data(data().m_light_buffers, lights, cam, data().m_light_grid);
 
 
-    experimental::PipelineRepository::BindingContext binding_context = make_binding_context(data(),
-                                                                                            cam,
-                                                                                            params);
+    PipelineRepository::BindingContext binding_context = make_binding_context(data(), cam, params);
 
     size_t next_matrix_update_index = 0;
 

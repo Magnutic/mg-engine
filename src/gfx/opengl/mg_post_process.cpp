@@ -92,10 +92,8 @@ float linearise_depth(float depth) {
 constexpr const char* post_process_fs_fallback =
     R"(void main() { frag_out = vec4(1.0, 0.0, 1.0, 1.0); })";
 
-experimental::PipelineRepository make_post_process_pipeline_repository()
+PipelineRepository make_post_process_pipeline_repository()
 {
-    using namespace experimental;
-
     PipelineRepository::Config config{};
 
     config.preamble_shader_code = { VertexShaderCode{ post_process_vs },
@@ -112,13 +110,13 @@ experimental::PipelineRepository make_post_process_pipeline_repository()
 
     config.material_params_ubo_slot = k_material_params_ubo_slot;
 
-    return experimental::PipelineRepository(config);
+    return PipelineRepository(config);
 }
 
 } // namespace
 
 struct PostProcessRendererData {
-    experimental::PipelineRepository pipeline_repository = make_post_process_pipeline_repository();
+    PipelineRepository pipeline_repository = make_post_process_pipeline_repository();
 
     UniformBuffer frame_block_ubo{ sizeof(FrameBlock) };
 
@@ -173,8 +171,8 @@ void setup_render_pipeline(PostProcessRendererData& data,
         input_bindings.push_back({ k_input_depth_texture_unit, input_depth.value() });
     }
 
-    experimental::PipelineRepository::BindingContext binding_context =
-        data.pipeline_repository.binding_context(input_bindings);
+    PipelineRepository::BindingContext binding_context = data.pipeline_repository.binding_context(
+        input_bindings);
 
     data.pipeline_repository.bind_pipeline(material, binding_context);
 }
@@ -221,7 +219,8 @@ void PostProcessRenderer::post_process(const Material& material,
     MG_CHECK_GL_ERROR();
 }
 
-void PostProcessRenderer::drop_shaders() {
+void PostProcessRenderer::drop_shaders()
+{
     data().pipeline_repository.drop_pipelines();
 }
 

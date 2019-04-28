@@ -38,7 +38,7 @@ namespace Mg::gfx {
 class Material;
 }
 
-namespace Mg::gfx::experimental {
+namespace Mg::gfx {
 
 template<ShaderStage stage> struct ShaderStageCode {
     ShaderStageCode() = default;
@@ -97,7 +97,7 @@ public:
         }
     }
 
-    /** Create a PipelinePrototypeContext -- the shared binding state for all Pipelines of this
+    /** Create a BindingContext -- the shared binding state for all Pipelines of this
      * PipelineRepository.
      */
     BindingContext binding_context(span<const PipelineInputBinding> shared_inputs)
@@ -124,4 +124,4 @@ private:
     UniformBuffer             m_material_params_ubo{ defs::k_material_parameters_buffer_size };
 };
 
-} // namespace Mg::gfx::experimental
+} // namespace Mg::gfx
