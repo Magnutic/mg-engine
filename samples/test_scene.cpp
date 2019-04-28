@@ -501,6 +501,7 @@ void render_scene(double lerp_factor)
     if (g_scene->draw_debug) { render_light_debug_geometry(); }
 
     g_scene->root.window().refresh();
+    gfx.synchronise();
 }
 
 void main_loop()
