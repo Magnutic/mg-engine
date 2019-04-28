@@ -94,7 +94,7 @@ std::string shader_input_layout_code(const Material& material)
     std::string snippet;
     snippet.reserve(256);
 
-    // Include definition of each paramater
+    // Include definition of each parameter
     if (!material.parameters().empty()) {
         snippet += "layout (std140) uniform MaterialParams {\n";
 
