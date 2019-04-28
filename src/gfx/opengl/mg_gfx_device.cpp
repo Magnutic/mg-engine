@@ -235,7 +235,7 @@ void OpenGLGfxDevice::bind_buffer_texture(TextureUnit unit, const BufferTexture&
 void OpenGLGfxDevice::bind_uniform_buffer(UniformBufferSlot slot, const UniformBuffer& buffer)
 {
     auto   gl_slot = static_cast<uint32_t>(slot);
-    GLuint ubo_id  = static_cast<uint32_t>(buffer.internal_id());
+    GLuint ubo_id  = static_cast<uint32_t>(buffer.gfx_api_handle());
     glBindBufferBase(GL_UNIFORM_BUFFER, gl_slot, ubo_id);
 }
 

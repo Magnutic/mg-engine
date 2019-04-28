@@ -157,7 +157,7 @@ PipelineInputBinding::PipelineInputBinding(uint32_t location, TextureHandle text
 {}
 
 PipelineInputBinding::PipelineInputBinding(uint32_t location, const UniformBuffer& ubo)
-    : PipelineInputBinding(location, ubo.internal_id(), PipelineInputType::UniformBuffer)
+    : PipelineInputBinding(location, ubo.gfx_api_handle(), PipelineInputType::UniformBuffer)
 {}
 
 void bind_pipeline_input_set(span<const PipelineInputBinding> bindings)

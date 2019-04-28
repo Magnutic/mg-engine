@@ -50,13 +50,13 @@ UniformBuffer::UniformBuffer(size_t size, void* data) : m_size(size)
 
 UniformBuffer::~UniformBuffer()
 {
-    GLuint ubo_id = static_cast<uint32_t>(internal_id());
+    GLuint ubo_id = static_cast<uint32_t>(gfx_api_handle());
     glDeleteBuffers(1, &ubo_id);
 }
 
 void UniformBuffer::set_data(span<const std::byte> data)
 {
-    GLuint ubo_id = static_cast<uint32_t>(internal_id());
+    GLuint ubo_id = static_cast<uint32_t>(gfx_api_handle());
 
     if (ubo_id == 0) {
         g_log.write_warning("Attempting to write to uninitialised UBO");

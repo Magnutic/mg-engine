@@ -73,7 +73,7 @@ public:
     /** Get the buffer's size in bytes. */
     size_t size() const { return m_size; }
 
-    OpaqueHandle::Value internal_id() const { return m_internal_ubo_id.value; }
+    OpaqueHandle::Value gfx_api_handle() const { return m_internal_ubo_id.value; }
 
     /** Get the maximum size for a UBO on the present system. */
     static size_t max_size();
