@@ -30,8 +30,6 @@
 
 #include "mg_render_command_data.h"
 
-#include "mg_glad.h"
-
 namespace Mg::gfx {
 
 MatrixUniformHandler::MatrixUniformHandler()
