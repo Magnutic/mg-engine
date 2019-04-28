@@ -21,9 +21,7 @@
 //
 //**************************************************************************************************
 
-#include "mg/gfx/mg_matrix_ubo.h"
-
-#include <sstream>
+#include "mg/gfx/mg_matrix_uniform_handler.h"
 
 #include "mg/gfx/mg_camera.h"
 #include "mg/gfx/mg_render_command_list.h"

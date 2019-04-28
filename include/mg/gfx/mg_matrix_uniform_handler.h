@@ -21,17 +21,17 @@
 //
 //**************************************************************************************************
 
-/** @file mg_matrix_ubo.h
+/** @file mg_matrix_uniform_hander.h
  * Utility for renderers; passing transformation matrices to shader using a Uniform Buffer Object.
  */
 
 #pragma once
 
-#include <vector>
+#include "mg/gfx/mg_uniform_buffer.h"
 
 #include <glm/mat4x4.hpp>
 
-#include "mg/gfx/mg_uniform_buffer.h"
+#include <vector>
 
 namespace Mg::gfx {
 
@@ -63,7 +63,7 @@ public:
      * Note that UBO size may be limited -- in this case, as much of the input as possible is set
      * (starting at starting_index).
      */
-    void
+    size_t
     set_matrices(const ICamera& camera, const RenderCommandList& drawlist, size_t starting_index);
 
     /** Get matrix UBO. */
