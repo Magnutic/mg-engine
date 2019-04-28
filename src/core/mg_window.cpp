@@ -211,6 +211,15 @@ std::unique_ptr<Window> Window::make(WindowSettings settings, const std::string&
     // Sticky keys means that key state remains 'pressed' until their state has been polled, so
     // that key-presses in between polls do not go unnoticed.
     glfwSetInputMode(window, GLFW_STICKY_KEYS, true);
+
+    if (glfwRawMouseMotionSupported()) {
+        g_log.write_message("Raw mouse-motion input enabled.");
+        glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+    }
+    else {
+        g_log.write_message("Raw mouse-motion input unavailable.");
+    }
+
     auto window_handle = std::make_unique<Window>(ConstructKey{}, window, settings);
     window_handle->apply_settings(settings);
     window_handle->set_title(title);
