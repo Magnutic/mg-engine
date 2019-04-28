@@ -436,6 +436,8 @@ void render_light_debug_geometry()
     auto& gfx = g_scene->root.gfx_device();
 
     gfx.set_depth_test(DepthFunc::NONE);
+    gfx.set_use_blending(true);
+    gfx.set_blend_mode(c_blend_mode_alpha);
 
     for (const Light& light : g_scene->scene_lights) {
         if (light.vector.w == 0.0) { continue; }
@@ -448,6 +450,7 @@ void render_light_debug_geometry()
     }
 
     gfx.set_depth_test(DepthFunc::LESS);
+    gfx.set_use_blending(false);
 }
 
 void render_scene(double lerp_factor)
