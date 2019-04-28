@@ -92,6 +92,9 @@ public:
      */
     virtual void set_blend_mode(BlendMode blend_mode) = 0;
 
+    /** Synchronise application with graphics device. */
+    virtual void synchronise() = 0;
+
     virtual MeshRepository&     mesh_repository()     = 0;
     virtual TextureRepository&  texture_repository()  = 0;
     virtual MaterialRepository& material_repository() = 0;

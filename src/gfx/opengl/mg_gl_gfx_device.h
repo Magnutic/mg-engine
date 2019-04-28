@@ -78,6 +78,11 @@ public:
      */
     void set_blend_mode(BlendMode blend_mode) override;
 
+    /** Synchronise application with graphics device. For OpenGL, this is equivalent to
+     * `glFinish()`.
+     */
+    void synchronise() override;
+
     MeshRepository&     mesh_repository() override;
     TextureRepository&  texture_repository() override;
     MaterialRepository& material_repository() override;

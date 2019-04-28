@@ -192,6 +192,14 @@ void OpenGLGfxDevice::set_use_blending(bool enable)
     }
 }
 
+/** Synchronise application with graphics device. */
+void OpenGLGfxDevice::synchronise()
+{
+    // N.B. I tried using fences with glClientWaitSync as I hear that is a better approach (for
+    // unclear reasons) but it had nowhere near the same impact on reducing input lag as glFinish.
+    glFinish();
+}
+
 MeshRepository& OpenGLGfxDevice::mesh_repository()
 {
     return data().mesh_repository;
