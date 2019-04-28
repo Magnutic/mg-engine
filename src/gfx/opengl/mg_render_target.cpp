@@ -32,7 +32,7 @@
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_gsl.h"
 
-#include "mg_texture_node.h"
+#include "../mg_texture_node.h"
 
 #include "mg_gl_debug.h"
 #include "mg_glad.h"

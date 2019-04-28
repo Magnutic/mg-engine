@@ -58,6 +58,7 @@ struct MeshInfo {
     // Index of this object in data structure -- used for deletion.
     uint32_t self_index{};
 
+    // Identifier for the mesh object (vertex array object) in the graphics API.
     uint32_t vao_id;
 };
 

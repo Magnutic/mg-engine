@@ -93,25 +93,25 @@ add_library(mg_engine
     ecs/mg_entity.cpp
     gfx/mg_light_buffers.cpp
     gfx/mg_light_grid.cpp
+    gfx/mg_material.cpp
     gfx/mg_material_repository.cpp
+    gfx/mg_matrix_ubo.cpp
+    gfx/mg_render_command_list.cpp
+    gfx/mg_texture_repository.cpp
     gfx/opengl/mg_billboard_renderer.cpp
     gfx/opengl/mg_buffer_texture.cpp
     gfx/opengl/mg_debug_renderer.cpp
     gfx/opengl/mg_gfx_device.cpp
     gfx/opengl/mg_gl_debug.cpp
-    gfx/opengl/mg_material.cpp
-    gfx/opengl/mg_matrix_ubo.cpp
     gfx/opengl/mg_mesh_renderer.cpp
     gfx/opengl/mg_mesh_repository.cpp
     gfx/opengl/mg_opengl_shader.cpp
-    gfx/opengl/mg_post_process.cpp
     gfx/opengl/mg_pipeline.cpp
     gfx/opengl/mg_pipeline_repository.cpp
-    gfx/opengl/mg_render_command_list.cpp
+    gfx/opengl/mg_post_process.cpp
     gfx/opengl/mg_render_target.cpp
     gfx/opengl/mg_shader.cpp
     gfx/opengl/mg_texture2d.cpp
-    gfx/opengl/mg_texture_repository.cpp
     gfx/opengl/mg_uniform_buffer.cpp
     input/mg_input.cpp
     input/mg_joy.cpp

@@ -28,7 +28,8 @@
 #include "mg/gfx/mg_uniform_buffer.h"
 
 #include "mg_opengl_shader.h"
-#include "mg_texture_node.h"
+
+#include "../mg_texture_node.h"
 
 #include "mg_glad.h"
 

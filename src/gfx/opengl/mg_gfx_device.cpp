@@ -24,7 +24,6 @@
 #include "mg/gfx/mg_gfx_device.h"
 
 #include "mg_gl_debug.h"
-#include "mg_texture_node.h"
 #include "mg_glad.h"
 
 #include "mg/core/mg_log.h"

@@ -28,7 +28,7 @@
 #include "mg/resources/mg_mesh_resource.h"
 #include "mg/utils/mg_assert.h"
 
-#include "mg_mesh_info.h"
+#include "../mg_mesh_info.h"
 #include "mg_glad.h"
 
 #include <fmt/core.h>
