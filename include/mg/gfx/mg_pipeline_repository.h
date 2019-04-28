@@ -107,7 +107,7 @@ public:
     }
 
     /** Binds the pipeline corresponding the the given material. Requires that you create a
-     * PipelinePrototypeContext first, see `binding_context()`.
+     * BindingContext first, see `binding_context()`.
      */
     void bind_pipeline(const Material& material, BindingContext& binding_context);
 
