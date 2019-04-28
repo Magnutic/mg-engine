@@ -28,8 +28,6 @@
 #include "mg/gfx/mg_camera.h"
 #include "mg/gfx/mg_render_command_list.h"
 
-#include "mg_render_command_data.h"
-
 namespace Mg::gfx {
 
 MatrixUniformHandler::MatrixUniformHandler()
@@ -44,8 +42,7 @@ void MatrixUniformHandler::set_matrices(const ICamera&           camera,
     const glm::mat4 VP = camera.view_proj_matrix();
 
     for (size_t i = 0; i < m_matrix_storage.size() && i + starting_index < drawlist.size(); ++i) {
-        auto& command_data      = internal::get_command_data(drawlist[i + starting_index].data);
-        m_matrix_storage[i].M   = command_data.M;
+        m_matrix_storage[i].M   = drawlist[i + starting_index].M;
         m_matrix_storage[i].MVP = VP * m_matrix_storage[i].M;
     }
 

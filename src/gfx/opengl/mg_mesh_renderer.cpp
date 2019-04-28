@@ -36,7 +36,6 @@
 #include "shader_factories/shader_code/mg_mesh_framework_shader_code.h"
 #include "mg_glad.h"
 
-#include "../mg_render_command_data.h"
 #include "../mg_texture_node.h"
 
 namespace Mg::gfx {
@@ -212,8 +211,6 @@ void MeshRenderer::render(const ICamera&           cam,
                           span<const Light>        lights,
                           RenderParameters         params)
 {
-    using namespace internal;
-
     auto            current_vao      = uint32_t(-1);
     const Material* current_material = nullptr;
 
@@ -231,29 +228,27 @@ void MeshRenderer::render(const ICamera&           cam,
         }
 
         if (mesh_list[i].culled) { continue; }
-        const RenderCommandData& command_data = get_command_data(mesh_list[i].data);
+        const RenderCommand& command = mesh_list[i];
 
-        const auto* material = command_data.material;
-
-        MG_ASSERT_DEBUG(material != nullptr);
+        MG_ASSERT_DEBUG(command.material != nullptr);
 
         // Set up mesh state
-        if (current_vao != command_data.mesh_vao_id) {
-            current_vao = command_data.mesh_vao_id;
+        if (current_vao != command.mesh_vao_id) {
+            current_vao = command.mesh_vao_id;
             glBindVertexArray(current_vao);
         }
 
         // Set up material state
-        if (current_material != material) {
-            data().pipeline_repository.bind_pipeline(*material, binding_context);
-            current_material = material;
+        if (current_material != command.material) {
+            data().pipeline_repository.bind_pipeline(*command.material, binding_context);
+            current_material = command.material;
         }
 
         // Set up mesh transform matrix index
         set_matrix_index(i % MATRIX_UBO_ARRAY_SIZE);
 
         // Draw submeshes
-        draw_elements(command_data.amount, command_data.begin);
+        draw_elements(command.amount, command.begin);
     }
 
     // Error check the traditional way once every frame to catch GL errors even in release builds

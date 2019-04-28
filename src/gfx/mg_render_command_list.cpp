@@ -30,7 +30,6 @@
 #include "mg/utils/mg_stl_helpers.h"
 
 #include "mg_mesh_info.h"
-#include "mg_render_command_data.h"
 #include "mg_texture_node.h"
 
 #include <fmt/core.h>
@@ -39,8 +38,9 @@
 
 namespace Mg::gfx {
 
-inline Material* material_for_submesh(span<const MaterialBinding> material_bindings,
-                                      size_t                      sub_mesh_index)
+namespace {
+
+Material* material_for_submesh(span<const MaterialBinding> material_bindings, size_t sub_mesh_index)
 {
     auto it = find_if(material_bindings, [&](const MaterialBinding& mb) {
         return mb.sub_mesh_index == sub_mesh_index;
@@ -53,9 +53,7 @@ inline Material* material_for_submesh(span<const MaterialBinding> material_bindi
     return material_for_submesh(material_bindings, 0);
 }
 
-RenderCommandList::RenderCommandList()
-    : m_command_data(Array<uint8_t>::make(defs::k_render_command_data_buffer_size))
-{}
+} // namespace
 
 void RenderCommandList::add_mesh(MeshHandle                  mesh,
                                  const Transform&            transform,
@@ -74,31 +72,18 @@ void RenderCommandList::add_mesh(MeshHandle                  mesh,
             continue;
         }
 
-        void* p_command_data = nullptr;
-
-        // Write data to command data buffer
-        {
-            // TODO: Consider whether this can be optimised to write directly to m_command_data
-            internal::RenderCommandData command_data{};
-
-            command_data.M           = transform.matrix();
-            command_data.mesh_vao_id = md.vao_id;
-            command_data.centre      = md.centre;
-            command_data.begin       = md.submeshes[i].begin;
-            command_data.amount      = md.submeshes[i].amount;
-            command_data.material    = material;
-            command_data.radius      = md.radius;
-
-            // Write to final location in buffer
-            p_command_data = &m_command_data[m_command_data_offset];
-            std::memcpy(p_command_data, &command_data, sizeof(command_data));
-
-            m_command_data_offset += sizeof(command_data);
-        }
-
         // Write render command to command list
-        m_render_commands.push_back(
-            { internal::cast_to_render_command_data_handle(p_command_data), false });
+        {
+            RenderCommand& command = m_render_commands.emplace_back();
+
+            command.M           = transform.matrix();
+            command.mesh_vao_id = md.vao_id;
+            command.centre      = md.centre;
+            command.begin       = md.submeshes[i].begin;
+            command.amount      = md.submeshes[i].amount;
+            command.material    = material;
+            command.radius      = md.radius;
+        }
 
         // Write dummy sort-key (Overwritten with proper values upon call to sort_draw_list())
         m_keys.push_back(SortKey{ 0, 0, narrow<uint32_t>(m_render_commands.size() - 1) });
@@ -110,16 +95,14 @@ void RenderCommandList::frustum_cull_draw_list(const ICamera& camera)
     const glm::mat4 VP = camera.view_proj_matrix();
 
     for (RenderCommand& command : m_render_commands) {
-        auto& command_data = internal::get_command_data(command.data);
-
-        const glm::mat4& M      = command_data.M;
-        float            radius = command_data.radius;
+        const glm::mat4& M      = command.M;
+        float            radius = command.radius;
 
         const glm::vec3 scale{ M[0][0], M[1][1], M[2][2] };
         const glm::mat4 MVP          = VP * M;
         const float     scale_factor = std::max(std::max(scale.x, scale.y), scale.z);
 
-        command.culled = frustum_cull(MVP, command_data.centre, scale_factor * radius);
+        command.culled = frustum_cull(MVP, command.centre, scale_factor * radius);
     }
 }
 
@@ -141,19 +124,18 @@ void RenderCommandList::sort_draw_list(const ICamera& camera, SortFunc sf)
 {
     for (uint32_t i = 0; i < m_render_commands.size(); ++i) {
         const RenderCommand& command      = m_render_commands[i];
-        auto&                command_data = internal::get_command_data(command.data);
 
         // Find distance to camera for sorting
-        const glm::vec3 translation = command_data.M[3];
+        const glm::vec3 translation = command.M[3];
 
         // Store depth in cm to get better precision as uint32_t
         const float depth_f = camera.depth_at_point(translation) * 100.0f;
         const auto  depth   = uint32_t(glm::max(0.0f, depth_f));
 
         // TODO: This fingerprint is not much good
-        const uint32_t mesh_fingerprint     = command_data.mesh_vao_id & 0x0F;
+        const uint32_t mesh_fingerprint     = command.mesh_vao_id & 0x0F;
         const auto     material_fingerprint = uint32_t(
-            reinterpret_cast<uintptr_t>(command_data.material)); // NOLINT
+            reinterpret_cast<uintptr_t>(command.material)); // NOLINT
         const uint32_t draw_call_fingerprint = (material_fingerprint << 8) | mesh_fingerprint;
 
         m_keys[i] = SortKey{ depth, draw_call_fingerprint, i };

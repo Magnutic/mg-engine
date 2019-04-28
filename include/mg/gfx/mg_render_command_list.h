@@ -30,8 +30,10 @@
 #include "mg/containers/mg_array.h"
 #include "mg/gfx/mg_mesh_handle.h"
 #include "mg/gfx/mg_render_command_data_handle.h"
-#include "mg/mg_defs.h"
 #include "mg/utils/mg_gsl.h"
+
+#include <glm/mat4x4.hpp>
+#include <glm/vec3.hpp>
 
 #include <cstdint>
 #include <vector>
@@ -50,8 +52,17 @@ enum class SortFunc { NEAR_TO_FAR, FAR_TO_NEAR };
 /** Description of an individual draw call (one submesh, with transform, material, and metadata). */
 struct RenderCommand {
     // May be expanded with different types of commands, flags?
-    RenderCommandDataHandle data;
-    bool                    culled;
+    glm::mat4 M;
+    glm::vec3 centre;
+    float     radius;
+
+    uint32_t mesh_vao_id;
+
+    uint32_t begin;
+    uint32_t amount;
+
+    const Material* material;
+    bool            culled;
 };
 
 /** Tells which material to use for a given submesh (by numeric index). */
@@ -65,8 +76,6 @@ class ICamera;
 /** List of draw calls to be rendered. */
 class RenderCommandList {
 public:
-    explicit RenderCommandList();
-
     void add_mesh(MeshHandle                  mesh,
                   const Transform&            transform,
                   span<const MaterialBinding> material_bindings);
@@ -75,7 +84,6 @@ public:
     {
         m_keys.clear();
         m_render_commands.clear();
-        m_command_data_offset = 0;
     }
 
     void frustum_cull_draw_list(const ICamera& camera);
@@ -86,8 +94,6 @@ public:
 
     size_t size() const { return m_render_commands.size(); }
 
-    span<const uint8_t> command_buffer_data() const noexcept { return m_command_data; }
-
     struct SortKey {
         uint32_t depth;
         uint32_t fingerprint;
@@ -97,8 +103,6 @@ public:
 private:
     std::vector<SortKey>       m_keys;
     std::vector<RenderCommand> m_render_commands;
-    Array<uint8_t>             m_command_data;
-    uint32_t                   m_command_data_offset = 0;
 };
 
 } // namespace Mg::gfx

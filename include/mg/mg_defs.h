@@ -72,9 +72,6 @@ constexpr std::size_t k_max_samplers_per_material = 8;
 /** Size of storage for material parameter values. */
 constexpr std::size_t k_material_parameters_buffer_size = 128;
 
-/** Size of buffer to allocate for render command data. */
-constexpr std::size_t k_render_command_data_buffer_size = 10 * 1024 * 1024;
-
 // Light cluster grid configuration. The renderer divides the view frustum into a grid, each element
 // of which holds a list of lights that intersect it. This allows faster light calculation.
 // These are preprocessor defines so that they can be stringified and included in string literals
