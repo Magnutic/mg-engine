@@ -208,6 +208,9 @@ std::unique_ptr<Window> Window::make(WindowSettings settings, const std::string&
         window_from_glfw_handle(w).window_size_callback(width, height);
     });
 
+    // Sticky keys means that key state remains 'pressed' until their state has been polled, so
+    // that key-presses in between polls do not go unnoticed.
+    glfwSetInputMode(window, GLFW_STICKY_KEYS, true);
     auto window_handle = std::make_unique<Window>(ConstructKey{}, window, settings);
     window_handle->apply_settings(settings);
     window_handle->set_title(title);
