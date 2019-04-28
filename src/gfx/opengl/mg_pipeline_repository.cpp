@@ -182,11 +182,14 @@ void PipelineRepository::bind_pipeline(const Material& material, BindingContext&
 
 Pipeline& PipelineRepository::get_or_make_pipeline(const Material& material)
 {
-    uint32_t hash = material.shader_hash();
+    const uint32_t hash = material.shader_hash();
 
-    auto it = find_if(m_pipelines, [hash](auto& elem) { return elem.hash == hash; });
-    if (it == m_pipelines.end()) { return make_pipeline(material).pipeline; }
-    return it->pipeline;
+    auto has_same_hash = [hash](auto& elem) { return elem.hash == hash; };
+    auto it            = find_if(m_pipelines, has_same_hash);
+
+    const bool was_found = (it != m_pipelines.end());
+
+    return was_found ? it->pipeline : make_pipeline(material).pipeline;
 }
 
 PipelineRepository::PipelineNode& PipelineRepository::make_pipeline(const Material& material)
