@@ -76,13 +76,13 @@ void RenderCommandList::add_mesh(MeshHandle                  mesh,
         {
             RenderCommand& command = m_render_commands.emplace_back();
 
-            command.M           = transform.matrix();
-            command.mesh_vao_id = md.vao_id;
-            command.centre      = md.centre;
-            command.begin       = md.submeshes[i].begin;
-            command.amount      = md.submeshes[i].amount;
-            command.material    = material;
-            command.radius      = md.radius;
+            command.M                      = transform.matrix();
+            command.gfx_api_mesh_object_id = md.gfx_api_mesh_object_id;
+            command.centre                 = md.centre;
+            command.begin                  = md.submeshes[i].begin;
+            command.amount                 = md.submeshes[i].amount;
+            command.material               = material;
+            command.radius                 = md.radius;
         }
 
         // Write dummy sort-key (Overwritten with proper values upon call to sort_draw_list())
@@ -123,7 +123,7 @@ inline bool cmp_draw_call(RenderCommandList::SortKey lhs, RenderCommandList::Sor
 void RenderCommandList::sort_draw_list(const ICamera& camera, SortFunc sf)
 {
     for (uint32_t i = 0; i < m_render_commands.size(); ++i) {
-        const RenderCommand& command      = m_render_commands[i];
+        const RenderCommand& command = m_render_commands[i];
 
         // Find distance to camera for sorting
         const glm::vec3 translation = command.M[3];
@@ -133,8 +133,8 @@ void RenderCommandList::sort_draw_list(const ICamera& camera, SortFunc sf)
         const auto  depth   = uint32_t(glm::max(0.0f, depth_f));
 
         // TODO: This fingerprint is not much good
-        const uint32_t mesh_fingerprint     = command.mesh_vao_id & 0x0F;
-        const auto     material_fingerprint = uint32_t(
+        const uint32_t mesh_fingerprint     = static_cast<uint8_t>(command.gfx_api_mesh_object_id);
+        const auto     material_fingerprint = static_cast<uint32_t>(
             reinterpret_cast<uintptr_t>(command.material)); // NOLINT
         const uint32_t draw_call_fingerprint = (material_fingerprint << 8) | mesh_fingerprint;
 

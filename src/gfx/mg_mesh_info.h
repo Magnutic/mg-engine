@@ -30,8 +30,8 @@
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/gfx/mg_mesh_handle.h"
-
 #include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_opaque_handle.h"
 
 #include <glm/vec3.hpp>
 
@@ -55,11 +55,11 @@ struct MeshInfo {
     float       radius{};
     Identifier  mesh_id{ "" };
 
+    // Identifier for the mesh object (vertex array object) in the graphics API.
+    OpaqueHandle::Value gfx_api_mesh_object_id{};
+
     // Index of this object in data structure -- used for deletion.
     uint32_t self_index{};
-
-    // Identifier for the mesh object (vertex array object) in the graphics API.
-    uint32_t vao_id;
 };
 
 inline MeshHandle make_mesh_handle(const MeshInfo* mesh_info)

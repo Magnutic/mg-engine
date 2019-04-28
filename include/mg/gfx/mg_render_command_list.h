@@ -31,6 +31,7 @@
 #include "mg/gfx/mg_mesh_handle.h"
 #include "mg/gfx/mg_render_command_data_handle.h"
 #include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_opaque_handle.h"
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
@@ -52,23 +53,23 @@ enum class SortFunc { NEAR_TO_FAR, FAR_TO_NEAR };
 /** Description of an individual draw call (one submesh, with transform, material, and metadata). */
 struct RenderCommand {
     // May be expanded with different types of commands, flags?
-    glm::mat4 M;
-    glm::vec3 centre;
-    float     radius;
+    glm::mat4 M{};
+    glm::vec3 centre{};
+    float     radius{};
 
-    uint32_t mesh_vao_id;
+    OpaqueHandle::Value gfx_api_mesh_object_id{};
 
-    uint32_t begin;
-    uint32_t amount;
+    uint32_t begin{};
+    uint32_t amount{};
 
-    const Material* material;
-    bool            culled;
+    const Material* material{};
+    bool            culled{};
 };
 
 /** Tells which material to use for a given submesh (by numeric index). */
 struct MaterialBinding {
     size_t    sub_mesh_index = 0;
-    Material* material;
+    Material* material{};
 };
 
 class ICamera;

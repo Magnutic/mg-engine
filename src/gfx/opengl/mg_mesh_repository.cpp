@@ -57,8 +57,10 @@ public:
     ~MeshNode()
     {
         const auto* meshname = mesh_info.mesh_id.c_str();
-        g_log.write_verbose(fmt::format("Deleting VAO {} (Mesh '{}')", mesh_info.vao_id, meshname));
-        glDeleteVertexArrays(1, &mesh_info.vao_id);
+        const auto  vao_id   = static_cast<uint32_t>(mesh_info.gfx_api_mesh_object_id);
+
+        g_log.write_verbose(fmt::format("Deleting VAO {} (Mesh '{}')", vao_id, meshname));
+        glDeleteVertexArrays(1, &vao_id);
     }
 };
 
@@ -194,8 +196,12 @@ MeshHandle MeshRepositoryImpl::_make_mesh(const MeshResource& mesh_res,
         mesh_info.submeshes.push_back({ sm.begin, sm.amount });
     }
 
-    glGenVertexArrays(1, &mesh_info.vao_id);
-    glBindVertexArray(mesh_info.vao_id);
+
+    uint32_t vao_id = 0;
+    glGenVertexArrays(1, &vao_id);
+    mesh_info.gfx_api_mesh_object_id = static_cast<OpaqueHandle::Value>(vao_id);
+
+    glBindVertexArray(vao_id);
 
     {
         BufferObject& vbo                = m_buffer_objects[uint32_t(vbo_index)];
