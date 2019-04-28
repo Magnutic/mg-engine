@@ -65,11 +65,6 @@ public:
         uint32_t          material_params_ubo_slot;
     };
 
-    struct PipelineNode {
-        Pipeline pipeline;
-        uint32_t hash;
-    };
-
     class BindingContext {
     private:
         friend class PipelineRepository;
@@ -114,6 +109,11 @@ public:
     void drop_pipelines() { m_pipelines.clear(); }
 
 private:
+    struct PipelineNode {
+        Pipeline pipeline;
+        uint32_t hash;
+    };
+
     Pipeline&     get_or_make_pipeline(const Material& material);
     PipelineNode& make_pipeline(const Material& material);
     ShaderCode    assemble_shader_code(const Material& material);
