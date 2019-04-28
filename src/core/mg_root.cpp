@@ -35,13 +35,13 @@
 #include <memory>
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#define NOGDI // wingdi.h defines OPAQUE and TRANSPARENT as macros, causing conflicts.
-#define NOMINMAX
-#include <Windows.h>
-#undef NOGDI
-#undef WIN32_LEAN_AND_MEAN
-#undef NOMINMAX
+#    define WIN32_LEAN_AND_MEAN
+#    define NOGDI // wingdi.h defines OPAQUE and TRANSPARENT as macros, causing conflicts.
+#    define NOMINMAX
+#    include <Windows.h>
+#    undef NOGDI
+#    undef WIN32_LEAN_AND_MEAN
+#    undef NOMINMAX
 #endif
 
 namespace Mg {
@@ -84,7 +84,7 @@ Root::Root()
     }
 
     // Create render context
-    data().gfx_device = gfx::make_opengl_gfx_device(*data().window);
+    data().gfx_device = std::make_unique<gfx::GfxDevice>(*data().window);
 }
 
 Root::~Root()

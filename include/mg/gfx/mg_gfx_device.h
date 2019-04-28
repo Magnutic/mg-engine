@@ -29,6 +29,7 @@
 
 #include "mg/gfx/mg_blend_modes.h"
 #include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_simple_pimpl.h"
 
 #include <memory>
 
@@ -58,48 +59,52 @@ enum class DepthFunc {
 /** Types of functions to use in culling. */
 enum class CullFunc { NONE = 0, FRONT = 0x404, BACK = 0x405 };
 
+struct GfxDeviceData;
+
 /** Provides access to the graphics context.
  * N.B. only one GfxDevice object exist at a time.
  */
-class GfxDevice {
+class GfxDevice : PimplMixin<GfxDeviceData> {
 public:
-    MG_INTERFACE_BOILERPLATE(GfxDevice);
+    explicit GfxDevice(Window& window);
+    ~GfxDevice();
+
+    MG_MAKE_NON_MOVABLE(GfxDevice);
+    MG_MAKE_NON_COPYABLE(GfxDevice);
 
     /** Set depth testing function. DepthFunc::NONE disables depth testing.  */
-    virtual void set_depth_test(DepthFunc func) = 0;
+    void set_depth_test(DepthFunc func);
 
     /** Set whether to write depth when drawing to render target. */
-    virtual void set_depth_write(bool on) = 0;
+    void set_depth_write(bool on);
 
     /** Set whether to write colour when drawing to render target. */
-    virtual void set_colour_write(bool on) = 0;
+    void set_colour_write(bool on);
 
     /** Set colour & alpha to use when clearing render target. */
-    virtual void set_clear_colour(float red, float green, float blue, float alpha = 1.0f) = 0;
+    void set_clear_colour(float red, float green, float blue, float alpha = 1.0f);
 
     /** Clear the currently bound render target. */
-    virtual void clear(bool colour = true, bool depth = true, bool stencil = true) = 0;
+    void clear(bool colour = true, bool depth = true, bool stencil = true);
 
     /** Set which culling function to use. */
-    virtual void set_culling(CullFunc culling) = 0;
+    void set_culling(CullFunc culling);
 
     /** Set whether to use blending when rendering to target. */
-    virtual void set_use_blending(bool enable) = 0;
+    void set_use_blending(bool enable);
 
     /** Sets the blend mode to use during next frame.
      * Blending must be enabled through set_use_blending().
      * @param blend_mode Which blend mode to use. Some pre-defined ones are Mg::c_blend_mode_xxxxx
      */
-    virtual void set_blend_mode(BlendMode blend_mode) = 0;
+    void set_blend_mode(BlendMode blend_mode);
 
     /** Synchronise application with graphics device. */
-    virtual void synchronise() = 0;
+    void synchronise();
 
-    virtual MeshRepository&     mesh_repository()     = 0;
-    virtual TextureRepository&  texture_repository()  = 0;
-    virtual MaterialRepository& material_repository() = 0;
+    MeshRepository&     mesh_repository();
+    TextureRepository&  texture_repository();
+    MaterialRepository& material_repository();
 };
-
-std::unique_ptr<GfxDevice> make_opengl_gfx_device(Mg::Window& window);
 
 } // namespace Mg::gfx

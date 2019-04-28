@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-#include "mg_gl_gfx_device.h"
+#include "mg/gfx/mg_gfx_device.h"
 
 #include "mg_gl_debug.h"
 #include "mg_texture_node.h"
@@ -40,9 +40,11 @@
 
 #include <cstdint>
 
-namespace Mg::gfx::opengl {
+namespace Mg::gfx {
 
 #ifndef NDEBUG
+namespace {
+
 /** Wrapper for calling convention (GLAPIENTRY) */
 static void APIENTRY ogl_error_callback_wrapper(uint32_t      source,
                                                 uint32_t      type,
@@ -54,11 +56,13 @@ static void APIENTRY ogl_error_callback_wrapper(uint32_t      source,
 {
     ogl_error_callback(source, type, id, severity, length, msg, user_param);
 }
+
+} // namespace
 #endif
 
-static OpenGLGfxDevice* p_gfx_device = nullptr;
+static GfxDevice* p_gfx_device = nullptr;
 
-struct OpenGLGfxDeviceData {
+struct GfxDeviceData {
     MeshRepository     mesh_repository;
     TextureRepository  texture_repository;
     MaterialRepository material_repository;
@@ -66,10 +70,10 @@ struct OpenGLGfxDeviceData {
 
 //--------------------------------------------------------------------------------------------------
 
-OpenGLGfxDevice::OpenGLGfxDevice(::Mg::Window& window)
+GfxDevice::GfxDevice(Window& window)
 {
     if (p_gfx_device != nullptr) {
-        g_log.write_error("Only one Mg::gfx::OpenGLGfxDevice may be constructed at a time.");
+        g_log.write_error("Only one Mg::gfx::GfxDevice may be constructed at a time.");
         throw RuntimeError();
     }
 
@@ -111,21 +115,12 @@ OpenGLGfxDevice::OpenGLGfxDevice(::Mg::Window& window)
     set_depth_test(DepthFunc::LESS);
 }
 
-OpenGLGfxDevice& OpenGLGfxDevice::get()
-{
-    if (p_gfx_device == nullptr) {
-        g_log.write_error("Attempting to access OpenGLGfxDevice outside of its lifetime.");
-        throw RuntimeError();
-    }
-    return *p_gfx_device;
-}
-
-OpenGLGfxDevice::~OpenGLGfxDevice()
+GfxDevice::~GfxDevice()
 {
     p_gfx_device = nullptr;
 }
 
-void OpenGLGfxDevice::set_blend_mode(BlendMode blend_mode)
+void GfxDevice::set_blend_mode(BlendMode blend_mode)
 {
     auto col_mode = uint32_t(blend_mode.colour);
     auto a_mode   = uint32_t(blend_mode.alpha);
@@ -139,7 +134,7 @@ void OpenGLGfxDevice::set_blend_mode(BlendMode blend_mode)
 }
 
 /** Enable/disable depth testing and set depth testing function. */
-void OpenGLGfxDevice::set_depth_test(DepthFunc func)
+void GfxDevice::set_depth_test(DepthFunc func)
 {
     if (func != DepthFunc::NONE) {
         glEnable(GL_DEPTH_TEST);
@@ -150,31 +145,31 @@ void OpenGLGfxDevice::set_depth_test(DepthFunc func)
     }
 }
 
-void OpenGLGfxDevice::set_depth_write(bool on)
+void GfxDevice::set_depth_write(bool on)
 {
     glDepthMask(GLboolean(on));
 }
 
-void OpenGLGfxDevice::set_colour_write(bool on)
+void GfxDevice::set_colour_write(bool on)
 {
     auto gb_on = GLboolean(on);
     glColorMask(gb_on, gb_on, gb_on, gb_on);
 }
 
 /** Set colour & alpha to use when clearing render target. */
-void OpenGLGfxDevice::set_clear_colour(float red, float green, float blue, float alpha)
+void GfxDevice::set_clear_colour(float red, float green, float blue, float alpha)
 {
     glClearColor(red, green, blue, alpha);
 }
 
-void OpenGLGfxDevice::clear(bool colour, bool depth, bool stencil)
+void GfxDevice::clear(bool colour, bool depth, bool stencil)
 {
     glClear((colour ? GL_COLOR_BUFFER_BIT : 0u) | (depth ? GL_DEPTH_BUFFER_BIT : 0u) |
             (stencil ? GL_STENCIL_BUFFER_BIT : 0u));
 }
 
 /** Set which culling function to use. */
-void OpenGLGfxDevice::set_culling(CullFunc culling)
+void GfxDevice::set_culling(CullFunc culling)
 {
     if (culling == CullFunc::NONE) { glDisable(GL_CULL_FACE); }
     else {
@@ -184,7 +179,7 @@ void OpenGLGfxDevice::set_culling(CullFunc culling)
 }
 
 /** Set whether to use blending when rendering to target. */
-void OpenGLGfxDevice::set_use_blending(bool enable)
+void GfxDevice::set_use_blending(bool enable)
 {
     if (enable) { glEnable(GL_BLEND); }
     else {
@@ -193,35 +188,28 @@ void OpenGLGfxDevice::set_use_blending(bool enable)
 }
 
 /** Synchronise application with graphics device. */
-void OpenGLGfxDevice::synchronise()
+void GfxDevice::synchronise()
 {
     // N.B. I tried using fences with glClientWaitSync as I hear that is a better approach (for
     // unclear reasons) but it had nowhere near the same impact on reducing input lag as glFinish.
     glFinish();
 }
 
-MeshRepository& OpenGLGfxDevice::mesh_repository()
+MeshRepository& GfxDevice::mesh_repository()
 {
     return data().mesh_repository;
 }
 
-TextureRepository& OpenGLGfxDevice::texture_repository()
+TextureRepository& GfxDevice::texture_repository()
 {
     return data().texture_repository;
 }
 
-MaterialRepository& OpenGLGfxDevice::material_repository()
+MaterialRepository& GfxDevice::material_repository()
 {
     return data().material_repository;
 }
 
-} // namespace Mg::gfx::opengl
-
-namespace Mg::gfx {
-
-std::unique_ptr<GfxDevice> make_opengl_gfx_device(Mg::Window& window)
-{
-    return std::make_unique<opengl::OpenGLGfxDevice>(window);
-}
-
 } // namespace Mg::gfx
+
+namespace Mg::gfx {} // namespace Mg::gfx

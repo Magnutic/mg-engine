@@ -25,13 +25,13 @@
 
 #include "mg/core/mg_log.h"
 #include "mg/gfx/mg_camera.h"
+#include "mg/gfx/mg_gfx_device.h"
 #include "mg/gfx/mg_material.h"
 #include "mg/gfx/mg_pipeline_repository.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/utils/mg_opaque_handle.h"
 #include "mg/utils/mg_stl_helpers.h"
 
-#include "mg_gl_gfx_device.h"
 #include "mg_opengl_shader.h"
 
 #include "mg_glad.h"
