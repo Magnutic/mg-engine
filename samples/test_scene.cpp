@@ -253,7 +253,7 @@ void init()
 
     // Create a lot of random lights
     // I know rand / srand is not much good but this is just a little sample.
-    std::srand(222);
+    std::srand(0xdeadbeef);
 
     for (size_t i = 0; i < k_num_lights; ++i) {
         auto pos = glm::vec3(rand(), rand(), 0.0f);
@@ -443,7 +443,7 @@ void render_light_debug_geometry()
         if (light.vector.w == 0.0) { continue; }
         DebugRenderer::EllipsoidDrawParams params;
         params.centre     = glm::vec3(light.vector);
-        params.colour     = glm::vec4(normalize(light.colour), 0.5f);
+        params.colour     = glm::vec4(normalize(light.colour), 0.15f);
         params.dimensions = glm::vec3(std::sqrt(light.range_sqr));
         params.wireframe  = true;
         g_scene->debug_renderer.draw_ellipsoid(g_scene->camera, params);
@@ -488,10 +488,11 @@ void render_scene(double lerp_factor)
 
     // Apply tonemap and render to window render target.
     {
-        g_scene->bloom_material->set_sampler("sampler_bloom",
-                                             g_scene->blur_targets.vert_pass_target_texture);
         g_scene->root.window().render_target.bind();
         gfx.clear();
+
+        g_scene->bloom_material->set_sampler("sampler_bloom",
+                                             g_scene->blur_targets.vert_pass_target_texture);
         g_scene->post_renderer.post_process(*g_scene->bloom_material,
                                             g_scene->hdr_target->colour_target());
     }
