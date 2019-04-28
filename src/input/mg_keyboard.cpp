@@ -36,7 +36,139 @@ namespace Mg::input {
 namespace {
 
 // Name look-up cache
-std::array<const char*, Keyboard::k_num_keys> key_names;
+std::array<std::string, Keyboard::k_num_keys> g_key_names;
+
+const char* default_key_name(Keyboard::Key key)
+{
+    switch (key) {
+    case Keyboard::Key::Space:
+        return "Space";
+    case Keyboard::Key::Backslash:
+        return "Backslash";
+    case Keyboard::Key::World1:
+        return "World_1";
+    case Keyboard::Key::World2:
+        return "World_2";
+    case Keyboard::Key::Esc:
+        return "Escape";
+    case Keyboard::Key::Enter:
+        return "Enter";
+    case Keyboard::Key::Tab:
+        return "Tab";
+    case Keyboard::Key::Backspace:
+        return "Backspace";
+    case Keyboard::Key::Ins:
+        return "Insert";
+    case Keyboard::Key::Del:
+        return "Delete";
+    case Keyboard::Key::Right:
+        return "Right";
+    case Keyboard::Key::Left:
+        return "Left";
+    case Keyboard::Key::Down:
+        return "Down";
+    case Keyboard::Key::Up:
+        return "Up";
+    case Keyboard::Key::PageUp:
+        return "Page Up";
+    case Keyboard::Key::PageDown:
+        return "Page Down";
+    case Keyboard::Key::Home:
+        return "Home";
+    case Keyboard::Key::End:
+        return "End";
+    case Keyboard::Key::CapsLock:
+        return "Caps Lock";
+    case Keyboard::Key::ScrollLock:
+        return "Scroll Lock";
+    case Keyboard::Key::NumLock:
+        return "Num Lock";
+    case Keyboard::Key::PrintScreen:
+        return "Print Screen";
+    case Keyboard::Key::Pause:
+        return "Pause";
+    case Keyboard::Key::F1:
+        return "F1";
+    case Keyboard::Key::F2:
+        return "F2";
+    case Keyboard::Key::F3:
+        return "F3";
+    case Keyboard::Key::F4:
+        return "F4";
+    case Keyboard::Key::F5:
+        return "F5";
+    case Keyboard::Key::F6:
+        return "F6";
+    case Keyboard::Key::F7:
+        return "F7";
+    case Keyboard::Key::F8:
+        return "F8";
+    case Keyboard::Key::F9:
+        return "F9";
+    case Keyboard::Key::F10:
+        return "F10";
+    case Keyboard::Key::F11:
+        return "F11";
+    case Keyboard::Key::F12:
+        return "F12";
+    case Keyboard::Key::KP_0:
+        return "Keypad 0";
+    case Keyboard::Key::KP_1:
+        return "Keypad 1";
+    case Keyboard::Key::KP_2:
+        return "Keypad 2";
+    case Keyboard::Key::KP_3:
+        return "Keypad 3";
+    case Keyboard::Key::KP_4:
+        return "Keypad 4";
+    case Keyboard::Key::KP_5:
+        return "Keypad 5";
+    case Keyboard::Key::KP_6:
+        return "Keypad 6";
+    case Keyboard::Key::KP_7:
+        return "Keypad 7";
+    case Keyboard::Key::KP_8:
+        return "Keypad 8";
+    case Keyboard::Key::KP_9:
+        return "Keypad 9";
+    case Keyboard::Key::KP_decimal:
+        return "Keypad Decimal";
+    case Keyboard::Key::KP_divide:
+        return "Keypad Divide";
+    case Keyboard::Key::KP_multiply:
+        return "Keypad Multiply";
+    case Keyboard::Key::KP_subtract:
+        return "Keypad Subtract";
+    case Keyboard::Key::KP_add:
+        return "Keypad Add";
+    case Keyboard::Key::KP_enter:
+        return "Keypad Enter";
+    case Keyboard::Key::KP_equal:
+        return "Keypad Equal";
+    case Keyboard::Key::LeftShift:
+        return "Left Shift";
+    case Keyboard::Key::LeftControl:
+        return "Left Control";
+    case Keyboard::Key::LeftAlt:
+        return "Left Alt";
+    case Keyboard::Key::LeftSuper:
+        return "Left Super";
+    case Keyboard::Key::RightShift:
+        return "Right Shift";
+    case Keyboard::Key::RightControl:
+        return "Right Control";
+    case Keyboard::Key::RightAlt:
+        return "Right Alt";
+    case Keyboard::Key::RightSuper:
+        return "Right Super";
+    case Keyboard::Key::Menu:
+        return "Menu";
+    default:
+        g_log.write_error(fmt::format("Keyboard::description(): unexpected id {}",
+                                      static_cast<InputSource::Id>(key)));
+        MG_ASSERT(false);
+    }
+};
 
 // Map from Keyboard::Key enum values to GLFW key codes.
 constexpr std::array<int, Keyboard::k_num_keys> k_glfw_key_codes{ {
@@ -172,211 +304,26 @@ std::string Keyboard::description(InputSource::Id id) const
 {
     const auto key = static_cast<Key>(id);
 
-    // Check if name is in key_names cache
-    const char** p_name = &key_names.at(id);
-    if (*p_name != nullptr) { return *p_name; }
+    // Check if name is in g_key_names cache
+    std::string& name = g_key_names.at(id);
+    if (name != "") { return name; }
 
     // Ask GLFW for localised key name
     // TODO: bug in GLFW < 3.3 makes this return LATIN-1 instead of UTF-8 when run in an X11 env.
     // Enforce use of GLFW >= 3.3 in build system?
-    const char* key_name = glfwGetKeyName(glfw_key_code(key), 0);
+    const char* localised_name = glfwGetKeyName(glfw_key_code(key), 0);
 
-    if (key_name != nullptr) { return key_name; }
+    if (localised_name != nullptr) {
+        name = localised_name;
+        return name;
+    }
 
     // If glfwGetKeyName does not return localised name, fall back to these.
     g_log.write_warning(
         fmt::format("Input: could not get localised name of key {}.", glfw_key_code(key)));
 
-    switch (key) {
-    case Key::Space:
-        *p_name = "Space";
-        break;
-    case Key::Backslash:
-        *p_name = "Backslash";
-        break;
-    case Key::World1:
-        *p_name = "World_1";
-        break;
-    case Key::World2:
-        *p_name = "World_2";
-        break;
-    case Key::Esc:
-        *p_name = "Escape";
-        break;
-    case Key::Enter:
-        *p_name = "Enter";
-        break;
-    case Key::Tab:
-        *p_name = "Tab";
-        break;
-    case Key::Backspace:
-        *p_name = "Backspace";
-        break;
-    case Key::Ins:
-        *p_name = "Insert";
-        break;
-    case Key::Del:
-        *p_name = "Delete";
-        break;
-    case Key::Right:
-        *p_name = "Right";
-        break;
-    case Key::Left:
-        *p_name = "Left";
-        break;
-    case Key::Down:
-        *p_name = "Down";
-        break;
-    case Key::Up:
-        *p_name = "Up";
-        break;
-    case Key::PageUp:
-        *p_name = "Page Up";
-        break;
-    case Key::PageDown:
-        *p_name = "Page Down";
-        break;
-    case Key::Home:
-        *p_name = "Home";
-        break;
-    case Key::End:
-        *p_name = "End";
-        break;
-    case Key::CapsLock:
-        *p_name = "Caps Lock";
-        break;
-    case Key::ScrollLock:
-        *p_name = "Scroll Lock";
-        break;
-    case Key::NumLock:
-        *p_name = "Num Lock";
-        break;
-    case Key::PrintScreen:
-        *p_name = "Print Screen";
-        break;
-    case Key::Pause:
-        *p_name = "Pause";
-        break;
-    case Key::F1:
-        *p_name = "F1";
-        break;
-    case Key::F2:
-        *p_name = "F2";
-        break;
-    case Key::F3:
-        *p_name = "F3";
-        break;
-    case Key::F4:
-        *p_name = "F4";
-        break;
-    case Key::F5:
-        *p_name = "F5";
-        break;
-    case Key::F6:
-        *p_name = "F6";
-        break;
-    case Key::F7:
-        *p_name = "F7";
-        break;
-    case Key::F8:
-        *p_name = "F8";
-        break;
-    case Key::F9:
-        *p_name = "F9";
-        break;
-    case Key::F10:
-        *p_name = "F10";
-        break;
-    case Key::F11:
-        *p_name = "F11";
-        break;
-    case Key::F12:
-        *p_name = "F12";
-        break;
-    case Key::KP_0:
-        *p_name = "Keypad 0";
-        break;
-    case Key::KP_1:
-        *p_name = "Keypad 1";
-        break;
-    case Key::KP_2:
-        *p_name = "Keypad 2";
-        break;
-    case Key::KP_3:
-        *p_name = "Keypad 3";
-        break;
-    case Key::KP_4:
-        *p_name = "Keypad 4";
-        break;
-    case Key::KP_5:
-        *p_name = "Keypad 5";
-        break;
-    case Key::KP_6:
-        *p_name = "Keypad 6";
-        break;
-    case Key::KP_7:
-        *p_name = "Keypad 7";
-        break;
-    case Key::KP_8:
-        *p_name = "Keypad 8";
-        break;
-    case Key::KP_9:
-        *p_name = "Keypad 9";
-        break;
-    case Key::KP_decimal:
-        *p_name = "Keypad Decimal";
-        break;
-    case Key::KP_divide:
-        *p_name = "Keypad Divide";
-        break;
-    case Key::KP_multiply:
-        *p_name = "Keypad Multiply";
-        break;
-    case Key::KP_subtract:
-        *p_name = "Keypad Subtract";
-        break;
-    case Key::KP_add:
-        *p_name = "Keypad Add";
-        break;
-    case Key::KP_enter:
-        *p_name = "Keypad Enter";
-        break;
-    case Key::KP_equal:
-        *p_name = "Keypad Equal";
-        break;
-    case Key::LeftShift:
-        *p_name = "Left Shift";
-        break;
-    case Key::LeftControl:
-        *p_name = "Left Control";
-        break;
-    case Key::LeftAlt:
-        *p_name = "Left Alt";
-        break;
-    case Key::LeftSuper:
-        *p_name = "Left Super";
-        break;
-    case Key::RightShift:
-        *p_name = "Right Shift";
-        break;
-    case Key::RightControl:
-        *p_name = "Right Control";
-        break;
-    case Key::RightAlt:
-        *p_name = "Right Alt";
-        break;
-    case Key::RightSuper:
-        *p_name = "Right Super";
-        break;
-    case Key::Menu:
-        *p_name = "Menu";
-        break;
-    default:
-        g_log.write_error(fmt::format("Keyboard::description(): unexpected id {}", id));
-        MG_ASSERT(false);
-    }
-
-    return *p_name;
+    name = default_key_name(key);
+    return name;
 }
 
 float Keyboard::state(InputSource::Id id) const
