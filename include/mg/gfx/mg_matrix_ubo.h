@@ -39,7 +39,7 @@ class RenderCommandList;
 
 #ifndef MATRIX_UBO_ARRAY_SIZE
 // Corresponds to guaranteed lower bound of GL_MAX_UNIFORM_BLOCK_SIZE.
-#define MATRIX_UBO_ARRAY_SIZE 128
+#    define MATRIX_UBO_ARRAY_SIZE 128
 #endif
 
 class ICamera;

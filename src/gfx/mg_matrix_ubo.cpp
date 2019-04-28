@@ -35,18 +35,20 @@ MatrixUniformHandler::MatrixUniformHandler()
     , m_matrix_ubo(sizeof(Matrices_t) * MATRIX_UBO_ARRAY_SIZE)
 {}
 
-void MatrixUniformHandler::set_matrices(const ICamera&           camera,
-                                        const RenderCommandList& drawlist,
-                                        size_t                   starting_index)
+size_t MatrixUniformHandler::set_matrices(const ICamera&           camera,
+                                          const RenderCommandList& drawlist,
+                                          size_t                   starting_index)
 {
     const glm::mat4 VP = camera.view_proj_matrix();
 
-    for (size_t i = 0; i < m_matrix_storage.size() && i + starting_index < drawlist.size(); ++i) {
+    size_t i = 0;
+    for (; i < m_matrix_storage.size() && i + starting_index < drawlist.size(); ++i) {
         m_matrix_storage[i].M   = drawlist[i + starting_index].M;
         m_matrix_storage[i].MVP = VP * m_matrix_storage[i].M;
     }
 
     m_matrix_ubo.set_data(as_bytes(span<Matrices_t>{ m_matrix_storage }));
+    return i;
 }
 
 } // namespace Mg::gfx

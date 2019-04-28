@@ -219,12 +219,13 @@ void MeshRenderer::render(const ICamera&           cam,
 
     PipelineRepository::BindingContext binding_context = make_binding_context(data(), cam, params);
 
-    size_t next_matrix_update_index = 0;
+    size_t matrix_update_countdown = 1;
 
     for (uint32_t i = 0; i < mesh_list.size(); ++i) {
-        if (i == next_matrix_update_index) {
-            data().m_matrix_uniform_handler.set_matrices(cam, mesh_list, i);
-            next_matrix_update_index = i + MATRIX_UBO_ARRAY_SIZE;
+        if (--matrix_update_countdown == 0) {
+            matrix_update_countdown = data().m_matrix_uniform_handler.set_matrices(cam,
+                                                                                   mesh_list,
+                                                                                   i);
         }
 
         if (mesh_list[i].culled) { continue; }
