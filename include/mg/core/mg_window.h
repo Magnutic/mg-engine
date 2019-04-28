@@ -83,9 +83,6 @@ public:
     /** Call at end of frame to display image to window. */
     void refresh();
 
-    /** Polls input events for this window, refreshing `keyboard` and `mouse` members. */
-    void poll_input_events();
-
     /** Set window title. */
     void set_title(const std::string& title);
 
@@ -134,14 +131,23 @@ public:
     /** Set the settings for this Window. Takes immediate effect. */
     void apply_settings(WindowSettings s);
 
+    //----------------------------------------------------------------------------------------------
+    // Input devices
+
     /** Get underlying GLFW window handle. Used by input system. */
     GLFWwindow* glfw_window() const { return m_window; } // TODO: fix abstraction leak somehow
+
+    /** Polls input events for this window, refreshing `keyboard` and `mouse` members. */
+    void poll_input_events();
 
     /** Keyboard input device associated with this Window. */
     input::Keyboard keyboard;
 
     /** Mouse input device associated with this Window. */
     input::Mouse mouse;
+
+    //----------------------------------------------------------------------------------------------
+    // Render target for this window.
 
     gfx::WindowRenderTarget render_target{};
 
