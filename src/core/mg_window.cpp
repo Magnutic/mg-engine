@@ -239,6 +239,7 @@ VideoMode Window::frame_buffer_size() const
 void Window::refresh()
 {
     // Update GLFW window
+    // TODO: this is OpenGL-specific
     glfwSwapBuffers(m_window);
 }
 
@@ -281,7 +282,7 @@ void Window::reset()
                          window_pos_y,
                          m_settings.video_mode.width,
                          m_settings.video_mode.height,
-                         GLFW_DONT_CARE); // 'don't care' -> use highest available
+                         GLFW_DONT_CARE); // Refresh rate: 'don't care' -> use highest available
 
     set_vsync(m_window, m_settings.vsync);
 }
