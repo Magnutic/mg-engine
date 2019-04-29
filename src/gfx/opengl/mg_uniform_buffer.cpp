@@ -23,15 +23,16 @@
 
 #include "mg/gfx/mg_uniform_buffer.h"
 
-#include <algorithm> // std::min
-#include <cstring>   // memcpy
+#include "mg_glad.h"
+
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_runtime_error.h"
+#include "mg/utils/mg_assert.h"
 
 #include <fmt/core.h>
 
-#include "mg/core/mg_log.h"
-#include "mg/utils/mg_assert.h"
-
-#include "mg_glad.h"
+#include <algorithm> // std::min
+#include <cstring>   // memcpy
 
 namespace Mg::gfx {
 
@@ -66,12 +67,14 @@ void UniformBuffer::set_data(span<const std::byte> data)
     auto size = std::min(m_size, data.size_bytes());
 
     if (size < data.size_bytes()) {
-        g_log.write_warning(fmt::format(
+        g_log.write_error(fmt::format(
             "UniformBuffer at {}: set_data(): could not fit data in buffer (data size {}, "
             "available size {})",
             static_cast<void*>(this),
             data.size_bytes(),
             m_size));
+
+        throw RuntimeError{};
     }
 
     glBindBuffer(GL_UNIFORM_BUFFER, ubo_id);
