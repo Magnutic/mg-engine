@@ -55,7 +55,7 @@ UniformBuffer::~UniformBuffer()
     glDeleteBuffers(1, &ubo_id);
 }
 
-void UniformBuffer::set_data(span<const std::byte> data)
+void UniformBuffer::set_data(span<const std::byte> data, size_t dest_offset)
 {
     GLuint ubo_id = static_cast<uint32_t>(gfx_api_handle());
 
@@ -64,27 +64,29 @@ void UniformBuffer::set_data(span<const std::byte> data)
         return;
     }
 
-    auto size = std::min(m_size, data.size_bytes());
+    MG_ASSERT(dest_offset < m_size);
+    const size_t available_size = m_size - dest_offset;
 
-    if (size < data.size_bytes()) {
+    if (available_size < data.size_bytes()) {
         g_log.write_error(fmt::format(
             "UniformBuffer at {}: set_data(): could not fit data in buffer (data size {}, "
-            "available size {})",
+            "buffer size {}, writing starting at offset {})",
             static_cast<void*>(this),
             data.size_bytes(),
-            m_size));
+            m_size,
+            dest_offset));
 
         throw RuntimeError{};
     }
 
     glBindBuffer(GL_UNIFORM_BUFFER, ubo_id);
     GLvoid* p = glMapBufferRange(GL_UNIFORM_BUFFER,
-                                 0,
-                                 GLsizeiptr(size),
+                                 narrow<GLintptr>(dest_offset),
+                                 narrow<GLsizeiptr>(data.size_bytes()),
                                  GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT);
     MG_ASSERT(p != nullptr);
 
-    std::memcpy(p, &data[0], size);
+    std::memcpy(p, &data[0], data.size_bytes());
     glUnmapBuffer(GL_UNIFORM_BUFFER);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
