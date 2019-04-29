@@ -55,8 +55,6 @@ enum class UniformBufferSlot : uint32_t;
  * @remark As of writing -- 2018 -- only an OpenGL back-end is implemented, but in a Vulkan or
  * Direct3D back-end, it would instead be necessary to specify the uniform buffer slot directly in
  * the shader code instead.
- *
- * Then, use the appropriate GfxDevice implementation to bind the UniformBuffer to the same slot.
  */
 class UniformBuffer {
 public:
