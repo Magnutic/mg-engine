@@ -36,8 +36,6 @@
 #include "shader_factories/shader_code/mg_mesh_framework_shader_code.h"
 #include "mg_glad.h"
 
-#include "../mg_texture_node.h"
-
 namespace Mg::gfx {
 
 namespace { // internal linkage
