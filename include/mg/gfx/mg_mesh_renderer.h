@@ -59,7 +59,7 @@ public:
 
     /** Render the supplied list of meshes. */
     void render(const ICamera&           cam,
-                const RenderCommandList& mesh_list,
+                const RenderCommandList& command_list,
                 span<const Light>        lights,
                 RenderParameters         params);
 };

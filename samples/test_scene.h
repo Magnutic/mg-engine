@@ -61,8 +61,8 @@ struct Scene {
     Mg::gfx::BillboardRenderer   billboard_renderer;
     Mg::gfx::PostProcessRenderer post_renderer;
 
-    Mg::gfx::RenderCommandList   render_list;
-    Mg::gfx::BillboardRenderList billboard_render_list;
+    Mg::gfx::RenderCommandProducer render_command_producer;
+    Mg::gfx::BillboardRenderList   billboard_render_list;
 
     Mg::Opt<Mg::gfx::TextureRenderTarget> hdr_target; // Optional to defer initialisation
     BlurTargets                           blur_targets;

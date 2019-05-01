@@ -55,9 +55,9 @@ Material* material_for_submesh(span<const MaterialBinding> material_bindings, si
 
 } // namespace
 
-void RenderCommandList::add_mesh(MeshHandle                  mesh,
-                                 const Transform&            transform,
-                                 span<const MaterialBinding> material_bindings)
+void RenderCommandProducer::add_mesh(MeshHandle                  mesh,
+                                     const Transform&            transform,
+                                     span<const MaterialBinding> material_bindings)
 {
     const internal::MeshInfo& md = internal::mesh_info(mesh);
 
@@ -74,9 +74,9 @@ void RenderCommandList::add_mesh(MeshHandle                  mesh,
 
         // Write render command to command list
         {
-            RenderCommand& command = m_render_commands.emplace_back();
+            m_m_transform_matrices_unsorted.emplace_back(transform.matrix());
+            RenderCommand& command = m_render_commands_unsorted.emplace_back();
 
-            command.M                      = transform.matrix();
             command.gfx_api_mesh_object_id = md.gfx_api_mesh_object_id;
             command.centre                 = md.centre;
             command.begin                  = md.submeshes[i].begin;
@@ -84,30 +84,23 @@ void RenderCommandList::add_mesh(MeshHandle                  mesh,
             command.material               = material;
             command.radius                 = md.radius;
         }
-
-        // Write dummy sort-key (Overwritten with proper values upon call to sort_draw_list())
-        m_keys.push_back(SortKey{ 0, 0, narrow<uint32_t>(m_render_commands.size() - 1) });
     }
 }
 
-void RenderCommandList::frustum_cull_draw_list(const ICamera& camera)
+void RenderCommandProducer::clear()
 {
-    const glm::mat4 VP = camera.view_proj_matrix();
-
-    for (RenderCommand& command : m_render_commands) {
-        const glm::mat4& M      = command.M;
-        float            radius = command.radius;
-
-        const glm::vec3 scale{ M[0][0], M[1][1], M[2][2] };
-        const glm::mat4 MVP          = VP * M;
-        const float     scale_factor = std::max(std::max(scale.x, scale.y), scale.z);
-
-        command.culled = frustum_cull(MVP, command.centre, scale_factor * radius);
-    }
+    m_keys.clear();
+    m_commands.m_render_commands.clear();
+    m_commands.m_m_transform_matrices.clear();
+    m_commands.m_mvp_transform_matrices.clear();
+    m_render_commands_unsorted.clear();
+    m_m_transform_matrices_unsorted.clear();
 }
+
+namespace {
 
 template<bool invert>
-inline bool cmp_draw_call(RenderCommandList::SortKey lhs, RenderCommandList::SortKey rhs) noexcept
+bool cmp_draw_call(RenderCommandProducer::SortKey lhs, RenderCommandProducer::SortKey rhs) noexcept
 {
     uint64_t lhs_int;
     uint64_t rhs_int;
@@ -119,30 +112,77 @@ inline bool cmp_draw_call(RenderCommandList::SortKey lhs, RenderCommandList::Sor
     return invert ? (lhs_int > rhs_int) : (rhs_int < lhs_int);
 }
 
-// TODO: make sure sort is correct
-void RenderCommandList::sort_draw_list(const ICamera& camera, SortFunc sf)
+bool in_view(const glm::mat4& M, const glm::mat4& MVP, glm::vec3 centre, float radius)
 {
-    for (uint32_t i = 0; i < m_render_commands.size(); ++i) {
-        const RenderCommand& command = m_render_commands[i];
+    const glm::vec3 scale{ M[0][0], M[1][1], M[2][2] };
+    const float     scale_factor = std::max(std::max(scale.x, scale.y), scale.z);
+
+    return !frustum_cull(MVP, centre, scale_factor * radius);
+}
+
+uint32_t view_depth_in_cm(const ICamera& camera, glm::vec3 pos)
+{
+    const float depth_f = camera.depth_at_point(pos) * 100.0f;
+    return static_cast<uint32_t>(glm::max(0.0f, depth_f));
+}
+
+uint32_t render_command_fingerpint(const RenderCommand& command)
+{
+    // TODO: This fingerprint is not much good
+    const uint32_t mesh_fingerprint     = static_cast<uint8_t>(command.gfx_api_mesh_object_id);
+    const auto     material_fingerprint = static_cast<uint32_t>(
+        reinterpret_cast<uintptr_t>(command.material)); // NOLINT
+    return (material_fingerprint << 8) | mesh_fingerprint;
+}
+
+} // namespace
+
+// TODO: make sure sort is correct
+const RenderCommandList& RenderCommandProducer::finalise(const ICamera& camera, SortFunc sort_func)
+{
+    // Create sort key sequence
+    m_keys.clear();
+
+    for (uint32_t i = 0; i < size(); ++i) {
+        const RenderCommand& command = m_render_commands_unsorted[i];
+        const glm::mat4&     M       = m_m_transform_matrices_unsorted[i];
 
         // Find distance to camera for sorting
-        const glm::vec3 translation = command.M[3];
-
         // Store depth in cm to get better precision as uint32_t
-        const float depth_f = camera.depth_at_point(translation) * 100.0f;
-        const auto  depth   = uint32_t(glm::max(0.0f, depth_f));
+        const glm::vec3 translation = M[3];
+        const auto      depth       = view_depth_in_cm(camera, translation);
 
-        // TODO: This fingerprint is not much good
-        const uint32_t mesh_fingerprint     = static_cast<uint8_t>(command.gfx_api_mesh_object_id);
-        const auto     material_fingerprint = static_cast<uint32_t>(
-            reinterpret_cast<uintptr_t>(command.material)); // NOLINT
-        const uint32_t draw_call_fingerprint = (material_fingerprint << 8) | mesh_fingerprint;
+        const uint32_t command_fingerprint = render_command_fingerpint(command);
 
-        m_keys[i] = SortKey{ depth, draw_call_fingerprint, i };
+        m_keys.push_back({ depth, command_fingerprint, i });
     }
 
-    auto cmp = sf == SortFunc::FAR_TO_NEAR ? cmp_draw_call<true> : cmp_draw_call<false>;
-    sort(m_keys, [&](SortKey lhs, SortKey rhs) { return cmp(lhs, rhs); });
+    MG_ASSERT(m_keys.size() == size());
+
+    // Sort sort-key sequence
+    auto cmp = (sort_func == SortFunc::FAR_TO_NEAR) ? cmp_draw_call<true> : cmp_draw_call<false>;
+    sort(m_keys, [&](const SortKey& lhs, const SortKey& rhs) { return cmp(lhs, rhs); });
+
+    // Write out sorted render commands to m_commands.
+    m_commands.m_render_commands.reserve(size());
+    m_commands.m_m_transform_matrices.reserve(size());
+    m_commands.m_mvp_transform_matrices.reserve(size());
+
+    const glm::mat4 VP = camera.view_proj_matrix();
+
+    for (const SortKey& key : m_keys) {
+        const RenderCommand& command = m_render_commands_unsorted[key.index];
+        const glm::mat4&     M       = m_m_transform_matrices_unsorted[key.index];
+        const glm::mat4      MVP     = VP * M;
+
+        if (in_view(M, MVP, command.centre, command.radius)) {
+            m_commands.m_render_commands.emplace_back(m_render_commands_unsorted[key.index]);
+            m_commands.m_m_transform_matrices.emplace_back(M);
+            m_commands.m_mvp_transform_matrices.emplace_back(MVP);
+        }
+    }
+
+    return m_commands;
 }
 
 } // namespace Mg::gfx

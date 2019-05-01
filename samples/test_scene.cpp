@@ -390,7 +390,7 @@ Scene::State lerp(const Scene::State& fst, const Scene::State& snd, double x)
     return output;
 }
 
-void add_to_render_list(const Model& model, RenderCommandList& renderlist)
+void add_to_render_list(const Model& model, RenderCommandProducer& renderlist)
 {
     renderlist.add_mesh(model.mesh, model.transform, model.material_bindings);
 }
@@ -463,19 +463,21 @@ void render_scene(double lerp_factor)
 
     // Draw meshes
     {
-        RenderCommandList& render_list = g_scene->render_list;
-        render_list.clear();
-        for (auto&& model : g_scene->scene_models) { add_to_render_list(model, render_list); }
+        RenderCommandProducer& render_command_producer = g_scene->render_command_producer;
+        render_command_producer.clear();
 
-        render_list.frustum_cull_draw_list(g_scene->camera);
-        render_list.sort_draw_list(g_scene->camera, SortFunc::NEAR_TO_FAR);
+        for (auto&& model : g_scene->scene_models) {
+            add_to_render_list(model, render_command_producer);
+        }
 
         g_scene->hdr_target->bind();
         gfx.clear();
 
-        auto time = static_cast<float>(g_scene->root.time_since_init());
+        const auto& commands = render_command_producer.finalise(g_scene->camera,
+                                                                SortFunc::NEAR_TO_FAR);
+        auto        time     = static_cast<float>(g_scene->root.time_since_init());
         g_scene->mesh_renderer.render(g_scene->camera,
-                                      render_list,
+                                      commands,
                                       g_scene->scene_lights,
                                       { time, -6.0 });
 

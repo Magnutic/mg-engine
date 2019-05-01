@@ -21,8 +21,8 @@
 //
 //**************************************************************************************************
 
-/** @file mg_matrix_uniform_hander.h
- * Utility for renderers; passing transformation matrices to shader using a Uniform Buffer Object.
+/** @file mg_matrix_uniform_handler.h
+ * Utility for renderers; passing transformation matrices to shader using a uniform buffer object.
  */
 
 #pragma once
@@ -30,9 +30,7 @@
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/utils/mg_gsl.h"
 
-#include <glm/mat4x4.hpp>
-
-#include <vector>
+#include <glm/fwd.hpp>
 
 namespace Mg::gfx {
 
@@ -44,13 +42,15 @@ namespace Mg::gfx {
 class ICamera;
 
 /** Handles UBO for transformation matrices.
- * Constructs transformation matrices from draw calls.
+ * Passes transformation matrices to a shader.
  *
- * The shader must declare a uniform block consisting of an array of length MATRIX_UBO_ARRAY_SIZE of
- * matrix structs, e.g.:
+ * The shader must declare a uniform block consisting of an two arrays of length
+ * MATRIX_UBO_ARRAY_SIZE of matrix structs, e.g.:
  * @code
- *     struct matrices_t { mat4 MVP; mat4 M; };
- *     layout(std140) uniform MatrixBlock { matrices_t matrices[MATRIX_UBO_ARRAY_SIZE]; } mat_block;
+ *     layout(std140) uniform MatrixBlock {
+ *         mat4 m_matrices[MATRIX_UBO_ARRAY_SIZE];
+ *         mat4 mvp_matri:es[MATRIX_UBO_ARRAY_SIZE];
+ *     } mat_block;
  * @endcode
  */
 class MatrixUniformHandler {
@@ -58,18 +58,19 @@ public:
     /** Constructs new UBO for matrices. */
     explicit MatrixUniformHandler();
 
-    /** Set matrix ubo data to hold transformation matrices for the given camera and drawcall list.
-     * Note that UBO size may be limited -- in this case, as much of the input as possible is set
-     * (starting at starting_index).
+    /** Set matrix UBO data to hold transformation matrices.
+     * m_matrices and mvp_matrices should be equally long.
+     * Note that UBO size may be limited -- in this case, as much of the input as possible is set.
+     * @return The number of matrices passed into the UBO (i.e. min(MATRIX_UBO_ARRAY_SIZE,
+     * m_matrices.size())
      */
-    size_t set_matrices(const ICamera& camera, span<const glm::mat4> matrices);
+    size_t set_matrices(span<const glm::mat4> m_matrices, span<const glm::mat4> mvp_matrices);
 
     /** Get matrix UBO. */
     const UniformBuffer& ubo() const { return m_matrix_ubo; }
 
 private:
-    std::vector<glm::mat4> m_mvp_matrices;
-    UniformBuffer          m_matrix_ubo;
+    UniformBuffer m_matrix_ubo;
 };
 
 } // namespace Mg::gfx

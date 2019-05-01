@@ -205,7 +205,7 @@ void MeshRenderer::drop_shaders()
 }
 
 void MeshRenderer::render(const ICamera&           cam,
-                          const RenderCommandList& mesh_list,
+                          const RenderCommandList& command_list,
                           span<const Light>        lights,
                           RenderParameters         params)
 {
@@ -214,23 +214,19 @@ void MeshRenderer::render(const ICamera&           cam,
 
     update_light_data(data().m_light_buffers, lights, cam, data().m_light_grid);
 
-
     PipelineRepository::BindingContext binding_context = make_binding_context(data(), cam, params);
 
+    auto   render_commands         = command_list.render_commands();
     size_t matrix_update_countdown = 1;
 
-    for (uint32_t i = 0; i < mesh_list.size(); ++i) {
+    for (uint32_t i = 0; i < render_commands.size(); ++i) {
         if (--matrix_update_countdown == 0) {
-            std::vector<glm::mat4> matrices;                                           // temp
-            for (auto u = i; u < MATRIX_UBO_ARRAY_SIZE && u < mesh_list.size(); ++u) { // temp
-                matrices.push_back(mesh_list[u].M);                                    // temp
-            }                                                                          // temp
-
-            matrix_update_countdown = data().m_matrix_uniform_handler.set_matrices(cam, matrices);
+            matrix_update_countdown = data().m_matrix_uniform_handler.set_matrices(
+                command_list.m_transform_matrices().subspan(i),
+                command_list.mvp_transform_matrices().subspan(i));
         }
 
-        if (mesh_list[i].culled) { continue; }
-        const RenderCommand& command = mesh_list[i];
+        const RenderCommand& command = render_commands[i];
 
         MG_ASSERT_DEBUG(command.material != nullptr);
 

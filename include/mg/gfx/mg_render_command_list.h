@@ -50,10 +50,9 @@ class Material;
 /** Function for sorting draw calls */
 enum class SortFunc { NEAR_TO_FAR, FAR_TO_NEAR };
 
-/** Description of an individual draw call (one submesh, with transform, material, and metadata). */
+/** Description of an individual draw call. */
 struct RenderCommand {
     // May be expanded with different types of commands, flags?
-    glm::mat4 M{};
     glm::vec3 centre{};
     float     radius{};
 
@@ -63,7 +62,6 @@ struct RenderCommand {
     uint32_t amount{};
 
     const Material* material{};
-    bool            culled{};
 };
 
 /** Tells which material to use for a given submesh (by numeric index). */
@@ -76,24 +74,42 @@ class ICamera;
 
 /** List of draw calls to be rendered. */
 class RenderCommandList {
+    friend class RenderCommandProducer;
+
+public:
+    span<const RenderCommand> render_commands() const { return m_render_commands; }
+    span<const glm::mat4>     m_transform_matrices() const { return m_m_transform_matrices; }
+    span<const glm::mat4>     mvp_transform_matrices() const { return m_mvp_transform_matrices; }
+
+private:
+    std::vector<RenderCommand> m_render_commands;
+    std::vector<glm::mat4>     m_m_transform_matrices;
+    std::vector<glm::mat4>     m_mvp_transform_matrices;
+};
+
+/** Interface for producing RenderCommandList. */
+class RenderCommandProducer {
 public:
     void add_mesh(MeshHandle                  mesh,
                   const Transform&            transform,
                   span<const MaterialBinding> material_bindings);
 
-    void clear()
-    {
-        m_keys.clear();
-        m_render_commands.clear();
-    }
+    /** Removes all added render commands, resetting the state of the RenderCommandProducer.
+     * N.B. it is better to re-use the same RenderCommandProducer and clear each frame than to
+     * create a new one, since the former approach allows the same heap-memory buffers to be
+     * re-used.
+     */
+    void clear();
 
-    void frustum_cull_draw_list(const ICamera& camera);
+    /** Sorts and frustum culls draw list and makes render commands available as
+     * RenderCommandList.
+     * @param camera The camera to consider for sorting and frustum culling.
+     * @param sort_func Sorting order for the command sequence.
+     * @return Reference to sorted command sequence along with associated transformation matrices.
+     */
+    const RenderCommandList& finalise(const ICamera& camera, SortFunc sort_func);
 
-    void sort_draw_list(const ICamera& camera, SortFunc sf);
-
-    const RenderCommand& operator[](size_t i) const { return m_render_commands[m_keys[i].index]; }
-
-    size_t size() const { return m_render_commands.size(); }
+    size_t size() const { return m_render_commands_unsorted.size(); }
 
     struct SortKey {
         uint32_t depth;
@@ -102,8 +118,12 @@ public:
     };
 
 private:
-    std::vector<SortKey>       m_keys;
-    std::vector<RenderCommand> m_render_commands;
+    RenderCommandList m_commands;
+
+    std::vector<SortKey> m_keys;
+
+    std::vector<RenderCommand> m_render_commands_unsorted;
+    std::vector<glm::mat4>     m_m_transform_matrices_unsorted;
 };
 
 } // namespace Mg::gfx
