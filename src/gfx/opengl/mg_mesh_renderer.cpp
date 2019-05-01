@@ -221,9 +221,12 @@ void MeshRenderer::render(const ICamera&           cam,
 
     for (uint32_t i = 0; i < mesh_list.size(); ++i) {
         if (--matrix_update_countdown == 0) {
-            matrix_update_countdown = data().m_matrix_uniform_handler.set_matrices(cam,
-                                                                                   mesh_list,
-                                                                                   i);
+            std::vector<glm::mat4> matrices;                                           // temp
+            for (auto u = i; u < MATRIX_UBO_ARRAY_SIZE && u < mesh_list.size(); ++u) { // temp
+                matrices.push_back(mesh_list[u].M);                                    // temp
+            }                                                                          // temp
+
+            matrix_update_countdown = data().m_matrix_uniform_handler.set_matrices(cam, matrices);
         }
 
         if (mesh_list[i].culled) { continue; }

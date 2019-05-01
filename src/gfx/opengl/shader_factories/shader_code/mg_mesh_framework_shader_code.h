@@ -62,17 +62,13 @@ layout(location = 7) in uvec4 vert_joint_weight;
 
 layout(location = 8) in uint _matrix_index;
 
-struct matrices_t {
-    mat4 MVP;
-    mat4 M;
-};
-
 layout(std140) uniform MatrixBlock {
-    matrices_t matrices[MATRIX_ARRAY_SIZE];
+    mat4 m_matrices[MATRIX_ARRAY_SIZE];
+    mat4 mvp_matrices[MATRIX_ARRAY_SIZE];
 } _matrix_block;
 
-#define MATRIX_MVP (_matrix_block.matrices[_matrix_index].MVP)
-#define MATRIX_M (_matrix_block.matrices[_matrix_index].M)
+#define MATRIX_M   (_matrix_block.m_matrices[_matrix_index])
+#define MATRIX_MVP (_matrix_block.mvp_matrices[_matrix_index])
 
 struct ClusterGridParams {
     vec2 z_param;

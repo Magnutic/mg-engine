@@ -28,14 +28,13 @@
 #pragma once
 
 #include "mg/gfx/mg_uniform_buffer.h"
+#include "mg/utils/mg_gsl.h"
 
 #include <glm/mat4x4.hpp>
 
 #include <vector>
 
 namespace Mg::gfx {
-
-class RenderCommandList;
 
 #ifndef MATRIX_UBO_ARRAY_SIZE
 // Corresponds to guaranteed lower bound of GL_MAX_UNIFORM_BLOCK_SIZE.
@@ -63,21 +62,14 @@ public:
      * Note that UBO size may be limited -- in this case, as much of the input as possible is set
      * (starting at starting_index).
      */
-    size_t
-    set_matrices(const ICamera& camera, const RenderCommandList& drawlist, size_t starting_index);
+    size_t set_matrices(const ICamera& camera, span<const glm::mat4> matrices);
 
     /** Get matrix UBO. */
     const UniformBuffer& ubo() const { return m_matrix_ubo; }
 
 private:
-    /** Transform-matrices layout. */
-    struct Matrices_t {
-        glm::mat4 MVP;
-        glm::mat4 M;
-    };
-
-    std::vector<Matrices_t> m_matrix_storage;
-    UniformBuffer           m_matrix_ubo;
+    std::vector<glm::mat4> m_mvp_matrices;
+    UniformBuffer          m_matrix_ubo;
 };
 
 } // namespace Mg::gfx
