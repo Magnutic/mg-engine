@@ -121,8 +121,6 @@ void BasicFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
 {
     MG_ASSERT(target_buffer.size() >= file_size(file));
 
-    g_log.write_verbose(fmt::format("BasicFileLoader::load_file(): loading '{}'...", file.c_str()));
-
     auto fname = file.str_view();
     auto path  = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
 
