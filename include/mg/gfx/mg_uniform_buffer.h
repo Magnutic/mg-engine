@@ -41,20 +41,6 @@ enum class UniformBufferSlot : uint32_t;
 /** Uniform buffer objects are groups of shader uniforms -- 'constant' shader input data.
  * @remark Constant from the shader's perspective, i.e. immutable and not varying per-vertex or
  * per-fragment.
- *
- * Uniform buffer objects are bound to global slots (see UniformBufferSlot), rather than being
- * bound to the currently active shader program. Thus, uniform buffer objects do not need to be
- * re-bound when the active shader program is switched.
- *
- * To make a ShaderProgram use a UniformBuffer as source data for one of its uniform blocks,
- * set the uniform block's binding to a given UniformBufferSlot:
- *
- * [OpenGL only]
- *     ShaderProgram::set_uniform_block_binding(block_name, uniform_buffer_slot)
- *
- * @remark As of writing -- 2018 -- only an OpenGL back-end is implemented, but in a Vulkan or
- * Direct3D back-end, it would instead be necessary to specify the uniform buffer slot directly in
- * the shader code instead.
  */
 class UniformBuffer {
 public:
