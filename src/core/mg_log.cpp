@@ -117,6 +117,9 @@ void Log::output(Prio prio, std::string_view str)
     case Prio::Verbose:
         prefix = "[INFO]";
         break;
+    case Prio::Debug:
+        prefix = "[DEBUG]";
+        break;
     default:
         MG_ASSERT_DEBUG(false);
         prefix = "";

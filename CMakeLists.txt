@@ -19,6 +19,8 @@ option(MG_BUILD_SAMPLES "Build Mg Engine sample applications" ON)
 # (e.g. building the library with GCC then linking to an application built with Clang).
 option(MG_DEBUG_SANITISERS "Enable sanitisers (ASan, UBSan) for debug builds." OFF)
 
+option(MG_ENABLE_DEBUG_LOGGING "Enable extra verbose debug logging." OFF)
+
 # We want all executables in one, predictable location,
 # since they use relative paths to find resources.
 set(OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/")

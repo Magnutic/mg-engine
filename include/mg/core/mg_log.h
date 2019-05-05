@@ -33,6 +33,12 @@
 #include <string_view>
 #include <utility>
 
+#if MG_ENABLE_DEBUG_LOGGING
+#    define MG_LOG_DEBUG(msg) ::Mg::g_log.write(::Mg::Log::Prio::Debug, msg)
+#else
+#    define MG_LOG_DEBUG(msg) static_cast<void>(0);
+#endif
+
 namespace Mg {
 
 struct LogData;
@@ -43,11 +49,11 @@ public:
     /** Message priorities, decides which messages should be included in file
      * and console output.
      */
-    enum class Prio { Error, Warning, Message, Verbose };
+    enum class Prio { Error, Warning, Message, Verbose, Debug };
 
     explicit Log(std::string_view file_path,
-                 Prio             console_verbosity  = Prio::Verbose,
-                 Prio             log_file_verbosity = Prio::Verbose);
+                 Prio             console_verbosity  = Prio::Debug,
+                 Prio             log_file_verbosity = Prio::Debug);
 
     Log(const Log& other) = delete;
     Log& operator=(const Log& other) = delete;
