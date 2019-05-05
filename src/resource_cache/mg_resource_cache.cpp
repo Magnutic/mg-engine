@@ -124,7 +124,7 @@ const ResourceCache::FileInfo* ResourceCache::file_info(Identifier file) const
 void ResourceCache::rebuild_file_list()
 {
     // Caller (i.e. refresh()) is responsible for locking m_file_list_mutex.
-    log_verbose("<N/A>", "Building file list...");
+    log_verbose("<N/A>", "(Re-) Building file list...");
 
     // Update file list with the new file record.
     auto update_file_list = [&](const FileRecord& file_record, IFileLoader& loader) {
