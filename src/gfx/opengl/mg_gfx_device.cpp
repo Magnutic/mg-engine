@@ -41,7 +41,7 @@
 
 namespace Mg::gfx {
 
-#ifndef NDEBUG
+#if MG_ENABLE_DEBUG_LOGGING
 namespace {
 
 /** Wrapper for calling convention (GLAPIENTRY) */
@@ -93,7 +93,7 @@ GfxDevice::GfxDevice(Window& window)
         throw RuntimeError();
     }
 
-#ifndef NDEBUG
+#if MG_ENABLE_DEBUG_LOGGING
     // Add detailed OpenGL debug messaging in debug builds
     if (GLAD_GL_KHR_debug != 0) {
         glDebugMessageCallback(ogl_error_callback_wrapper, nullptr);
