@@ -131,8 +131,8 @@ inline glm::quat Rotation::to_quaternion() const
 
 inline bool Rotation::is_equivalent(const Rotation& rhs) const
 {
-    float matching = dot(m_quaternion, rhs.m_quaternion);
-    return (abs(matching - 1.0f) < 0.001f);
+    float matching = glm::dot(m_quaternion, rhs.m_quaternion);
+    return (glm::abs(matching - 1.0f) < 0.001f);
 }
 
 inline Rotation Rotation::combine(const Rotation& fst, const Rotation& snd)
