@@ -247,14 +247,14 @@ BillboardRenderer::BillboardRenderer()
 
     glBindVertexArray(0);
 
-    data().vao = vao_id;
-    data().vbo = vbo_id;
+    impl().vao = vao_id;
+    impl().vbo = vbo_id;
 }
 
 BillboardRenderer::~BillboardRenderer()
 {
-    GLuint vao_id = static_cast<GLuint>(data().vao.value);
-    GLuint vbo_id = static_cast<GLuint>(data().vbo.value);
+    GLuint vao_id = static_cast<GLuint>(impl().vao.value);
+    GLuint vbo_id = static_cast<GLuint>(impl().vbo.value);
     glDeleteVertexArrays(1, &vao_id);
     glDeleteBuffers(1, &vbo_id);
 }
@@ -266,7 +266,7 @@ void BillboardRenderer::render(const ICamera&             camera,
     if (render_list.view().empty()) { return; }
 
     const auto& billboards = render_list.view();
-    update_buffer(data(), billboards);
+    update_buffer(impl(), billboards);
 
     {
         CameraBlock camera_block{};
@@ -275,23 +275,23 @@ void BillboardRenderer::render(const ICamera&             camera,
         camera_block.cam_pos_xyz_aspect_ratio_w = glm::vec4(camera.get_position(),
                                                             camera.aspect_ratio());
 
-        data().camera_ubo.set_data(byte_representation(camera_block));
+        impl().camera_ubo.set_data(byte_representation(camera_block));
     }
 
-    std::array shared_inputs = { PipelineInputBinding(k_camera_ubo_slot, data().camera_ubo) };
+    std::array shared_inputs = { PipelineInputBinding(k_camera_ubo_slot, impl().camera_ubo) };
 
-    PipelineRepository::BindingContext binding_context = data().pipeline_repository.binding_context(
+    PipelineRepository::BindingContext binding_context = impl().pipeline_repository.binding_context(
         shared_inputs);
 
-    data().pipeline_repository.bind_pipeline(material, binding_context);
+    impl().pipeline_repository.bind_pipeline(material, binding_context);
 
-    glBindVertexArray(static_cast<GLuint>(data().vao.value));
+    glBindVertexArray(static_cast<GLuint>(impl().vao.value));
     glDrawArrays(GL_POINTS, 0, narrow<GLint>(billboards.size()));
 }
 
 void BillboardRenderer::drop_shaders()
 {
-    data().pipeline_repository.drop_pipelines();
+    impl().pipeline_repository.drop_pipelines();
 }
 
 } // namespace Mg::gfx

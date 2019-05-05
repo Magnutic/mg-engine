@@ -196,17 +196,17 @@ void GfxDevice::synchronise()
 
 MeshRepository& GfxDevice::mesh_repository()
 {
-    return data().mesh_repository;
+    return impl().mesh_repository;
 }
 
 TextureRepository& GfxDevice::texture_repository()
 {
-    return data().texture_repository;
+    return impl().texture_repository;
 }
 
 MaterialRepository& GfxDevice::material_repository()
 {
-    return data().material_repository;
+    return impl().material_repository;
 }
 
 } // namespace Mg::gfx

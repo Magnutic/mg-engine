@@ -58,17 +58,17 @@ TextureRepository::~TextureRepository() = default;
 
 TextureHandle TextureRepository::create(const TextureResource& resource)
 {
-    auto [index, ptr] = data().nodes.construct(Texture2D::from_texture_resource(resource));
+    auto [index, ptr] = impl().nodes.construct(Texture2D::from_texture_resource(resource));
     ptr->self_index   = index;
 
-    data().node_map.emplace_back(resource.resource_id(), ptr);
+    impl().node_map.emplace_back(resource.resource_id(), ptr);
 
     return make_texture_handle(ptr);
 }
 
 TextureHandle TextureRepository::create_render_target(const RenderTargetParams& params)
 {
-    auto [index, ptr] = data().nodes.construct(Texture2D::render_target(params));
+    auto [index, ptr] = impl().nodes.construct(Texture2D::render_target(params));
     ptr->self_index   = index;
     return make_texture_handle(ptr);
 }
@@ -76,10 +76,10 @@ TextureHandle TextureRepository::create_render_target(const RenderTargetParams& 
 void TextureRepository::update(const TextureResource& resource)
 {
     Identifier resource_id = resource.resource_id();
-    auto       it = find_if(data().node_map, [&](auto& pair) { return pair.first == resource_id; });
+    auto       it = find_if(impl().node_map, [&](auto& pair) { return pair.first == resource_id; });
 
     // If not found, then we do not have a texture using the updated resource, so ignore.
-    if (it == data().node_map.end()) { return; }
+    if (it == impl().node_map.end()) { return; }
 
     internal::TextureNode* p_node      = it->second;
     Texture2D              new_texture = Texture2D::from_texture_resource(resource);
@@ -93,10 +93,10 @@ void TextureRepository::update(const TextureResource& resource)
 void TextureRepository::destroy(TextureHandle handle)
 {
     auto& texture_node = internal::texture_node(handle);
-    data().nodes.destroy(texture_node.self_index);
+    impl().nodes.destroy(texture_node.self_index);
 
-    auto it = find_if(data().node_map, [&](auto& pair) { return pair.second == &texture_node; });
-    if (it != data().node_map.end()) { data().node_map.erase(it); }
+    auto it = find_if(impl().node_map, [&](auto& pair) { return pair.second == &texture_node; });
+    if (it != impl().node_map.end()) { impl().node_map.erase(it); }
 }
 
 } // namespace Mg::gfx

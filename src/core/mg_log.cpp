@@ -58,9 +58,9 @@ struct LogData {
 Log::Log(std::string_view file_path, Prio console_verbosity, Prio log_file_verbosity)
     : PImplMixin(file_path, console_verbosity, log_file_verbosity)
 {
-    data().writer = io::make_output_filestream(file_path, true);
+    impl().writer = io::make_output_filestream(file_path, true);
 
-    if (!data().writer) {
+    if (!impl().writer) {
         std::cerr << "[ERROR]: "
                   << "Failed to open log file '" << file_path << "'.";
         return;
@@ -69,34 +69,34 @@ Log::Log(std::string_view file_path, Prio console_verbosity, Prio log_file_verbo
     time_t log_open_time = time(nullptr);
     tm&    t             = *localtime(&log_open_time);
 
-    *data().writer << fmt::format("Log started at {0:%F}, {0:%T}\n", t);
+    *impl().writer << fmt::format("Log started at {0:%F}, {0:%T}\n", t);
 }
 
 /** Set verbosity for console output */
 void Log::set_console_verbosity(Prio prio)
 {
-    data().console_verbosity = prio;
+    impl().console_verbosity = prio;
 }
 
 /** Set verbosity for log file output */
 void Log::set_file_verbosity(Prio prio)
 {
-    data().log_file_verbosity = prio;
+    impl().log_file_verbosity = prio;
 }
 
 Log::GetVerbosityReturn Log::get_verbosity() const
 {
-    return { data().console_verbosity, data().log_file_verbosity };
+    return { impl().console_verbosity, impl().log_file_verbosity };
 }
 
 void Log::flush()
 {
-    if (data().writer) { data().writer->flush(); }
+    if (impl().writer) { impl().writer->flush(); }
 }
 
 std::string_view Log::file_path() const
 {
-    return data().file_path;
+    return impl().file_path;
 }
 
 void Log::output(Prio prio, std::string_view str)
@@ -127,23 +127,23 @@ void Log::output(Prio prio, std::string_view str)
 
     std::string message = fmt::format("{} {}", prefix, str);
 
-    if (prio <= data().console_verbosity) {
+    if (prio <= impl().console_verbosity) {
         // MSVC has terrible iostream performance on cout, so use puts()
         // (Apparently cout is unbuffered on MSVC but C functions like
         // puts() and printf() have their own internal buffering.)
         puts(message.c_str());
     }
 
-    if (data().writer && prio <= data().log_file_verbosity) {
+    if (impl().writer && prio <= impl().log_file_verbosity) {
         // Write timestamp to log file
         time_t msg_time = time(nullptr);
         tm&    t        = *localtime(&msg_time);
 
-        data().writer.value() << fmt::format("{:%T}: {}\n", t, message);
+        impl().writer.value() << fmt::format("{:%T}: {}\n", t, message);
 
         // If message was a warning or error, make sure it's written to file
         // immediately (perhaps a crash is imminent!)
-        if (prio <= Prio::Warning) { data().writer->flush(); }
+        if (prio <= Prio::Warning) { impl().writer->flush(); }
     }
 }
 

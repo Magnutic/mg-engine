@@ -204,7 +204,7 @@ MeshRenderer::~MeshRenderer() = default;
 
 void MeshRenderer::drop_shaders()
 {
-    data().pipeline_repository.drop_pipelines();
+    impl().pipeline_repository.drop_pipelines();
 }
 
 void MeshRenderer::render(const ICamera&           cam,
@@ -215,16 +215,16 @@ void MeshRenderer::render(const ICamera&           cam,
     auto            current_vao      = uint32_t(-1);
     const Material* current_material = nullptr;
 
-    update_light_data(data().m_light_buffers, lights, cam, data().m_light_grid);
+    update_light_data(impl().m_light_buffers, lights, cam, impl().m_light_grid);
 
-    PipelineRepository::BindingContext binding_context = make_binding_context(data(), cam, params);
+    PipelineRepository::BindingContext binding_context = make_binding_context(impl(), cam, params);
 
     auto   render_commands         = command_list.render_commands();
     size_t matrix_update_countdown = 1;
 
     for (uint32_t i = 0; i < render_commands.size(); ++i) {
         if (--matrix_update_countdown == 0) {
-            matrix_update_countdown = data().m_matrix_uniform_handler.set_matrices(
+            matrix_update_countdown = impl().m_matrix_uniform_handler.set_matrices(
                 command_list.m_transform_matrices().subspan(i),
                 command_list.mvp_transform_matrices().subspan(i));
         }
@@ -243,7 +243,7 @@ void MeshRenderer::render(const ICamera&           cam,
 
         // Set up material state
         if (current_material != command.material) {
-            data().pipeline_repository.bind_pipeline(*command.material, binding_context);
+            impl().pipeline_repository.bind_pipeline(*command.material, binding_context);
             current_material = command.material;
         }
 

@@ -181,13 +181,13 @@ void setup_render_pipeline(PostProcessRendererData& data,
 
 PostProcessRenderer::PostProcessRenderer() : PImplMixin()
 {
-    init(data());
+    init(impl());
 }
 
 PostProcessRenderer::~PostProcessRenderer()
 {
-    GLuint vao_id = static_cast<uint32_t>(data().vao.value);
-    GLuint vbo_id = static_cast<uint32_t>(data().vbo.value);
+    GLuint vao_id = static_cast<uint32_t>(impl().vao.value);
+    GLuint vbo_id = static_cast<uint32_t>(impl().vbo.value);
 
     glDeleteVertexArrays(1, &vao_id);
     glDeleteBuffers(1, &vbo_id);
@@ -195,9 +195,9 @@ PostProcessRenderer::~PostProcessRenderer()
 
 void PostProcessRenderer::post_process(const Material& material, TextureHandle input_colour)
 {
-    setup_render_pipeline(data(), material, input_colour, nullopt, 0.0f, 0.0f);
+    setup_render_pipeline(impl(), material, input_colour, nullopt, 0.0f, 0.0f);
 
-    GLuint vao_id = static_cast<GLuint>(data().vao.value);
+    GLuint vao_id = static_cast<GLuint>(impl().vao.value);
 
     glBindVertexArray(vao_id);
     glDrawArrays(GL_TRIANGLES, 0, 12);
@@ -210,9 +210,9 @@ void PostProcessRenderer::post_process(const Material& material,
                                        float           z_near,
                                        float           z_far)
 {
-    setup_render_pipeline(data(), material, input_colour, input_depth, z_near, z_far);
+    setup_render_pipeline(impl(), material, input_colour, input_depth, z_near, z_far);
 
-    GLuint vao_id = static_cast<GLuint>(data().vao.value);
+    GLuint vao_id = static_cast<GLuint>(impl().vao.value);
 
     glBindVertexArray(vao_id);
     glDrawArrays(GL_TRIANGLES, 0, 12);
@@ -221,7 +221,7 @@ void PostProcessRenderer::post_process(const Material& material,
 
 void PostProcessRenderer::drop_shaders()
 {
-    data().pipeline_repository.drop_pipelines();
+    impl().pipeline_repository.drop_pipelines();
 }
 
 } // namespace Mg::gfx

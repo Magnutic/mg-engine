@@ -55,7 +55,7 @@ MaterialRepository::~MaterialRepository() = default;
 
 Material* MaterialRepository::create(Identifier id, ResourceHandle<ShaderResource> shader)
 {
-    auto [index, ptr] = data().nodes.construct(Material{ id, shader });
+    auto [index, ptr] = impl().nodes.construct(Material{ id, shader });
     ptr->self_index   = index;
     return &ptr->material;
 }
@@ -63,7 +63,7 @@ Material* MaterialRepository::create(Identifier id, ResourceHandle<ShaderResourc
 void MaterialRepository::destroy(const Material* handle)
 {
     auto* p_node = reinterpret_cast<const MaterialNode*>(handle); // NOLINT
-    data().nodes.destroy(p_node->self_index);
+    impl().nodes.destroy(p_node->self_index);
 }
 
 } // namespace Mg::gfx

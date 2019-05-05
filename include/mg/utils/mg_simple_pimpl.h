@@ -34,7 +34,7 @@ namespace Mg {
 
 /** Mixin utility type, reduces boilerplate of writing PIMPL (pointer to implementation) classes.
  * Provides ownership of `ImplT` implementation instance, which may be accessed within the subclass
- * via `data()` member functions.
+ * via `impl()` member functions.
  * PImplMixin's constructor forwards its arguments to ImplT's constructor.
  *
  * @remark PImplMixin is intended to be used as a base class, for example:
@@ -60,13 +60,13 @@ protected:
     void swap(PImplMixin& rhs) noexcept
     {
         using std::swap;
-        swap(data(), rhs.data());
+        swap(impl(), rhs.impl());
     }
 
     friend void swap(PImplMixin& lhs, PImplMixin& rhs) noexcept { lhs.swap(rhs); }
 
-    ImplT&       data() { return *m_impl; }
-    const ImplT& data() const { return *m_impl; }
+    ImplT&       impl() { return *m_impl; }
+    const ImplT& impl() const { return *m_impl; }
 
 private:
     std::unique_ptr<ImplT> m_impl;
@@ -92,27 +92,27 @@ protected:
         new (&m_impl_buffer) ImplT(std::forward<Args>(args)...);
     }
 
-    InPlacePImplMixin(const InPlacePImplMixin& rhs) { new (&m_impl_buffer) ImplT(rhs.data()); }
+    InPlacePImplMixin(const InPlacePImplMixin& rhs) { new (&m_impl_buffer) ImplT(rhs.impl()); }
 
     InPlacePImplMixin(InPlacePImplMixin&& rhs) noexcept
     {
-        new (&m_impl_buffer) ImplT(std::move_if_noexcept(rhs.data()));
+        new (&m_impl_buffer) ImplT(std::move_if_noexcept(rhs.impl()));
     }
 
     InPlacePImplMixin& operator=(InPlacePImplMixin rhs) noexcept { swap(rhs); }
 
-    ~InPlacePImplMixin() { data().~ImplT(); }
+    ~InPlacePImplMixin() { impl().~ImplT(); }
 
     void swap(InPlacePImplMixin& rhs) noexcept
     {
         using std::swap;
-        swap(data(), rhs.data());
+        swap(impl(), rhs.impl());
     }
 
     friend void swap(InPlacePImplMixin& lhs, InPlacePImplMixin& rhs) noexcept { lhs.swap(rhs); }
 
-    ImplT&       data() { return *reinterpret_cast<ImplT*>(&m_impl_buffer); }
-    const ImplT& data() const { return *reinterpret_cast<const ImplT*>(&m_impl_buffer); }
+    ImplT&       impl() { return *reinterpret_cast<ImplT*>(&m_impl_buffer); }
+    const ImplT& impl() const { return *reinterpret_cast<const ImplT*>(&m_impl_buffer); }
 
 private:
     std::aligned_storage_t<max_impl_size, alignof(max_align_t)> m_impl_buffer;

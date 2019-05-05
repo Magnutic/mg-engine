@@ -296,21 +296,21 @@ static void draw_primitive(ShaderHandle                        program,
 
 void DebugRenderer::draw_box(const ICamera& camera, BoxDrawParams params)
 {
-    draw_primitive(data().program.program_handle(), camera, data().box, params);
+    draw_primitive(impl().program.program_handle(), camera, impl().box, params);
 }
 
 void DebugRenderer::draw_ellipsoid(const ICamera& camera, EllipsoidDrawParams params)
 {
-    auto it = data().spheres.find(params.steps);
+    auto it = impl().spheres.find(params.steps);
 
     // If no sphere mesh with the required amount of steps was found, create it.
-    if (it == data().spheres.end()) {
-        auto p = data().spheres.emplace(params.steps, generate_ellipsoid_verts(params.steps));
+    if (it == impl().spheres.end()) {
+        auto p = impl().spheres.emplace(params.steps, generate_ellipsoid_verts(params.steps));
         it     = p.first;
     }
 
     Sphere& sphere = it->second;
-    draw_primitive(data().program.program_handle(), camera, sphere.mesh, params);
+    draw_primitive(impl().program.program_handle(), camera, sphere.mesh, params);
 }
 
 } // namespace Mg::gfx

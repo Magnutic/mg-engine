@@ -61,7 +61,7 @@ static uint32_t s_old_codepage;
 
 Root::Root()
 {
-    data().start_time = std::chrono::high_resolution_clock::now();
+    impl().start_time = std::chrono::high_resolution_clock::now();
 
 #ifdef _WIN32
     // Allow UTF-8 output to Windows console
@@ -72,25 +72,25 @@ Root::Root()
     g_log.write_message("Mg Engine initialising...");
 
     // Set up engine config
-    data().config = std::make_unique<Config>(defs::k_default_config_file_name);
+    impl().config = std::make_unique<Config>(defs::k_default_config_file_name);
 
     // Create window
     {
-        data().window = Window::make(WindowSettings{}, "Mg Engine");
-        if (data().window == nullptr) {
+        impl().window = Window::make(WindowSettings{}, "Mg Engine");
+        if (impl().window == nullptr) {
             g_log.write_error("Failed to open window.");
             throw RuntimeError();
         }
     }
 
     // Create render context
-    data().gfx_device = std::make_unique<gfx::GfxDevice>(*data().window);
+    impl().gfx_device = std::make_unique<gfx::GfxDevice>(*impl().window);
 }
 
 Root::~Root()
 {
     g_log.write_message("Mg Engine exiting...");
-    data().config->write_to_file(defs::k_default_config_file_name);
+    impl().config->write_to_file(defs::k_default_config_file_name);
 
 #ifdef _WIN32
     // Return to code page used before the application started.
@@ -102,22 +102,22 @@ double Root::time_since_init()
 {
     using namespace std::chrono;
     using seconds_double = duration<double, seconds::period>;
-    return seconds_double(high_resolution_clock::now() - data().start_time).count();
+    return seconds_double(high_resolution_clock::now() - impl().start_time).count();
 }
 
 Config& Root::config()
 {
-    return *data().config;
+    return *impl().config;
 }
 
 Window& Root::window()
 {
-    return *data().window;
+    return *impl().window;
 }
 
 gfx::GfxDevice& Root::gfx_device()
 {
-    return *data().gfx_device;
+    return *impl().gfx_device;
 }
 
 }; // namespace Mg

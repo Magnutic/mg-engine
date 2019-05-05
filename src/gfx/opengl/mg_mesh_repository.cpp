@@ -306,7 +306,7 @@ MeshBuffer::~MeshBuffer() = default;
 
 MeshBuffer::CreateReturn MeshBuffer::create(const MeshResource& resource)
 {
-    return data().create(resource);
+    return impl().create(resource);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -316,18 +316,18 @@ MeshRepository::~MeshRepository() = default;
 
 MeshHandle MeshRepository::create(const MeshResource& mesh_res)
 {
-    return data().create(mesh_res);
+    return impl().create(mesh_res);
 }
 
 void MeshRepository::destroy(MeshHandle handle)
 {
-    data().destroy(handle);
+    impl().destroy(handle);
 }
 
 MeshBuffer MeshRepository::new_mesh_buffer(VertexBufferSize vertex_buffer_size,
                                            IndexBufferSize  index_buffer_size)
 {
-    return MeshBuffer{ data(), vertex_buffer_size, index_buffer_size };
+    return MeshBuffer{ impl(), vertex_buffer_size, index_buffer_size };
 }
 
 } // namespace Mg::gfx
