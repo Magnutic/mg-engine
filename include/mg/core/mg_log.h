@@ -44,7 +44,7 @@ namespace Mg {
 struct LogData;
 
 /** Outputs messages with different priorities to console and file. */
-class Log : PimplMixin<LogData> {
+class Log : PImplMixin<LogData> {
 public:
     /** Message priorities, decides which messages should be included in file
      * and console output.

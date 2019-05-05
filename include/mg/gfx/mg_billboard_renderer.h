@@ -87,7 +87,7 @@ private:
 
 struct BillboardRendererData;
 
-class BillboardRenderer : PimplMixin<BillboardRendererData> {
+class BillboardRenderer : PImplMixin<BillboardRendererData> {
 public:
     explicit BillboardRenderer();
     MG_MAKE_NON_COPYABLE(BillboardRenderer);

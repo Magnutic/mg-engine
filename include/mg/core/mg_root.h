@@ -47,7 +47,7 @@ struct RootData;
  * Only one instance of the engine root may exist at a time in an application
  * (due to global state such as config, log, and -- more fundamentally -- graphics API context).
  */
-class Root : PimplMixin<RootData> {
+class Root : PImplMixin<RootData> {
 public:
     Root();
     MG_MAKE_NON_COPYABLE(Root);

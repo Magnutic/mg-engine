@@ -48,7 +48,7 @@ class MeshBufferImpl;
  *
  * Construct using Mg::MeshRepository::new_mesh_buffer()
  */
-class MeshBuffer : PimplMixin<MeshBufferImpl> {
+class MeshBuffer : PImplMixin<MeshBufferImpl> {
 public:
     MG_MAKE_NON_COPYABLE(MeshBuffer);
     MG_MAKE_DEFAULT_MOVABLE(MeshBuffer);
@@ -65,7 +65,7 @@ public:
 
 private:
     friend class MeshRepository;
-    using PimplMixin::PimplMixin; // Constructor forwarding to pImpl class constructor.
+    using PImplMixin::PImplMixin; // Constructor forwarding to pImpl class constructor.
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -85,7 +85,7 @@ enum class IndexBufferSize : size_t;
 class MeshRepositoryImpl;
 
 /** Creates, stores, and updates meshes. */
-class MeshRepository : PimplMixin<MeshRepositoryImpl> {
+class MeshRepository : PImplMixin<MeshRepositoryImpl> {
 public:
     MeshRepository();
     MG_MAKE_NON_COPYABLE(MeshRepository);

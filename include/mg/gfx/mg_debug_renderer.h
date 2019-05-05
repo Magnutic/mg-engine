@@ -45,7 +45,7 @@ struct DebugRendererData;
 /** Renderer for drawing debug geometry.
  * N.B. this renderer is relatively inefficient and is intended for debugging visualisation.
  */
-class DebugRenderer : PimplMixin<DebugRendererData> {
+class DebugRenderer : PImplMixin<DebugRendererData> {
 public:
     DebugRenderer();
     MG_MAKE_NON_COPYABLE(DebugRenderer);

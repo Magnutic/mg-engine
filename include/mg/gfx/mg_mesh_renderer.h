@@ -45,7 +45,7 @@ struct RenderParameters {
     float camera_exposure;
 };
 
-class MeshRenderer : PimplMixin<MeshRendererData> {
+class MeshRenderer : PImplMixin<MeshRendererData> {
 public:
     MeshRenderer();
     MG_MAKE_DEFAULT_MOVABLE(MeshRenderer);

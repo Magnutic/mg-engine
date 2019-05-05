@@ -64,7 +64,7 @@ struct GfxDeviceData;
 /** Provides access to the graphics context.
  * N.B. only one GfxDevice object exist at a time.
  */
-class GfxDevice : PimplMixin<GfxDeviceData> {
+class GfxDevice : PImplMixin<GfxDeviceData> {
 public:
     explicit GfxDevice(Window& window);
     ~GfxDevice();

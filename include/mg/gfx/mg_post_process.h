@@ -37,7 +37,7 @@ class Material;
 
 struct PostProcessRendererData;
 
-class PostProcessRenderer : PimplMixin<PostProcessRendererData> {
+class PostProcessRenderer : PImplMixin<PostProcessRendererData> {
 public:
     explicit PostProcessRenderer();
 

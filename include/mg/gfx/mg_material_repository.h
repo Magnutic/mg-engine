@@ -41,7 +41,7 @@ namespace Mg::gfx {
 class Material;
 struct MaterialRepositoryData;
 
-class MaterialRepository : PimplMixin<MaterialRepositoryData> {
+class MaterialRepository : PImplMixin<MaterialRepositoryData> {
 public:
     MG_MAKE_NON_MOVABLE(MaterialRepository);
     MG_MAKE_NON_COPYABLE(MaterialRepository);

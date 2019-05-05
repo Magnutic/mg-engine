@@ -179,7 +179,7 @@ void setup_render_pipeline(PostProcessRendererData& data,
 
 } // namespace
 
-PostProcessRenderer::PostProcessRenderer() : PimplMixin()
+PostProcessRenderer::PostProcessRenderer() : PImplMixin()
 {
     init(data());
 }

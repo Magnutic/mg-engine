@@ -56,7 +56,7 @@ struct LogData {
 };
 
 Log::Log(std::string_view file_path, Prio console_verbosity, Prio log_file_verbosity)
-    : PimplMixin(file_path, console_verbosity, log_file_verbosity)
+    : PImplMixin(file_path, console_verbosity, log_file_verbosity)
 {
     data().writer = io::make_output_filestream(file_path, true);
 

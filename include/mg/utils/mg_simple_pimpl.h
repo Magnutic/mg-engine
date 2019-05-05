@@ -35,35 +35,35 @@ namespace Mg {
 /** Mixin utility type, reduces boilerplate of writing PIMPL (pointer to implementation) classes.
  * Provides ownership of `ImplT` implementation instance, which may be accessed within the subclass
  * via `data()` member functions.
- * PimplMixin's constructor forwards its arguments to ImplT's constructor.
+ * PImplMixin's constructor forwards its arguments to ImplT's constructor.
  *
- * @remark PimplMixin is intended to be used as a base class, for example:
- *     class MyClass : PimplMixin<MyClassImpl> { ... }
+ * @remark PImplMixin is intended to be used as a base class, for example:
+ *     class MyClass : PImplMixin<MyClassImpl> { ... }
  *
  * @remark As always when using the PIMPL idiom, the public class's constructors and destructor must
  * be defined in the .cpp file, after `ImplT` is defined (i.e. `ImplT` must be a complete type).
  *
  * @tparam ImplT Implementation type.
  */
-template<typename ImplT> class PimplMixin {
+template<typename ImplT> class PImplMixin {
 protected:
     template<typename... Args>
-    PimplMixin(Args&&... args) : m_impl(std::make_unique<ImplT>(std::forward<Args>(args)...))
+    PImplMixin(Args&&... args) : m_impl(std::make_unique<ImplT>(std::forward<Args>(args)...))
     {}
 
-    PimplMixin(const PimplMixin& rhs) : m_impl(std::make_unique<ImplT>(*rhs.m_impl)) {}
+    PImplMixin(const PImplMixin& rhs) : m_impl(std::make_unique<ImplT>(*rhs.m_impl)) {}
 
-    PimplMixin(PimplMixin&& rhs) = default;
+    PImplMixin(PImplMixin&& rhs) = default;
 
-    PimplMixin& operator=(PimplMixin rhs) noexcept { swap(rhs); }
+    PImplMixin& operator=(PImplMixin rhs) noexcept { swap(rhs); }
 
-    void swap(PimplMixin& rhs) noexcept
+    void swap(PImplMixin& rhs) noexcept
     {
         using std::swap;
         swap(data(), rhs.data());
     }
 
-    friend void swap(PimplMixin& lhs, PimplMixin& rhs) noexcept { lhs.swap(rhs); }
+    friend void swap(PImplMixin& lhs, PImplMixin& rhs) noexcept { lhs.swap(rhs); }
 
     ImplT&       data() { return *m_impl; }
     const ImplT& data() const { return *m_impl; }
@@ -76,7 +76,7 @@ private:
  * inline instead of through a pointer. This means that it needs to know the maximum size of the
  * implementation (the `max_impl_size` template paramater).
  *
- * Usage is identical to `PimplMixin`.
+ * Usage is identical to `PImplMixin`.
  *
  * @tparam ImplT Implementation type.
  * @tparam max_impl_size Maximum size of private implementation class. A buffer of this size is
@@ -84,32 +84,32 @@ private:
  * public class's ABI as long as `max_impl_size` stays the same; changing `max_impl_size` will
  * break ABI.
  */
-template<typename ImplT, size_t max_impl_size> class InPlacePimplMixin {
+template<typename ImplT, size_t max_impl_size> class InPlacePImplMixin {
 protected:
-    template<typename... Args> InPlacePimplMixin(Args&&... args)
+    template<typename... Args> InPlacePImplMixin(Args&&... args)
     {
         static_assert(sizeof(ImplT) <= max_impl_size);
         new (&m_impl_buffer) ImplT(std::forward<Args>(args)...);
     }
 
-    InPlacePimplMixin(const InPlacePimplMixin& rhs) { new (&m_impl_buffer) ImplT(rhs.data()); }
+    InPlacePImplMixin(const InPlacePImplMixin& rhs) { new (&m_impl_buffer) ImplT(rhs.data()); }
 
-    InPlacePimplMixin(InPlacePimplMixin&& rhs) noexcept
+    InPlacePImplMixin(InPlacePImplMixin&& rhs) noexcept
     {
         new (&m_impl_buffer) ImplT(std::move_if_noexcept(rhs.data()));
     }
 
-    InPlacePimplMixin& operator=(InPlacePimplMixin rhs) noexcept { swap(rhs); }
+    InPlacePImplMixin& operator=(InPlacePImplMixin rhs) noexcept { swap(rhs); }
 
-    ~InPlacePimplMixin() { data().~ImplT(); }
+    ~InPlacePImplMixin() { data().~ImplT(); }
 
-    void swap(InPlacePimplMixin& rhs) noexcept
+    void swap(InPlacePImplMixin& rhs) noexcept
     {
         using std::swap;
         swap(data(), rhs.data());
     }
 
-    friend void swap(InPlacePimplMixin& lhs, InPlacePimplMixin& rhs) noexcept { lhs.swap(rhs); }
+    friend void swap(InPlacePImplMixin& lhs, InPlacePImplMixin& rhs) noexcept { lhs.swap(rhs); }
 
     ImplT&       data() { return *reinterpret_cast<ImplT*>(&m_impl_buffer); }
     const ImplT& data() const { return *reinterpret_cast<const ImplT*>(&m_impl_buffer); }

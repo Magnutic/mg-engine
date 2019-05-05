@@ -40,7 +40,7 @@ namespace Mg::gfx {
 struct RenderTargetParams; // Defined in mg_texture_related_types.h
 struct TextureRepositoryData;
 
-class TextureRepository : PimplMixin<TextureRepositoryData> {
+class TextureRepository : PImplMixin<TextureRepositoryData> {
 public:
     MG_MAKE_NON_MOVABLE(TextureRepository);
     MG_MAKE_NON_COPYABLE(TextureRepository);
