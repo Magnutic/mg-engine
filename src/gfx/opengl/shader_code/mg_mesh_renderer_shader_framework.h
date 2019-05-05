@@ -21,7 +21,7 @@
 //
 //**************************************************************************************************
 
-/** @file mg_mesh_framework_shader_code.h
+/** @file mg_mesh_renderer_shader_framework.h
  * The 'framework' shader code -- the code which defines the interface between renderer and the
  * material-specific shader code -- for MeshRenderer.
  */
@@ -46,7 +46,9 @@
 
 #define MATRIX_UBO_ARRAY_SIZE_STR MG_STRINGISE(MATRIX_UBO_ARRAY_SIZE)
 
-static constexpr const char k_lit_mesh_framework_vertex_code[] = R"(
+namespace Mg::gfx::shader_code::mesh_renderer {
+
+static constexpr const char k_shader_framework_vertex_code[] = R"(
 #version 330 core
 
 #define MATRIX_ARRAY_SIZE )" MATRIX_UBO_ARRAY_SIZE_STR R"(
@@ -160,7 +162,7 @@ void main()
 }
 )";
 
-static constexpr const char k_lit_mesh_framework_fragment_code[] = R"(
+static constexpr const char k_shader_framework_fragment_code[] = R"(
 #version 330 core
 
 #define LIGHT_GRID_WIDTH )" LIGHT_GRID_WIDTH_STR R"(
@@ -310,3 +312,5 @@ void main() {
     _frag_out = vec4(pow(2.0, _frame_block.exposure) * colour.rgb, colour.a);
 }
 )";
+
+} // namespace Mg::gfx::shader_code::mesh_renderer

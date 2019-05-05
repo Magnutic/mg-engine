@@ -33,8 +33,9 @@
 #include "mg/gfx/mg_vertex.h"
 
 #include "mg_gl_debug.h"
-#include "shader_factories/shader_code/mg_mesh_framework_shader_code.h"
 #include "mg_glad.h"
+
+#include "shader_code/mg_mesh_renderer_shader_framework.h"
 
 namespace Mg::gfx {
 
@@ -119,10 +120,12 @@ FrameBlock make_frame_block(const ICamera& camera, float current_time, float cam
 
 PipelineRepository make_mesh_pipeline_repository()
 {
+    using namespace shader_code::mesh_renderer;
+
     PipelineRepository::Config config{};
-    config.preamble_shader_code = { VertexShaderCode{ k_lit_mesh_framework_vertex_code },
+    config.preamble_shader_code = { VertexShaderCode{ k_shader_framework_vertex_code },
                                     {},
-                                    FragmentShaderCode{ k_lit_mesh_framework_fragment_code } };
+                                    FragmentShaderCode{ k_shader_framework_fragment_code } };
 
     config.on_error_shader_code = { {}, {}, FragmentShaderCode{ mesh_fs_fallback } };
 
