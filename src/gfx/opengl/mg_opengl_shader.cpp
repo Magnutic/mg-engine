@@ -26,7 +26,6 @@
 #include "mg_gl_debug.h"
 #include "mg_glad.h"
 
-#include "mg/core/mg_log.h"
 #include "mg/gfx/mg_shader.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_optional.h"
@@ -43,8 +42,6 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
-
-#include <fmt/core.h>
 
 namespace Mg::gfx::opengl {
 
@@ -69,10 +66,10 @@ void use_program(ShaderHandle program)
     glUseProgram(gl_program_id(program));
 }
 
-int32_t uniform_location(ShaderHandle program, std::string_view uniform_name)
+Opt<UniformLocation> uniform_location(ShaderHandle program, std::string_view uniform_name)
 {
-    auto ret_val = glGetUniformLocation(gl_program_id(program), std::string(uniform_name).c_str());
-    return ret_val;
+    auto location = glGetUniformLocation(gl_program_id(program), std::string(uniform_name).c_str());
+    return location == -1 ? nullopt : make_opt(UniformLocation{ location });
 }
 
 bool set_uniform_block_binding(ShaderHandle      program,
@@ -82,130 +79,123 @@ bool set_uniform_block_binding(ShaderHandle      program,
     const Opt<GLuint> opt_block_index = uniform_block_index(gl_program_id(program), block_name);
     const auto        slot_index      = static_cast<GLuint>(slot);
 
-    auto bind = [&](GLuint block_index) {
-        glUniformBlockBinding(gl_program_id(program), block_index, slot_index);
+    if (opt_block_index) {
+        glUniformBlockBinding(gl_program_id(program), *opt_block_index, slot_index);
         return true;
-    };
-
-    auto log_no_such_block = [&] {
-        static const auto msg =
-            "set_uniform_block_binding(\"{}\"): "
-            "no such active uniform block in shader.";
-        g_log.write_warning(fmt::format(msg, block_name));
+    }
+    else {
         return false;
-    };
-
-    return opt_block_index.map(bind).or_else(log_no_such_block).value();
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
 
-template<> void set_uniform<int32_t>(int32_t location, const int32_t& value)
+template<> void set_uniform<int32_t>(UniformLocation location, const int32_t& value)
 {
-    glUniform1iv(location, 1, &value);
+    glUniform1iv(static_cast<int32_t>(location), 1, &value);
 }
 
-template<> void set_uniform<uint32_t>(int32_t location, const uint32_t& value)
+template<> void set_uniform<uint32_t>(UniformLocation location, const uint32_t& value)
 {
-    glUniform1uiv(location, 1, &value);
+    glUniform1uiv(static_cast<int32_t>(location), 1, &value);
 }
 
-template<> void set_uniform<float>(int32_t location, const float& value)
+template<> void set_uniform<float>(UniformLocation location, const float& value)
 {
-    glUniform1fv(location, 1, &value);
+    glUniform1fv(static_cast<int32_t>(location), 1, &value);
 }
 
-template<> void set_uniform<glm::ivec2>(int32_t location, const glm::ivec2& value)
+template<> void set_uniform<glm::ivec2>(UniformLocation location, const glm::ivec2& value)
 {
-    glUniform2iv(location, 1, &(value[0]));
+    glUniform2iv(static_cast<int32_t>(location), 1, &(value[0]));
 }
 
-template<> void set_uniform<glm::ivec3>(int32_t location, const glm::ivec3& value)
+template<> void set_uniform<glm::ivec3>(UniformLocation location, const glm::ivec3& value)
 {
-    glUniform3iv(location, 1, &(value[0]));
+    glUniform3iv(static_cast<int32_t>(location), 1, &(value[0]));
 }
 
-template<> void set_uniform<glm::ivec4>(int32_t location, const glm::ivec4& value)
+template<> void set_uniform<glm::ivec4>(UniformLocation location, const glm::ivec4& value)
 {
-    glUniform4iv(location, 1, &(value[0]));
+    glUniform4iv(static_cast<int32_t>(location), 1, &(value[0]));
 }
 
-template<> void set_uniform<glm::uvec2>(int32_t location, const glm::uvec2& value)
+template<> void set_uniform<glm::uvec2>(UniformLocation location, const glm::uvec2& value)
 {
-    glUniform2uiv(location, 1, &(value[0]));
+    glUniform2uiv(static_cast<int32_t>(location), 1, &(value[0]));
 }
 
-template<> void set_uniform<glm::uvec3>(int32_t location, const glm::uvec3& value)
+template<> void set_uniform<glm::uvec3>(UniformLocation location, const glm::uvec3& value)
 {
-    glUniform3uiv(location, 1, &(value[0]));
+    glUniform3uiv(static_cast<int32_t>(location), 1, &(value[0]));
 }
 
-template<> void set_uniform<glm::uvec4>(int32_t location, const glm::uvec4& value)
+template<> void set_uniform<glm::uvec4>(UniformLocation location, const glm::uvec4& value)
 {
-    glUniform4uiv(location, 1, &(value[0]));
+    glUniform4uiv(static_cast<int32_t>(location), 1, &(value[0]));
 }
 
-template<> void set_uniform<glm::vec2>(int32_t location, const glm::vec2& value)
+template<> void set_uniform<glm::vec2>(UniformLocation location, const glm::vec2& value)
 {
-    glUniform2fv(location, 1, &(value[0]));
+    glUniform2fv(static_cast<int32_t>(location), 1, &(value[0]));
 }
 
-template<> void set_uniform<glm::vec3>(int32_t location, const glm::vec3& value)
+template<> void set_uniform<glm::vec3>(UniformLocation location, const glm::vec3& value)
 {
-    glUniform3fv(location, 1, &(value[0]));
+    glUniform3fv(static_cast<int32_t>(location), 1, &(value[0]));
 }
 
-template<> void set_uniform<glm::vec4>(int32_t location, const glm::vec4& value)
+template<> void set_uniform<glm::vec4>(UniformLocation location, const glm::vec4& value)
 {
-    glUniform4fv(location, 1, &(value[0]));
+    glUniform4fv(static_cast<int32_t>(location), 1, &(value[0]));
 }
 
-template<> void set_uniform<glm::mat2>(int32_t location, const glm::mat2& value)
+template<> void set_uniform<glm::mat2>(UniformLocation location, const glm::mat2& value)
 {
-    glUniformMatrix2fv(location, 1, 0, &(value[0][0]));
+    glUniformMatrix2fv(static_cast<int32_t>(location), 1, 0, &(value[0][0]));
 }
 
-template<> void set_uniform<glm::mat3>(int32_t location, const glm::mat3& value)
+template<> void set_uniform<glm::mat3>(UniformLocation location, const glm::mat3& value)
 {
-    glUniformMatrix3fv(location, 1, 0, &(value[0][0]));
+    glUniformMatrix3fv(static_cast<int32_t>(location), 1, 0, &(value[0][0]));
 }
 
-template<> void set_uniform<glm::mat4>(int32_t location, const glm::mat4& value)
+template<> void set_uniform<glm::mat4>(UniformLocation location, const glm::mat4& value)
 {
-    glUniformMatrix4fv(location, 1, 0, &(value[0][0]));
+    glUniformMatrix4fv(static_cast<int32_t>(location), 1, 0, &(value[0][0]));
 }
 
-template<> void set_uniform<glm::mat2x3>(int32_t location, const glm::mat2x3& value)
+template<> void set_uniform<glm::mat2x3>(UniformLocation location, const glm::mat2x3& value)
 {
-    glUniformMatrix2x3fv(location, 1, 0, &(value[0][0]));
+    glUniformMatrix2x3fv(static_cast<int32_t>(location), 1, 0, &(value[0][0]));
 }
 
-template<> void set_uniform<glm::mat3x2>(int32_t location, const glm::mat3x2& value)
+template<> void set_uniform<glm::mat3x2>(UniformLocation location, const glm::mat3x2& value)
 {
-    glUniformMatrix3x2fv(location, 1, 0, &(value[0][0]));
+    glUniformMatrix3x2fv(static_cast<int32_t>(location), 1, 0, &(value[0][0]));
 }
 
-template<> void set_uniform<glm::mat2x4>(int32_t location, const glm::mat2x4& value)
+template<> void set_uniform<glm::mat2x4>(UniformLocation location, const glm::mat2x4& value)
 {
-    glUniformMatrix2x4fv(location, 1, 0, &(value[0][0]));
+    glUniformMatrix2x4fv(static_cast<int32_t>(location), 1, 0, &(value[0][0]));
 }
 
-template<> void set_uniform<glm::mat4x2>(int32_t location, const glm::mat4x2& value)
+template<> void set_uniform<glm::mat4x2>(UniformLocation location, const glm::mat4x2& value)
 {
-    glUniformMatrix4x2fv(location, 1, 0, &(value[0][0]));
+    glUniformMatrix4x2fv(static_cast<int32_t>(location), 1, 0, &(value[0][0]));
 }
 
-template<> void set_uniform<glm::mat3x4>(int32_t location, const glm::mat3x4& value)
+template<> void set_uniform<glm::mat3x4>(UniformLocation location, const glm::mat3x4& value)
 {
-    glUniformMatrix3x4fv(location, 1, 0, &(value[0][0]));
+    glUniformMatrix3x4fv(static_cast<int32_t>(location), 1, 0, &(value[0][0]));
 }
 
-template<> void set_uniform<glm::mat4x3>(int32_t location, const glm::mat4x3& value)
+template<> void set_uniform<glm::mat4x3>(UniformLocation location, const glm::mat4x3& value)
 {
-    glUniformMatrix4x3fv(location, 1, 0, &(value[0][0]));
+    glUniformMatrix4x3fv(static_cast<int32_t>(location), 1, 0, &(value[0][0]));
 }
 
-void set_sampler_binding(int32_t location, TextureUnit unit)
+void set_sampler_binding(UniformLocation location, TextureUnit unit)
 {
     set_uniform(location, static_cast<int32_t>(unit.get()));
 }

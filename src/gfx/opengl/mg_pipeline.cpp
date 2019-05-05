@@ -23,17 +23,17 @@
 
 #include "mg/gfx/mg_pipeline.h"
 
+#include "../mg_texture_node.h"
+#include "mg_gl_debug.h"
+#include "mg_opengl_shader.h"
+#include "mg_glad.h"
+
+#include "mg/core/mg_log.h"
 #include "mg/gfx/mg_buffer_texture.h"
 #include "mg/gfx/mg_texture2d.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 
-#include "mg_opengl_shader.h"
-
-#include "../mg_texture_node.h"
-
-#include "mg_glad.h"
-
-#include "mg_gl_debug.h"
+#include "fmt/core.h"
 
 namespace Mg::gfx {
 
@@ -121,17 +121,32 @@ Pipeline::Pipeline(OpaqueHandle               internal_handle,
         auto&& [input_name, type, location] = input_location;
         auto name                           = input_name.str_view();
 
+        auto log_error = [&] {
+            g_log.write_message(fmt::format(
+                "Mg::Pipeline::Pipeline: no such active uniform '{}' (shader-program id {}).",
+                name,
+                static_cast<uint32_t>(shader_handle)));
+        };
+
+        bool success = false;
+
         switch (type) {
         case PipelineInputType::BufferTexture:
-            set_sampler_binding(uniform_location(shader_handle, name), TextureUnit{ location });
-            break;
-        case PipelineInputType::Sampler2D:
-            set_sampler_binding(uniform_location(shader_handle, name), TextureUnit{ location });
-            break;
-        case PipelineInputType::UniformBuffer:
-            set_uniform_block_binding(shader_handle, name, UniformBufferSlot{ location });
+            [[fallthrough]];
+
+        case PipelineInputType::Sampler2D: {
+            auto uniform_index = uniform_location(shader_handle, name);
+            if (uniform_index) { set_sampler_binding(*uniform_index, TextureUnit{ location }); }
+            success = uniform_index.has_value();
             break;
         }
+
+        case PipelineInputType::UniformBuffer:
+            success = set_uniform_block_binding(shader_handle, name, UniformBufferSlot{ location });
+            break;
+        }
+
+        if (!success) { log_error(); }
     };
 
     for (auto&& location : prototype.common_input_layout) { set_input_location(location); }

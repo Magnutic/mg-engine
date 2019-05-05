@@ -30,6 +30,7 @@
 #include "mg/gfx/mg_shader.h"
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/gfx/mg_uniform_buffer.h"
+#include "mg/utils/mg_optional.h"
 
 #include <cstdint>
 #include <string_view>
@@ -39,16 +40,18 @@ namespace Mg::gfx::opengl {
 
 void use_program(ShaderHandle program);
 
+enum class UniformLocation : int32_t;
+
 /** Get the location for the given uniform.
- * @return Index number if uniform_name corresponds to an active uniform, -1 otherwise.
+ * @return Index number if uniform_name corresponds to an active uniform, nullopt otherwise.
  */
-int32_t uniform_location(ShaderHandle program, std::string_view uniform_name);
+Opt<UniformLocation> uniform_location(ShaderHandle program, std::string_view uniform_name);
 
 /** Type-safe wrapper for glUniform*.
  * Supports GLM vectors and matrices, int32_t, uint32_t, and float.
  * Defined in mg_opengl_shader.cpp
  */
-template<typename T> void set_uniform(int32_t location, const T& value);
+template<typename T> void set_uniform(UniformLocation location, const T& value);
 
 /** Set texture unit to use for the given sampler uniform.
  *
@@ -57,13 +60,13 @@ template<typename T> void set_uniform(int32_t location, const T& value);
  * be a signed integer. Hence, this function will automatically ensure the correct type, making it
  * preferable to use.
  */
-void set_sampler_binding(int32_t location, TextureUnit unit);
+void set_sampler_binding(UniformLocation location, TextureUnit unit);
 
 /** Bind Shader's block with name block_name to the given uniform buffer slot.
  * @return Whether successful (i.e. block_name corresponds to an active uniform block).
  */
-bool set_uniform_block_binding(ShaderHandle      program,
-                               std::string_view  block_name,
-                               UniformBufferSlot slot);
+[[nodiscard]] bool set_uniform_block_binding(ShaderHandle      program,
+                                             std::string_view  block_name,
+                                             UniformBufferSlot slot);
 
 } // namespace Mg::gfx::opengl

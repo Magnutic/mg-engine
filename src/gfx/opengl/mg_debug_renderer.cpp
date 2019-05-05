@@ -268,8 +268,9 @@ static void draw_primitive(ShaderHandle                        program,
                   params.orientation.to_matrix() * glm::scale(params.dimensions);
 
     opengl::use_program(program);
-    opengl::set_uniform(opengl::uniform_location(program, "colour"), params.colour);
-    opengl::set_uniform(opengl::uniform_location(program, "MVP"), camera.view_proj_matrix() * M);
+    opengl::set_uniform(opengl::uniform_location(program, "colour").value(), params.colour);
+    opengl::set_uniform(opengl::uniform_location(program, "MVP").value(),
+                        camera.view_proj_matrix() * M);
 
     glBindVertexArray(mesh.vao_id);
 
