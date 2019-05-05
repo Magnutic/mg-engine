@@ -56,10 +56,10 @@ public:
     // Destruction of MeshNode should destroy assocated VAO.
     ~MeshNode()
     {
-        const auto* meshname = mesh_info.mesh_id.c_str();
-        const auto  vao_id   = static_cast<uint32_t>(mesh_info.gfx_api_mesh_object_id);
+        const auto* meshname[[maybe_unused]] = mesh_info.mesh_id.c_str();
+        const auto  vao_id = static_cast<uint32_t>(mesh_info.gfx_api_mesh_object_id);
 
-        g_log.write_verbose(fmt::format("Deleting VAO {} (Mesh '{}')", vao_id, meshname));
+        MG_LOG_DEBUG(fmt::format("Deleting VAO {} (Mesh '{}')", vao_id, meshname));
         glDeleteVertexArrays(1, &vao_id);
     }
 };
@@ -85,7 +85,7 @@ struct BufferObject {
     BufferObject() = default;
     ~BufferObject()
     {
-        g_log.write_verbose(fmt::format("Deleting buffer object {}", gfx_api_id));
+        MG_LOG_DEBUG(fmt::format("Deleting buffer object {}", gfx_api_id));
         glDeleteBuffers(1, &gfx_api_id);
     }
 
