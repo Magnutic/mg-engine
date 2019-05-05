@@ -5,8 +5,10 @@ cmake_minimum_required(VERSION 3.8.2)
 set(CATCH_HEADER "${CMAKE_CURRENT_LIST_DIR}/catch.hpp")
 
 if (NOT EXISTS ${CATCH_HEADER})
-    message("-- Catch not found, downloading...")
-    FILE(DOWNLOAD "https://github.com/catchorg/Catch2/releases/download/v2.1.0/catch.hpp" ${CATCH_HEADER})
+    message("-- Catch2 header (${CATCH_HEADER}) not found, downloading...")
+    file(
+        DOWNLOAD "https://github.com/catchorg/Catch2/releases/download/v2.7.2/catch.hpp" ${CATCH_HEADER}
+        EXPECTED_HASH SHA256=725a002a3837e343056ead2c2ffad6c1d9680b675635e81d53e7fd765be27909)
 endif()
 
 # Catch main
