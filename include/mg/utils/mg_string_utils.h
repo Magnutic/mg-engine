@@ -43,7 +43,7 @@ namespace Mg {
 
 static constexpr std::string_view k_white_space = " \t\f\v\n\r";
 
-bool is_white_space(char c);
+bool is_whitespace(char c);
 bool is_not_whitespace(char c);
 
 /** Tokenise string by delimiter, returns tokens in vector. Works on UTF-8

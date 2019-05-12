@@ -30,7 +30,7 @@
 
 namespace Mg {
 
-bool is_white_space(char c)
+bool is_whitespace(char c)
 {
     return std::find(k_white_space.begin(), k_white_space.end(), c) != k_white_space.end();
 }
