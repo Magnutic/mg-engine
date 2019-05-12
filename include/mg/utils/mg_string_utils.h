@@ -161,10 +161,10 @@ public:
         return data[pos];
     }
 
-    constexpr char peek_next() const noexcept
+    constexpr char peek_next(size_t n = 1) const noexcept
     {
-        if (pos + 1 >= data.size()) return '\0';
-        return data[pos + 1];
+        if (pos + n >= data.size()) { return '\0'; }
+        return data[pos + n];
     }
 
     constexpr bool match(char c) noexcept
@@ -175,6 +175,16 @@ public:
         }
 
         return false;
+    }
+
+    constexpr bool match(std::string_view str) noexcept
+    {
+        for (size_t i = 0; i < str.size(); ++i) {
+            if (peek_next(i) != str[i]) { return false; }
+        }
+
+        for (size_t i = 0; i < str.size(); ++i) { advance(); }
+        return true;
     }
 
     constexpr bool is_at_end() const noexcept { return pos >= data.size(); }
