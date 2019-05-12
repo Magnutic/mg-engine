@@ -138,17 +138,26 @@ public:
     constexpr explicit SimpleInputStream(std::string_view str) noexcept : data(str) {}
 
     std::string_view data{};
-    size_t           pos = 0;
+    size_t           pos         = 0;
+    size_t           line        = 1;
+    size_t           pos_in_line = 1;
 
     constexpr char advance() noexcept
     {
-        if (is_at_end()) return '\0';
+        if (is_at_end()) { return '\0'; }
+
+        if (data[pos] == '\n') {
+            ++line;
+            pos_in_line = 0;
+        }
+
+        ++pos_in_line;
         return data[pos++];
     }
 
     constexpr char peek() const noexcept
     {
-        if (is_at_end()) return '\0';
+        if (is_at_end()) { return '\0'; }
         return data[pos];
     }
 
@@ -161,7 +170,7 @@ public:
     constexpr bool match(char c) noexcept
     {
         if (peek() == c) {
-            ++pos;
+            advance();
             return true;
         }
 
