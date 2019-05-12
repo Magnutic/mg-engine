@@ -63,7 +63,6 @@ public:
         return handle;
     }
 
-
 private:
     Array<std::byte>   m_data;
     ResourceCache*     m_owning_cache;

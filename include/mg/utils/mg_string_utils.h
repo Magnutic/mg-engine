@@ -46,6 +46,16 @@ static constexpr std::string_view k_white_space = " \t\f\v\n\r";
 bool is_whitespace(char c);
 bool is_not_whitespace(char c);
 
+inline bool is_ascii_digit(char c)
+{
+    return (c >= '0' && c <= '9');
+}
+
+inline bool is_ascii_alphanumeric(char c)
+{
+    return ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_' || is_ascii_digit(c));
+}
+
 /** Tokenise string by delimiter, returns tokens in vector. Works on UTF-8
  * strings, but delimiter has to be ASCII.
  * @param s String to tokenise

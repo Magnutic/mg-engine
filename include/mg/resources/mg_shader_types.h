@@ -1,7 +1,7 @@
 //**************************************************************************************************
 // Mg Engine
 //--------------------------------------------------------------------------------------------------
-// Copyright (c) 2018 Magnus Bergsten
+// Copyright (c) 2019 Magnus Bergsten
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -21,12 +21,13 @@
 //
 //**************************************************************************************************
 
-/** @file mg_shader_enums.h
- * Enumeration types relating to shaders and associated functions.
+/** @file mg_shader_types.h
+ * Types relating to shaders and associated functions.
  */
 
 #pragma once
 
+#include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_optional.h"
 
@@ -34,53 +35,56 @@
 
 namespace Mg {
 
-enum class ShaderSamplerType { Sampler2D, SamplerCube };
+/** Types and utilities related to shaders. */
+namespace shader {
 
-inline std::string_view shader_sampler_type_to_string(ShaderSamplerType type)
+enum class SamplerType { Sampler2D, SamplerCube };
+
+inline std::string_view sampler_type_to_string(SamplerType type)
 {
     switch (type) {
-    case ShaderSamplerType::Sampler2D:
+    case SamplerType::Sampler2D:
         return "sampler2D";
-    case ShaderSamplerType::SamplerCube:
+    case SamplerType::SamplerCube:
         return "samplerCube";
     }
     MG_ASSERT(false && "unreachable");
 }
 
-inline Opt<ShaderSamplerType> string_to_shader_sampler_type(std::string_view str)
+inline Opt<SamplerType> string_to_sampler_type(std::string_view str)
 {
-    if (str == "sampler2D") return ShaderSamplerType::Sampler2D;
-    if (str == "samplerCube") return ShaderSamplerType::SamplerCube;
+    if (str == "sampler2D") { return SamplerType::Sampler2D; }
+    if (str == "samplerCube") { return SamplerType::SamplerCube; }
     return nullopt;
 }
 
-enum class ShaderParameterType { Int, Float, Vec2, Vec4 }; // Order matters, used for sorting
+enum class ParameterType { Int, Float, Vec2, Vec4 }; // Order matters, used for sorting
 
-inline std::string_view shader_parameter_type_to_string(ShaderParameterType type)
+inline std::string_view parameter_type_to_string(ParameterType type)
 {
     switch (type) {
-    case ShaderParameterType::Int:
+    case ParameterType::Int:
         return "int";
-    case ShaderParameterType::Float:
+    case ParameterType::Float:
         return "float";
-    case ShaderParameterType::Vec2:
+    case ParameterType::Vec2:
         return "vec2";
-    case ShaderParameterType::Vec4:
+    case ParameterType::Vec4:
         return "vec4";
     }
     MG_ASSERT(false && "unreachable");
 }
 
-inline Opt<ShaderParameterType> string_to_shader_parameter_type(std::string_view str)
+inline Opt<ParameterType> string_to_parameter_type(std::string_view str)
 {
-    if (str == "int") return ShaderParameterType::Int;
-    if (str == "float") return ShaderParameterType::Float;
-    if (str == "vec2") return ShaderParameterType::Vec2;
-    if (str == "vec4") return ShaderParameterType::Vec4;
+    if (str == "int") { return ParameterType::Int; }
+    if (str == "float") { return ParameterType::Float; }
+    if (str == "vec2") { return ParameterType::Vec2; }
+    if (str == "vec4") { return ParameterType::Vec4; }
     return nullopt;
 }
 
-namespace ShaderTag {
+namespace Tag {
 using Value = uint32_t;
 enum Flags : Value {
     OPAQUE                    = 1 << 0,
@@ -88,7 +92,26 @@ enum Flags : Value {
     DEFINES_VERTEX_PREPROCESS = 1 << 2,
     DEFINES_LIGHT_MODEL       = 1 << 3,
 };
-} // namespace ShaderTag
+} // namespace Tag
 
+struct Sampler {
+    Identifier  name{ "" };
+    SamplerType type{};
+};
+
+struct Parameter {
+    static constexpr size_t k_max_size = 4 * sizeof(float);
+
+    Identifier                        name{ "" };
+    ParameterType                     type{};
+    std::array<std::byte, k_max_size> value{};
+};
+
+struct Option {
+    Identifier name{ "" };
+    bool       default_value = false;
+};
+
+} // namespace shader
 
 } // namespace Mg

@@ -1,7 +1,7 @@
 //**************************************************************************************************
 // Mg Engine
 //--------------------------------------------------------------------------------------------------
-// Copyright (c) 2018 Magnus Bergsten
+// Copyright (c) 2019 Magnus Bergsten
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -21,55 +21,32 @@
 //
 //**************************************************************************************************
 
-/** @file mg_shader_resource.h
- *
+/** @file mg_shader_parser.h
+ * Parser for shader resource files.
  */
 
 #pragma once
 
-#include "mg/containers/mg_array.h"
-#include "mg/resource_cache/mg_base_resource.h"
 #include "mg/resources/mg_shader_types.h"
 #include "mg/utils/mg_gsl.h"
 
-#include <cstddef>
 #include <string>
 #include <string_view>
 #include <vector>
 
-namespace Mg {
+namespace Mg::shader {
 
-class ShaderResource : public BaseResource {
-public:
-    using BaseResource::BaseResource;
+struct ParseResult {
+    std::string vertex_code;
+    std::string fragment_code;
 
-    span<const shader::Sampler>   samplers() const { return m_samplers; }
-    span<const shader::Parameter> parameters() const { return m_parameters; }
-    span<const shader::Option>    options() const { return m_options; }
+    std::vector<shader::Sampler>   samplers;
+    std::vector<shader::Parameter> parameters;
+    std::vector<shader::Option>    options;
 
-    std::string_view vertex_code() const { return m_vertex_code; }
-    std::string_view fragment_code() const { return m_fragment_code; }
-
-    shader::Tag::Value tags() const { return m_tags; }
-
-    bool should_reload_on_file_change() const override { return true; }
-
-    std::string debug_print() const;
-
-    Identifier type_id() const override { return "ShaderResource"; }
-
-protected:
-    LoadResourceResult load_resource_impl(const ResourceLoadingInput& input) override;
-
-private:
-    std::vector<shader::Parameter> m_parameters;
-    std::vector<shader::Sampler>   m_samplers;
-    std::vector<shader::Option>    m_options;
-
-    std::string m_vertex_code;
-    std::string m_fragment_code;
-
-    shader::Tag::Value m_tags = 0;
+    shader::Tag::Value tags = {};
 };
 
-} // namespace Mg
+ParseResult parse_shader(std::string_view shader_resource_definition);
+
+} // namespace Mg::shader

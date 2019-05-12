@@ -100,7 +100,7 @@ std::string shader_input_layout_code(const Material& material)
 
         for (const Material::Parameter& p : material.parameters()) {
             snippet += '\t';
-            snippet += shader_parameter_type_to_string(p.type);
+            snippet += shader::parameter_type_to_string(p.type);
             snippet += " ";
             snippet += p.name.str_view();
             snippet += ";\n";
@@ -112,7 +112,7 @@ std::string shader_input_layout_code(const Material& material)
     // Include definition of each sampler
     for (const Material::Sampler& s : material.samplers()) {
         snippet += "uniform ";
-        snippet += shader_sampler_type_to_string(s.type);
+        snippet += shader::sampler_type_to_string(s.type);
         snippet += " ";
         snippet += s.name.str_view();
         snippet += ";\n";
@@ -272,7 +272,7 @@ ShaderCode PipelineRepository::assemble_shader_code(const Material& material)
         ResourceAccessGuard shader_resource_access(material.shader());
 
         // If there is a vertex-preprocess function, then include the corresponding #define
-        if ((shader_resource_access->tags() & ShaderTag::DEFINES_VERTEX_PREPROCESS) != 0) {
+        if ((shader_resource_access->tags() & shader::Tag::DEFINES_VERTEX_PREPROCESS) != 0) {
             code.vertex.code += "#define VERTEX_PREPROCESS_ENABLED 1";
         }
 

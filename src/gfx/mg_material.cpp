@@ -36,6 +36,26 @@
 
 namespace Mg::gfx {
 
+namespace {
+
+size_t num_elems_for_param_type(shader::ParameterType type)
+{
+    switch (type) {
+    case shader::ParameterType::Vec4:
+        return 4;
+    case shader::ParameterType::Vec2:
+        return 2;
+    case shader::ParameterType::Float:
+        return 1;
+    case shader::ParameterType::Int:
+        return 1;
+    }
+
+    MG_ASSERT(false && "unreachable");
+}
+
+} // namespace
+
 Material::Material(Identifier material_id, ResourceHandle<ShaderResource> shader)
     : m_id(material_id), m_shader(shader)
 {
@@ -44,35 +64,20 @@ Material::Material(Identifier material_id, ResourceHandle<ShaderResource> shader
     MG_ASSERT(shader_resource_access->samplers().size() <= defs::k_max_samplers_per_material);
 
     uint32_t opt_index = 0;
-    for (const ShaderResource::Option& o : shader_resource_access->options()) {
+    for (const shader::Option& o : shader_resource_access->options()) {
         m_options.push_back(o.name);
         m_option_flags |= (static_cast<uint32_t>(o.default_value) << opt_index);
         ++opt_index;
     }
 
-    for (const ShaderResource::Parameter& p : shader_resource_access->parameters()) {
+    for (const shader::Parameter& p : shader_resource_access->parameters()) {
         m_params.push_back({ p.name, p.type });
         _set_parameter_impl(p.name, p.value, p.type);
     };
 
-    for (const ShaderResource::Sampler& s : shader_resource_access->samplers()) {
+    for (const shader::Sampler& s : shader_resource_access->samplers()) {
         m_samplers.push_back({ s.name, s.type, {} });
     }
-}
-
-size_t num_elems_for_param_type(ShaderParameterType type)
-{
-    switch (type) {
-    case ShaderParameterType::Vec4:
-        return 4;
-    case ShaderParameterType::Vec2:
-        return 2;
-    case ShaderParameterType::Float:
-        return 1;
-    case ShaderParameterType::Int:
-        return 1;
-    }
-    MG_ASSERT(false && "unreachable");
 }
 
 void Material::set_sampler(Identifier name, TextureHandle texture)
@@ -132,51 +137,51 @@ Opt<size_t> Material::sampler_index(Identifier name)
 
 void Material::set_parameter(Identifier name, int param)
 {
-    _set_parameter_impl(name, byte_representation(param), ShaderParameterType::Int);
+    _set_parameter_impl(name, byte_representation(param), shader::ParameterType::Int);
 }
 void Material::set_parameter(Identifier name, float param)
 {
-    _set_parameter_impl(name, byte_representation(param), ShaderParameterType::Float);
+    _set_parameter_impl(name, byte_representation(param), shader::ParameterType::Float);
 }
 void Material::set_parameter(Identifier name, glm::vec2 param)
 {
-    _set_parameter_impl(name, byte_representation(param), ShaderParameterType::Vec2);
+    _set_parameter_impl(name, byte_representation(param), shader::ParameterType::Vec2);
 }
 void Material::set_parameter(Identifier name, glm::vec4 param)
 {
-    _set_parameter_impl(name, byte_representation(param), ShaderParameterType::Vec4);
+    _set_parameter_impl(name, byte_representation(param), shader::ParameterType::Vec4);
 }
 
 namespace {
 
 // How far to advance in to parameters buffer for each type.
-size_t offset_for_param_type(ShaderParameterType type)
+size_t offset_for_param_type(shader::ParameterType type)
 {
     switch (type) {
-    case ShaderParameterType::Vec4:
+    case shader::ParameterType::Vec4:
         return 16;
-    case ShaderParameterType::Vec2:
+    case shader::ParameterType::Vec2:
         return 8;
-    case ShaderParameterType::Float:
+    case shader::ParameterType::Float:
         return 4;
-    case ShaderParameterType::Int:
+    case shader::ParameterType::Int:
         return 4;
     }
     MG_ASSERT(false && "unreachable");
 }
 
 // Print error message when the wrong type is passed into Material::set_parameter
-void wrong_type_error(Identifier          material_id,
-                      Identifier          param_id,
-                      ShaderParameterType expected,
-                      ShaderParameterType actual)
+void wrong_type_error(Identifier            material_id,
+                      Identifier            param_id,
+                      shader::ParameterType expected,
+                      shader::ParameterType actual)
 {
     auto error_msg = fmt::format(
         "Material '{}': set_parameter(\"{}\", ...): wrong type, expected {}, got {}.",
         material_id.c_str(),
         param_id.c_str(),
-        shader_parameter_type_to_string(expected),
-        shader_parameter_type_to_string(actual));
+        shader::parameter_type_to_string(expected),
+        shader::parameter_type_to_string(actual));
 
     g_log.write_error(error_msg);
 }
@@ -185,7 +190,7 @@ void wrong_type_error(Identifier          material_id,
 
 void Material::_set_parameter_impl(Identifier            name,
                                    span<const std::byte> param_value,
-                                   ShaderParameterType   param_type)
+                                   shader::ParameterType param_type)
 {
     Parameter* p_param = nullptr;
 
@@ -243,7 +248,7 @@ std::string Material::debug_print() const
     oss << "\n\tSamplers: {";
 
     for (const Sampler& s : samplers()) {
-        oss << "\n\t\t'" << s.name.c_str() << "' : " << shader_sampler_type_to_string(s.type);
+        oss << "\n\t\t'" << s.name.c_str() << "' : " << shader::sampler_type_to_string(s.type);
     }
 
     oss << (samplers().empty() ? "}" : "\n\t}");
@@ -251,7 +256,7 @@ std::string Material::debug_print() const
     oss << "\n\tParameters: {";
 
     for (const Parameter& p : parameters()) {
-        oss << "\n\t\t'" << p.name.c_str() << "' : " << shader_parameter_type_to_string(p.type)
+        oss << "\n\t\t'" << p.name.c_str() << "' : " << shader::parameter_type_to_string(p.type)
             << " = ";
         // TODO: fix
     }

@@ -32,7 +32,7 @@
 #include "mg/gfx/mg_pipeline_identifier.h"
 #include "mg/gfx/mg_texture_handle.h"
 #include "mg/resource_cache/mg_resource_handle.h"
-#include "mg/resources/mg_shader_enums.h"
+#include "mg/resources/mg_shader_types.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_optional.h"
 
@@ -56,14 +56,14 @@ public:
     explicit Material(Identifier material_id, ResourceHandle<ShaderResource> shader);
 
     struct Sampler {
-        Identifier        name{ "" };
-        ShaderSamplerType type{};
-        TextureHandle     sampler{};
+        Identifier          name{ "" };
+        shader::SamplerType type{};
+        TextureHandle       sampler{};
     };
 
     struct Parameter {
-        Identifier          name{ "" };
-        ShaderParameterType type{};
+        Identifier            name{ "" };
+        shader::ParameterType type{};
     };
 
     using Option = Identifier;
@@ -132,7 +132,7 @@ public:
 private:
     void _set_parameter_impl(Identifier            name,
                              span<const std::byte> param_value,
-                             ShaderParameterType   param_type);
+                             shader::ParameterType param_type);
 
 private:
     Samplers   m_samplers{};

@@ -60,9 +60,10 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_handle.h
     ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_loading_input.h
     ${MG_HEADER_DIR}/mg/resources/mg_mesh_resource.h
-    ${MG_HEADER_DIR}/mg/resources/mg_shader_enums.h
     ${MG_HEADER_DIR}/mg/resources/mg_shader_resource.h
+    ${MG_HEADER_DIR}/mg/resources/mg_shader_types.h
     ${MG_HEADER_DIR}/mg/resources/mg_texture_resource.h
+    ${MG_HEADER_DIR}/mg/resources/shader_parser/mg_shader_parser.h
     ${MG_HEADER_DIR}/mg/utils/mg_assert.h
     ${MG_HEADER_DIR}/mg/utils/mg_binary_io.h
     ${MG_HEADER_DIR}/mg/utils/mg_fopen_utf8.h
@@ -124,6 +125,8 @@ add_library(mg_engine
     resources/mg_raw_resource.cpp
     resources/mg_shader_resource.cpp
     resources/mg_texture_resource.cpp
+    resources/shader_parser/mg_shader_lexer.cpp
+    resources/shader_parser/mg_shader_parser.cpp
     utils/mg_fopen_utf8.cpp
     utils/mg_string_utils.cpp
     utils/mg_text_file_io.cpp
