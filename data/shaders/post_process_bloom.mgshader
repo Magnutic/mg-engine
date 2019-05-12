@@ -1,5 +1,24 @@
 TAGS {}
+
 OPTIONS {}
+
 PARAMETERS { sampler2D sampler_bloom; }
-VERTEX_CODE {}
-FRAGMENT_CODE { #include "bloom.glsl" }
+
+FRAGMENT_CODE {
+    #include "lotte_tonemap.glsl"
+
+    const float bloom_strength = 0.0175;
+
+    const int bloom_mip_start = 0;
+    const int bloom_mip_end   = 4;
+
+    void main() {
+        vec3 colour = texture(sampler_colour, tex_coord).rgb;
+
+        for (int i = bloom_mip_start; i < bloom_mip_end; ++i) {
+            colour += textureLod(sampler_bloom, tex_coord, i).rgb * bloom_strength;
+        }
+
+        frag_out = vec4(lotteTonemap(colour), 1.0);
+    }
+}

@@ -26,15 +26,7 @@ PARAMETERS {
     vec4 ambient_colour = vec4(0.75, 1.07, 1.5, 1.0);
 }
 
-// Vertex code block. Consists of #include-directives and GLSL-code-literals.
-// #include-directives must point to a GLSL source code file.
-// GLSL-code-literals are delimited by BEGIN_GLSL and END_GLSL.
-// Included GLSL-code and GLSL-code-literals are concatenated.
-VERTEX_CODE {
-}
-
-// See comment for VERTEX_CODE above.
 FRAGMENT_CODE {
-#include "default_light_model.glsl"
-#include "default_surface.glsl"
+    #include <default_light_model.glsl>
+    #include <default_surface.glsl>
 }
