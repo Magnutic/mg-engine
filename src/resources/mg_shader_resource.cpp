@@ -64,7 +64,6 @@ enum class TokenType {
     CURLY_LEFT,
     CURLY_RIGHT,
     EQUALS,
-    HASH,
 
     // Values
     TRUE,
@@ -95,7 +94,6 @@ enum class TokenType {
 
     // Misc
     IDENTIFIER,
-    INCLUDE,
     END_OF_FILE,
 };
 
@@ -111,7 +109,6 @@ std::string_view token_type_to_str(TokenType type)
     case TokenType::CURLY_LEFT: return "{";
     case TokenType::CURLY_RIGHT: return "}";
     case TokenType::EQUALS: return "=";
-    case TokenType::HASH: return "#";
 
     // Data types
     case TokenType::SAMPLER2D: return "sampler2D";
@@ -142,7 +139,6 @@ std::string_view token_type_to_str(TokenType type)
 
     // Misc
     case TokenType::IDENTIFIER: return "IDENTIFIER";
-    case TokenType::INCLUDE: return "include";
     case TokenType::END_OF_FILE: return "END_OF_FILE";
     }
     // clang-format on
@@ -159,7 +155,6 @@ constexpr std::array<std::pair<std::string_view, TokenType>, 18> keywords{ {
     { "false", TokenType::FALSE },
     { "sampler2D", TokenType::SAMPLER2D },
     { "samplerCube", TokenType::SAMPLERCUBE },
-    { "include", TokenType::INCLUDE },
     { "PARAMETERS", TokenType::PARAMETERS },
     { "OPTIONS", TokenType::OPTIONS },
     { "VERTEX_CODE", TokenType::VERTEX_CODE },
@@ -202,13 +197,15 @@ struct LexerState {
     SimpleInputStream  stream;
     std::vector<Token> tokens;
 
-    size_t line        = 1;
     size_t token_start = 0;
 };
 
 void lex_error(LexerState& lex, std::string_view reason)
 {
-    g_log.write_error(fmt::format("Error parsing at line {}: {}", lex.line, reason));
+    g_log.write_error(fmt::format("Error parsing at line {} col {}: {}",
+                                  lex.stream.line,
+                                  lex.stream.pos_in_line,
+                                  reason));
     throw RuntimeError();
 }
 
@@ -220,23 +217,7 @@ size_t lexeme_length(LexerState& lex)
 template<typename T = float> void add_token(LexerState& lex, TokenType type, T literal_value = {})
 {
     std::string_view lexeme = lex.stream.data.substr(lex.token_start, lexeme_length(lex));
-    lex.tokens.push_back({ type, lexeme, literal_value, lex.line });
-}
-
-void string_literal(LexerState& lex)
-{
-    while (lex.stream.peek() != '"' && !lex.stream.is_at_end()) {
-        if (lex.stream.peek() == '\n') {
-            lex_error(lex, "Unexpected line break in string-literal.");
-        }
-        lex.stream.advance();
-    }
-
-    lex.stream.advance(); // Skip ending quote
-
-    add_token(lex,
-              TokenType::STRING_LITERAL,
-              lex.stream.data.substr(lex.token_start + 1, lexeme_length(lex) - 2));
+    lex.tokens.push_back({ type, lexeme, literal_value, lex.stream.line });
 }
 
 bool is_digit(char c)
@@ -259,12 +240,54 @@ void numeric_literal(LexerState& lex)
     add_token(lex, TokenType::NUMERIC_LITERAL, value);
 }
 
+void code_block_literal(LexerState& lex, TokenType type)
+{
+    auto skip_whitespace = [&lex] {
+        while (is_whitespace(lex.stream.peek())) { lex.stream.advance(); }
+    };
+
+    skip_whitespace();
+
+    if (!lex.stream.match('{')) {
+        lex_error(lex, fmt::format("Expected {{ after {}", token_type_to_str(type)));
+    }
+
+    const auto code_start_pos = lex.stream.pos;
+
+    for (size_t brace_level = 1; brace_level > 0; lex.stream.advance()) {
+        const char c = lex.stream.peek();
+        if (c == '{') { ++brace_level; }
+        if (c == '}') { --brace_level; }
+        if (c == '\0') { lex_error(lex, fmt::format("Unexpected end-of-file in code block.")); }
+    }
+
+    const auto code_length = lex.stream.pos - code_start_pos - 1;
+
+    std::string_view code_block_content = lex.stream.data.substr(code_start_pos, code_length);
+    add_token(lex, type, code_block_content);
+}
+
 void identifier(LexerState& lex)
 {
     while (is_alphanumeric(lex.stream.peek())) { lex.stream.advance(); }
 
-    auto lexeme         = lex.stream.data.substr(lex.token_start, lexeme_length(lex));
+    auto lexeme = lex.stream.data.substr(lex.token_start, lexeme_length(lex));
+
+    if (lexeme == "vec3") {
+        lex_error(lex,
+                  "vec3 is not supported due to driver inconsistencies. Please use vec4 instead.");
+    }
+
     auto opt_token_type = get_keyword_type(lexeme);
+
+    if (opt_token_type) {
+        TokenType token_type = opt_token_type.value();
+
+        if (token_type == TokenType::VERTEX_CODE || token_type == TokenType::FRAGMENT_CODE) {
+            code_block_literal(lex, token_type);
+            return;
+        }
+    }
 
     opt_token_type.map_or_else([&](TokenType type) { add_token(lex, type); },
                                [&] { add_token(lex, TokenType::IDENTIFIER, lexeme); });
@@ -281,7 +304,6 @@ void next_token(LexerState& lex)
     case '\r':
         break;
     case '\n':
-        ++lex.line;
         break;
     case ',':
         add_token(lex, TokenType::COMMA);
@@ -303,12 +325,6 @@ void next_token(LexerState& lex)
         break;
     case '=':
         add_token(lex, TokenType::EQUALS);
-        break;
-    case '#':
-        add_token(lex, TokenType::HASH);
-        break;
-    case '"':
-        string_literal(lex);
         break;
     case '/':
         if (lex.stream.peek() == '/') {
@@ -366,10 +382,10 @@ public:
             parse_options_block();
             break;
         case TokenType::VERTEX_CODE:
-            parse_code_block(ShaderBlockType::Vertex);
+            vertex_code = string_value(t);
             break;
         case TokenType::FRAGMENT_CODE:
-            parse_code_block(ShaderBlockType::Fragment);
+            fragment_code = string_value(t);
             break;
         case TokenType::END_OF_FILE:
             return;
@@ -573,36 +589,6 @@ public:
         parse_block([this] { parse_option_declaration(); });
     }
 
-    void parse_code_block_statement(ShaderBlockType shader_type)
-    {
-        std::string_view include_filename;
-
-        auto& t = next_token();
-
-        switch (t.type) {
-        case TokenType::HASH:
-            expect_next(TokenType::INCLUDE);
-            include_filename = parse_string_literal();
-            break;
-        default:
-            parse_error("Unexpected token.", t);
-        }
-
-        switch (shader_type) {
-        case ShaderBlockType::Vertex:
-            vertex_includes.emplace_back(include_filename);
-            break;
-        case ShaderBlockType::Fragment:
-            fragment_includes.emplace_back(include_filename);
-            break;
-        }
-    }
-
-    void parse_code_block(ShaderBlockType shader_type)
-    {
-        parse_block([this, shader_type] { parse_code_block_statement(shader_type); });
-    }
-
     const Token& next_token()
     {
         auto& ret_val = peek_token();
@@ -643,8 +629,8 @@ public:
 
     ShaderTag::Value tags = {};
 
-    std::vector<std::string> vertex_includes;
-    std::vector<std::string> fragment_includes;
+    std::string vertex_code;
+    std::string fragment_code;
 
     std::vector<ShaderResource::Sampler>   samplers;
     std::vector<ShaderResource::Parameter> parameters;
@@ -663,29 +649,112 @@ static constexpr auto k_delimiter_comment = R"(
 
 )";
 
-// Helper for ShaderResource::load_resource. Assemble shader code by loading included code files.
-std::string assemble_shader_code(const fs::path&             include_directory,
-                                 span<std::string>           include_files,
+// Helper for ShaderResource::load_resource. Assemble shader code by loading included code
+// files.
+std::string assemble_shader_code(std::vector<fs::path>       include_directories,
+                                 std::string_view            code,
                                  const ResourceLoadingInput& input)
 {
-    std::string code;
-    code.reserve(1024);
+    auto get_code = [&](Identifier resource_path) -> std::pair<bool, std::string> {
+        try {
+            ResourceHandle      file_handle = input.load_dependency<TextResource>(resource_path);
+            ResourceAccessGuard include_access(file_handle);
+            return { true, std::string(include_access->text()) };
+        }
+        catch (...) {
+            return { false, "" };
+        }
+    };
 
-    for (auto&& include_file : include_files) {
-        // Get include file path relative to resource root directory
-        auto include_path = (include_directory / include_file).u8string();
+    // The search directories for a recursive #include statement, i.e. the same as
+    // include_directories but also the included file's directory.
+    auto recursive_include_directories = [&](fs::path included_file) -> std::vector<fs::path> {
+        const auto            file_directory          = included_file.parent_path();
+        std::vector<fs::path> new_include_directories = include_directories;
 
-        // Add origin tracking comment (helps debugging shader)
-        code += fmt::format(k_delimiter_comment, include_path);
+        if (find(new_include_directories, file_directory) == new_include_directories.end()) {
+            new_include_directories.push_back(file_directory);
+        }
 
-        // Load include file as a dependency of this resource.
-        Identifier     path_identifier     = Identifier::from_runtime_string(include_path);
-        ResourceHandle include_file_handle = input.load_dependency<TextResource>(path_identifier);
-        ResourceAccessGuard include_access(include_file_handle);
-        code += include_access->text();
+        return new_include_directories;
+    };
+
+    auto get_include = [&](std::string_view include_file) -> std::pair<bool, std::string> {
+        std::string result;
+
+        for (auto include_directory : include_directories) {
+            auto file_path = (include_directory / include_file);
+
+            // Load include file as a dependency of this resource.
+            auto [is_found,
+                  included_code] = get_code(Identifier::from_runtime_string(file_path.u8string()));
+
+            if (is_found) {
+                // Add origin-tracking comment (helps debugging shader)
+                result += fmt::format(k_delimiter_comment, file_path.u8string());
+                result += assemble_shader_code(recursive_include_directories(file_path),
+                                               included_code,
+                                               input);
+                return { true, result };
+            }
+        }
+
+        return { false, "" };
+    };
+
+    auto try_parse_line_as_include = [](std::string_view line) -> std::pair<bool, std::string> {
+        const std::pair<bool, std::string> fail_value = { false, "" };
+
+        SimpleInputStream stream(line);
+
+        auto skip_whitespace = [&stream] {
+            while (is_whitespace(stream.peek())) { stream.advance(); }
+        };
+
+        skip_whitespace();
+        if (!stream.match('#')) { return fail_value; }
+        skip_whitespace();
+        if (!stream.match("include")) { return fail_value; }
+        skip_whitespace();
+
+        char terminator;
+
+        if (stream.match('\"')) { terminator = '\"'; }
+        else if (stream.match('<')) {
+            terminator = '>';
+        }
+        else {
+            return fail_value;
+        }
+
+        std::string include_path;
+
+        while (stream.peek() != terminator) {
+            if (stream.is_at_end()) { return fail_value; }
+            include_path += stream.advance();
+        }
+
+        return { true, include_path };
+    };
+
+    std::vector<std::string_view> lines = tokenise_string(code, "\n");
+    std::string                   assembled_code;
+
+    for (auto&& line : lines) {
+        auto [line_is_include, include_path] = try_parse_line_as_include(line);
+
+        if (line_is_include) {
+            auto [include_success, included_code] = get_include(include_path);
+            if (!include_success) { throw "TODO BETTER ERROR HANDLING"; }
+            assembled_code += included_code;
+        }
+        else {
+            assembled_code += line;
+            assembled_code += '\n';
+        }
     }
 
-    return code;
+    return assembled_code;
 }
 
 } // namespace
@@ -705,8 +774,8 @@ LoadResourceResult ShaderResource::load_resource_impl(const ResourceLoadingInput
         // Get directory of shader file so that #include directives search relative to that path.
         fs::path include_path = fs::path{ resource_id().str_view() }.parent_path();
 
-        m_vertex_code   = assemble_shader_code(include_path, parser.vertex_includes, input);
-        m_fragment_code = assemble_shader_code(include_path, parser.fragment_includes, input);
+        m_vertex_code   = assemble_shader_code({ include_path }, parser.vertex_code, input);
+        m_fragment_code = assemble_shader_code({ include_path }, parser.fragment_code, input);
 
         // Sort parameters so that larger types come first (for the sake of alignment)
         sort(m_parameters, [](const Parameter& l, const Parameter& r) {
