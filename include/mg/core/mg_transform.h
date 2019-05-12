@@ -22,9 +22,14 @@
 //**************************************************************************************************
 
 /** @file mg_transform.h
- * Transform class: Scale, Rotation and Position. */
+ * Transform class: Scale, Rotation and Position.
+ */
 
 #pragma once
+
+#ifndef GLM_ENABLE_EXPERIMENTAL
+#define GLM_ENABLE_EXPERIMENTAL
+#endif
 
 #include <glm/gtx/transform.hpp>
 #include <glm/mat4x4.hpp>

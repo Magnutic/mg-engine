@@ -27,6 +27,10 @@
 #include "mg/gfx/mg_camera.h"
 #include "mg/gfx/mg_light_grid.h"
 
+#ifndef GLM_ENABLE_EXPERIMENTAL
+#define GLM_ENABLE_EXPERIMENTAL
+#endif
+
 #include <glm/gtx/fast_square_root.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>

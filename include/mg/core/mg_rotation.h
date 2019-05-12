@@ -22,9 +22,14 @@
 //**************************************************************************************************
 
 /** @file mg_rotation.h
- * Quaternion-based rotation class. All angles are given in radians */
+ * Quaternion-based rotation class. All angles are given in radians.
+ */
 
 #pragma once
+
+#ifndef GLM_ENABLE_EXPERIMENTAL
+#define GLM_ENABLE_EXPERIMENTAL
+#endif
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>

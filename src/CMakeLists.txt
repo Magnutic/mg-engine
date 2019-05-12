@@ -136,11 +136,6 @@ add_library(mg_engine
 target_compile_features(mg_engine PUBLIC cxx_std_17)
 set_target_properties(mg_engine PROPERTIES CXX_EXTENSIONS OFF)
 
-# Configuration defines for dependencies
-target_compile_definitions(mg_engine PUBLIC
-    GLM_ENABLE_EXPERIMENTAL # Use experimental (GTX) features in GLM (required for GLM >= v0.9.9.0)
-)
-
 if (MG_ENABLE_DEBUG_LOGGING)
     target_compile_definitions(mg_engine PUBLIC "MG_ENABLE_DEBUG_LOGGING=1")
 endif()
