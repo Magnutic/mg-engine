@@ -427,7 +427,7 @@ public:
             // elements. This prevents dangling reference errors when args depend on an element in
             // this vector (e.g. v.emplace_back(v[0]); )
 
-            size_type new_capacity = capacity() * k_growth_factor;
+            size_type new_capacity = static_cast<size_type>(capacity() * k_growth_factor);
 
             // If k_growth_factor is not large enough, new_capacity might not be any larger.
             // This is especially likely to happen if initial capacity was very small.
