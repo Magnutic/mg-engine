@@ -50,6 +50,7 @@
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/utils/mg_binary_io.h"
+#include "mg/utils/mg_file_time_helper.h"
 
 #include <zip.h>
 
@@ -75,7 +76,7 @@ Array<FileRecord> BasicFileLoader::available_files()
     for (auto& file : fs::recursive_directory_iterator{ root_dir, search_options }) {
         if (fs::is_directory(file)) { continue; }
 
-        time_point last_write_time = fs::last_write_time(file.path());
+        auto last_write_time = last_write_time_t(file.path());
 
         // Get path relative to this loader's root directory.
         // Using generic path format: this is to ensure that files are given string-identical
@@ -108,13 +109,13 @@ uintmax_t BasicFileLoader::file_size(Identifier file)
     return fs::file_size(file_path);
 }
 
-time_point BasicFileLoader::file_time_stamp(Identifier file)
+std::time_t BasicFileLoader::file_time_stamp(Identifier file)
 {
     MG_ASSERT(file_exists(file));
 
     auto     fname     = file.str_view();
     fs::path file_path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
-    return fs::last_write_time(file_path);
+    return last_write_time_t(file_path);
 }
 
 void BasicFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
@@ -190,14 +191,18 @@ Array<FileRecord> ZipFileLoader::available_files()
     for (uint32_t i = 0; i < num_files; ++i) {
         const char* filename = zip_get_name(m_archive_file, i, 0);
 
-        time_point last_write_time;
+        std::time_t last_write_time = -1;
 
         struct zip_stat stat = {};
         zip_stat(m_archive_file, filename, 0, &stat);
 
         if ((stat.valid & ZIP_STAT_MTIME) != 0) {
-            last_write_time = std::chrono::system_clock::from_time_t(stat.mtime);
-        }
+            last_write_time = stat.mtime;
+		}
+		else {
+			constexpr auto msg = "Failed to get time stamp of file '{}' in archive '{}'.";
+			g_log.write_warning(fmt::format(msg, filename, m_archive_name));
+		}
 
         index[i] = FileRecord{ Identifier::from_runtime_string(filename), last_write_time };
     }
@@ -244,23 +249,23 @@ uintmax_t ZipFileLoader::file_size(Identifier file)
     return sb.size;
 }
 
-time_point ZipFileLoader::file_time_stamp(Identifier file)
+std::time_t ZipFileLoader::file_time_stamp(Identifier file)
 {
     MG_ASSERT(file_exists(file));
     open_zip_archive();
 
     auto sb = zip_stat_helper(m_archive_file, file);
-    if ((sb.valid & ZIP_STAT_MTIME) == 0) {
-        g_log.write_error(
-            fmt::format("ZipFileLoader::file_time_stamp(): "
-                        "Could not read time stamp of file '{}' in zip archive '{}'",
-                        file.c_str(),
-                        m_archive_name));
+	if ((sb.valid & ZIP_STAT_MTIME) == 0) {
+		g_log.write_error(
+			fmt::format("ZipFileLoader::file_time_stamp(): "
+				"Could not read time stamp of file '{}' in zip archive '{}'",
+				file.c_str(),
+				m_archive_name));
 
-        throw RuntimeError();
-    }
+		throw RuntimeError();
+	}
 
-    return std::chrono::system_clock::from_time_t(sb.mtime);
+    return sb.mtime;
 }
 
 // RAII wrapper, automatically closes zipfile on scope exit

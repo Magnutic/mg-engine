@@ -75,7 +75,7 @@ void ResourceCache::refresh()
     struct ReloadInfo {
         ResourceEntryBase& entry;
         Identifier         resource_type_id;
-        time_point         new_time_stamp;
+        std::time_t        new_time_stamp;
         IFileLoader&       new_loader;
     };
     std::vector<ReloadInfo> entries_to_reload;

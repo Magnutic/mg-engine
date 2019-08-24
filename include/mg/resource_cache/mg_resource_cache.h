@@ -141,7 +141,7 @@ public:
     }
 
     /** Returns the time stamp of the given file. Throws if file does not exist in file list. */
-    time_point file_time_stamp(Identifier file) const
+	std::time_t file_time_stamp(Identifier file) const
     {
         std::shared_lock lock{ m_file_list_mutex };
         auto             p_file_info = file_info(file);
@@ -184,7 +184,7 @@ private:
 
     struct FileInfo {
         Identifier   filename;
-        time_point   time_stamp;
+        std::time_t  time_stamp;
         IFileLoader* loader;
 
         // ResourceEntry associated with this file. Nullptr if not loaded.

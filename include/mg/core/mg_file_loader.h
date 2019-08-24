@@ -32,6 +32,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <filesystem>
 
 #include "mg/containers/mg_array.h"
 #include "mg/core/mg_identifier.h"
@@ -44,16 +45,11 @@ using zip_t = struct zip;
 
 namespace Mg {
 
-// N.B. this assumes that std::filesystem::file_time_type is a typedef of
-// std::chrono::system_clock::time_point. I believe this is the case on most platforms -
-// probably on all desktop OS platforms, I am guessing that the under-specification is to
-// support arbitrary file systems on e.g. embedded systems.
-using time_point = std::chrono::system_clock::time_point;
 
 /** Record representing a single file available in a IFileLoader. */
 struct FileRecord {
-    Identifier name{ "" };
-    time_point time_stamp;
+    Identifier  name{ "" };
+    std::time_t time_stamp;
 };
 
 /** Interface for loading files from some source (e.g. directory, zip-archive, ...). */
@@ -70,7 +66,7 @@ public:
     virtual uintmax_t file_size(Identifier file) = 0;
 
     /** Get the last-modified time stamp of the file. */
-    virtual time_point file_time_stamp(Identifier file) = 0;
+    virtual std::time_t file_time_stamp(Identifier file) = 0;
 
     /** Load file. Throws if file is not available. */
     virtual void load_file(Identifier file, span<std::byte> target_buffer) = 0;
@@ -92,7 +88,7 @@ public:
 
     uintmax_t file_size(Identifier file) override;
 
-    time_point file_time_stamp(Identifier file) override;
+    std::time_t file_time_stamp(Identifier file) override;
 
     void load_file(Identifier file, span<std::byte> target_buffer) override;
 
@@ -115,7 +111,7 @@ public:
 
     uintmax_t file_size(Identifier file) override;
 
-    time_point file_time_stamp(Identifier file) override;
+    std::time_t file_time_stamp(Identifier file) override;
 
     void load_file(Identifier file, span<std::byte> target_buffer) override;
 

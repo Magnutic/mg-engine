@@ -36,6 +36,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <ctime>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
@@ -47,8 +48,6 @@ class IFileLoader;
 class BaseResource;
 class ResourceCache;
 
-using time_point = std::chrono::system_clock::time_point;
-
 /** ResourceEntry is the internal storage-node type for resources in a ResourceCache.
  * ResourceEntryBase implements the resource-type-independent functionality as an abstract base
  * class, allowing the stored resource to be accessed as BaseResource via get_resource.
@@ -57,7 +56,7 @@ class ResourceEntryBase {
 public:
     ResourceEntryBase(Identifier     resource_id,
                       IFileLoader&   loader,
-                      time_point     time_stamp,
+                      std::time_t     time_stamp,
                       ResourceCache& owning_cache)
         : m_p_loader(&loader)
         , m_p_owning_cache(&owning_cache)
@@ -97,15 +96,15 @@ public:
         return m_resource_type_id;
     }
 
-    time_point time_stamp() const { return m_time_stamp; }
+    std::time_t time_stamp() const { return m_time_stamp; }
 
     ResourceCache& owning_cache() const { return *m_p_owning_cache; }
 
     IFileLoader& loader() const { return *m_p_loader; }
 
     struct Dependency {
-        Identifier dependency_id;
-        time_point time_stamp;
+        Identifier  dependency_id;
+        std::time_t time_stamp;
     };
 
     /** A list of resource files upon which this resource depends. This is used to trigger
@@ -115,7 +114,7 @@ public:
      */
     std::vector<Dependency> dependencies;
 
-    time_point last_access{};
+    std::time_t last_access{};
 
     mutable std::shared_timed_mutex mutex;
     std::atomic_uint32_t            ref_count{};
@@ -125,7 +124,7 @@ protected:
     ResourceCache* m_p_owning_cache = nullptr;
     Identifier     m_resource_id;
     Identifier     m_resource_type_id = "<unset>";
-    time_point     m_time_stamp{};
+    std::time_t    m_time_stamp{};
 
     // Has the resource ever been loaded? (Only required for sanity checking.)
     bool m_has_been_loaded = false;

@@ -59,7 +59,7 @@ public:
         : m_entry(handle.m_p_entry), m_lock(handle.m_p_entry->mutex)
     {
         if (!m_entry->is_loaded()) { m_entry->load_resource(); }
-        m_entry->last_access = std::chrono::system_clock::now();
+        m_entry->last_access = std::time(nullptr);
         ++m_entry->ref_count;
 
         MG_ASSERT(
@@ -79,7 +79,7 @@ public:
     MG_MAKE_NON_COPYABLE(ResourceAccessGuard);
     MG_MAKE_NON_MOVABLE(ResourceAccessGuard);
 
-    time_point file_time_stamp() const noexcept { return m_entry->time_stamp(); }
+    std::time_t file_time_stamp() const noexcept { return m_entry->time_stamp(); }
 
     const ResT& operator*() const& noexcept { return _deref(); }
     const ResT* operator->() const& noexcept { return &_deref(); }
