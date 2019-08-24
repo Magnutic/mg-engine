@@ -38,7 +38,7 @@ std::FILE* fopen_utf8(const char* filepath_utf8, const char* mode);
 
 #ifdef _WIN32
 #ifdef _MSC_VER
-std::wstring widen_if_msvc(std::string_view str)
+std::wstring widen_if_msvc(std::string_view str);
 #else // Windows, non-MSVC compiler
 
 /* Unsolved issue here - how to open files with unicode file paths on Windows? MSVC supports a
