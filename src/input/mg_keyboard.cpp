@@ -31,6 +31,8 @@
 
 #include <fmt/core.h>
 
+#include <array>
+
 namespace Mg::input {
 
 namespace {

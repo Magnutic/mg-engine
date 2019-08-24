@@ -31,6 +31,8 @@
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_optional.h"
 
+#include <array>
+#include <cstddef>
 #include <string_view>
 
 namespace Mg {

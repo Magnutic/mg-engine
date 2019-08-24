@@ -23,6 +23,8 @@
 
 #include "mg/utils/mg_fopen_utf8.h"
 
+#include "mg/utils/mg_gsl.h"
+
 // TODO: investigate replacements for codecvt, which is deprecated in C++17.
 #include <codecvt>
 #include <locale>
