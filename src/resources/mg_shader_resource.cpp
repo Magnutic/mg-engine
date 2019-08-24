@@ -113,7 +113,7 @@ std::string assemble_shader_code(std::vector<fs::path>       include_directories
 {
     auto get_code = [&input](fs::path file_path) -> std::pair<bool, std::string> {
         try {
-            const auto          file_id     = Identifier::from_runtime_string(file_path.u8string());
+            const auto          file_id     = Identifier::from_runtime_string(file_path.generic_u8string());
             ResourceHandle      file_handle = input.load_dependency<TextResource>(file_id);
             ResourceAccessGuard include_access(file_handle);
             return { true, std::string(include_access->text()) };
@@ -135,7 +135,7 @@ std::string assemble_shader_code(std::vector<fs::path>       include_directories
             if (!is_found) { continue; }
 
             // Add origin-tracking comment (helps debugging shader)
-            result += fmt::format(k_delimiter_comment, file_path.u8string());
+            result += fmt::format(k_delimiter_comment, file_path.generic_u8string());
 
             // Recursively assemble loaded code.
             result += assemble_shader_code(include_dirs_for_file(include_directories, file_path),
@@ -167,7 +167,7 @@ std::string assemble_shader_code(std::vector<fs::path>       include_directories
         if (!include_success) {
             g_log.write_error(fmt::format("Could not find '{}' (#include directive in '{}'.)",
                                           include_path,
-                                          source_file.u8string()));
+                                          source_file.generic_u8string()));
             throw RuntimeError{};
         }
         assembled_code += included_code;

@@ -124,10 +124,10 @@ void BasicFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
     auto fname = file.str_view();
     auto path  = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
 
-    BinaryFileReader reader{ path.u8string() };
+    BinaryFileReader reader{ path.generic_u8string() };
 
     if (!reader.good()) {
-        g_log.write_error(fmt::format("Could not read file '{}'", path.c_str()));
+        g_log.write_error(fmt::format("Could not read file '{}'", path.generic_u8string()));
         throw RuntimeError();
     }
 
