@@ -54,6 +54,7 @@ void ResourceEntryBase::load_resource()
     BaseResource& resource    = create_resource();
     m_resource_type_id        = resource.type_id();
     m_has_been_loaded         = true;
+    m_time_stamp              = loader().file_time_stamp(resource_id());
     LoadResourceResult result = resource.load_resource(input);
 
     switch (result.result_code) {
