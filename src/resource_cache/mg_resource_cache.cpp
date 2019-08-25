@@ -32,6 +32,20 @@
 
 namespace Mg {
 
+namespace {
+std::string format_time(std::time_t time)
+{
+    const auto time_gm = std::gmtime(&time);
+    if (!time_gm) { return "<INVALID TIME>"; }
+
+    constexpr size_t maxlen = 100;
+    std::string      time_string(maxlen, ' ');
+    const auto       len = std::strftime(time_string.data(), maxlen, "%c %Z", time_gm);
+    time_string.resize(len);
+    return time_string;
+}
+} // namespace
+
 //--------------------------------------------------------------------------------------------------
 // ResourceCache implementation
 //--------------------------------------------------------------------------------------------------
@@ -45,10 +59,25 @@ void ResourceCache::refresh()
         rebuild_file_list();
     }
 
+    auto has_file_changed = [this](const ResourceCache::FileInfo& file,
+                                   std::time_t                    old_time_stamp) -> bool {
+        bool has_changed = file.time_stamp > old_time_stamp;
+
+        if (has_changed) {
+            g_log.write_message(fmt::format(
+                "Detected that {} has changed (old time-stamp: {}, new time-stamp: {}).",
+                file.filename.str_view(),
+                format_time(old_time_stamp),
+                format_time(file.time_stamp)));
+        }
+
+        return has_changed;
+    };
+
     // Has any of the given ResourceEntry's dependencies' files changed since they were loaded?
-    auto dependencies_were_updated = [this](const ResourceEntryBase& entry) -> bool {
+    auto dependencies_were_updated = [&](const ResourceEntryBase& entry) -> bool {
         auto dependency_was_updated = [&](const ResourceEntryBase::Dependency& dependency) {
-            return file_info(dependency.dependency_id)->time_stamp > dependency.time_stamp;
+            return has_file_changed(*file_info(dependency.dependency_id), dependency.time_stamp);
         };
 
         return find_if(entry.dependencies, dependency_was_updated) != entry.dependencies.end();
@@ -56,7 +85,7 @@ void ResourceCache::refresh()
 
     // Should the resource corresponding to the given file be re-loaded (i.e. has its file or those
     // of any of its dependencies changed)?
-    auto should_reload = [&dependencies_were_updated](const FileInfo& fi) -> bool {
+    auto should_reload = [&](const FileInfo& fi) -> bool {
         if (fi.entry == nullptr) { return false; }
 
         std::shared_lock entry_lock{ fi.entry->mutex };
@@ -66,7 +95,7 @@ void ResourceCache::refresh()
         }
 
         // First, check whether resource file has been updated.
-        if (fi.time_stamp > fi.entry->time_stamp()) { return true; }
+        if (has_file_changed(fi, fi.entry->time_stamp())) { return true; }
 
         // Then, check whether dependencies have been updated.
         return dependencies_were_updated(*fi.entry);
