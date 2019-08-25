@@ -284,4 +284,3 @@ ShaderCode PipelineRepository::assemble_shader_code(const Material& material)
 }
 
 } // namespace Mg::gfx
-

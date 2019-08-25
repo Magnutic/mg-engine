@@ -170,13 +170,14 @@ make_binding_context(MeshRendererData& data, const ICamera& cam, RenderParameter
     FrameBlock frame_block = make_frame_block(cam, params.current_time, params.camera_exposure);
     data.m_frame_ubo.set_data(byte_representation(frame_block));
 
-    std::array shared_bindings =
-        { PipelineInputBinding{ k_matrix_ubo_slot, data.m_matrix_uniform_handler.ubo() },
-          PipelineInputBinding{ k_frame_ubo_slot, data.m_frame_ubo },
-          PipelineInputBinding{ k_light_ubo_slot, data.m_light_buffers.light_data_buffer },
-          PipelineInputBinding{ k_sampler_tile_data_index, data.m_light_buffers.tile_data_texture },
-          PipelineInputBinding{ k_sampler_light_index_index,
-                                data.m_light_buffers.light_index_texture } };
+    std::array shared_bindings = {
+        PipelineInputBinding{ k_matrix_ubo_slot, data.m_matrix_uniform_handler.ubo() },
+        PipelineInputBinding{ k_frame_ubo_slot, data.m_frame_ubo },
+        PipelineInputBinding{ k_light_ubo_slot, data.m_light_buffers.light_data_buffer },
+        PipelineInputBinding{ k_sampler_tile_data_index, data.m_light_buffers.tile_data_texture },
+        PipelineInputBinding{ k_sampler_light_index_index,
+                              data.m_light_buffers.light_index_texture }
+    };
 
     return data.pipeline_repository.binding_context(shared_bindings);
 }

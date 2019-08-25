@@ -196,13 +196,11 @@ Array<FileRecord> ZipFileLoader::available_files()
         struct zip_stat stat = {};
         zip_stat(m_archive_file, filename, 0, &stat);
 
-        if ((stat.valid & ZIP_STAT_MTIME) != 0) {
-            last_write_time = stat.mtime;
-		}
-		else {
-			constexpr auto msg = "Failed to get time stamp of file '{}' in archive '{}'.";
-			g_log.write_warning(fmt::format(msg, filename, m_archive_name));
-		}
+        if ((stat.valid & ZIP_STAT_MTIME) != 0) { last_write_time = stat.mtime; }
+        else {
+            constexpr auto msg = "Failed to get time stamp of file '{}' in archive '{}'.";
+            g_log.write_warning(fmt::format(msg, filename, m_archive_name));
+        }
 
         index[i] = FileRecord{ Identifier::from_runtime_string(filename), last_write_time };
     }
@@ -255,15 +253,15 @@ std::time_t ZipFileLoader::file_time_stamp(Identifier file)
     open_zip_archive();
 
     auto sb = zip_stat_helper(m_archive_file, file);
-	if ((sb.valid & ZIP_STAT_MTIME) == 0) {
-		g_log.write_error(
-			fmt::format("ZipFileLoader::file_time_stamp(): "
-				"Could not read time stamp of file '{}' in zip archive '{}'",
-				file.c_str(),
-				m_archive_name));
+    if ((sb.valid & ZIP_STAT_MTIME) == 0) {
+        g_log.write_error(
+            fmt::format("ZipFileLoader::file_time_stamp(): "
+                        "Could not read time stamp of file '{}' in zip archive '{}'",
+                        file.c_str(),
+                        m_archive_name));
 
-		throw RuntimeError();
-	}
+        throw RuntimeError();
+    }
 
     return sb.mtime;
 }

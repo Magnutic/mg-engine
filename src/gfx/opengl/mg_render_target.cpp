@@ -108,7 +108,7 @@ TextureRenderTarget TextureRenderTarget::with_colour_target(TextureHandle colour
 {
     TextureRenderTarget trt;
     trt.m_colour_target = colour_target;
-    trt.m_mip_level = mip_level;
+    trt.m_mip_level     = mip_level;
 
     const auto& texture_node = internal::texture_node(colour_target);
 
@@ -171,7 +171,7 @@ TextureRenderTarget TextureRenderTarget::with_colour_and_depth_targets(TextureHa
     TextureRenderTarget trt;
     trt.m_colour_target = colour_target;
     trt.m_depth_target  = depth_target;
-    trt.m_mip_level = mip_level;
+    trt.m_mip_level     = mip_level;
 
     // Create frame buffer object (FBO)
     GLuint fbo_id = 0;

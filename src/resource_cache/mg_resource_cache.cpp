@@ -88,10 +88,8 @@ void ResourceCache::refresh()
         for (const FileInfo& file : m_file_list) {
             if (should_reload(file)) {
                 std::unique_lock entry_lock(file.entry->mutex);
-                entries_to_reload.push_back(ReloadInfo{ *file.entry,
-                                                        file.entry->resource_type_id(),
-                                                        file.time_stamp,
-                                                        *file.loader });
+                entries_to_reload.push_back(ReloadInfo{
+                    *file.entry, file.entry->resource_type_id(), file.time_stamp, *file.loader });
                 file.entry->unload();
             }
         }

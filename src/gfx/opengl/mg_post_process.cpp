@@ -102,11 +102,12 @@ PipelineRepository make_post_process_pipeline_repository()
 
     config.on_error_shader_code = { {}, {}, FragmentShaderCode{ post_process_fs_fallback } };
 
-    config.pipeline_prototype.common_input_layout =
-        { { "MaterialParams", PipelineInputType::UniformBuffer, k_material_params_ubo_slot },
-          { "FrameBlock", PipelineInputType::UniformBuffer, k_frame_block_ubo_slot },
-          { "sampler_colour", PipelineInputType::Sampler2D, k_input_colour_texture_unit },
-          { "sampler_depth", PipelineInputType::Sampler2D, k_input_depth_texture_unit } };
+    config.pipeline_prototype.common_input_layout = {
+        { "MaterialParams", PipelineInputType::UniformBuffer, k_material_params_ubo_slot },
+        { "FrameBlock", PipelineInputType::UniformBuffer, k_frame_block_ubo_slot },
+        { "sampler_colour", PipelineInputType::Sampler2D, k_input_colour_texture_unit },
+        { "sampler_depth", PipelineInputType::Sampler2D, k_input_depth_texture_unit }
+    };
 
     config.material_params_ubo_slot = k_material_params_ubo_slot;
 
@@ -162,10 +163,10 @@ void setup_render_pipeline(PostProcessRendererData& data,
     FrameBlock frame_block{ z_near, z_far };
     data.frame_block_ubo.set_data(byte_representation(frame_block));
 
-    small_vector<PipelineInputBinding, 3> input_bindings = { { k_frame_block_ubo_slot,
-                                                               data.frame_block_ubo },
-                                                             { k_input_colour_texture_unit,
-                                                               input_colour } };
+    small_vector<PipelineInputBinding, 3> input_bindings = {
+        { k_frame_block_ubo_slot, data.frame_block_ubo },
+        { k_input_colour_texture_unit, input_colour }
+    };
 
     if (input_depth.has_value()) {
         input_bindings.push_back({ k_input_depth_texture_unit, input_depth.value() });

@@ -60,10 +60,8 @@ Rotation Rotation::rotation_between_vectors(glm::vec3 fst, glm::vec3 snd)
     float s    = std::sqrt((1.0f + cos_theta) * 2.0f);
     float invs = 1.0f / s;
 
-    return Rotation{ glm::quat{ s * 0.5f,
-                                rotation_axis.x * invs,
-                                rotation_axis.y * invs,
-                                rotation_axis.z * invs } };
+    return Rotation{ glm::quat{
+        s * 0.5f, rotation_axis.x * invs, rotation_axis.y * invs, rotation_axis.z * invs } };
 }
 
 Rotation Rotation::look_to(glm::vec3 dir, glm::vec3 up)

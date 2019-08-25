@@ -194,7 +194,8 @@ void write_crash_log(Log& log)
 
     auto outpath = out_directory /= log_filename;
 
-    log.write_message(fmt::format("Saving crash log '{}'", fs::absolute(outpath).generic_u8string()));
+    log.write_message(
+        fmt::format("Saving crash log '{}'", fs::absolute(outpath).generic_u8string()));
     log.flush();
 
     fs::copy(log_path, outpath);

@@ -31,8 +31,8 @@
 #include "mg/core/mg_runtime_error.h"
 
 #ifdef _MSC_VER
-#define WIN32_LEAN_AND_MEAN
-#include "Windows.h"
+#    define WIN32_LEAN_AND_MEAN
+#    include "Windows.h"
 #endif // _MSC_VER
 
 namespace Mg {

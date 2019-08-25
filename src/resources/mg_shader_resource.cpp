@@ -113,8 +113,8 @@ std::string assemble_shader_code(std::vector<fs::path>       include_directories
 {
     auto get_code = [&input](fs::path file_path) -> std::pair<bool, std::string> {
         try {
-            const auto          file_id     = Identifier::from_runtime_string(file_path.generic_u8string());
-            ResourceHandle      file_handle = input.load_dependency<TextResource>(file_id);
+            const auto     file_id = Identifier::from_runtime_string(file_path.generic_u8string());
+            ResourceHandle file_handle = input.load_dependency<TextResource>(file_id);
             ResourceAccessGuard include_access(file_handle);
             return { true, std::string(include_access->text()) };
         }

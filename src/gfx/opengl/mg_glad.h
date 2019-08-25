@@ -29,9 +29,9 @@
 #pragma once
 
 #ifdef WIN32
-#ifndef APIENTRY
-#define APIENTRY __stdcall
-#endif
+#    ifndef APIENTRY
+#        define APIENTRY __stdcall
+#    endif
 #endif
 
 #include <glad/glad.h>

@@ -37,7 +37,7 @@
 #include "mg_glad.h"
 
 #ifndef GLM_ENABLE_EXPERIMENTAL
-#define GLM_ENABLE_EXPERIMENTAL
+#    define GLM_ENABLE_EXPERIMENTAL
 #endif
 
 #include <glm/gtx/norm.hpp>

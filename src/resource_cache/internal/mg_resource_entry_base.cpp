@@ -40,7 +40,7 @@ void ResourceEntryBase::load_resource()
     MG_ASSERT(m_p_owning_cache != nullptr);
     MG_ASSERT(m_p_loader != nullptr);
 
-	last_access = std::time(nullptr);
+    last_access = std::time(nullptr);
 
     // Load raw data.
     auto file_size = loader().file_size(resource_id());

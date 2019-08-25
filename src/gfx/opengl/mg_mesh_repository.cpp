@@ -56,7 +56,7 @@ public:
     // Destruction of MeshNode should destroy assocated VAO.
     ~MeshNode()
     {
-        const auto* meshname[[maybe_unused]] = mesh_info.mesh_id.c_str();
+        const auto* meshname [[maybe_unused]] = mesh_info.mesh_id.c_str();
         const auto  vao_id = static_cast<uint32_t>(mesh_info.gfx_api_mesh_object_id);
 
         MG_LOG_DEBUG(fmt::format("Deleting VAO {} (Mesh '{}')", vao_id, meshname));
