@@ -77,12 +77,10 @@ constexpr BlendMode c_blend_mode_alpha{ BlendFunc::ADD,        BlendFunc::ADD,
                                         BlendParam::ONE,       BlendParam::ONE };
 
 /** Premultiplied alpha BlendMode */
-constexpr BlendMode c_blend_mode_alpha_premultiplied{ BlendFunc::ADD,
-                                                      BlendFunc::ADD,
-                                                      BlendParam::ONE,
-                                                      BlendParam::ONE_MINUS_SRC_ALPHA,
-                                                      BlendParam::ONE,
-                                                      BlendParam::ONE };
+constexpr BlendMode c_blend_mode_alpha_premultiplied{
+    BlendFunc::ADD,  BlendFunc::ADD, BlendParam::ONE, BlendParam::ONE_MINUS_SRC_ALPHA,
+    BlendParam::ONE, BlendParam::ONE
+};
 
 /** Additive BlendMode */
 constexpr BlendMode c_blend_mode_add{ BlendFunc::ADD,  BlendFunc::ADD,  BlendParam::SRC_ALPHA,

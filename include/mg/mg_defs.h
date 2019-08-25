@@ -37,7 +37,7 @@ namespace Mg::defs {
 //--------------------------------------------------------------------------------------------------
 
 #ifndef MG_DEFAULT_CONFIG_FILE_NAME
-#define MG_DEFAULT_CONFIG_FILE_NAME "mg_engine.cfg"
+#    define MG_DEFAULT_CONFIG_FILE_NAME "mg_engine.cfg"
 #endif
 
 constexpr auto k_default_config_file_name = MG_DEFAULT_CONFIG_FILE_NAME;
@@ -83,37 +83,37 @@ constexpr std::size_t k_material_parameters_buffer_size = 128;
  * number overlap a cluster, there will be artefacts. It is, however, best to keep this number
  * relatively small, to avoid growing data requirements.
  */
-#define MG_MAX_LIGHTS_PER_CLUSTER 128
+#    define MG_MAX_LIGHTS_PER_CLUSTER 128
 #endif
 
 #ifndef MG_MAX_NUM_LIGHTS
 /** Maximum number of lights that may be rendered at a time. */
-#define MG_MAX_NUM_LIGHTS 512
+#    define MG_MAX_NUM_LIGHTS 512
 #endif
 
 #ifndef MG_LIGHT_GRID_WIDTH
 /** Width of light cluster grid. */
-#define MG_LIGHT_GRID_WIDTH 16
+#    define MG_LIGHT_GRID_WIDTH 16
 #endif
 
 #ifndef MG_LIGHT_GRID_HEIGHT
 /** Height of light cluster grid. */
-#define MG_LIGHT_GRID_HEIGHT 8
+#    define MG_LIGHT_GRID_HEIGHT 8
 #endif
 
 #ifndef MG_LIGHT_GRID_DEPTH
 /** Depth of light cluster grid. */
-#define MG_LIGHT_GRID_DEPTH 24
+#    define MG_LIGHT_GRID_DEPTH 24
 #endif
 
 #ifndef MG_LIGHT_GRID_FAR_PLANE
 /** Depth at which the light grid ends. Lights beyond this will be inside the final grid slice. */
-#define MG_LIGHT_GRID_FAR_PLANE 500.0
+#    define MG_LIGHT_GRID_FAR_PLANE 500.0
 #endif
 
 #ifndef MG_LIGHT_GRID_DEPTH_BIAS
 /** Bias in depth slice calculation, used to avoid too many thin slices near the camera. */
-#define MG_LIGHT_GRID_DEPTH_BIAS -3.5
+#    define MG_LIGHT_GRID_DEPTH_BIAS -3.5
 #endif
 
 #define MG_LIGHT_GRID_SIZE (MG_LIGHT_GRID_WIDTH * MG_LIGHT_GRID_HEIGHT * MG_LIGHT_GRID_DEPTH)

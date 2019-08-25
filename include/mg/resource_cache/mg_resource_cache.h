@@ -141,7 +141,7 @@ public:
     }
 
     /** Returns the time stamp of the given file. Throws if file does not exist in file list. */
-	std::time_t file_time_stamp(Identifier file) const
+    std::time_t file_time_stamp(Identifier file) const
     {
         std::shared_lock lock{ m_file_list_mutex };
         auto             p_file_info = file_info(file);

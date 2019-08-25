@@ -36,4 +36,4 @@ namespace Mg {
 // C++17 standard).
 std::time_t last_write_time_t(const std::filesystem::path& file);
 
-}
+} // namespace Mg

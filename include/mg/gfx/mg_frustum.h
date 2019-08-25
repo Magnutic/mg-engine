@@ -28,7 +28,7 @@
 #pragma once
 
 #ifndef GLM_ENABLE_EXPERIMENTAL
-#define GLM_ENABLE_EXPERIMENTAL
+#    define GLM_ENABLE_EXPERIMENTAL
 #endif
 
 #include <glm/gtx/fast_square_root.hpp>
@@ -56,50 +56,44 @@ inline bool frustum_cull(const glm::mat4& mvp, const glm::vec3 centre, float rad
     };
 
     // Right
-    plane = { mvp[0][3] + mvp[0][0],
-              mvp[1][3] + mvp[1][0],
-              mvp[2][3] + mvp[2][0],
-              mvp[3][3] + mvp[3][0] };
+    plane = {
+        mvp[0][3] + mvp[0][0], mvp[1][3] + mvp[1][0], mvp[2][3] + mvp[2][0], mvp[3][3] + mvp[3][0]
+    };
 
     if (cull()) { return true; }
 
     // Left
-    plane = { mvp[0][3] - mvp[0][0],
-              mvp[1][3] - mvp[1][0],
-              mvp[2][3] - mvp[2][0],
-              mvp[3][3] - mvp[3][0] };
+    plane = {
+        mvp[0][3] - mvp[0][0], mvp[1][3] - mvp[1][0], mvp[2][3] - mvp[2][0], mvp[3][3] - mvp[3][0]
+    };
 
     if (cull()) { return true; }
 
     // Bottom
-    plane = { mvp[0][3] + mvp[0][1],
-              mvp[1][3] + mvp[1][1],
-              mvp[2][3] + mvp[2][1],
-              mvp[3][3] + mvp[3][1] };
+    plane = {
+        mvp[0][3] + mvp[0][1], mvp[1][3] + mvp[1][1], mvp[2][3] + mvp[2][1], mvp[3][3] + mvp[3][1]
+    };
 
     if (cull()) { return true; }
 
     // Top
-    plane = { mvp[0][3] - mvp[0][1],
-              mvp[1][3] - mvp[1][1],
-              mvp[2][3] - mvp[2][1],
-              mvp[3][3] - mvp[3][1] };
+    plane = {
+        mvp[0][3] - mvp[0][1], mvp[1][3] - mvp[1][1], mvp[2][3] - mvp[2][1], mvp[3][3] - mvp[3][1]
+    };
 
     if (cull()) { return true; }
 
     // Near
-    plane = { mvp[0][3] + mvp[0][2],
-              mvp[1][3] + mvp[1][2],
-              mvp[2][3] + mvp[2][2],
-              mvp[3][3] + mvp[3][2] };
+    plane = {
+        mvp[0][3] + mvp[0][2], mvp[1][3] + mvp[1][2], mvp[2][3] + mvp[2][2], mvp[3][3] + mvp[3][2]
+    };
 
     if (cull()) { return true; }
 
     // Far
-    plane = { mvp[0][3] - mvp[0][2],
-              mvp[1][3] - mvp[1][2],
-              mvp[2][3] - mvp[2][2],
-              mvp[3][3] - mvp[3][2] };
+    plane = {
+        mvp[0][3] - mvp[0][2], mvp[1][3] - mvp[1][2], mvp[2][3] - mvp[2][2], mvp[3][3] - mvp[3][2]
+    };
 
     return cull();
 }

@@ -41,9 +41,9 @@
 #include "mg/utils/mg_max.h"
 
 #if __cplusplus >= 201703L
-#define HAVE_OVERALIGNED_NEW 1
+#    define HAVE_OVERALIGNED_NEW 1
 #else
-#define HAVE_OVERALIGNED_NEW 0
+#    define HAVE_OVERALIGNED_NEW 0
 #endif
 
 namespace Mg {

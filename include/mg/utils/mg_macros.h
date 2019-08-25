@@ -33,11 +33,11 @@
  * mg_identifier.h).
  */
 #if defined _MSC_VER
-#define MG_INLINE __forceinline
+#    define MG_INLINE __forceinline
 #elif defined __GNUC__ || defined __clang__
-#define MG_INLINE __attribute__((always_inline))
+#    define MG_INLINE __attribute__((always_inline))
 #else
-#define MG_INLINE inline
+#    define MG_INLINE inline
 #endif
 
 /** Unsigned integer overflow is not in itself an error, but it often indicates a bug, so we want to
@@ -45,22 +45,22 @@
  * Use MG_USES_UNSIGNED_OVERFLOW to mark a function as such, making it exempt from the checks.
  */
 #if defined __clang__
-#define MG_USES_UNSIGNED_OVERFLOW __attribute__((no_sanitize("unsigned-integer-overflow")))
+#    define MG_USES_UNSIGNED_OVERFLOW __attribute__((no_sanitize("unsigned-integer-overflow")))
 #else
-#define MG_USES_UNSIGNED_OVERFLOW
+#    define MG_USES_UNSIGNED_OVERFLOW
 #endif
 
 #ifndef _MSC_VER
 /** Generates deleted move constructors and move assignment operators. */
-#define MG_MAKE_NON_MOVABLE(class_name) \
-    class_name(class_name&&) = delete;  \
-    class_name& operator=(class_name&&) = delete;
+#    define MG_MAKE_NON_MOVABLE(class_name) \
+        class_name(class_name&&) = delete;  \
+        class_name& operator=(class_name&&) = delete;
 #else
 // Due to poor support for guaranteed copy elision in Visual Studio 15.7.5,
 // we let the type still be movable there. Compiling on any other compiler
 // will catch non-elided moves, still.
 // TODO: remove this when MSVC is no longer broken.
-#define MG_MAKE_NON_MOVABLE(class_name) MG_MAKE_DEFAULT_MOVABLE(class_name)
+#    define MG_MAKE_NON_MOVABLE(class_name) MG_MAKE_DEFAULT_MOVABLE(class_name)
 #endif
 
 /** Generates deleted and copy constructors and copy assignment operators. */

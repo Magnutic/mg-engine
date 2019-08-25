@@ -104,7 +104,7 @@ public:
 
     static TextureRenderTarget with_colour_and_depth_targets(TextureHandle colour_target,
                                                              TextureHandle depth_target,
-                                                             int32_t mip_level = 0);
+                                                             int32_t       mip_level = 0);
 
     MG_MAKE_DEFAULT_MOVABLE(TextureRenderTarget);
     MG_MAKE_NON_COPYABLE(TextureRenderTarget);

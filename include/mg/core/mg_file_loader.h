@@ -30,9 +30,9 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <string>
 #include <string_view>
-#include <filesystem>
 
 #include "mg/containers/mg_array.h"
 #include "mg/core/mg_identifier.h"

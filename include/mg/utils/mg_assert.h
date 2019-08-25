@@ -31,7 +31,7 @@
 #include <cstdlib>
 
 #ifndef MG_CONTRACT_VIOLATION_THROWS
-#define MG_CONTRACT_VIOLATION_THROWS 0
+#    define MG_CONTRACT_VIOLATION_THROWS 0
 #endif
 
 /** MG_ASSERT will check even in release builds -- use when checking for errors is critical, more
@@ -42,9 +42,9 @@
 
 /** MG_ASSERT_DEBUG: debug-build assertion. */
 #ifndef NDEBUG
-#define MG_ASSERT_DEBUG(expr) MG_ASSERT(expr)
+#    define MG_ASSERT_DEBUG(expr) MG_ASSERT(expr)
 #else
-#define MG_ASSERT_DEBUG(expr) static_cast<void>(0);
+#    define MG_ASSERT_DEBUG(expr) static_cast<void>(0);
 #endif
 
 namespace Mg {

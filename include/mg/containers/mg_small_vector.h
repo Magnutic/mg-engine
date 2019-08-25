@@ -7,15 +7,15 @@
 
 // What assertion function or macro to use.
 #ifndef MG_SMALL_VECTOR_ASSERT
-#include <cassert>
-#define MG_SMALL_VECTOR_ASSERT(exp) assert(exp)
+#    include <cassert>
+#    define MG_SMALL_VECTOR_ASSERT(exp) assert(exp)
 #endif
 
 // Disable warning "[...] m_capacity maybe uninitialized in this function.".
 // (m_capacity is a union member which is managed manually).
 #if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
 
 namespace Mg {
@@ -825,5 +825,5 @@ void swap(small_vector<T, num_local_elems_a>& a,
 } // namespace Mg
 
 #if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC diagnostic pop
+#    pragma GCC diagnostic pop
 #endif

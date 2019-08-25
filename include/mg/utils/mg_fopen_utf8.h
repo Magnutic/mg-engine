@@ -37,9 +37,9 @@ namespace Mg {
 std::FILE* fopen_utf8(const char* filepath_utf8, const char* mode);
 
 #ifdef _WIN32
-#ifdef _MSC_VER
+#    ifdef _MSC_VER
 std::wstring widen_if_msvc(std::string_view str);
-#else // Windows, non-MSVC compiler
+#    else // Windows, non-MSVC compiler
 
 /* Unsolved issue here - how to open files with unicode file paths on Windows? MSVC supports a
  * non-standard wstring (UTF-16) overload, but AFAIK other Windows compilers like MinGW does not.
@@ -54,13 +54,13 @@ std::wstring widen_if_msvc(std::string_view str);
  * writing, it seems libstdc++ has not yet implemented filesystem, so we will keep this solution
  * until then.
  */
-#error "No support for unicode file paths in fopen on the current platform."
-#endif // _MSC_VER
-#else  // Not Windows
+#        error "No support for unicode file paths in fopen on the current platform."
+#    endif // _MSC_VER
+#else      // Not Windows
 inline std::string widen_if_msvc(std::string_view str)
 {
     return std::string(str);
 }
-#endif // _WIN32
+#endif     // _WIN32
 
 } // namespace Mg

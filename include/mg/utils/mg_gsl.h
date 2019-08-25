@@ -35,27 +35,27 @@
 
 #ifndef MG_CHECK_SPAN_ACCESS
 /** Whether to do bounds check when accessing span elements. */
-#define MG_CHECK_SPAN_ACCESS 1
+#    define MG_CHECK_SPAN_ACCESS 1
 #endif
 
 #ifndef MG_CHECK_SPAN_CONSTRUCTION
 /** Whether to do a run-time sanity check on span constructors. */
-#define MG_CHECK_SPAN_CONSTRUCTION 1
+#    define MG_CHECK_SPAN_CONSTRUCTION 1
 #endif
 
 #if (__GNUC__ >= 7) || (__clang_major__ >= 5) || (_MSC_VER >= 1914)
-#define MG_HAVE_CLASS_TEMPLATE_DEDUCTION 1
+#    define MG_HAVE_CLASS_TEMPLATE_DEDUCTION 1
 #else
-#define MG_HAVE_CLASS_TEMPLATE_DEDUCTION 0
+#    define MG_HAVE_CLASS_TEMPLATE_DEDUCTION 0
 #endif
 
 // For the sake of testing, we often want to check that assertions are triggered. This is done by
 // catching exceptions. In tests, assertion failures throw, which means that otherwise-noexcept
 // functions must be non-noexcept, hence this macro.
 #if MG_CONTRACT_VIOLATION_THROWS
-#define MG_SPAN_NOEXCEPT
+#    define MG_SPAN_NOEXCEPT
 #else
-#define MG_SPAN_NOEXCEPT noexcept
+#    define MG_SPAN_NOEXCEPT noexcept
 #endif
 
 namespace Mg::gsl {
