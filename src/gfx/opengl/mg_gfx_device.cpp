@@ -88,7 +88,7 @@ GfxDevice::GfxDevice(Window& window)
     }
 
     // Check for errors.
-    if (uint32_t error = glGetError(); error) {
+    if (const uint32_t error = glGetError(); error) {
         g_log.write_error(fmt::format("OpenGL initialisation: {}", gfx::gl_error_string(error)));
         throw RuntimeError();
     }
@@ -119,56 +119,55 @@ GfxDevice::~GfxDevice()
     p_gfx_device = nullptr;
 }
 
-void GfxDevice::set_blend_mode(BlendMode blend_mode)
+void GfxDevice::set_blend_mode(BlendMode blend_mode) noexcept
 {
-    auto col_mode = uint32_t(blend_mode.colour);
-    auto a_mode   = uint32_t(blend_mode.alpha);
-    auto src_col  = uint32_t(blend_mode.src_colour);
-    auto dst_col  = uint32_t(blend_mode.dst_colour);
-    auto srcA     = uint32_t(blend_mode.src_alpha);
-    auto dstA     = uint32_t(blend_mode.dst_alpha);
+    const auto col_mode = static_cast<uint32_t>(blend_mode.colour);
+    const auto a_mode   = static_cast<uint32_t>(blend_mode.alpha);
+    const auto src_col  = static_cast<uint32_t>(blend_mode.src_colour);
+    const auto dst_col  = static_cast<uint32_t>(blend_mode.dst_colour);
+    const auto srcA     = static_cast<uint32_t>(blend_mode.src_alpha);
+    const auto dstA     = static_cast<uint32_t>(blend_mode.dst_alpha);
 
     glBlendEquationSeparate(col_mode, a_mode);
     glBlendFuncSeparate(src_col, dst_col, srcA, dstA);
 }
 
 /** Enable/disable depth testing and set depth testing function. */
-void GfxDevice::set_depth_test(DepthFunc func)
+void GfxDevice::set_depth_test(DepthFunc func) noexcept
 {
     if (func != DepthFunc::NONE) {
         glEnable(GL_DEPTH_TEST);
-        glDepthFunc(uint32_t(func));
+        glDepthFunc(static_cast<uint32_t>(func));
     }
     else {
         glDisable(GL_DEPTH_TEST);
     }
 }
 
-void GfxDevice::set_depth_write(bool on)
+void GfxDevice::set_depth_write(bool on) noexcept
 {
-    glDepthMask(GLboolean(on));
+    glDepthMask(GLboolean{ on });
 }
 
-void GfxDevice::set_colour_write(bool on)
+void GfxDevice::set_colour_write(bool on) noexcept
 {
-    auto gb_on = GLboolean(on);
-    glColorMask(gb_on, gb_on, gb_on, gb_on);
+    glColorMask({ on }, { on }, { on }, { on });
 }
 
 /** Set colour & alpha to use when clearing render target. */
-void GfxDevice::set_clear_colour(float red, float green, float blue, float alpha)
+void GfxDevice::set_clear_colour(float red, float green, float blue, float alpha) noexcept
 {
     glClearColor(red, green, blue, alpha);
 }
 
-void GfxDevice::clear(bool colour, bool depth, bool stencil)
+void GfxDevice::clear(bool colour, bool depth, bool stencil) noexcept
 {
     glClear((colour ? GL_COLOR_BUFFER_BIT : 0u) | (depth ? GL_DEPTH_BUFFER_BIT : 0u) |
             (stencil ? GL_STENCIL_BUFFER_BIT : 0u));
 }
 
 /** Set which culling function to use. */
-void GfxDevice::set_culling(CullFunc culling)
+void GfxDevice::set_culling(CullFunc culling) noexcept
 {
     if (culling == CullFunc::NONE) { glDisable(GL_CULL_FACE); }
     else {
@@ -178,7 +177,7 @@ void GfxDevice::set_culling(CullFunc culling)
 }
 
 /** Set whether to use blending when rendering to target. */
-void GfxDevice::set_use_blending(bool enable)
+void GfxDevice::set_use_blending(bool enable) noexcept
 {
     if (enable) { glEnable(GL_BLEND); }
     else {
@@ -187,24 +186,24 @@ void GfxDevice::set_use_blending(bool enable)
 }
 
 /** Synchronise application with graphics device. */
-void GfxDevice::synchronise()
+void GfxDevice::synchronise() noexcept
 {
     // N.B. I tried using fences with glClientWaitSync as I hear that is a better approach (for
     // unclear reasons) but it had nowhere near the same impact on reducing input lag as glFinish.
     glFinish();
 }
 
-MeshRepository& GfxDevice::mesh_repository()
+MeshRepository& GfxDevice::mesh_repository() noexcept
 {
     return impl().mesh_repository;
 }
 
-TextureRepository& GfxDevice::texture_repository()
+TextureRepository& GfxDevice::texture_repository() noexcept
 {
     return impl().texture_repository;
 }
 
-MaterialRepository& GfxDevice::material_repository()
+MaterialRepository& GfxDevice::material_repository() noexcept
 {
     return impl().material_repository;
 }

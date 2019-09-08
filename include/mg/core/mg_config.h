@@ -58,9 +58,9 @@ public:
     void set(std::string_view value);
     void set(double value);
 
-    std::string_view key() const { return m_key; }
-    uint32_t         key_hash() const { return m_key_hash; }
-    const Value&     value() const { return m_value; }
+    std::string_view key() const noexcept { return m_key; }
+    uint32_t         key_hash() const noexcept { return m_key_hash; }
+    const Value&     value() const noexcept { return m_value; }
 
 private:
     ConfigVariable(std::string_view key) : m_key(key), m_key_hash(hash_fnv1a(key)) {}
@@ -80,7 +80,7 @@ private:
  */
 class Config {
 public:
-    Config() {}
+    Config() noexcept {}
 
     Config(std::string_view filepath) { read_from_file(filepath); }
 
@@ -92,7 +92,7 @@ public:
      */
     void set_default_value(std::string_view key, std::string_view value)
     {
-        auto p_cvar = at(key);
+        const auto* p_cvar = at(key);
         if (p_cvar == nullptr) m_values.emplace_back(key, value);
     }
 
@@ -101,7 +101,7 @@ public:
      */
     void set_default_value(std::string_view key, double value)
     {
-        auto p_cvar = at(key);
+        const auto* p_cvar = at(key);
         if (p_cvar == nullptr) m_values.emplace_back(key, value);
     }
 

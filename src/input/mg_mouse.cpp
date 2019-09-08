@@ -51,7 +51,7 @@ MouseType type(InputSource::Id id)
 
 InputSource::Id to_input_id(Mouse::Button button)
 {
-    return InputSource::Id(button);
+    return static_cast<InputSource::Id>(button);
 }
 
 Mouse::Button to_button(InputSource::Id id)
@@ -62,7 +62,7 @@ Mouse::Button to_button(InputSource::Id id)
 
 InputSource::Id to_input_id(Mouse::Axis axis)
 {
-    return InputSource::Id(axis) + Mouse::k_num_buttons;
+    return static_cast<InputSource::Id>(axis) + Mouse::k_num_buttons;
 }
 
 Mouse::Axis to_axis(InputSource::Id id)
@@ -126,8 +126,10 @@ std::string Mouse::description(InputSource::Id id) const
 float Mouse::state(InputSource::Id id) const
 {
     switch (type(id)) {
-    case MouseType::Button:
-        return float(m_button_states.test(static_cast<size_t>(to_button(id))));
+    case MouseType::Button: {
+        const auto button_index = static_cast<size_t>(to_button(id));
+        return narrow_cast<float>(m_button_states.test(button_index));
+    }
     case MouseType::Axis:
         switch (to_axis(id)) {
         case Axis::pos_x:
@@ -151,17 +153,17 @@ void Mouse::refresh()
     GLFWwindow* window_handle = m_window.glfw_window();
 
     for (size_t i = 0; i < k_num_buttons; ++i) {
-        m_button_states[i] = (glfwGetMouseButton(window_handle, int(i)) == GLFW_PRESS);
+        m_button_states[i] = (glfwGetMouseButton(window_handle, narrow<int>(i)) == GLFW_PRESS);
     }
 
-    float prev_x_pos = m_x_pos;
-    float prev_y_pos = m_y_pos;
+    const float prev_x_pos = m_x_pos;
+    const float prev_y_pos = m_y_pos;
 
     {
         double x, y;
         glfwGetCursorPos(window_handle, &x, &y);
-        m_x_pos = float(x);
-        m_y_pos = float(y);
+        m_x_pos = narrow_cast<float>(x);
+        m_y_pos = narrow_cast<float>(y);
     }
 
     m_x_delta = m_x_pos - prev_x_pos;

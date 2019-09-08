@@ -30,7 +30,7 @@ namespace Mg::ecs {
 size_t ComponentTag::n_component_types = 0;
 
 // Reset EntityCollection, destroying all entities and components
-void EntityCollection::reset()
+void EntityCollection::reset() noexcept
 {
     for (auto& ptr : m_component_collections) { ptr.release(); }
     m_entity_data.clear();
@@ -50,7 +50,7 @@ void EntityCollection::delete_entity(Entity entity)
     for (uint32_t i = 0; i < k_max_component_types; ++i) {
         // Remove component if it exists
         if (component_mask(entity).test(i)) {
-            auto& handle = component_handle_ref(entity, i);
+            const auto& handle = component_handle_ref(entity, i);
             at(m_component_collections, i)->erase(handle);
         }
     }

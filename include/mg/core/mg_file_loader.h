@@ -49,7 +49,7 @@ namespace Mg {
 /** Record representing a single file available in a IFileLoader. */
 struct FileRecord {
     Identifier  name{ "" };
-    std::time_t time_stamp;
+    std::time_t time_stamp{};
 };
 
 /** Interface for loading files from some source (e.g. directory, zip-archive, ...). */
@@ -103,6 +103,9 @@ class ZipFileLoader final : public IFileLoader {
 public:
     explicit ZipFileLoader(std::string_view archive) : m_archive_name(archive) {}
 
+	MG_MAKE_DEFAULT_COPYABLE(ZipFileLoader);
+    MG_MAKE_DEFAULT_MOVABLE(ZipFileLoader);
+
     ~ZipFileLoader() { close_zip_archive(); }
 
     Array<FileRecord> available_files() override;
@@ -119,7 +122,7 @@ public:
 
 private:
     void open_zip_archive();
-    void close_zip_archive();
+    void close_zip_archive() noexcept;
 
     std::string m_archive_name;
     zip_t*      m_archive_file = nullptr;

@@ -45,7 +45,7 @@ namespace Mg {
 /** Default deleter for Mg::Array and Mg::ArrayUnknownSize. */
 template<typename T> class DefaultArrayDelete {
 public:
-    void operator()(T* ptr) { delete[] ptr; }
+    void operator()(T* ptr) noexcept { delete[] ptr; }
 };
 
 namespace detail {
@@ -160,7 +160,7 @@ public:
             // If an exception was thrown, destroy all the so-far constructed objects in reverse
             // order of construction.
             for (size_t u = 0; u < i; ++u) {
-                auto index = i - u - 1;
+                const auto index = i - u - 1;
                 reinterpret_cast<T*>(p_storage)[index].~T(); // NOLINT
             }
 

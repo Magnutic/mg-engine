@@ -54,19 +54,19 @@ constexpr uint32_t k_matrix_index_vertex_attrib_location = 8;
 
 // Parameters used to calculate cluster slice from fragment depth
 struct ClusterGridParams {
-    glm::vec2 z_param;
+    glm::vec2 z_param{};
     float     scale = 0.0f;
     float     bias  = 0.0f;
 };
 
 /** Frame-global UBO block */
 struct FrameBlock {
-    ClusterGridParams cluster_grid_params;
+    ClusterGridParams cluster_grid_params{};
 
     // .xyz: camera_position; .w: time. vec4 for alignment purposes.
-    glm::vec4 camera_position_and_time;
+    glm::vec4 camera_position_and_time{};
 
-    glm::uvec2 viewport_size;
+    glm::uvec2 viewport_size{};
 
     float camera_exposure = 0.0f;
 };
@@ -95,10 +95,10 @@ FrameBlock make_frame_block(const ICamera& camera, float current_time, float cam
 {
     std::array<int, 4> viewport_data{};
     glGetIntegerv(GL_VIEWPORT, &viewport_data[0]);
-    glm::uvec2 viewport_size{ narrow<uint32_t>(viewport_data[2]),
-                              narrow<uint32_t>(viewport_data[3]) };
+    const glm::uvec2 viewport_size{ narrow<uint32_t>(viewport_data[2]),
+                                    narrow<uint32_t>(viewport_data[3]) };
 
-    static const float scale = MG_LIGHT_GRID_DEPTH / std::log2(float(MG_LIGHT_GRID_FAR_PLANE));
+    static const float scale = MG_LIGHT_GRID_DEPTH / std::log2(float{ MG_LIGHT_GRID_FAR_PLANE });
 
     const auto depth_range = camera.depth_range();
     const auto z_near      = depth_range.near();
@@ -111,7 +111,7 @@ FrameBlock make_frame_block(const ICamera& camera, float current_time, float cam
 
     frame_block.cluster_grid_params.z_param = glm::vec2(z_near - z_far, z_near + z_far);
     frame_block.cluster_grid_params.scale   = -scale;
-    frame_block.cluster_grid_params.bias    = float(MG_LIGHT_GRID_DEPTH_BIAS) + c * scale;
+    frame_block.cluster_grid_params.bias    = float{ MG_LIGHT_GRID_DEPTH_BIAS } + c * scale;
 
     frame_block.camera_exposure = camera_exposure;
 
@@ -167,10 +167,10 @@ PipelineRepository::BindingContext
 make_binding_context(MeshRendererData& data, const ICamera& cam, RenderParameters params)
 {
     // Upload frame-global uniforms
-    FrameBlock frame_block = make_frame_block(cam, params.current_time, params.camera_exposure);
+    const auto frame_block = make_frame_block(cam, params.current_time, params.camera_exposure);
     data.m_frame_ubo.set_data(byte_representation(frame_block));
 
-    std::array shared_bindings = {
+    const std::array shared_bindings = {
         PipelineInputBinding{ k_matrix_ubo_slot, data.m_matrix_uniform_handler.ubo() },
         PipelineInputBinding{ k_frame_ubo_slot, data.m_frame_ubo },
         PipelineInputBinding{ k_light_ubo_slot, data.m_light_buffers.light_data_buffer },
@@ -182,13 +182,15 @@ make_binding_context(MeshRendererData& data, const ICamera& cam, RenderParameter
     return data.pipeline_repository.binding_context(shared_bindings);
 }
 
-void draw_elements(size_t num_elements, size_t starting_element)
+void draw_elements(size_t num_elements, size_t starting_element) noexcept
 {
-    auto begin = reinterpret_cast<GLvoid*>(starting_element * sizeof(uint_vertex_index)); // NOLINT
-    glDrawElements(GL_TRIANGLES, int32_t(num_elements), GL_UNSIGNED_SHORT, begin);
+    const uintptr_t begin = starting_element * sizeof(uint_vertex_index);
+    GLvoid*         gl_begin{};
+    std::memcpy(&gl_begin, &begin, sizeof(begin));
+    glDrawElements(GL_TRIANGLES, narrow<int32_t>(num_elements), GL_UNSIGNED_SHORT, gl_begin);
 }
 
-void set_matrix_index(uint32_t index)
+void set_matrix_index(uint32_t index) noexcept
 {
     glVertexAttribI1ui(k_matrix_index_vertex_attrib_location, index);
 }
@@ -220,8 +222,8 @@ void MeshRenderer::render(const ICamera&           cam,
 
     PipelineRepository::BindingContext binding_context = make_binding_context(impl(), cam, params);
 
-    auto   render_commands         = command_list.render_commands();
-    size_t matrix_update_countdown = 1;
+    const auto render_commands         = command_list.render_commands();
+    size_t     matrix_update_countdown = 1;
 
     for (uint32_t i = 0; i < render_commands.size(); ++i) {
         if (--matrix_update_countdown == 0) {

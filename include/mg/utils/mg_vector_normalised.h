@@ -44,7 +44,7 @@ namespace Mg {
  *
  * For input values outside the range the fractional part is used.
  */
-template<typename T> inline T normalise(float value)
+template<typename T> inline T normalise(float value) noexcept
 {
     static_assert(std::is_integral<T>::value, "Can only normalise to integers");
 
@@ -70,22 +70,22 @@ template<typename T> constexpr float denormalise(T value)
 /** Two-element normalised fixed-point vector, 16-bit elements. */
 struct vec2_normalised {
     vec2_normalised() = default;
-    explicit vec2_normalised(glm::vec2 vec) { set(vec); }
-    explicit vec2_normalised(float x, float y) { set(glm::vec2{ x, y }); }
+    explicit vec2_normalised(glm::vec2 vec) noexcept { set(vec); }
+    explicit vec2_normalised(float x, float y) noexcept { set(glm::vec2{ x, y }); }
 
-    void set(glm::vec2 vec)
+    void set(glm::vec2 vec) noexcept
     {
         m_x = normalise<int16_t>(vec.x);
         m_y = normalise<int16_t>(vec.y);
     }
 
-    vec2_normalised& operator=(glm::vec2 vec)
+    vec2_normalised& operator=(glm::vec2 vec) noexcept
     {
         set(vec);
         return *this;
     }
 
-    glm::vec2 get() const { return glm::vec2(denormalise(m_x), denormalise(m_y)); }
+    glm::vec2 get() const noexcept { return glm::vec2(denormalise(m_x), denormalise(m_y)); }
 
     int16_t m_x = 0;
     int16_t m_y = 0;
@@ -94,11 +94,11 @@ struct vec2_normalised {
 /** Three-element normalised fixed-point vector, 16-bit elements. */
 struct vec3_normalised {
     vec3_normalised() = default;
-    explicit vec3_normalised(glm::vec3 vec) { set(vec); }
+    explicit vec3_normalised(glm::vec3 vec) noexcept { set(vec); }
 
-    explicit vec3_normalised(float x, float y, float z) { set(glm::vec3{ x, y, z }); }
+    explicit vec3_normalised(float x, float y, float z) noexcept { set(glm::vec3{ x, y, z }); }
 
-    void set(glm::vec3 vec)
+    void set(glm::vec3 vec) noexcept
     {
         m_x = normalise<int16_t>(vec.x);
         m_y = normalise<int16_t>(vec.y);
@@ -106,13 +106,13 @@ struct vec3_normalised {
         m_w = normalise<int16_t>(0.0f);
     }
 
-    vec3_normalised& operator=(glm::vec3 vec)
+    vec3_normalised& operator=(glm::vec3 vec) noexcept
     {
         set(vec);
         return *this;
     }
 
-    glm::vec3 get() const
+    glm::vec3 get() const noexcept
     {
         return glm::vec3(denormalise(m_x), denormalise(m_y), denormalise(m_z));
     }
@@ -129,11 +129,14 @@ private:
 /** Four-element normalised fixed-point vector, 16-bit elements. */
 struct vec4_normalised {
     vec4_normalised() = default;
-    explicit vec4_normalised(glm::vec4 vec) { set(vec); }
+    explicit vec4_normalised(glm::vec4 vec) noexcept { set(vec); }
 
-    explicit vec4_normalised(float x, float y, float z, float w) { set(glm::vec4{ x, y, z, w }); }
+    explicit vec4_normalised(float x, float y, float z, float w) noexcept
+    {
+        set(glm::vec4{ x, y, z, w });
+    }
 
-    void set(glm::vec4 vec)
+    void set(glm::vec4 vec) noexcept
     {
         m_x = normalise<int16_t>(vec.x);
         m_y = normalise<int16_t>(vec.y);
@@ -141,13 +144,13 @@ struct vec4_normalised {
         m_w = normalise<int16_t>(vec.w);
     }
 
-    vec4_normalised& operator=(glm::vec4 vec)
+    vec4_normalised& operator=(glm::vec4 vec) noexcept
     {
         set(vec);
         return *this;
     }
 
-    glm::vec4 get() const
+    glm::vec4 get() const noexcept
     {
         return glm::vec4(denormalise(m_x), denormalise(m_y), denormalise(m_z), denormalise(m_w));
     }

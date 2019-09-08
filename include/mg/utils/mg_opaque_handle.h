@@ -43,29 +43,30 @@ public:
 
     OpaqueHandle() = default;
 
-    OpaqueHandle(uint64_t id) : value{ id } {}
+    OpaqueHandle(uint64_t id) noexcept : value{ id } {}
 
     OpaqueHandle(OpaqueHandle&& rhs) noexcept : value{ rhs.value } { rhs.value = {}; }
 
     OpaqueHandle& operator=(OpaqueHandle&& rhs) noexcept
     {
-        swap(rhs);
-        OpaqueHandle tmp;
-        rhs.swap(tmp);
+        OpaqueHandle tmp{ std::move(rhs) };
+        swap(tmp);
         return *this;
     }
 
     OpaqueHandle(const OpaqueHandle&) = delete;
     OpaqueHandle& operator=(const OpaqueHandle&) = delete;
 
+    ~OpaqueHandle() = default;
+
     void swap(OpaqueHandle& rhs) noexcept { std::swap(value, rhs.value); }
 
-    friend bool operator==(const OpaqueHandle& lhs, const OpaqueHandle& rhs)
+    friend bool operator==(const OpaqueHandle& lhs, const OpaqueHandle& rhs) noexcept
     {
         return lhs.value == rhs.value;
     }
 
-    friend bool operator!=(const OpaqueHandle& lhs, const OpaqueHandle& rhs)
+    friend bool operator!=(const OpaqueHandle& lhs, const OpaqueHandle& rhs) noexcept
     {
         return lhs.value != rhs.value;
     }

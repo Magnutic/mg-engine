@@ -73,38 +73,38 @@ public:
     MG_MAKE_NON_COPYABLE(GfxDevice);
 
     /** Set depth testing function. DepthFunc::NONE disables depth testing.  */
-    void set_depth_test(DepthFunc func);
+    void set_depth_test(DepthFunc func) noexcept;
 
     /** Set whether to write depth when drawing to render target. */
-    void set_depth_write(bool on);
+    void set_depth_write(bool on) noexcept;
 
     /** Set whether to write colour when drawing to render target. */
-    void set_colour_write(bool on);
+    void set_colour_write(bool on) noexcept;
 
     /** Set colour & alpha to use when clearing render target. */
-    void set_clear_colour(float red, float green, float blue, float alpha = 1.0f);
+    void set_clear_colour(float red, float green, float blue, float alpha = 1.0f) noexcept;
 
     /** Clear the currently bound render target. */
-    void clear(bool colour = true, bool depth = true, bool stencil = true);
+    void clear(bool colour = true, bool depth = true, bool stencil = true) noexcept;
 
     /** Set which culling function to use. */
-    void set_culling(CullFunc culling);
+    void set_culling(CullFunc culling) noexcept;
 
     /** Set whether to use blending when rendering to target. */
-    void set_use_blending(bool enable);
+    void set_use_blending(bool enable) noexcept;
 
     /** Sets the blend mode to use during next frame.
      * Blending must be enabled through set_use_blending().
      * @param blend_mode Which blend mode to use. Some pre-defined ones are Mg::c_blend_mode_xxxxx
      */
-    void set_blend_mode(BlendMode blend_mode);
+    void set_blend_mode(BlendMode blend_mode) noexcept;
 
     /** Synchronise application with graphics device. */
-    void synchronise();
+    void synchronise() noexcept;
 
-    MeshRepository&     mesh_repository();
-    TextureRepository&  texture_repository();
-    MaterialRepository& material_repository();
+    MeshRepository&     mesh_repository() noexcept;
+    TextureRepository&  texture_repository() noexcept;
+    MaterialRepository& material_repository() noexcept;
 };
 
 } // namespace Mg::gfx

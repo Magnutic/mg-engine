@@ -45,7 +45,7 @@ public:
     MG_MAKE_NON_MOVABLE(TextureRepository);
     MG_MAKE_NON_COPYABLE(TextureRepository);
 
-    explicit TextureRepository();
+    TextureRepository();
     ~TextureRepository();
 
     TextureHandle create(const TextureResource& resource);

@@ -50,7 +50,7 @@ using tl::nullopt_t;
  * a different name.
  * Refer to documentation for std::optional or tl::optional for details.
  */
-template<typename T> Opt<std::decay_t<T>> make_opt(T&& value)
+template<typename T> constexpr Opt<std::decay_t<T>> make_opt(T&& value)
 {
     return tl::make_optional<T>(std::forward<T>(value));
 }

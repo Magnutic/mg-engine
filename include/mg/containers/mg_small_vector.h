@@ -140,7 +140,7 @@ template<typename T, std::size_t num_local_elems> class small_vector {
 
     // According to the following source, 1.5 is a good choice for a vector's growth factor:
     // https://github.com/facebook/folly/blob/master/folly/docs/FBVector.md
-    static constexpr float k_growth_factor = 1.5;
+    static constexpr double k_growth_factor = 1.5;
 
 public:
     using value_type = T;
@@ -161,7 +161,7 @@ public:
     // ---------------------------------------------------------------------------------------------
 
     /** Default-constructor: creates empty small_vector. */
-    small_vector() : m_size(0), m_uses_external_storage(0) {}
+    small_vector() noexcept : m_size(0), m_uses_external_storage(0) {}
 
     ~small_vector() { clear(); }
 
@@ -203,10 +203,17 @@ public:
 
     // Assignment
     // ---------------------------------------------------------------------------------------------
-
-    small_vector& operator=(small_vector rhs) noexcept
+    small_vector& operator=(const small_vector& rhs)
     {
-        swap(rhs);
+        small_vector tmp(rhs);
+        swap(tmp);
+        return *this;
+    }
+
+    small_vector& operator=(small_vector&& rhs) noexcept(nothrow_swap)
+    {
+        small_vector tmp(std::move(rhs));
+        swap(tmp);
         return *this;
     }
 
@@ -282,7 +289,7 @@ public:
     /** Returns maximum number of elements that this container could theoretically store -- in the
      * absence of memory limitations.
      */
-    size_type max_size() const noexcept { return size_type(1) << (sizeof(size_type) * 8 - 1); }
+    size_type max_size() const noexcept { return size_type{ 1 } << (sizeof(size_type) * 8 - 1); }
 
     /** Returns the size of the local element storage -- the number of elements that this container
      * can hold without falling back to dynamic memory allocation.
@@ -444,7 +451,7 @@ public:
         return (*this)[m_size++];
     }
 
-    void pop_back()
+    void pop_back() noexcept
     {
         _destroy_at(size() - 1);
         --m_size;
@@ -491,12 +498,12 @@ private:
 
     elem_data_t* _storage_ptr() noexcept
     {
-        return uses_local_storage() ? m_buffer : m_external_buffer.get();
+        return uses_local_storage() ? &m_buffer[0] : m_external_buffer.get();
     }
 
     const elem_data_t* _storage_ptr() const noexcept
     {
-        return uses_local_storage() ? m_buffer : m_external_buffer.get();
+        return uses_local_storage() ? &m_buffer[0] : m_external_buffer.get();
     }
 
     template<typename... Args>
@@ -510,9 +517,10 @@ private:
         return _construct_in_buffer_at(_storage_ptr(), index, std::forward<Args>(args)...);
     }
 
-    void _destroy_in_buffer_at(elem_data_t* buffer, size_type index) noexcept
+    void _destroy_in_buffer_at(const elem_data_t* buffer, size_type index) noexcept
     {
-        reinterpret_cast<pointer>(buffer + index)->~T();
+        MG_SMALL_VECTOR_ASSERT(buffer != nullptr);
+        reinterpret_cast<const_pointer>(buffer + index)->~T();
     }
 
     void _destroy_at(size_type index) noexcept { _destroy_in_buffer_at(_storage_ptr(), index); }
@@ -539,9 +547,9 @@ private:
         swap(m_buffer, rhs.m_buffer);
 
         // Cannot swap bit fields
-        auto tmp   = m_size;
-        m_size     = rhs.m_size;
-        rhs.m_size = tmp;
+        const auto tmp = m_size;
+        m_size         = rhs.m_size;
+        rhs.m_size     = tmp;
     }
 
     // Swap implementation for the case where both operands use local storage and the element
@@ -587,9 +595,9 @@ private:
         swap(m_capacity, rhs.m_capacity);
 
         // Cannot swap bit fields
-        auto tmp   = m_size;
-        m_size     = rhs.m_size;
-        rhs.m_size = tmp;
+        const auto tmp = m_size;
+        m_size         = rhs.m_size;
+        rhs.m_size     = tmp;
     }
 
     // Swap for the case where this is using local storage, and rhs is using external storage.
@@ -656,6 +664,9 @@ private:
                                      elem_data_t* dst,
                                      size_type    num) /* noexcept(nothrow_move) */
     {
+        MG_SMALL_VECTOR_ASSERT(src != nullptr);
+        MG_SMALL_VECTOR_ASSERT(dst != nullptr);
+
         size_type i = 0;
 
         try {
@@ -668,8 +679,8 @@ private:
             // If copying failed, destroy the copies that were made.
             for (size_type u = 0; u < i; ++u) {
                 // Destroy copies in new buffer.
-                elem_data_t* addr = &dst[i - 1 - u];
-                reinterpret_cast<pointer>(addr)->~T();
+                const elem_data_t* addr = &dst[i - 1 - u];
+                reinterpret_cast<const_pointer>(addr)->~T();
             }
 
             throw;
@@ -687,13 +698,13 @@ private:
 
         // Since m_capacity is in union with local buffer, we need to copy it before writing to
         // local buffer.
-        size_type      tmp_capacity = m_capacity;
-        ExternalBuffer tmp_buffer   = std::move(m_external_buffer);
+        const size_type tmp_capacity = m_capacity;
+        ExternalBuffer  tmp_buffer   = std::move(m_external_buffer);
 
         // Try to move -- with strong exception guarantee.
         try {
             m_external_buffer.~ExternalBuffer();
-            _move_elems_between_buffers(tmp_buffer.get(), m_buffer, elems_to_move);
+            _move_elems_between_buffers(tmp_buffer.get(), &m_buffer[0], elems_to_move);
         }
         catch (...) {
             // Restore external storage on failure

@@ -45,12 +45,14 @@ inline bool frustum_cull(const glm::mat4& mvp, const glm::vec3 centre, float rad
 {
     glm::vec4 plane;
 
-    auto cull = [&]() {
-        float magnitude = glm::fastSqrt(plane.x * plane.x + plane.y * plane.y + plane.z * plane.z);
+    const auto cull = [&]() {
+        const float magnitude = glm::fastSqrt(plane.x * plane.x + plane.y * plane.y +
+                                              plane.z * plane.z);
 
         plane /= magnitude;
 
-        float distance = plane.x * centre.x + plane.y * centre.y + plane.z * centre.z + plane.w;
+        const float distance = plane.x * centre.x + plane.y * centre.y + plane.z * centre.z +
+                               plane.w;
 
         return distance <= -radius;
     };

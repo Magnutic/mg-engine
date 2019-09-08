@@ -108,12 +108,12 @@ constexpr std::size_t k_material_parameters_buffer_size = 128;
 
 #ifndef MG_LIGHT_GRID_FAR_PLANE
 /** Depth at which the light grid ends. Lights beyond this will be inside the final grid slice. */
-#    define MG_LIGHT_GRID_FAR_PLANE 500.0
+#    define MG_LIGHT_GRID_FAR_PLANE 500
 #endif
 
 #ifndef MG_LIGHT_GRID_DEPTH_BIAS
 /** Bias in depth slice calculation, used to avoid too many thin slices near the camera. */
-#    define MG_LIGHT_GRID_DEPTH_BIAS -3.5
+#    define MG_LIGHT_GRID_DEPTH_BIAS -3.5f
 #endif
 
 #define MG_LIGHT_GRID_SIZE (MG_LIGHT_GRID_WIDTH * MG_LIGHT_GRID_HEIGHT * MG_LIGHT_GRID_DEPTH)

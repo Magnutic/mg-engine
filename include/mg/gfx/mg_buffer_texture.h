@@ -47,9 +47,9 @@ public:
         BitDepth bit_depth;
     };
 
-    explicit BufferTexture(Type type, size_t buffer_size);
+    BufferTexture(Type type, size_t buffer_size);
 
-    explicit BufferTexture(Type type, span<const std::byte> data) : BufferTexture(type, data.size())
+    BufferTexture(Type type, span<const std::byte> data) : BufferTexture(type, data.size())
     {
         set_data(data);
     }
@@ -59,11 +59,11 @@ public:
 
     ~BufferTexture();
 
-    void set_data(span<const std::byte> data);
+    void set_data(span<const std::byte> data) noexcept;
 
-    size_t size() const { return m_buffer_size; }
+    size_t size() const noexcept { return m_buffer_size; }
 
-    OpaqueHandle::Value gfx_api_handle() const { return m_tex_id.value; }
+    OpaqueHandle::Value gfx_api_handle() const noexcept { return m_tex_id.value; }
 
 private:
     OpaqueHandle m_tex_id;

@@ -127,7 +127,7 @@ inline std::string_view token_type_to_str(TokenType type)
     MG_ASSERT(false && "Unexpected TokenType");
 }
 
-inline Opt<TokenType> get_keyword_type(std::string_view lexeme)
+inline Opt<TokenType> get_keyword_type(std::string_view lexeme) noexcept
 {
     static constexpr std::array<std::pair<std::string_view, TokenType>, 18> keywords{ {
         { "int", TokenType::INT },
@@ -149,7 +149,7 @@ inline Opt<TokenType> get_keyword_type(std::string_view lexeme)
         { "DEFINES_VERTEX_PREPROCESS", TokenType::DEFINES_VERTEX_PREPROCESS },
     } };
 
-    for (auto&& [str, token_type] : keywords) {
+    for (const auto [str, token_type] : keywords) {
         if (str == lexeme) { return token_type; }
     }
 
@@ -163,12 +163,12 @@ struct Token {
     size_t                                line{};
 };
 
-inline float numeric_value(const Token& token)
+inline float numeric_value(const Token& token) noexcept
 {
     return std::get<float>(token.literal_value);
 }
 
-inline std::string_view string_value(const Token& token)
+inline std::string_view string_value(const Token& token) noexcept
 {
     return std::get<std::string_view>(token.literal_value);
 }

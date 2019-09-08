@@ -38,20 +38,20 @@
 /** Functionality specific to the OpenGL backend. */
 namespace Mg::gfx::opengl {
 
-void use_program(ShaderHandle program);
+void use_program(ShaderHandle program) noexcept;
 
 enum class UniformLocation : int32_t;
 
 /** Get the location for the given uniform.
  * @return Index number if uniform_name corresponds to an active uniform, nullopt otherwise.
  */
-Opt<UniformLocation> uniform_location(ShaderHandle program, std::string_view uniform_name);
+Opt<UniformLocation> uniform_location(ShaderHandle program, std::string_view uniform_name) noexcept;
 
 /** Type-safe wrapper for glUniform*.
  * Supports GLM vectors and matrices, int32_t, uint32_t, and float.
  * Defined in mg_opengl_shader.cpp
  */
-template<typename T> void set_uniform(UniformLocation location, const T& value);
+template<typename T> void set_uniform(UniformLocation location, const T& value) noexcept;
 
 /** Set texture unit to use for the given sampler uniform.
  *
@@ -60,13 +60,13 @@ template<typename T> void set_uniform(UniformLocation location, const T& value);
  * be a signed integer. Hence, this function will automatically ensure the correct type, making it
  * preferable to use.
  */
-void set_sampler_binding(UniformLocation location, TextureUnit unit);
+void set_sampler_binding(UniformLocation location, TextureUnit unit) noexcept;
 
 /** Bind Shader's block with name block_name to the given uniform buffer slot.
  * @return Whether successful (i.e. block_name corresponds to an active uniform block).
  */
 [[nodiscard]] bool set_uniform_block_binding(ShaderHandle      program,
                                              std::string_view  block_name,
-                                             UniformBufferSlot slot);
+                                             UniformBufferSlot slot) noexcept;
 
 } // namespace Mg::gfx::opengl

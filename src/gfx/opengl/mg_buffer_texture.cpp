@@ -204,7 +204,7 @@ BufferTexture::BufferTexture(Type type, size_t buffer_size) : m_buffer_size(buff
     // Create data buffer and allocate storage
     glGenBuffers(1, &buf_id);
     glBindBuffer(GL_TEXTURE_BUFFER, buf_id);
-    glBufferData(GL_TEXTURE_BUFFER, GLintptr(buffer_size), nullptr, GL_STREAM_DRAW);
+    glBufferData(GL_TEXTURE_BUFFER, narrow<GLintptr>(buffer_size), nullptr, GL_STREAM_DRAW);
 
     // Create texture object
     glGenTextures(1, &tex_id);
@@ -223,18 +223,18 @@ BufferTexture::BufferTexture(Type type, size_t buffer_size) : m_buffer_size(buff
 
 BufferTexture::~BufferTexture()
 {
-    GLuint buf_id = static_cast<uint32_t>(m_buf_id.value);
-    GLuint tex_id = static_cast<uint32_t>(m_tex_id.value);
+    const auto buf_id = static_cast<GLuint>(m_buf_id.value);
+    const auto tex_id = static_cast<GLuint>(m_tex_id.value);
     glDeleteTextures(1, &tex_id);
     glDeleteBuffers(1, &buf_id);
 }
 
-void BufferTexture::set_data(span<const std::byte> data)
+void BufferTexture::set_data(span<const std::byte> data) noexcept
 {
     // Update data buffer contents
-    GLuint buf_id = static_cast<uint32_t>(m_buf_id.value);
+    const auto buf_id = static_cast<GLuint>(m_buf_id.value);
     glBindBuffer(GL_TEXTURE_BUFFER, buf_id);
-    glBufferSubData(GL_TEXTURE_BUFFER, 0, GLsizeiptr(data.size_bytes()), data.data());
+    glBufferSubData(GL_TEXTURE_BUFFER, 0, narrow<GLsizeiptr>(data.size_bytes()), data.data());
 }
 
 } // namespace Mg::gfx

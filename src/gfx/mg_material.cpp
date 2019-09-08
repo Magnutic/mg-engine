@@ -38,7 +38,7 @@ namespace Mg::gfx {
 
 namespace {
 
-size_t num_elems_for_param_type(shader::ParameterType type)
+size_t num_elems_for_param_type(shader::ParameterType type) noexcept
 {
     switch (type) {
     case shader::ParameterType::Vec4:
@@ -155,7 +155,7 @@ void Material::set_parameter(Identifier name, glm::vec4 param)
 namespace {
 
 // How far to advance in to parameters buffer for each type.
-size_t offset_for_param_type(shader::ParameterType type)
+size_t offset_for_param_type(shader::ParameterType type) noexcept
 {
     switch (type) {
     case shader::ParameterType::Vec4:
@@ -227,7 +227,7 @@ void Material::_set_parameter_impl(Identifier            name,
     std::memcpy(&m_parameter_data.buffer[offset], param_value.data(), size);
 }
 
-PipelineIdentifier Material::pipeline_identifier() const
+PipelineIdentifier Material::pipeline_identifier() const noexcept
 {
     return { m_shader.resource_id(), m_option_flags };
 }

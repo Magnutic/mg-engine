@@ -75,7 +75,7 @@ auto try_parse_line_as_include = [](std::string_view line) -> std::pair<bool, st
 
     SimpleInputStream stream(line);
 
-    auto skip_whitespace = [&stream] {
+    const auto skip_whitespace = [&stream] {
         while (is_whitespace(stream.peek())) { stream.advance(); }
     };
 
@@ -85,7 +85,7 @@ auto try_parse_line_as_include = [](std::string_view line) -> std::pair<bool, st
     if (!stream.match("include")) { return fail_value; }
     skip_whitespace();
 
-    char terminator;
+    char terminator{};
 
     if (stream.match('\"')) { terminator = '\"'; }
     else if (stream.match('<')) {
@@ -111,11 +111,11 @@ std::string assemble_shader_code(std::vector<fs::path>       include_directories
                                  const ResourceLoadingInput& input,
                                  fs::path                    source_file)
 {
-    auto get_code = [&input](fs::path file_path) -> std::pair<bool, std::string> {
+    const auto get_code = [&input](fs::path file_path) -> std::pair<bool, std::string> {
         try {
-            const auto     file_id = Identifier::from_runtime_string(file_path.generic_u8string());
-            ResourceHandle file_handle = input.load_dependency<TextResource>(file_id);
-            ResourceAccessGuard include_access(file_handle);
+            const auto file_id = Identifier::from_runtime_string(file_path.generic_u8string());
+            const ResourceHandle      file_handle = input.load_dependency<TextResource>(file_id);
+            const ResourceAccessGuard include_access(file_handle);
             return { true, std::string(include_access->text()) };
         }
         catch (ResourceError&) {
@@ -123,14 +123,14 @@ std::string assemble_shader_code(std::vector<fs::path>       include_directories
         }
     };
 
-    auto get_include = [&](std::string_view include_file) -> std::pair<bool, std::string> {
+    const auto get_include = [&](std::string_view include_file) -> std::pair<bool, std::string> {
         std::string result;
 
         for (auto include_directory : include_directories) {
             const fs::path file_path = include_directory / include_file;
 
             // Load include file as a dependency of this resource.
-            auto [is_found, included_code] = get_code(file_path);
+            const auto [is_found, included_code] = get_code(file_path);
 
             if (!is_found) { continue; }
 
@@ -153,8 +153,8 @@ std::string assemble_shader_code(std::vector<fs::path>       include_directories
     std::vector<std::string_view> lines = tokenise_string(code, "\n");
     std::string                   assembled_code;
 
-    for (auto&& line : lines) {
-        auto [line_is_include, include_path] = try_parse_line_as_include(line);
+    for (const auto line : lines) {
+        const auto [line_is_include, include_path] = try_parse_line_as_include(line);
 
         if (!line_is_include) {
             assembled_code += line;
@@ -163,7 +163,7 @@ std::string assemble_shader_code(std::vector<fs::path>       include_directories
             continue;
         }
 
-        auto [include_success, included_code] = get_include(include_path);
+        const auto [include_success, included_code] = get_include(include_path);
         if (!include_success) {
             g_log.write_error(fmt::format("Could not find '{}' (#include directive in '{}'.)",
                                           include_path,

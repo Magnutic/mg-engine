@@ -62,7 +62,7 @@ void RenderCommandProducer::add_mesh(MeshHandle                  mesh,
     const internal::MeshInfo& md = internal::mesh_info(mesh);
 
     for (size_t i = 0; i < md.submeshes.size(); ++i) {
-        auto material = material_for_submesh(material_bindings, i);
+        const auto* material = material_for_submesh(material_bindings, i);
 
         if (material == nullptr) {
             auto msg = fmt::format("No material specified for mesh '{}', submesh {}. Skipping.",
@@ -87,7 +87,7 @@ void RenderCommandProducer::add_mesh(MeshHandle                  mesh,
     }
 }
 
-void RenderCommandProducer::clear()
+void RenderCommandProducer::clear() noexcept
 {
     m_keys.clear();
     m_commands.m_render_commands.clear();
@@ -120,18 +120,19 @@ bool in_view(const glm::mat4& M, const glm::mat4& MVP, glm::vec3 centre, float r
     return !frustum_cull(MVP, centre, scale_factor * radius);
 }
 
-uint32_t view_depth_in_cm(const ICamera& camera, glm::vec3 pos)
+uint32_t view_depth_in_cm(const ICamera& camera, glm::vec3 pos) noexcept
 {
     const float depth_f = camera.depth_at_point(pos) * 100.0f;
-    return static_cast<uint32_t>(glm::max(0.0f, depth_f));
+    return narrow_cast<uint32_t>(glm::max(0.0f, depth_f));
 }
 
-uint32_t render_command_fingerpint(const RenderCommand& command)
+uint32_t render_command_fingerpint(const RenderCommand& command) noexcept
 {
     // TODO: This fingerprint is not much good
-    const uint32_t mesh_fingerprint     = static_cast<uint8_t>(command.gfx_api_mesh_object_id);
-    const auto     material_fingerprint = static_cast<uint32_t>(
-        reinterpret_cast<uintptr_t>(command.material)); // NOLINT
+    const uint32_t mesh_fingerprint = static_cast<uint8_t>(command.gfx_api_mesh_object_id);
+    uintptr_t      mat_ptr_as_int{};
+    std::memcpy(&mat_ptr_as_int, &command.material, sizeof(command.material));
+    const auto material_fingerprint = narrow_cast<uint32_t>(mat_ptr_as_int);
     return (material_fingerprint << 8) | mesh_fingerprint;
 }
 

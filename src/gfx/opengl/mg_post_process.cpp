@@ -139,7 +139,7 @@ void init(PostProcessRendererData& data)
     glGenBuffers(1, &vbo_id);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), &quad_vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), &quad_vertices[0], GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
     glEnableVertexAttribArray(0);
@@ -187,18 +187,19 @@ PostProcessRenderer::PostProcessRenderer() : PImplMixin()
 
 PostProcessRenderer::~PostProcessRenderer()
 {
-    GLuint vao_id = static_cast<uint32_t>(impl().vao.value);
-    GLuint vbo_id = static_cast<uint32_t>(impl().vbo.value);
+    const auto vao_id = static_cast<uint32_t>(impl().vao.value);
+    const auto vbo_id = static_cast<uint32_t>(impl().vbo.value);
 
     glDeleteVertexArrays(1, &vao_id);
     glDeleteBuffers(1, &vbo_id);
 }
 
-void PostProcessRenderer::post_process(const Material& material, TextureHandle input_colour)
+void PostProcessRenderer::post_process(const Material& material,
+                                       TextureHandle   input_colour) noexcept
 {
     setup_render_pipeline(impl(), material, input_colour, nullopt, 0.0f, 0.0f);
 
-    GLuint vao_id = static_cast<GLuint>(impl().vao.value);
+    const auto vao_id = static_cast<GLuint>(impl().vao.value);
 
     glBindVertexArray(vao_id);
     glDrawArrays(GL_TRIANGLES, 0, 12);
@@ -209,18 +210,18 @@ void PostProcessRenderer::post_process(const Material& material,
                                        TextureHandle   input_colour,
                                        TextureHandle   input_depth,
                                        float           z_near,
-                                       float           z_far)
+                                       float           z_far) noexcept
 {
     setup_render_pipeline(impl(), material, input_colour, input_depth, z_near, z_far);
 
-    GLuint vao_id = static_cast<GLuint>(impl().vao.value);
+    const auto vao_id = static_cast<GLuint>(impl().vao.value);
 
     glBindVertexArray(vao_id);
     glDrawArrays(GL_TRIANGLES, 0, 12);
     MG_CHECK_GL_ERROR();
 }
 
-void PostProcessRenderer::drop_shaders()
+void PostProcessRenderer::drop_shaders() noexcept
 {
     impl().pipeline_repository.drop_pipelines();
 }

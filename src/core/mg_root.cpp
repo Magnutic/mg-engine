@@ -98,7 +98,7 @@ Root::~Root()
 #endif
 }
 
-double Root::time_since_init()
+double Root::time_since_init() noexcept
 {
     using namespace std::chrono;
     using seconds_double = duration<double, seconds::period>;

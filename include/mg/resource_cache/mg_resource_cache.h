@@ -174,7 +174,7 @@ public:
 
     using FileChangeCallbackT = void (*)(const FileChangedEvent&);
 
-    void set_resource_reload_callback(FileChangeCallbackT callback)
+    void set_resource_reload_callback(FileChangeCallbackT callback) noexcept
     {
         m_resource_reload_callback = std::move(callback);
     }
@@ -209,7 +209,7 @@ private:
         if (file_info.entry == nullptr) {
             // Lock to make sure that no other thread is trying to create a ResourceEntry for the
             // same resource at the same time.
-            std::unique_lock{ m_set_resource_entry_mutex };
+            std::unique_lock lock{ m_set_resource_entry_mutex };
 
             // Check again after locking, in case another thread did the same thing ahead of us.
             if (file_info.entry == nullptr) {
@@ -224,7 +224,7 @@ private:
     }
 
     // Throw ResourceNotFound exception and write details to log.
-    void throw_resource_not_found(Identifier filename) const;
+    [[noreturn]] void throw_resource_not_found(Identifier filename) const;
 
     // Log a message with nice formatting.
     void log_verbose(Identifier resource, std::string_view message) const;

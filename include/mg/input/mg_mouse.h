@@ -40,7 +40,7 @@ namespace Mg::input {
 /** Mouse input-device implementation. */
 class Mouse final : public IInputDevice {
 public:
-    Mouse(const Window& window) : m_window(window) { m_button_states.reset(); }
+    Mouse(const Window& window) noexcept : m_window(window) { m_button_states.reset(); }
 
     enum class Button { left, right, middle, button4, button5, button6, button7, button8 };
     static constexpr size_t k_num_buttons = 8;

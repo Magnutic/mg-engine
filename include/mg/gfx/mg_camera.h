@@ -43,13 +43,13 @@ namespace Mg::gfx {
 
 class DepthRange {
 public:
-    DepthRange(float near, float far) : m_near(near), m_far(far)
+    DepthRange(float near, float far) noexcept : m_near(near), m_far(far)
     {
         MG_ASSERT(near > 0.0f && near < far);
     }
 
-    float near() const { return m_near; }
-    float far() const { return m_far; }
+    float near() const noexcept { return m_near; }
+    float far() const noexcept { return m_far; }
 
 private:
     float m_near, m_far;
@@ -98,9 +98,9 @@ public:
     /** Construct a camera.
      * @param fov Field Of View angle, in degrees.
      * @param z_range Depth clipping range. */
-    explicit Camera(FieldOfView fov          = { FieldOfView::DEGREES, 75.0f },
-                    float       aspect_ratio = 4.0f / 3.0f,
-                    DepthRange  z_range      = { 0.1f, 2000.0f })
+    Camera(FieldOfView fov          = { FieldOfView::DEGREES, 75.0f },
+           float       aspect_ratio = 4.0f / 3.0f,
+           DepthRange  z_range      = { 0.1f, 2000.0f }) noexcept
         : field_of_view(fov), m_depth_range{ z_range }
     {
         set_aspect_ratio(aspect_ratio);
@@ -109,19 +109,19 @@ public:
     FieldOfView field_of_view;
 
     /** Set depth clipping range. */
-    void set_depth_range(DepthRange z_range) { m_depth_range = z_range; }
+    void set_depth_range(DepthRange z_range) noexcept { m_depth_range = z_range; }
 
     /** Get camera's depth range. */
-    DepthRange depth_range() const override { return m_depth_range; }
+    DepthRange depth_range() const noexcept override { return m_depth_range; }
 
     /** Set aspect ratio. */
-    void set_aspect_ratio(float aspect_ratio)
+    void set_aspect_ratio(float aspect_ratio) noexcept
     {
         MG_ASSERT(aspect_ratio > 0.0f);
         m_aspect = aspect_ratio;
     }
 
-    float aspect_ratio() const override { return m_aspect; }
+    float aspect_ratio() const noexcept override { return m_aspect; }
 
     glm::mat4 proj_matrix() const override
     {
@@ -138,13 +138,13 @@ public:
         return glm::inverse(glm::translate(position) * r.pitch(glm::half_pi<float>()).to_matrix());
     }
 
-    glm::mat4 view_proj_matrix() const override { return proj_matrix() * view_matrix(); }
+    glm::mat4 view_proj_matrix() const noexcept override { return proj_matrix() * view_matrix(); }
 
-    glm::vec3 get_position() const override { return position; }
+    glm::vec3 get_position() const noexcept override { return position; }
 
-    float depth_at_point(glm::vec3 point) const override
+    float depth_at_point(glm::vec3 point) const noexcept override
     {
-        auto p{ PointNormalPlane::from_point_and_normal(position, rotation.forward()) };
+        const auto p{ PointNormalPlane::from_point_and_normal(position, rotation.forward()) };
         return signed_distance_to_plane(p, point);
     }
 
@@ -162,29 +162,32 @@ private:
 /** Orthographic projection camera. */
 class OrthoCamera final : public ICamera {
 public:
-    explicit OrthoCamera() : min{ -0.5f }, max{ 0.5f } {}
+    explicit OrthoCamera() noexcept : min{ -0.5f }, max{ 0.5f } {}
 
-    explicit OrthoCamera(glm::vec3 _min, glm::vec3 _max) : min{ _min }, max{ _max } {}
+    explicit OrthoCamera(glm::vec3 _min, glm::vec3 _max) noexcept : min{ _min }, max{ _max } {}
 
-    glm::mat4 proj_matrix() const override
+    glm::mat4 proj_matrix() const noexcept override
     {
         return glm::orthoRH(min.x, max.x, min.y, max.y, min.z, max.z);
     }
 
-    glm::mat4 view_matrix() const override { return glm::mat4{}; }
+    glm::mat4 view_matrix() const noexcept override { return glm::mat4{}; }
 
-    glm::mat4 view_proj_matrix() const override { return proj_matrix(); }
+    glm::mat4 view_proj_matrix() const noexcept override { return proj_matrix(); }
 
-    DepthRange depth_range() const override { return { min.z, max.z }; }
+    DepthRange depth_range() const noexcept override { return { min.z, max.z }; }
 
-    float aspect_ratio() const override { return (max.x - min.x) / (max.y - min.y); }
+    float aspect_ratio() const noexcept override { return (max.x - min.x) / (max.y - min.y); }
 
-    glm::vec3 get_position() const override
+    glm::vec3 get_position() const noexcept override
     {
         return { min.x + max.x * 0.5f, min.y + max.y * 0.5f, max.z };
     }
 
-    float depth_at_point(glm::vec3 point) const override { return glm::abs(point.z - min.z); }
+    float depth_at_point(glm::vec3 point) const noexcept override
+    {
+        return glm::abs(point.z - min.z);
+    }
 
     glm::vec3 min;
     glm::vec3 max;

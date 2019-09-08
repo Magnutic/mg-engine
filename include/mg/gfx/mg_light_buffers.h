@@ -39,7 +39,7 @@ class LightGrid;
 
 /* Collection of GPU data structures holding information on lights, used by renderers. */
 struct LightBuffers {
-    explicit LightBuffers();
+    explicit LightBuffers() noexcept;
 
     UniformBuffer light_data_buffer;
     BufferTexture light_index_texture;

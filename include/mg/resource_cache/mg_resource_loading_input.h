@@ -36,9 +36,9 @@ namespace Mg {
 /** Input to resource types' `load_resource()` member function. */
 class ResourceLoadingInput {
 public:
-    explicit ResourceLoadingInput(Array<std::byte>   data,
-                                  ResourceCache&     owning_cache,
-                                  ResourceEntryBase& resource_entry)
+    ResourceLoadingInput(Array<std::byte>   data,
+                         ResourceCache&     owning_cache,
+                         ResourceEntryBase& resource_entry) noexcept
         : m_data(std::move(data)), m_owning_cache(&owning_cache), m_resource_entry(&resource_entry)
     {}
 
@@ -53,8 +53,8 @@ public:
     template<typename ResT>
     ResourceHandle<ResT> load_dependency(Identifier dependency_file_id) const
     {
-        auto file_time_stamp = m_owning_cache->file_time_stamp(dependency_file_id);
-        auto handle          = m_owning_cache->resource_handle<ResT>(dependency_file_id);
+        const auto file_time_stamp = m_owning_cache->file_time_stamp(dependency_file_id);
+        const auto handle          = m_owning_cache->resource_handle<ResT>(dependency_file_id);
 
         // Write dependency after look-up.
         // Order is important, as look-ups might throw.

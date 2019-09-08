@@ -126,7 +126,7 @@ public:
             parse_error("Unexpected token (expected sampler2D or samplerCube).", type_token);
         }
 
-        std::string_view identifier = parse_identifier();
+        const std::string_view identifier = parse_identifier();
 
         expect_next(TokenType::SEMICOLON);
 
@@ -145,7 +145,7 @@ public:
 
         auto& type_token = next_token();
 
-        std::string_view id = parse_identifier();
+        const std::string_view id = parse_identifier();
 
         expect_next(TokenType::EQUALS, "Specifying default value for parameter is mandatory");
 
@@ -193,7 +193,7 @@ public:
         // If the required type is an integer, round the given value to nearest int.
         // TODO: a better solution would be to parse as int to begin with.
         if (p.type == ParameterType::Int) {
-            std::array<int32_t, 4> int_value = { round<int32_t>(value.x), 0, 0, 0 };
+            const std::array<int32_t, 4> int_value = { round<int32_t>(value.x), 0, 0, 0 };
             std::memcpy(&p.value, &int_value, sizeof(p.value));
         }
         else {
@@ -206,7 +206,7 @@ public:
 
     void parse_option_declaration()
     {
-        std::string_view option_name = parse_identifier();
+        const std::string_view option_name = parse_identifier();
 
         if (auto& equal_token = next_token(); equal_token.type != TokenType::EQUALS) {
             parse_error("Expected = (i.e. default value for option, true|false).", equal_token);
@@ -232,7 +232,7 @@ public:
 
     void parse_tags_block()
     {
-        auto parse_tag = [this] {
+        const auto parse_tag = [this] {
             auto& tag_token = next_token();
             switch (tag_token.type) {
             case TokenType::UNLIT:
@@ -306,7 +306,7 @@ public:
         return t;
     }
 
-    ParseResult take_result() { return std::move(m_result); }
+    ParseResult take_result() noexcept { return std::move(m_result); }
 
 private:
     std::vector<Token>           m_tokens;

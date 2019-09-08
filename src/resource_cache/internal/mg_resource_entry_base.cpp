@@ -43,8 +43,8 @@ void ResourceEntryBase::load_resource()
     last_access = std::time(nullptr);
 
     // Load raw data.
-    auto file_size = loader().file_size(resource_id());
-    auto file_data = Array<std::byte>::make(file_size);
+    const auto file_size = loader().file_size(resource_id());
+    auto       file_data = Array<std::byte>::make(file_size);
     loader().load_file(resource_id(), file_data);
 
     // Structure providing interface needed for resources to load data.

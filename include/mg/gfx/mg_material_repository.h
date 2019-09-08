@@ -46,7 +46,7 @@ public:
     MG_MAKE_NON_MOVABLE(MaterialRepository);
     MG_MAKE_NON_COPYABLE(MaterialRepository);
 
-    explicit MaterialRepository();
+    MaterialRepository();
     ~MaterialRepository();
 
     Material* create(Identifier id, ResourceHandle<ShaderResource> shader);

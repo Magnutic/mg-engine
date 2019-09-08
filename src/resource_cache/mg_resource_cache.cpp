@@ -35,7 +35,7 @@ namespace Mg {
 namespace {
 std::string format_time(std::time_t time)
 {
-    const auto time_gm = std::gmtime(&time);
+    const auto* time_gm = std::gmtime(&time);
     if (!time_gm) { return "<INVALID TIME>"; }
 
     constexpr size_t maxlen = 100;
@@ -61,7 +61,7 @@ void ResourceCache::refresh()
 
     auto has_file_changed = [this](const ResourceCache::FileInfo& file,
                                    std::time_t                    old_time_stamp) -> bool {
-        bool has_changed = file.time_stamp > old_time_stamp;
+        const bool has_changed = file.time_stamp > old_time_stamp;
 
         if (has_changed) {
             g_log.write_message(fmt::format(
@@ -85,7 +85,7 @@ void ResourceCache::refresh()
 
     // Should the resource corresponding to the given file be re-loaded (i.e. has its file or those
     // of any of its dependencies changed)?
-    auto should_reload = [&](const FileInfo& fi) -> bool {
+    const auto should_reload = [&](const FileInfo& fi) -> bool {
         if (fi.entry == nullptr) { return false; }
 
         std::shared_lock entry_lock{ fi.entry->mutex };
@@ -127,7 +127,7 @@ void ResourceCache::refresh()
     // Notify callbacks of file changes.
     for (const auto& [entry, resource_type, new_time_stamp, new_loader] : entries_to_reload) {
         if (m_resource_reload_callback) {
-            BaseResourceHandle handle(entry.resource_type_id(), entry);
+            const BaseResourceHandle handle(entry.resource_type_id(), entry);
             m_resource_reload_callback(FileChangedEvent{ handle, resource_type, new_time_stamp });
         }
     }
@@ -154,7 +154,7 @@ void ResourceCache::rebuild_file_list()
     log_verbose("<N/A>", "(Re-) Building file list...");
 
     // Update file list with the new file record.
-    auto update_file_list = [&](const FileRecord& file_record, IFileLoader& loader) {
+    const auto update_file_list = [&](const FileRecord& file_record, IFileLoader& loader) {
         const auto filename = file_record.name;
         auto it = std::lower_bound(m_file_list.begin(), m_file_list.end(), filename, cmp_filename);
 
@@ -180,7 +180,7 @@ void ResourceCache::rebuild_file_list()
 }
 
 // Throw ResourceNotFound exception and write details to log.
-void ResourceCache::throw_resource_not_found(Identifier filename) const
+[[noreturn]] void ResourceCache::throw_resource_not_found(Identifier filename) const
 {
     std::string msg = "No such file. [ searched in ";
     for (auto&& p_loader : file_loaders()) { msg += fmt::format("'{}' ", p_loader->name()); }
@@ -224,11 +224,11 @@ bool ResourceCache::unload_unused(bool unload_all_unused) const
     // unload_unused does not modify anything in the file list itself, so shared lock suffices.
     std::shared_lock lock{ m_file_list_mutex };
 
-    auto is_unloadable = [](const ResourceEntryBase& entry) -> bool {
+   const auto is_unloadable = [](const ResourceEntryBase& entry) -> bool {
         return entry.ref_count == 0 && entry.is_loaded();
     };
 
-    auto try_unload = [&](const FileInfo& file_info) -> bool {
+    const auto try_unload = [&](const FileInfo& file_info) -> bool {
         using namespace std::chrono_literals;
         if (file_info.entry == nullptr || file_info.entry->ref_count != 0) { return false; }
 
@@ -258,7 +258,7 @@ bool ResourceCache::unload_unused(bool unload_all_unused) const
     std::vector<const FileInfo*> file_infos;
     for (const FileInfo& file_info : m_file_list) { file_infos.push_back(&file_info); }
 
-    auto lru_order = [](const FileInfo* l, const FileInfo* r) {
+    const auto lru_order = [](const FileInfo* l, const FileInfo* r) {
         if (l->entry == nullptr) { return false; }
         if (r->entry == nullptr) { return true; }
         return l->entry->last_access < r->entry->last_access;

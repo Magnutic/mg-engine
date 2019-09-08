@@ -37,7 +37,7 @@
 namespace Mg::gfx::internal {
 
 struct TextureNode {
-    explicit TextureNode(Texture2D&& tex) : texture(std::move(tex)) {}
+    explicit TextureNode(Texture2D&& tex) noexcept : texture(std::move(tex)) {}
 
     Texture2D texture;
 
@@ -45,7 +45,7 @@ struct TextureNode {
     uint32_t self_index{};
 };
 
-inline TextureHandle make_texture_handle(const TextureNode* texture_node)
+inline TextureHandle make_texture_handle(const TextureNode* texture_node) noexcept
 {
     TextureHandle handle{};
     static_assert(sizeof(handle) >= sizeof(texture_node));
@@ -54,7 +54,7 @@ inline TextureHandle make_texture_handle(const TextureNode* texture_node)
 }
 
 /** Dereference texture handle. */
-inline const TextureNode& texture_node(TextureHandle handle)
+inline const TextureNode& texture_node(TextureHandle handle) noexcept
 {
     MG_ASSERT(handle != TextureHandle{ 0 });
     return *reinterpret_cast<const TextureNode*>(handle); // NOLINT

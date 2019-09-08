@@ -60,12 +60,12 @@ PipelinePrototypeContext::PipelinePrototypeContext(const PipelinePrototype& prot
 
     if (settings.enable_blending) {
         glEnable(GL_BLEND);
-        auto colour     = static_cast<GLenum>(settings.blend_mode.colour);
-        auto alpha      = static_cast<GLenum>(settings.blend_mode.alpha);
-        auto src_colour = static_cast<GLenum>(settings.blend_mode.src_colour);
-        auto dst_colour = static_cast<GLenum>(settings.blend_mode.dst_colour);
-        auto src_alpha  = static_cast<GLenum>(settings.blend_mode.src_alpha);
-        auto dst_alpha  = static_cast<GLenum>(settings.blend_mode.dst_alpha);
+        const auto colour     = static_cast<GLenum>(settings.blend_mode.colour);
+        const auto alpha      = static_cast<GLenum>(settings.blend_mode.alpha);
+        const auto src_colour = static_cast<GLenum>(settings.blend_mode.src_colour);
+        const auto dst_colour = static_cast<GLenum>(settings.blend_mode.dst_colour);
+        const auto src_alpha  = static_cast<GLenum>(settings.blend_mode.src_alpha);
+        const auto dst_alpha  = static_cast<GLenum>(settings.blend_mode.dst_alpha);
 
         glBlendEquationSeparate(colour, alpha);
         glBlendFuncSeparate(src_colour, dst_colour, src_alpha, dst_alpha);
@@ -74,9 +74,9 @@ PipelinePrototypeContext::PipelinePrototypeContext(const PipelinePrototype& prot
         glDisable(GL_BLEND);
     }
 
-    glDepthMask(static_cast<GLboolean>(settings.depth_write));
+    glDepthMask(GLboolean{ settings.depth_write });
 
-    auto colour_write = static_cast<GLboolean>(settings.colour_write);
+    const auto colour_write = GLboolean{ settings.colour_write };
     glColorMask(colour_write, colour_write, colour_write, colour_write);
 
     MG_CHECK_GL_ERROR();
@@ -87,7 +87,7 @@ void PipelinePrototypeContext::bind_pipeline(const Pipeline& pipeline) const
     MG_ASSERT(&pipeline.prototype() == &bound_prototype &&
               "Pipeline bound to a PipelinePrototypeContext for a different PipelinePrototype.");
 
-    ShaderHandle shader_handle{ pipeline.m_internal_handle.value };
+    const ShaderHandle shader_handle{ pipeline.m_internal_handle.value };
     opengl::use_program(shader_handle);
 
     MG_CHECK_GL_ERROR();
@@ -114,14 +114,14 @@ Pipeline::Pipeline(OpaqueHandle               internal_handle,
     : m_internal_handle(std::move(internal_handle)), m_p_prototype(&prototype)
 {
     using namespace opengl;
-    ShaderHandle shader_handle{ m_internal_handle.value };
+    const ShaderHandle shader_handle{ m_internal_handle.value };
     use_program(shader_handle);
 
-    auto set_input_location = [shader_handle](const PipelineInputLocation& input_location) {
+    const auto set_input_location = [shader_handle](const PipelineInputLocation& input_location) {
         auto&& [input_name, type, location] = input_location;
         auto name                           = input_name.str_view();
 
-        auto log_error = [&] {
+        const auto log_error = [&] {
             g_log.write_message(fmt::format(
                 "Mg::Pipeline::Pipeline: no such active uniform '{}' (shader-program id {}).",
                 name,

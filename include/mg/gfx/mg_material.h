@@ -73,13 +73,13 @@ public:
     using Options    = small_vector<Option, 10>;
 
     /** Get the list of samplers (texture inputs) for this material. */
-    const Samplers& samplers() const { return m_samplers; }
+    const Samplers& samplers() const noexcept { return m_samplers; }
 
     /** Get the list of uniform input parameters for this material. */
-    const Parameters& parameters() const { return m_params; }
+    const Parameters& parameters() const noexcept { return m_params; }
 
     /** Get the list of on/off options for this material. */
-    const Options& options() const { return m_options; }
+    const Options& options() const noexcept { return m_options; }
 
     /** Get option values as bit flags. The bit at position `i` corresponds to the option at index
      * `i` within the options of this Material (see `Material::options()`).
@@ -91,7 +91,7 @@ public:
      * The primary use-case for this bit-flag value is to succinctly identify the corresponding
      * shader permutation for the current set of enabled options.
      */
-    uint32_t option_flags() const { return m_option_flags; }
+    uint32_t option_flags() const noexcept { return m_option_flags; }
 
     /** Enable or disable the given option. Throws if the option does not exist for this material */
     void set_option(Identifier option, bool enabled);
@@ -110,14 +110,14 @@ public:
 
     Identifier id() const noexcept { return m_id; }
 
-    void set_id(Identifier id) { m_id = id; }
+    void set_id(Identifier id) noexcept { m_id = id; }
 
     /** Identifier based on the aspects of the material that affect the corresponding rendering
      * pipeline. Used to allow multiple materials to re-use the same pipeline when applicable.
      */
-    PipelineIdentifier pipeline_identifier() const;
+    PipelineIdentifier pipeline_identifier() const noexcept;
 
-    ResourceHandle<ShaderResource> shader() const { return m_shader; }
+    ResourceHandle<ShaderResource> shader() const noexcept { return m_shader; }
 
     std::string debug_print() const;
 
@@ -145,8 +145,8 @@ private:
     struct ParamsBuffer {
         uint8_t buffer[defs::k_material_parameters_buffer_size];
 
-        const uint8_t* data() const { return &buffer[0]; }
-        size_t         size() const { return defs::k_material_parameters_buffer_size; }
+        const uint8_t* data() const noexcept { return &buffer[0]; }
+        size_t         size() const noexcept { return defs::k_material_parameters_buffer_size; }
     };
 
     ParamsBuffer m_parameter_data{};

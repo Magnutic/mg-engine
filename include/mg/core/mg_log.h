@@ -29,6 +29,7 @@
 #pragma once
 
 #include "mg/utils/mg_simple_pimpl.h"
+#include "mg/utils/mg_macros.h"
 
 #include <string_view>
 #include <utility>
@@ -59,42 +60,42 @@ public:
     Log& operator=(const Log& other) = delete;
 
     /** Set verbosity for console output */
-    void set_console_verbosity(Prio prio);
+    void set_console_verbosity(Prio prio) noexcept;
 
     /** Set verbosity for log file output */
-    void set_file_verbosity(Prio prio);
+    void set_file_verbosity(Prio prio) noexcept;
 
     struct GetVerbosityReturn {
         Prio console_verbosity;
         Prio log_file_verbosity;
     };
     /** Get verbosity levels. */
-    GetVerbosityReturn get_verbosity() const;
+    GetVerbosityReturn get_verbosity() const noexcept;
 
     /** Writes message with priority prio. */
-    void write(Prio prio, std::string_view msg) { output(prio, msg); }
+    void write(Prio prio, std::string_view msg) noexcept { output(prio, msg); }
 
     // Convenience functions:
 
     /** Writes a message with priority Error */
-    void write_error(std::string_view msg) { write(Prio::Error, msg); }
+    void write_error(std::string_view msg) noexcept { write(Prio::Error, msg); }
 
     /** Writes a message with priority Warning */
-    void write_warning(std::string_view msg) { write(Prio::Warning, msg); }
+    void write_warning(std::string_view msg) noexcept { write(Prio::Warning, msg); }
 
     /** Writes a message with priority Message */
-    void write_message(std::string_view msg) { write(Prio::Message, msg); }
+    void write_message(std::string_view msg) noexcept { write(Prio::Message, msg); }
 
     /** Writes a message with priority Verbose */
-    void write_verbose(std::string_view msg) { write(Prio::Verbose, msg); }
+    void write_verbose(std::string_view msg) noexcept { write(Prio::Verbose, msg); }
 
-    void flush();
+    void flush() noexcept;
 
     /** Get path to log output file. */
-    std::string_view file_path() const;
+    std::string_view file_path() const noexcept;
 
 private:
-    void output(Prio prio, std::string_view str);
+    void output(Prio prio, std::string_view str) noexcept;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -102,7 +103,9 @@ private:
 // Nifty counter lifetime management of log instance
 namespace detail {
 struct LogInitialiser {
-    LogInitialiser();
+    LogInitialiser() noexcept;
+    MG_MAKE_NON_COPYABLE(LogInitialiser);
+    MG_MAKE_NON_MOVABLE(LogInitialiser);
     ~LogInitialiser();
 };
 

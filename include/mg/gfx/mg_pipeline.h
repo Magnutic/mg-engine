@@ -116,7 +116,7 @@ public:
     MG_MAKE_DEFAULT_MOVABLE(Pipeline);
     MG_MAKE_NON_COPYABLE(Pipeline);
 
-    const PipelinePrototype& prototype() const { return *m_p_prototype; };
+    const PipelinePrototype& prototype() const noexcept { return *m_p_prototype; };
 
 private:
     Pipeline(OpaqueHandle               internal_handle,

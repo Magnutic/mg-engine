@@ -49,7 +49,7 @@ std::string error_dump_code(std::string_view code)
     size_t line = 1;
 
     str += std::to_string(line) + '\t';
-    for (char c : code) {
+    for (const char c : code) {
         str += c;
         if (c == '\n') {
             ++line;
@@ -159,7 +159,7 @@ ShaderCompileResult compile_shader(const ShaderCode& code)
 
 void PipelineRepository::bind_pipeline(const Material& material, BindingContext& binding_context)
 {
-    Pipeline& pipeline = get_or_make_pipeline(material);
+    const Pipeline& pipeline = get_or_make_pipeline(material);
 
     if (&pipeline != binding_context.currently_bound_pipeline) {
         binding_context.prototype_context.bind_pipeline(pipeline);
@@ -223,7 +223,7 @@ PipelineRepository::PipelineNode& PipelineRepository::make_pipeline(const Materi
         }
     }
 
-    auto log_shader_link_error = [&] {
+    const auto log_shader_link_error = [&] {
         g_log.write_error(fmt::format("Error linking shaders for program {}.", shader_name));
         g_log.write_verbose(
             fmt::format("Vertex code:\n{}", error_dump_code(shader_code.vertex.code)));
@@ -233,7 +233,7 @@ PipelineRepository::PipelineNode& PipelineRepository::make_pipeline(const Materi
             fmt::format("Fragment code:\n{}", error_dump_code(shader_code.fragment.code)));
     };
 
-    auto make_pipeline = [&]() -> Pipeline {
+    const auto make_pipeline = [&]() -> Pipeline {
         Pipeline::CreationParameters create_params{ compile_result.opt_vs.value(),
                                                     compile_result.opt_gs,
                                                     compile_result.opt_fs,

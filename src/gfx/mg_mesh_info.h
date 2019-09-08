@@ -62,7 +62,7 @@ struct MeshInfo {
     uint32_t self_index{};
 };
 
-inline MeshHandle make_mesh_handle(const MeshInfo* mesh_info)
+inline MeshHandle make_mesh_handle(const MeshInfo* mesh_info) noexcept
 {
     MeshHandle handle{};
     static_assert(sizeof(handle) >= sizeof(mesh_info));
@@ -71,10 +71,12 @@ inline MeshHandle make_mesh_handle(const MeshInfo* mesh_info)
 }
 
 /** Dereference mesh handle. */
-inline const MeshInfo& mesh_info(MeshHandle handle)
+inline const MeshInfo& mesh_info(MeshHandle handle) noexcept
 {
-    MG_ASSERT(handle != MeshHandle{ 0 });
-    return *reinterpret_cast<const MeshInfo*>(handle); // NOLINT
+    const MeshInfo* p{};
+    std::memcpy(&p, &handle, sizeof(handle));
+    MG_ASSERT(p != nullptr);
+    return *p;
 }
 
 } // namespace Mg::gfx::internal

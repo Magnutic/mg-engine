@@ -60,12 +60,12 @@ public:
 
     Identifier id() const noexcept { return m_id; }
 
-    OpaqueHandle::Value gfx_api_handle() const { return m_gfx_api_handle.value; }
+    OpaqueHandle::Value gfx_api_handle() const noexcept { return m_gfx_api_handle.value; }
 
 private:
-    Texture2D(OpaqueHandle&& gfx_api_handle) : m_gfx_api_handle(std::move(gfx_api_handle)) {}
+    Texture2D(OpaqueHandle&& gfx_api_handle) noexcept : m_gfx_api_handle(std::move(gfx_api_handle)) {}
 
-    void unload();
+    void unload() noexcept;
 
     OpaqueHandle m_gfx_api_handle;
 

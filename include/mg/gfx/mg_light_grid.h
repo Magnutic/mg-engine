@@ -60,22 +60,22 @@ public:
     /** (Re-) calculate the tile-delimiter planes.
      * @param P camera projection matrix.
      */
-    void calculate_delim_planes(glm::mat4 P);
+    void calculate_delim_planes(glm::mat4 P) noexcept;
 
     /** Find min or max extent of view space sphere within light grid. */
-    size_t extents(const glm::vec3& pos_view, float radius_sqr, bool horizontal, bool get_max);
+    size_t extents(const glm::vec3& pos_view, float radius_sqr, bool horizontal, bool get_max) noexcept;
 
     /** Get extents of sphere in slice planes. (Used in clustered rendering, for tiled rendering,
      * extents() is sufficient.)
      */
-    static std::pair<size_t, size_t> depth_extents(float depth, float radius)
+    static std::pair<size_t, size_t> depth_extents(float depth, float radius) noexcept
     {
-        static const float log2_max_dist = std::log2(float(MG_LIGHT_GRID_FAR_PLANE));
-        constexpr float    grid_depth    = float(MG_LIGHT_GRID_DEPTH);
-        constexpr float    grid_bias     = float(MG_LIGHT_GRID_DEPTH_BIAS);
+        static const float log2_max_dist = std::log2(float{ MG_LIGHT_GRID_FAR_PLANE });
+        constexpr float    grid_depth    = float{ MG_LIGHT_GRID_DEPTH };
+        constexpr float    grid_bias     = float{ MG_LIGHT_GRID_DEPTH_BIAS };
 
-        float fmin_z = (std::log2(depth - radius) / log2_max_dist) * grid_depth + grid_bias;
-        float fmax_z = (std::log2(depth + radius) / log2_max_dist) * grid_depth + grid_bias;
+        const float fmin_z = (std::log2(depth - radius) / log2_max_dist) * grid_depth + grid_bias;
+        const float fmax_z = (std::log2(depth + radius) / log2_max_dist) * grid_depth + grid_bias;
 
         size_t min_z = size_t(std::max(0.0f, fmin_z));
         size_t max_z = size_t(std::max(0.0f, std::min(grid_depth - 1.0f, fmax_z))) + 1u;
@@ -91,8 +91,8 @@ private:
     //
     // TODO: consider orthographic projections -- for those, _all but_ D are zero.
     struct DelimPlane {
-        float A_or_B; // A, in case delimiter is horizontal; otherwise B.
-        float C;
+        float A_or_B = 0.0f; // A, in case delimiter is horizontal; otherwise B.
+        float C      = 0.0f;
     };
 
     /** Signed square distance between view-space position and tile delimiter plane.
@@ -100,7 +100,7 @@ private:
      * @param offset View-space offset (x, if delimiter plane is vertical; otherwise y).
      * @param depth View-space depth (z).
      */
-    float signed_sqr_distance(const DelimPlane& plane, float offset, float depth);
+    float signed_sqr_distance(const DelimPlane& plane, float offset, float depth) noexcept;
 
     // View-space tile delimiter plane -- the planes that divide the screen into tiles.
     std::array<DelimPlane, MG_LIGHT_GRID_WIDTH + 1>  m_delim_plane_vert; // Facing negative x

@@ -57,7 +57,7 @@ public:
     /** Gets the high-precision time since the engine was started.
      * @return Time since engine start, in seconds.
      */
-    double time_since_init();
+    double time_since_init() noexcept;
 
     Config& config();
 

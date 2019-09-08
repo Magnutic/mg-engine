@@ -42,25 +42,25 @@ class MeshResource final : public BaseResource {
 public:
     using BaseResource::BaseResource;
 
-    span<const SubMesh>           sub_meshes() const { return span{ m_sub_meshes }; }
-    span<const Vertex>            vertices() const { return span{ m_vertices }; }
-    span<const uint_vertex_index> indices() const { return span{ m_indices }; }
+    span<const SubMesh>           sub_meshes() const noexcept { return span{ m_sub_meshes }; }
+    span<const Vertex>            vertices() const noexcept { return span{ m_vertices }; }
+    span<const uint_vertex_index> indices() const noexcept { return span{ m_indices }; }
 
     /** Get model-space centre coordinate (mean vertex coordinate). */
-    glm::vec3 centre() const { return m_centre; }
+    glm::vec3 centre() const noexcept { return m_centre; }
 
     /** Get mesh radius (distance from centre to most distant vertex). */
-    float radius() const { return m_radius; }
+    float radius() const noexcept { return m_radius; }
 
     /** Returns whether mesh data is valid. Useful for debug mode asserts. */
     bool validate() const;
 
     /** Calculate bounds of this mesh, i.e. centre and radius. */
-    void calculate_bounds();
+    void calculate_bounds() noexcept;
 
-    bool should_reload_on_file_change() const override { return true; }
+    bool should_reload_on_file_change() const noexcept override { return true; }
 
-    Identifier type_id() const override { return "MeshResource"; }
+    Identifier type_id() const noexcept override { return "MeshResource"; }
 
 protected:
     LoadResourceResult load_resource_impl(const ResourceLoadingInput& input) override;

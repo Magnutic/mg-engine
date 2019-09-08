@@ -43,7 +43,7 @@ template<typename ResT> class ResourceHandle;
 class BaseResourceHandle {
 public:
     BaseResourceHandle() = default;
-    explicit BaseResourceHandle(Identifier id, ResourceEntryBase& entry)
+    BaseResourceHandle(Identifier id, ResourceEntryBase& entry) noexcept
         : m_id(id), m_p_entry(&entry)
     {}
 
@@ -60,7 +60,7 @@ protected:
 template<typename ResT> class ResourceHandle : public BaseResourceHandle {
 public:
     ResourceHandle() = default;
-    explicit ResourceHandle(Identifier id, ResourceEntry<ResT>& entry)
+    ResourceHandle(Identifier id, ResourceEntry<ResT>& entry) noexcept
         : BaseResourceHandle(id, entry)
     {}
 };

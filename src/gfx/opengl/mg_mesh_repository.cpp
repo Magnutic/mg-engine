@@ -132,16 +132,16 @@ private:
 
 MeshHandle MeshRepositoryImpl::create(const MeshResource& mesh_res)
 {
-    VboIndex vbo_index = _make_vertex_buffer(mesh_res.vertices().size_bytes());
-    IboIndex ibo_index = _make_index_buffer(mesh_res.indices().size_bytes());
+    const VboIndex vbo_index = _make_vertex_buffer(mesh_res.vertices().size_bytes());
+    const IboIndex ibo_index = _make_index_buffer(mesh_res.indices().size_bytes());
     return _make_mesh(mesh_res, vbo_index, 0, ibo_index, 0);
 }
 
 void MeshRepositoryImpl::destroy(MeshHandle handle)
 {
-    auto&     mesh_info = internal::mesh_info(handle);
-    auto      index     = mesh_info.self_index;
-    MeshNode& node      = m_mesh_data[index];
+    auto&           mesh_info = internal::mesh_info(handle);
+    const auto      index     = mesh_info.self_index;
+    const MeshNode& node      = m_mesh_data[index];
 
     BufferObject& vbo = m_buffer_objects[node.vertex_buffer_index];
     if (--vbo.num_users == 0) { m_buffer_objects.destroy(node.vertex_buffer_index); }
@@ -159,7 +159,7 @@ VboIndex MeshRepositoryImpl::_make_vertex_buffer(size_t size)
 
     glGenBuffers(1, &p_vbo->gfx_api_id);
     glBindBuffer(GL_ARRAY_BUFFER, p_vbo->gfx_api_id);
-    glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(size), nullptr, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, narrow<GLsizeiptr>(size), nullptr, GL_STATIC_DRAW);
 
     return VboIndex{ vbo_index };
 }
@@ -171,7 +171,7 @@ IboIndex MeshRepositoryImpl::_make_index_buffer(size_t size)
 
     glGenBuffers(1, &p_ibo->gfx_api_id);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, p_ibo->gfx_api_id);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(size), nullptr, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, narrow<GLsizeiptr>(size), nullptr, GL_STATIC_DRAW);
 
     return IboIndex{ ibo_index };
 }
@@ -204,28 +204,28 @@ MeshHandle MeshRepositoryImpl::_make_mesh(const MeshResource& mesh_res,
     glBindVertexArray(vao_id);
 
     {
-        BufferObject& vbo                = m_buffer_objects[uint32_t(vbo_index)];
-        p_mesh_node->vertex_buffer_index = uint32_t(vbo_index);
+        BufferObject& vbo                = m_buffer_objects[static_cast<uint32_t>(vbo_index)];
+        p_mesh_node->vertex_buffer_index = static_cast<uint32_t>(vbo_index);
         ++vbo.num_users;
 
-        auto vbo_data = mesh_res.vertices().as_bytes();
+        const auto vbo_data = mesh_res.vertices().as_bytes();
         glBindBuffer(GL_ARRAY_BUFFER, vbo.gfx_api_id);
         glBufferSubData(GL_ARRAY_BUFFER,
-                        GLintptr(vbo_data_offset),
-                        GLsizeiptr(vbo_data.size()),
+                        narrow<GLintptr>(vbo_data_offset),
+                        narrow<GLsizeiptr>(vbo_data.size()),
                         vbo_data.data());
     }
 
     {
-        BufferObject& ibo               = m_buffer_objects[uint32_t(ibo_index)];
-        p_mesh_node->index_buffer_index = uint32_t(ibo_index);
+        BufferObject& ibo               = m_buffer_objects[static_cast<uint32_t>(ibo_index)];
+        p_mesh_node->index_buffer_index = static_cast<uint32_t>(ibo_index);
         ++ibo.num_users;
 
-        auto ibo_data = mesh_res.indices().as_bytes();
+        const auto ibo_data = mesh_res.indices().as_bytes();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo.gfx_api_id);
         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER,
-                        GLintptr(ibo_data_offset),
-                        GLsizeiptr(ibo_data.size()),
+                        narrow<GLintptr>(ibo_data_offset),
+                        narrow<GLsizeiptr>(ibo_data.size()),
                         ibo_data.data());
     }
 
@@ -236,12 +236,14 @@ MeshHandle MeshRepositoryImpl::_make_mesh(const MeshResource& mesh_res,
     for (const VertexAttribute& a : g_attrib_array) { stride += a.size; }
 
     for (const VertexAttribute& a : g_attrib_array) {
+        const GLvoid* gl_offset{};
+        std::memcpy(&gl_offset, &offset, sizeof(offset));
         glVertexAttribPointer(attrib_i,
-                              static_cast<GLint>(a.num),
+                              narrow<GLint>(a.num),
                               static_cast<uint32_t>(a.type),
                               static_cast<GLboolean>(a.normalised),
-                              static_cast<int32_t>(stride),
-                              reinterpret_cast<const GLvoid*>(offset)); // NOLINT
+                              narrow<int32_t>(stride),
+                              gl_offset); // NOLINT
 
         glEnableVertexAttribArray(attrib_i);
 
@@ -259,8 +261,8 @@ public:
                    VertexBufferSize    vertex_buffer_size,
                    IndexBufferSize     index_buffer_size)
         : m_mesh_repository(&mesh_repository)
-        , m_vbo_size(size_t(vertex_buffer_size))
-        , m_ibo_size(size_t(index_buffer_size))
+        , m_vbo_size(static_cast<size_t>(vertex_buffer_size))
+        , m_ibo_size(static_cast<size_t>(index_buffer_size))
         , m_vbo_id(mesh_repository._make_vertex_buffer(m_vbo_size))
         , m_ibo_id(mesh_repository._make_index_buffer(m_ibo_size))
     {}
@@ -311,8 +313,8 @@ MeshBuffer::CreateReturn MeshBuffer::create(const MeshResource& resource)
 
 //--------------------------------------------------------------------------------------------------
 
-MeshRepository::MeshRepository()  = default;
-MeshRepository::~MeshRepository() = default;
+MeshRepository::MeshRepository() = default;
+MeshRepository::~MeshRepository()         = default;
 
 MeshHandle MeshRepository::create(const MeshResource& mesh_res)
 {

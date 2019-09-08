@@ -91,21 +91,30 @@ public:
     /** Create a plane given a point on the plane and the plane's normal vector. */
     static PointNormalPlane from_point_and_normal(glm::vec3 point, glm::vec3 normal)
     {
-        PointNormalPlane ret;
         normal = glm::normalize(normal);
-        ret.a  = normal.x;
-        ret.b  = normal.y;
-        ret.c  = normal.z;
-        ret.d  = -normal.x * point.x - normal.y * point.y - normal.z * point.z;
-        return ret;
+        return { normal.x,
+                 normal.y,
+                 normal.z,
+                 -normal.x * point.x - normal.y * point.y - normal.z * point.z };
     }
 
     // Add more constructors as needed.
     // Members are private to maintain a,b,c normal being normalised as an invariant.
 
 private:
-    friend float signed_distance_to_plane(PointNormalPlane plane, glm::vec3 point);
     PointNormalPlane() = default;
+
+    PointNormalPlane(float a_, float b_, float c_, float d_) noexcept : a(a_), b(b_), c(c_), d(d_)
+    {}
+
+    /** Signed shortest distance (i.e. negative if on the side of the plane facing away from the
+     * plane's normal) from plane to point in 3D space.
+     */
+    friend constexpr float signed_distance_to_plane(PointNormalPlane plane,
+                                                    glm::vec3        point) noexcept
+    {
+        return plane.a * point.x + plane.b * point.y + plane.c * point.z + plane.d;
+    }
 
     float a;
     float b;
@@ -113,16 +122,9 @@ private:
     float d;
 };
 
-/** Signed shortest distance (i.e. negative if on the side of the plane facing away from the plane's
- * normal) from plane to point in 3D space.
- */
-inline float signed_distance_to_plane(PointNormalPlane plane, glm::vec3 point)
-{
-    return plane.a * point.x + plane.b * point.y + plane.c * point.z + plane.d;
-}
 
 /** Shortest distance from plane to point in 3D space. */
-inline float distance_to_plane(PointNormalPlane plane, glm::vec3 point)
+inline constexpr float distance_to_plane(PointNormalPlane plane, glm::vec3 point)
 {
     return abs(signed_distance_to_plane(plane, point));
 }

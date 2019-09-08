@@ -107,7 +107,7 @@ public:
      */
     void bind_pipeline(const Material& material, BindingContext& binding_context);
 
-    void drop_pipelines() { m_pipelines.clear(); }
+    void drop_pipelines() noexcept { m_pipelines.clear(); }
 
 private:
     struct PipelineNode {

@@ -57,12 +57,12 @@ using StringList = std::forward_list<std::string>;
 // one element, but in the case of a hash collision, there may be more.
 class PerHashStrings {
 public:
-    PerHashStrings(StringList::iterator begin, StringList::iterator end)
+    PerHashStrings(StringList::iterator begin, StringList::iterator end) noexcept
         : m_begin(begin), m_end(end)
     {}
 
-    StringList::iterator begin() const { return m_begin; }
-    StringList::iterator end() const { return m_end; }
+    StringList::iterator begin() const noexcept { return m_begin; }
+    StringList::iterator end() const noexcept { return m_end; }
 
 private:
     StringList::iterator m_begin;
@@ -83,12 +83,12 @@ DynamicStrMap*                                p_dynamic_str_map = nullptr;
 
 } // namespace
 
-detail::StrMapInitialiser::StrMapInitialiser()
+detail::StrMapInitialiser::StrMapInitialiser() noexcept
 {
     if (nifty_counter++ == 0) { p_dynamic_str_map = new (&map_buf) DynamicStrMap{}; }
 }
 
-detail::StrMapInitialiser::~StrMapInitialiser()
+detail::StrMapInitialiser::~StrMapInitialiser() noexcept
 {
     if (--nifty_counter == 0) { p_dynamic_str_map->~DynamicStrMap(); }
 }

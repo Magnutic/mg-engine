@@ -47,16 +47,16 @@ public:
     ~PostProcessRenderer();
 
     /** Post-process using only colour texture as input. */
-    void post_process(const Material& material, TextureHandle input_colour);
+    void post_process(const Material& material, TextureHandle input_colour) noexcept;
 
     /** Post-process using colour and depth textures. */
     void post_process(const Material& material,
                       TextureHandle   input_colour,
                       TextureHandle   input_depth,
                       float           z_near,
-                      float           z_far);
+                      float           z_far) noexcept;
 
-    void drop_shaders();
+    void drop_shaders() noexcept;
 };
 
 } // namespace Mg::gfx

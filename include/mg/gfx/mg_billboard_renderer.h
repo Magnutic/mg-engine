@@ -72,14 +72,14 @@ public:
     }
 
     /** Empty list of billboards. */
-    void clear() { m_billboards.clear(); }
+    void clear() noexcept { m_billboards.clear(); }
 
     /** Sort render list so that most distant billboard is rendered first. This is useful when using
      * alpha-blending.
      */
-    void sort_farthest_first(const ICamera& camera);
+    void sort_farthest_first(const ICamera& camera) noexcept;
 
-    const std::vector<Billboard>& view() const { return m_billboards; }
+    const std::vector<Billboard>& view() const noexcept { return m_billboards; }
 
 private:
     std::vector<Billboard> m_billboards;
@@ -89,7 +89,7 @@ struct BillboardRendererData;
 
 class BillboardRenderer : PImplMixin<BillboardRendererData> {
 public:
-    explicit BillboardRenderer();
+    BillboardRenderer();
     MG_MAKE_NON_COPYABLE(BillboardRenderer);
     MG_MAKE_NON_MOVABLE(BillboardRenderer);
     ~BillboardRenderer();
@@ -97,7 +97,7 @@ public:
     void
     render(const ICamera& camera, const BillboardRenderList& render_list, const Material& material);
 
-    void drop_shaders();
+    void drop_shaders() noexcept;
 };
 
 } // namespace Mg::gfx

@@ -38,19 +38,19 @@
 namespace Mg::gfx {
 
 /** Get string stating error type for the given GL error code. */
-const char* gl_error_string(uint32_t error_code);
+const char* gl_error_string(uint32_t error_code) noexcept;
 
-void check_gl_error(std::string_view file, std::string_view function, size_t line);
+void check_gl_error(std::string_view file, std::string_view function, size_t line) noexcept;
 
 //--------------------------------------------------------------------------------------------------
 // KHR_debug extension utilities
 //--------------------------------------------------------------------------------------------------
 
-const char* source_string(uint32_t source);
+const char* source_string(uint32_t source) noexcept;
 
-const char* type_string(uint32_t type);
+const char* type_string(uint32_t type) noexcept;
 
-const char* severity_string(uint32_t severity);
+const char* severity_string(uint32_t severity) noexcept;
 
 void ogl_error_callback(uint32_t source,
                         uint32_t type,
@@ -59,6 +59,6 @@ void ogl_error_callback(uint32_t source,
                         int32_t /* length */,
                         const char* msg,
                         const void* /* user_param */
-);
+                        ) noexcept;
 
 } // namespace Mg::gfx

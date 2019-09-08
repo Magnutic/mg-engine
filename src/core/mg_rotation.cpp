@@ -32,13 +32,13 @@
 
 namespace Mg {
 
-Rotation Rotation::rotation_between_vectors(glm::vec3 fst, glm::vec3 snd)
+Rotation Rotation::rotation_between_vectors(glm::vec3 fst, glm::vec3 snd) noexcept
 {
     fst = glm::normalize(fst);
     snd = glm::normalize(snd);
 
-    float     cos_theta = glm::dot(fst, snd);
-    glm::vec3 rotation_axis;
+    const float cos_theta = glm::dot(fst, snd);
+    glm::vec3   rotation_axis{};
 
     if (cos_theta < -1.0f + 0.001f) {
         // Special case when vectors in opposite directions:
@@ -57,26 +57,26 @@ Rotation Rotation::rotation_between_vectors(glm::vec3 fst, glm::vec3 snd)
 
     rotation_axis = cross(fst, snd);
 
-    float s    = std::sqrt((1.0f + cos_theta) * 2.0f);
-    float invs = 1.0f / s;
+    const float s    = std::sqrt((1.0f + cos_theta) * 2.0f);
+    const float invs = 1.0f / s;
 
     return Rotation{ glm::quat{
         s * 0.5f, rotation_axis.x * invs, rotation_axis.y * invs, rotation_axis.z * invs } };
 }
 
-Rotation Rotation::look_to(glm::vec3 dir, glm::vec3 up)
+Rotation Rotation::look_to(glm::vec3 dir, glm::vec3 up) noexcept
 {
     dir = normalize(dir);
     up  = normalize(up);
 
-    Rotation rot = rotation_between_vectors(world_vector::forward, dir);
+    const Rotation rot = rotation_between_vectors(world_vector::forward, dir);
 
-    glm::vec3 current_up = rot.up();
-    glm::vec3 desired_up = glm::normalize(glm::cross(glm::cross(dir, up), dir));
+    const glm::vec3 current_up = rot.up();
+    const glm::vec3 desired_up = glm::normalize(glm::cross(glm::cross(dir, up), dir));
 
-    float angle = glm::orientedAngle(current_up, desired_up, dir);
+    const float angle = glm::orientedAngle(current_up, desired_up, dir);
 
-    glm::quat up_adjustment = glm::angleAxis(angle, dir);
+    const glm::quat up_adjustment = glm::angleAxis(angle, dir);
 
     return Rotation{ up_adjustment * rot.m_quaternion };
 }

@@ -74,9 +74,9 @@ public:
     static constexpr size_t k_num_keys = static_cast<size_t>(Key::Menu) + 1;
 
 public:
-    Keyboard(const Window& window) : m_window(window) { m_key_states.reset(); }
+    Keyboard(const Window& window) noexcept : m_window(window) { m_key_states.reset(); }
 
-    InputSource key(Key key_id) const
+    InputSource key(Key key_id) const noexcept
     {
         return InputSource{ *this, static_cast<InputSource::Id>(key_id) };
     }

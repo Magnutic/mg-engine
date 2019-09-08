@@ -30,17 +30,17 @@
 
 namespace Mg {
 
-bool is_whitespace(char c)
+bool is_whitespace(char c) noexcept
 {
     return std::find(k_white_space.begin(), k_white_space.end(), c) != k_white_space.end();
 }
-bool is_not_whitespace(char c)
+bool is_not_whitespace(char c) noexcept
 {
     return std::find(k_white_space.begin(), k_white_space.end(), c) == k_white_space.end();
 }
 
 /** Tokenise string by delimiter, returns tokens in vector. */
-std::vector<std::string_view> tokenise_string(std::string_view s, std::string_view delims)
+std::vector<std::string_view> tokenise_string(std::string_view s, std::string_view delims) noexcept
 {
     auto     elems       = std::vector<std::string_view>{};
     bool     is_delim    = true;
@@ -48,10 +48,10 @@ std::vector<std::string_view> tokenise_string(std::string_view s, std::string_vi
     uint32_t i;
 
     for (i = 0; i < s.length(); ++i) {
-        char c         = s[i];
-        bool was_delim = is_delim;
-        auto it        = std::find(delims.begin(), delims.end(), c);
-        is_delim       = (it != delims.end());
+        const char c         = s[i];
+        const bool was_delim = is_delim;
+        auto       it        = std::find(delims.begin(), delims.end(), c);
+        is_delim             = (it != delims.end());
 
         if (is_delim) {
             if (token_start != std::string::npos) {
@@ -72,7 +72,8 @@ std::vector<std::string_view> tokenise_string(std::string_view s, std::string_vi
 }
 
 /** Split string on first occurrence of char c. */
-std::pair<std::string_view, std::string_view> split_string_on_char(std::string_view s, char c)
+std::pair<std::string_view, std::string_view> split_string_on_char(std::string_view s,
+                                                                   char             c) noexcept
 {
     size_t index;
     for (index = 0; index < s.length(); ++index) {
@@ -85,35 +86,35 @@ std::pair<std::string_view, std::string_view> split_string_on_char(std::string_v
 }
 
 /** Trim whitespace from end of string. */
-std::string_view rtrim(std::string_view str)
+std::string_view rtrim(std::string_view str) noexcept
 {
-    auto end    = std::find_if(str.rbegin(), str.rend(), is_not_whitespace).base();
-    auto length = size_t(str.end() - end);
+    const auto end    = std::find_if(str.rbegin(), str.rend(), is_not_whitespace).base();
+    const auto length = narrow<size_t>(str.end() - end);
     str.remove_suffix(length);
     return str;
 }
 
 /** Trim whitespace from beginning of string. */
-std::string_view ltrim(std::string_view str)
+std::string_view ltrim(std::string_view str) noexcept
 {
-    auto begin  = std::find_if(str.begin(), str.end(), is_not_whitespace);
-    auto length = size_t(begin - str.begin());
+    const auto begin  = std::find_if(str.begin(), str.end(), is_not_whitespace);
+    const auto length = narrow<size_t>(begin - str.begin());
     str.remove_prefix(length);
     return str;
 }
 
 /** Trim whitespace from beginning and end of string. */
-std::string_view trim(std::string_view str)
+std::string_view trim(std::string_view str) noexcept
 {
     return ltrim(rtrim(str));
 }
 
 /** Returns the first position of any of the ASCII characters in chars. */
-size_t find_any_of(std::string_view str, std::string_view chars)
+size_t find_any_of(std::string_view str, std::string_view chars) noexcept
 {
     size_t ret_val = 0;
 
-    for (char c : str) {
+    for (const char c : str) {
         auto it = std::find(chars.begin(), chars.end(), c);
         if (it != chars.end()) { break; }
         ret_val++;
@@ -125,20 +126,20 @@ size_t find_any_of(std::string_view str, std::string_view chars)
 }
 
 /** Returns a lowercase version of an ASCII string. */
-std::string to_lower(std::string_view str)
+std::string to_lower(std::string_view str) noexcept
 {
     std::string ret_val;
     ret_val.reserve(str.length());
-    for (char c : str) { ret_val += static_cast<char>(tolower(c)); }
+    for (const char c : str) { ret_val += narrow<char>(tolower(c)); }
     return ret_val;
 }
 
 /** Returns a uppercase version of an ASCII string. */
-std::string to_upper(std::string_view str)
+std::string to_upper(std::string_view str) noexcept
 {
     std::string ret_val;
     ret_val.reserve(str.length());
-    for (char c : str) { ret_val += static_cast<char>(toupper(c)); }
+    for (const char c : str) { ret_val += narrow<char>(toupper(c)); }
     return ret_val;
 }
 

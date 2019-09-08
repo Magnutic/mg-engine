@@ -88,7 +88,7 @@ LoadResourceResult MeshResource::load_resource_impl(const ResourceLoadingInput& 
     auto offset = sizeof(MeshHeader);
 
     // Load binary data into span
-    auto load_to = [&](auto span, size_t stride, size_t bytes_to_read = 0) {
+    const auto load_to = [&](auto span, size_t stride, size_t bytes_to_read = 0) {
         using data_type = typename decltype(span)::value_type;
         static_assert(std::is_trivially_copyable_v<data_type>);
         const auto size = bytes_to_read == 0 ? sizeof(data_type) : bytes_to_read;
@@ -125,7 +125,7 @@ LoadResourceResult MeshResource::load_resource_impl(const ResourceLoadingInput& 
 
 bool MeshResource::validate() const
 {
-    auto mesh_error = [&](std::string_view what) {
+    const auto mesh_error = [&](std::string_view what) {
         g_log.write_warning(
             fmt::format("Mesh::validate() for {}: {}", static_cast<const void*>(this), what));
     };
@@ -140,7 +140,7 @@ bool MeshResource::validate() const
 
     for (size_t i = 0; i < n_sub_meshes; ++i) {
         const SubMesh& sm = sub_meshes()[i];
-        if (sm.begin >= n_indices || sm.begin + sm.amount > n_indices) {
+        if (sm.begin >= n_indices || size_t{ sm.begin } + sm.amount > n_indices) {
             mesh_error(fmt::format("Invalid submesh at index {}", i));
             return false;
         }
@@ -168,22 +168,22 @@ bool MeshResource::validate() const
     return true;
 }
 
-void MeshResource::calculate_bounds()
+void MeshResource::calculate_bounds() noexcept
 {
     // Calculate centre position
     m_centre = {};
 
-    for (Vertex& v : m_vertices) { m_centre += v.position; }
+    for (const Vertex& v : m_vertices) { m_centre += v.position; }
 
     m_centre /= m_vertices.size();
 
     // Calculate mesh radius (distance from centre to most distance vertex)
     float radius_sqr = 0.0f;
 
-    for (Vertex& v : m_vertices) {
-        auto  diff           = m_centre - v.position;
-        float new_radius_sqr = glm::dot(diff, diff);
-        radius_sqr           = glm::max(radius_sqr, new_radius_sqr);
+    for (const Vertex& v : m_vertices) {
+        const auto  diff           = m_centre - v.position;
+        const float new_radius_sqr = glm::dot(diff, diff);
+        radius_sqr                 = glm::max(radius_sqr, new_radius_sqr);
     }
 
     m_radius = glm::sqrt(radius_sqr);

@@ -60,12 +60,9 @@ struct LoadResourceResult {
  */
 class BaseResource {
 public:
-    explicit BaseResource(Identifier id) : m_id(id) {}
+    explicit BaseResource(Identifier id) noexcept : m_id(id) {}
 
-    MG_MAKE_DEFAULT_COPYABLE(BaseResource);
-    MG_MAKE_DEFAULT_MOVABLE(BaseResource);
-
-    virtual ~BaseResource() {}
+    MG_INTERFACE_BOILERPLATE(BaseResource);
 
     /** Load resource from binary file data. This is the interface through which Mg::ResourceCache
      * initialises resource types.
@@ -80,7 +77,7 @@ public:
     virtual Identifier type_id() const = 0;
 
     /** Resource identifier (filename, if loaded from file). */
-    Identifier resource_id() const { return m_id; }
+    Identifier resource_id() const noexcept { return m_id; }
 
 protected:
     virtual LoadResourceResult load_resource_impl(const ResourceLoadingInput& params) = 0;

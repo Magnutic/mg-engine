@@ -129,10 +129,10 @@ PixelFormatResult dds_pf_to_pixel_format(const DDS_PIXELFORMAT& pf)
         }
     }
 
-    bool rgb = ((pf.dwFlags & DDPF_RGB) != 0) && (pf.dwRBitMask == 0x00ff0000u) &&
-               (pf.dwGBitMask == 0x0000ff00u) && (pf.dwBBitMask == 0x000000ffu);
+    const bool rgb = ((pf.dwFlags & DDPF_RGB) != 0) && (pf.dwRBitMask == 0x00ff0000u) &&
+                     (pf.dwGBitMask == 0x0000ff00u) && (pf.dwBBitMask == 0x000000ffu);
 
-    bool alpha = ((pf.dwFlags & DDPF_ALPHAPIXELS) != 0) && (pf.dwABitMask == 0xff000000u);
+    const bool alpha = ((pf.dwFlags & DDPF_ALPHAPIXELS) != 0) && (pf.dwABitMask == 0xff000000u);
 
     if (rgb && alpha && pf.dwRGBBitCount == 32) {
         return { true, TextureResource::PixelFormat::BGRA };
@@ -168,7 +168,7 @@ size_t block_size_by_format(TextureResource::PixelFormat pixel_format)
 /** Get the number of blocks in a mipmap of given dimensions. */
 size_t num_blocks_by_img_size(TextureResource::DimT width, TextureResource::DimT height)
 {
-    return ((width + 3) / 4) * ((height + 3) / 4);
+    return ((width + 3llu) / 4) * ((height + 3llu) / 4);
 }
 
 } // namespace
@@ -179,7 +179,7 @@ size_t num_blocks_by_img_size(TextureResource::DimT width, TextureResource::DimT
 
 LoadResourceResult TextureResource::load_resource_impl(const ResourceLoadingInput& input)
 {
-    span<const std::byte> dds_data = input.resource_data();
+    const span<const std::byte> dds_data = input.resource_data();
 
     if (dds_data.length() < sizeof(DDS_HEADER)) {
         return LoadResourceResult::data_error("DDS file corrupt, missing data.");
@@ -253,7 +253,7 @@ LoadResourceResult TextureResource::load_resource_impl(const ResourceLoadingInpu
     return LoadResourceResult::success();
 }
 
-TextureResource::MipLevelData TextureResource::pixel_data(MipIndexT mip_index) const
+TextureResource::MipLevelData TextureResource::pixel_data(MipIndexT mip_index) const noexcept
 {
     auto width  = m_format.width;
     auto height = m_format.height;

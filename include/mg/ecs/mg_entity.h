@@ -56,8 +56,8 @@ public:
 private:
     friend class EntityCollection;
 
-    Slot_map_handle& handle() { return m_handle; }
-    Entity(Slot_map_handle handle) : m_handle{ handle } {}
+    Slot_map_handle& handle() noexcept { return m_handle; }
+    Entity(Slot_map_handle handle) noexcept : m_handle{ handle } {}
 
     Slot_map_handle m_handle;
 };
@@ -78,7 +78,7 @@ public:
     {}
 
     /** Resets EntityCollection, destroying all entities and components. */
-    void reset();
+    void reset() noexcept;
 
     /** Creates a new entity with no components. */
     Entity create_entity();
@@ -131,7 +131,7 @@ public:
     ComponentMask component_mask(Entity entity) const { return data(entity).mask; }
 
     /** Get the number of currently existing entities. */
-    size_t num_entities() const { return m_entity_data.size(); }
+    size_t num_entities() const noexcept { return m_entity_data.size(); }
 
 private:
     // Array of handles to all components associated with an entity

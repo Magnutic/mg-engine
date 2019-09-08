@@ -32,6 +32,7 @@
 #include "mg/gfx/mg_render_target.h"
 #include "mg/input/mg_keyboard.h"
 #include "mg/input/mg_mouse.h"
+#include "mg/utils/mg_macros.h"
 
 #include <cstdint>
 #include <memory>
@@ -49,7 +50,7 @@ namespace Mg {
 Array<VideoMode> find_available_video_modes();
 
 /** Get video mode of primary monitor. */
-VideoMode current_monitor_video_mode();
+VideoMode current_monitor_video_mode() noexcept;
 
 //--------------------------------------------------------------------------------------------------
 
@@ -77,56 +78,56 @@ public:
     ~Window();
 
     // Do not allow copying or moving: Window must be findable by address.
-    Window(const Window&) = delete;
-    Window(Window&&)      = delete;
+    MG_MAKE_NON_COPYABLE(Window);
+    MG_MAKE_NON_MOVABLE(Window);
 
     /** Call at end of frame to display image to window. */
-    void refresh();
+    void refresh() noexcept;
 
     /** Set window title. */
-    void set_title(const std::string& title);
+    void set_title(const std::string& title) noexcept;
 
     /** Get whether window is currently fullscreen. */
-    bool is_fullscreen() const { return m_settings.fullscreen; }
+    bool is_fullscreen() const noexcept { return m_settings.fullscreen; }
 
     /** Get the size of the current window's frame buffer in pixels.
      * N.B. frame buffer size is not necessarily the same as window size.
      */
-    VideoMode frame_buffer_size() const;
+    VideoMode frame_buffer_size() const noexcept;
 
     /** Set callback function to invoke when window focus is gained or lost.
      * @see Mg::Window::FocusCallbackT
      */
-    void set_focus_callback(FocusCallbackT func) { m_focus_callback = func; }
+    void set_focus_callback(FocusCallbackT func) noexcept { m_focus_callback = func; }
 
     /** Get the callback function which is invoked when window focus is gained or lost.
      * @see Mg::Window::FocusCallbackT
      */
-    FocusCallbackT get_focus_callback() const { return m_focus_callback; }
+    FocusCallbackT get_focus_callback() const noexcept { return m_focus_callback; }
 
     //----------------------------------------------------------------------------------------------
     // Cursor state
 
-    bool is_cursor_locked_to_window() const { return m_is_cursor_locked; }
+    bool is_cursor_locked_to_window() const noexcept { return m_is_cursor_locked; }
 
     /** Releases cursor if it was locked to this window. */
     void release_cursor();
 
-    void set_cursor_lock_mode(CursorLockMode mode) { m_cursor_lock_mode = mode; }
+    void set_cursor_lock_mode(CursorLockMode mode) noexcept { m_cursor_lock_mode = mode; }
 
-    CursorLockMode get_cursor_lock_mode() const { return m_cursor_lock_mode; }
+    CursorLockMode get_cursor_lock_mode() const noexcept { return m_cursor_lock_mode; }
 
     //----------------------------------------------------------------------------------------------
     // Window settings
 
     /** Get current aspect ratio (width / height) of the window. */
-    float aspect_ratio() const
+    float aspect_ratio() const noexcept
     {
-        return float(m_settings.video_mode.width) / float(m_settings.video_mode.height);
+        return narrow_cast<float>(m_settings.video_mode.width) / m_settings.video_mode.height;
     }
 
     /** Get (const reference to) settings struct for this Window. */
-    const WindowSettings& settings() const { return m_settings; }
+    const WindowSettings& settings() const noexcept { return m_settings; }
 
     /** Set the settings for this Window. Takes immediate effect. */
     void apply_settings(WindowSettings s);
@@ -135,7 +136,10 @@ public:
     // Input devices
 
     /** Get underlying GLFW window handle. Used by input system. */
-    GLFWwindow* glfw_window() const { return m_window; } // TODO: fix abstraction leak somehow
+    GLFWwindow* glfw_window() const noexcept
+    {
+        return m_window;
+    } // TODO: fix abstraction leak somehow
 
     /** Polls input events for this window, refreshing `keyboard` and `mouse` members. */
     void poll_input_events();

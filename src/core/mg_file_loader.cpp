@@ -70,13 +70,13 @@ Array<FileRecord> BasicFileLoader::available_files()
 {
     small_vector<FileRecord, 48> index;
 
-    fs::path root_dir{ m_directory };
-    auto     search_options = fs::directory_options::follow_directory_symlink;
+    fs::path   root_dir{ m_directory };
+    const auto search_options = fs::directory_options::follow_directory_symlink;
 
     for (auto& file : fs::recursive_directory_iterator{ root_dir, search_options }) {
         if (fs::is_directory(file)) { continue; }
 
-        auto last_write_time = last_write_time_t(file.path());
+        const auto last_write_time = last_write_time_t(file.path());
 
         // Get path relative to this loader's root directory.
         // Using generic path format: this is to ensure that files are given string-identical
@@ -95,8 +95,8 @@ Array<FileRecord> BasicFileLoader::available_files()
 
 bool BasicFileLoader::file_exists(Identifier file)
 {
-    auto     fname     = file.str_view();
-    fs::path file_path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
+    const auto fname     = file.str_view();
+    fs::path   file_path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
     return fs::exists(file_path);
 }
 
@@ -104,8 +104,8 @@ uintmax_t BasicFileLoader::file_size(Identifier file)
 {
     MG_ASSERT(file_exists(file));
 
-    auto     fname     = file.str_view();
-    fs::path file_path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
+    const auto fname     = file.str_view();
+    fs::path   file_path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
     return fs::file_size(file_path);
 }
 
@@ -113,8 +113,8 @@ std::time_t BasicFileLoader::file_time_stamp(Identifier file)
 {
     MG_ASSERT(file_exists(file));
 
-    auto     fname     = file.str_view();
-    fs::path file_path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
+    const auto fname     = file.str_view();
+    fs::path   file_path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
     return last_write_time_t(file_path);
 }
 
@@ -122,8 +122,8 @@ void BasicFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
 {
     MG_ASSERT(target_buffer.size() >= file_size(file));
 
-    auto fname = file.str_view();
-    auto path  = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
+    const auto fname = file.str_view();
+    const auto path  = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
 
     BinaryFileReader reader{ path.generic_u8string() };
 
@@ -132,10 +132,10 @@ void BasicFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
         throw RuntimeError();
     }
 
-    auto size = reader.size();
+    const auto size = reader.size();
 
     // Point index_data to buffer
-    auto bytes_read = reader.read_array(target_buffer);
+    const auto bytes_read = reader.read_array(target_buffer);
 
     MG_ASSERT(bytes_read == size);
     MG_ASSERT(bytes_read <= target_buffer.size());
@@ -149,7 +149,7 @@ void BasicFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
 void ZipFileLoader::open_zip_archive()
 {
     if (m_archive_file != nullptr) {
-        auto error = zip_get_error(m_archive_file);
+        const auto* error = zip_get_error(m_archive_file);
         if (error->sys_err == 0 && error->zip_err == 0) { return; }
 
         // If something is wrong, try to close and re-open archive
@@ -173,7 +173,7 @@ void ZipFileLoader::open_zip_archive()
     }
 }
 
-void ZipFileLoader::close_zip_archive()
+void ZipFileLoader::close_zip_archive() noexcept
 {
     if (m_archive_file != nullptr) {
         zip_close(m_archive_file);
@@ -184,7 +184,7 @@ void ZipFileLoader::close_zip_archive()
 Array<FileRecord> ZipFileLoader::available_files()
 {
     open_zip_archive();
-    auto num_files = zip_get_num_entries(m_archive_file, 0);
+    const auto num_files = zip_get_num_entries(m_archive_file, 0);
 
     auto index = Array<FileRecord>::make(narrow<size_t>(num_files));
 
@@ -212,7 +212,7 @@ bool ZipFileLoader::file_exists(Identifier file)
 {
     open_zip_archive();
     struct zip_stat sb {};
-    int             result = zip_stat(m_archive_file, file.c_str(), 0, &sb);
+    const int       result = zip_stat(m_archive_file, file.c_str(), 0, &sb);
 
     return (result != -1);
 }
@@ -233,7 +233,7 @@ uintmax_t ZipFileLoader::file_size(Identifier file)
     MG_ASSERT(file_exists(file));
     open_zip_archive();
 
-    auto sb = zip_stat_helper(m_archive_file, file);
+    const auto sb = zip_stat_helper(m_archive_file, file);
 
     if ((sb.valid & ZIP_STAT_SIZE) == 0) {
         g_log.write_error(
@@ -252,7 +252,7 @@ std::time_t ZipFileLoader::file_time_stamp(Identifier file)
     MG_ASSERT(file_exists(file));
     open_zip_archive();
 
-    auto sb = zip_stat_helper(m_archive_file, file);
+    const auto sb = zip_stat_helper(m_archive_file, file);
     if ((sb.valid & ZIP_STAT_MTIME) == 0) {
         g_log.write_error(
             fmt::format("ZipFileLoader::file_time_stamp(): "
@@ -267,7 +267,7 @@ std::time_t ZipFileLoader::file_time_stamp(Identifier file)
 }
 
 // RAII wrapper, automatically closes zipfile on scope exit
-static auto make_zip_handle(zip_file_t* p)
+static auto make_zip_handle(zip_file_t* p) noexcept
 {
     return std::unique_ptr<zip_file_t, decltype(&zip_fclose)>{ p, &zip_fclose };
 }
@@ -283,9 +283,9 @@ void ZipFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
     // Make sure archive is open for reading
     open_zip_archive();
 
-    auto index = zip_name_locate(m_archive_file, file.c_str(), ZIP_FL_NOCASE);
+    const auto index = zip_name_locate(m_archive_file, file.c_str(), ZIP_FL_NOCASE);
 
-    auto error_throw = [&](std::string reason) {
+    const auto error_throw = [&](std::string reason) {
         g_log.write_error(fmt::format("Could not read file '{}' from archive '{}': {}",
                                       file.c_str(),
                                       m_archive_name,
@@ -318,7 +318,7 @@ void ZipFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
     }
 
     // Read data from file
-    auto bytes_read = zip_fread(zip_file.get(), target_buffer.data(), file_info.size);
+    const auto bytes_read = zip_fread(zip_file.get(), target_buffer.data(), file_info.size);
 
     if (bytes_read == -1) { error_throw("could not read data"); }
 

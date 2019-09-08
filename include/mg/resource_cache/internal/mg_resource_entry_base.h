@@ -57,7 +57,7 @@ public:
     ResourceEntryBase(Identifier     resource_id,
                       IFileLoader&   loader,
                       std::time_t    time_stamp,
-                      ResourceCache& owning_cache)
+                      ResourceCache& owning_cache) noexcept
         : m_p_loader(&loader)
         , m_p_owning_cache(&owning_cache)
         , m_resource_id(resource_id)
@@ -81,12 +81,12 @@ public:
     /** Unload stored resource. */
     virtual void unload() = 0;
 
-    Identifier resource_id() const { return m_resource_id; }
+    Identifier resource_id() const noexcept { return m_resource_id; }
 
     /** Get type-identifier (as given by `ResT::type_id()`) for the stored resource.
      * Precondition: the resource must have been loaded at least once.
      */
-    Identifier resource_type_id() const
+    Identifier resource_type_id() const noexcept
     {
         // It may seem a bit arbitrary to require that the resource has been loaded at least once,
         // but it simplifies the implementation of resource types, since it means they only need to
@@ -96,11 +96,11 @@ public:
         return m_resource_type_id;
     }
 
-    std::time_t time_stamp() const { return m_time_stamp; }
+    std::time_t time_stamp() const noexcept { return m_time_stamp; }
 
-    ResourceCache& owning_cache() const { return *m_p_owning_cache; }
+    ResourceCache& owning_cache() const noexcept { return *m_p_owning_cache; }
 
-    IFileLoader& loader() const { return *m_p_loader; }
+    IFileLoader& loader() const noexcept { return *m_p_loader; }
 
     struct Dependency {
         Identifier  dependency_id;

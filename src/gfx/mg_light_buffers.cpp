@@ -50,7 +50,7 @@ using LightBlock = std::array<Light, MG_MAX_NUM_LIGHTS>;
 // Keep below lower bound on max UBO size. TODO: split into multiple UBOs if too large?
 static_assert(sizeof(LightBlock) <= 16 * 1024);
 
-BufferTexture::Type light_index_tex_type()
+constexpr BufferTexture::Type light_index_tex_type()
 {
     BufferTexture::Type type{};
     type.channels  = BufferTexture::Channels::R; // red: light index
@@ -59,7 +59,7 @@ BufferTexture::Type light_index_tex_type()
     return type;
 }
 
-BufferTexture::Type light_grid_tex_type()
+constexpr BufferTexture::Type light_grid_tex_type()
 {
     BufferTexture::Type type{};
     type.channels  = BufferTexture::Channels::RG; // red: offset, green: amount.
@@ -81,11 +81,11 @@ static_assert(std::is_trivially_copyable_v<ClusterArray>);
 static_assert(std::is_trivially_copyable_v<LightIndexArray>);
 static_assert(std::is_trivially_copyable_v<LightGridData>);
 
-void add_light_to_cluster(size_t light_index, glm::uvec3 cluster, ClusterArray& clusters)
+void add_light_to_cluster(size_t light_index, glm::uvec3 cluster, ClusterArray& clusters) noexcept
 {
     auto cluster_index = MG_LIGHT_GRID_WIDTH * (MG_LIGHT_GRID_HEIGHT * cluster.z + cluster.y) +
                          cluster.x;
-    auto light_offset = clusters[cluster_index].num_lights;
+    const auto light_offset = clusters[cluster_index].num_lights;
 
     if (light_offset >= MG_MAX_LIGHTS_PER_CLUSTER) {
         g_log.write_warning("Too many light sources in cluster.");
@@ -108,7 +108,7 @@ auto light_grid_data   = std::make_unique<LightGridData>();
 
 //--------------------------------------------------------------------------------------------------
 
-LightBuffers::LightBuffers()
+LightBuffers::LightBuffers() noexcept
     : light_data_buffer{ sizeof(LightBlock) }
     , light_index_texture{ light_index_tex_type(), sizeof(LightIndexArray) }
     , tile_data_texture{ light_grid_tex_type(), sizeof(LightGridData) }
@@ -123,7 +123,7 @@ void update_light_data(LightBuffers&     light_data_out,
 
     grid.calculate_delim_planes(cam.proj_matrix());
 
-    glm::mat4 V = cam.view_matrix();
+    const glm::mat4 V = cam.view_matrix();
 
     for (size_t light_index = 0; light_index < lights.size(); ++light_index) {
         const Light& l = lights[light_index];

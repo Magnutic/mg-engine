@@ -42,7 +42,7 @@ namespace shader {
 
 enum class SamplerType { Sampler2D, SamplerCube };
 
-inline std::string_view sampler_type_to_string(SamplerType type)
+inline std::string_view sampler_type_to_string(SamplerType type) noexcept
 {
     switch (type) {
     case SamplerType::Sampler2D:
@@ -53,7 +53,7 @@ inline std::string_view sampler_type_to_string(SamplerType type)
     MG_ASSERT(false && "unreachable");
 }
 
-inline Opt<SamplerType> string_to_sampler_type(std::string_view str)
+inline Opt<SamplerType> string_to_sampler_type(std::string_view str) noexcept
 {
     if (str == "sampler2D") { return SamplerType::Sampler2D; }
     if (str == "samplerCube") { return SamplerType::SamplerCube; }
@@ -62,7 +62,7 @@ inline Opt<SamplerType> string_to_sampler_type(std::string_view str)
 
 enum class ParameterType { Int, Float, Vec2, Vec4 }; // Order matters, used for sorting
 
-inline std::string_view parameter_type_to_string(ParameterType type)
+inline std::string_view parameter_type_to_string(ParameterType type) noexcept
 {
     switch (type) {
     case ParameterType::Int:
@@ -77,7 +77,7 @@ inline std::string_view parameter_type_to_string(ParameterType type)
     MG_ASSERT(false && "unreachable");
 }
 
-inline Opt<ParameterType> string_to_parameter_type(std::string_view str)
+inline Opt<ParameterType> string_to_parameter_type(std::string_view str) noexcept
 {
     if (str == "int") { return ParameterType::Int; }
     if (str == "float") { return ParameterType::Float; }

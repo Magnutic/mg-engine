@@ -55,9 +55,9 @@ public:
     void set_data(span<const std::byte> data, size_t dest_offset = 0);
 
     /** Get the buffer's size in bytes. */
-    size_t size() const { return m_size; }
+    size_t size() const noexcept { return m_size; }
 
-    OpaqueHandle::Value gfx_api_handle() const { return m_internal_ubo_id.value; }
+    OpaqueHandle::Value gfx_api_handle() const noexcept { return m_internal_ubo_id.value; }
 
     /** Get the maximum size for a UBO on the present system. */
     static size_t max_size();

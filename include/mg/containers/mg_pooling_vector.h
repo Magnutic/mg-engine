@@ -70,7 +70,7 @@ public:
         return *ptr;
     }
 
-    T& get(size_t i)
+    T& get(size_t i) noexcept
     {
         MG_ASSERT_DEBUG(m_present[i]);
         return reinterpret_cast<T&>(m_storage[i]); // NOLINT
@@ -124,7 +124,7 @@ public:
     {
         if (m_free_indices.empty()) { _grow(); }
 
-        uint32_t index = m_free_indices.back();
+        const uint32_t index = m_free_indices.back();
         m_free_indices.pop_back();
 
         const ElemIndex ei{ _internal_index(index) };
@@ -137,7 +137,7 @@ public:
      * other members.
      * Time complexity: constant.
      */
-    void destroy(uint32_t index) noexcept
+    void destroy(uint32_t index)
     {
         const ElemIndex ei{ _internal_index(index) };
         m_free_indices.push_back(index);

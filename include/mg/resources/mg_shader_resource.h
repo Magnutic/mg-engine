@@ -43,14 +43,14 @@ class ShaderResource : public BaseResource {
 public:
     using BaseResource::BaseResource;
 
-    span<const shader::Sampler>   samplers() const { return m_samplers; }
-    span<const shader::Parameter> parameters() const { return m_parameters; }
-    span<const shader::Option>    options() const { return m_options; }
+    span<const shader::Sampler>   samplers() const noexcept { return m_samplers; }
+    span<const shader::Parameter> parameters() const noexcept { return m_parameters; }
+    span<const shader::Option>    options() const noexcept { return m_options; }
 
-    std::string_view vertex_code() const { return m_vertex_code; }
-    std::string_view fragment_code() const { return m_fragment_code; }
+    std::string_view vertex_code() const noexcept { return m_vertex_code; }
+    std::string_view fragment_code() const noexcept { return m_fragment_code; }
 
-    shader::Tag::Value tags() const { return m_tags; }
+    shader::Tag::Value tags() const noexcept { return m_tags; }
 
     bool should_reload_on_file_change() const override { return true; }
 

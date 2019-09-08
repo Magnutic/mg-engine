@@ -56,18 +56,18 @@ class WindowRenderTarget : public IRenderTarget {
     friend class ::Mg::Window;
 
 public:
-    void      bind() final;
+    void      bind() noexcept final;
     ImageSize image_size() const noexcept final { return m_image_size; }
 
-    void update_viewport();
+    void update_viewport() noexcept;
 
     MG_MAKE_NON_COPYABLE(WindowRenderTarget);
     MG_MAKE_NON_MOVABLE(WindowRenderTarget);
 
 private:
-    WindowRenderTarget() {}
+    WindowRenderTarget() = default;
 
-    void set_size(int32_t width, int32_t height) { m_image_size = { width, height }; }
+    void set_size(int32_t width, int32_t height) noexcept { m_image_size = { width, height }; }
 
     ImageSize m_image_size;
 };
@@ -114,8 +114,8 @@ public:
 
     ImageSize image_size() const final;
 
-    TextureHandle colour_target() const { return m_colour_target; }
-    TextureHandle depth_target() const { return m_depth_target; }
+    TextureHandle colour_target() const noexcept { return m_colour_target; }
+    TextureHandle depth_target() const noexcept { return m_depth_target; }
 
 private:
     TextureRenderTarget() = default;

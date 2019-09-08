@@ -34,47 +34,49 @@
 
 namespace Mg::gfx {
 
-void LightGrid::calculate_delim_planes(glm::mat4 P)
+void LightGrid::calculate_delim_planes(glm::mat4 P) noexcept
 {
     // If projection has not changed, we can re-use the previous planes
     if (P == m_prev_projection) { return; }
     m_prev_projection = P;
 
-    glm::vec2 scale = glm::vec2{ MG_LIGHT_GRID_WIDTH, MG_LIGHT_GRID_HEIGHT } / 2.0f;
+    const auto scale = glm::vec2{ MG_LIGHT_GRID_WIDTH, MG_LIGHT_GRID_HEIGHT } / 2.0f;
 
     // Create delimiter plane for each horizontal/vertical step by creating the frustum projection
     // matrix for that tile column/row, and then extracting frustum planes.
     for (size_t i = 0; i < MG_LIGHT_GRID_WIDTH + 1; ++i) {
-        float tile_bias = -scale.x + i - 1;
+        const float tile_bias = -scale.x + i - 1;
 
         // Frustum projection matrix columns
-        glm::vec4 col1{ P[0][0] * scale.x, 0.0f, tile_bias, 0.0f };
-        glm::vec4 col4{ 0.0f, 0.0f, 1.0f, 0.0f };
+        const glm::vec4 col1{ P[0][0] * scale.x, 0.0f, tile_bias, 0.0f };
+        const glm::vec4 col4{ 0.0f, 0.0f, 1.0f, 0.0f };
 
         // Extract left frustum plane
-        auto left             = glm::normalize(col4 + col1);
+        const auto left       = glm::normalize(col4 + col1);
         m_delim_plane_vert[i] = DelimPlane{ left.x, left.z };
     }
 
     for (size_t u = 0; u < MG_LIGHT_GRID_HEIGHT + 1; ++u) {
-        float tile_bias = -scale.y + u - 1;
+        const float tile_bias = -scale.y + u - 1;
 
         // Frustum projection matrix columns
-        glm::vec4 col2{ 0.0f, P[1][1] * scale.y, tile_bias, 0.0f };
-        glm::vec4 col4{ 0.0f, 0.0f, 1.0f, 0.0f };
+        const glm::vec4 col2{ 0.0f, P[1][1] * scale.y, tile_bias, 0.0f };
+        const glm::vec4 col4{ 0.0f, 0.0f, 1.0f, 0.0f };
 
         // Extract bottom frustum plane
-        auto bottom          = glm::normalize(col4 + col2);
+        const auto bottom    = glm::normalize(col4 + col2);
         m_delim_plane_hor[u] = DelimPlane{ bottom.y, bottom.z };
     }
 }
 
-size_t
-LightGrid::extents(const glm::vec3& pos_view, float radius_sqr, bool horizontal, bool get_max)
+size_t LightGrid::extents(const glm::vec3& pos_view,
+                          float            radius_sqr,
+                          bool             horizontal,
+                          bool             get_max) noexcept
 {
     const int cmp_sign = get_max ? -1 : 1;
 
-    auto planes = horizontal ? span{ m_delim_plane_hor } : span{ m_delim_plane_vert };
+    const auto planes = horizontal ? span{ m_delim_plane_hor } : span{ m_delim_plane_vert };
 
     const float offset = horizontal ? pos_view.y : pos_view.x;
     const float depth  = pos_view.z;
@@ -101,7 +103,7 @@ LightGrid::extents(const glm::vec3& pos_view, float radius_sqr, bool horizontal,
     return get_max ? max : min;
 };
 
-float LightGrid::signed_sqr_distance(const DelimPlane& plane, float offset, float depth)
+float LightGrid::signed_sqr_distance(const DelimPlane& plane, float offset, float depth) noexcept
 {
     // Plane-point distance formula adapted for tile delimiter planes -- quite simplified,
     // since these planes are all normalised and always have components that are zero.

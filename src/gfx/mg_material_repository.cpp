@@ -26,13 +26,15 @@
 #include "mg/containers/mg_pooling_vector.h"
 #include "mg/gfx/mg_material.h"
 
+#include <cstring> // memcpy
+
 namespace Mg::gfx {
 
 // The client-side handle type is Material*, but internally we use MaterialNode. Since Material is
 // the first element of MaterialNode, we can reinterpret_cast Material* to MaterialNode*.
 
 struct MaterialNode {
-    explicit MaterialNode(Material&& mat) : material(std::move(mat)) {}
+    explicit MaterialNode(Material&& mat) noexcept : material(std::move(mat)) {}
 
     // Publicly visible material data (Material* allows accessing only this).
     Material material;
@@ -62,7 +64,8 @@ Material* MaterialRepository::create(Identifier id, ResourceHandle<ShaderResourc
 
 void MaterialRepository::destroy(const Material* handle)
 {
-    auto* p_node = reinterpret_cast<const MaterialNode*>(handle); // NOLINT
+    const MaterialNode* p_node{};
+    std::memcpy(&p_node, &handle, sizeof(handle));
     impl().nodes.destroy(p_node->self_index);
 }
 

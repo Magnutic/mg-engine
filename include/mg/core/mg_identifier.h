@@ -134,7 +134,9 @@ namespace detail {
 
 // Static storage for dynamic string copies
 static struct StrMapInitialiser {
-    StrMapInitialiser();
+    StrMapInitialiser() noexcept;
+    MG_MAKE_NON_MOVABLE(StrMapInitialiser);
+    MG_MAKE_NON_COPYABLE(StrMapInitialiser);
     ~StrMapInitialiser();
 } str_map_initialiser;
 

@@ -120,20 +120,20 @@ public:
     /** Access the binary pixel data.
      * @param mip_index Which mipmap to get.
      */
-    MipLevelData pixel_data(MipIndexT mip_index) const;
+    MipLevelData pixel_data(MipIndexT mip_index) const noexcept;
 
     /** Get texture format info. */
-    const Format& format() const { return m_format; }
+    const Format& format() const noexcept { return m_format; }
 
     /** Access the texture settings struct. */
-    Settings& settings() { return m_settings; }
+    Settings& settings() noexcept { return m_settings; }
 
     /** Access the texture settings struct. */
-    const Settings& settings() const { return m_settings; }
+    const Settings& settings() const noexcept { return m_settings; }
 
-    bool should_reload_on_file_change() const override { return true; }
+    bool should_reload_on_file_change() const noexcept override { return true; }
 
-    Identifier type_id() const override { return "TextureResource"; }
+    Identifier type_id() const noexcept override { return "TextureResource"; }
 
 protected:
     /** Constructs a texture from file. Only DDS files are supported. */

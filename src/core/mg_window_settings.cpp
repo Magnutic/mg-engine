@@ -24,7 +24,7 @@ WindowSettings read_display_settings(Config& cfg)
 }
 
 /** Write video mode settings to supplied Config. */
-void write_display_settings(Config& cfg, WindowSettings& s)
+void write_display_settings(Config& cfg, const WindowSettings& s)
 {
     cfg.set_value("r_display_width", s.video_mode.width);
     cfg.set_value("r_display_height", s.video_mode.height);

@@ -29,6 +29,7 @@
 #include "mg/gfx/mg_material.h"
 #include "mg/gfx/mg_pipeline_repository.h"
 #include "mg/gfx/mg_uniform_buffer.h"
+#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_opaque_handle.h"
 #include "mg/utils/mg_stl_helpers.h"
 
@@ -166,9 +167,9 @@ PipelineRepository make_billboard_pipeline_factory()
 // BillboardRendererList implementation
 //--------------------------------------------------------------------------------------------------
 
-void BillboardRenderList::sort_farthest_first(const ICamera& camera)
+void BillboardRenderList::sort_farthest_first(const ICamera& camera) noexcept
 {
-    glm::vec3 cam_pos = camera.get_position();
+    const glm::vec3 cam_pos = camera.get_position();
 
     sort(m_billboards, [&](const Billboard& l, const Billboard& r) {
         return glm::distance2(cam_pos, l.pos) > glm::distance2(cam_pos, r.pos);
@@ -208,11 +209,14 @@ inline void update_buffer(BillboardRendererData& data, span<const Billboard> bil
     // According to the following source, this should help reduce synchronisation overhead.
     // TODO: investigate further.
     // https://www.khronos.org/opengl/wiki/Buffer_Object_Streaming
-    glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(data.vertex_buffer_size), nullptr, GL_STREAM_DRAW);
+    glBufferData(GL_ARRAY_BUFFER,
+                 narrow<GLsizeiptr>(data.vertex_buffer_size),
+                 nullptr,
+                 GL_STREAM_DRAW);
 
     data.vertex_buffer_size = billboards.size() * sizeof(Billboard);
     glBufferData(GL_ARRAY_BUFFER,
-                 GLsizeiptr(data.vertex_buffer_size),
+                 narrow<GLsizeiptr>(data.vertex_buffer_size),
                  billboards.data(),
                  GL_STREAM_DRAW);
 }
@@ -233,15 +237,12 @@ BillboardRenderer::BillboardRenderer()
     const int32_t stride = sizeof(Billboard);
 
     // Tell OpenGL how to interpret the vertex buffer.
-    auto set_attrib_ptr = [&](GLint size) {
-        glVertexAttribPointer(index,
-                              size,
-                              GL_FLOAT,
-                              GL_FALSE,
-                              stride,
-                              reinterpret_cast<GLvoid*>(offset)); // NOLINT
+    const auto set_attrib_ptr = [&](GLint size) {
+        GLvoid* gl_offset{};
+        std::memcpy(&gl_offset, &offset, sizeof(offset));
+        glVertexAttribPointer(index, size, GL_FLOAT, GL_FALSE, stride, gl_offset);
         glEnableVertexAttribArray(index);
-        offset += size * 4;
+        offset += intptr_t{ size } * 4;
         ++index;
     };
 
@@ -257,8 +258,8 @@ BillboardRenderer::BillboardRenderer()
 
 BillboardRenderer::~BillboardRenderer()
 {
-    GLuint vao_id = static_cast<GLuint>(impl().vao.value);
-    GLuint vbo_id = static_cast<GLuint>(impl().vbo.value);
+    const auto vao_id = static_cast<GLuint>(impl().vao.value);
+    const auto vbo_id = static_cast<GLuint>(impl().vbo.value);
     glDeleteVertexArrays(1, &vao_id);
     glDeleteBuffers(1, &vbo_id);
 }
@@ -282,7 +283,7 @@ void BillboardRenderer::render(const ICamera&             camera,
         impl().camera_ubo.set_data(byte_representation(camera_block));
     }
 
-    std::array shared_inputs = { PipelineInputBinding(k_camera_ubo_slot, impl().camera_ubo) };
+    const std::array shared_inputs = { PipelineInputBinding(k_camera_ubo_slot, impl().camera_ubo) };
 
     PipelineRepository::BindingContext binding_context = impl().pipeline_repository.binding_context(
         shared_inputs);
@@ -293,7 +294,7 @@ void BillboardRenderer::render(const ICamera&             camera,
     glDrawArrays(GL_POINTS, 0, narrow<GLint>(billboards.size()));
 }
 
-void BillboardRenderer::drop_shaders()
+void BillboardRenderer::drop_shaders() noexcept
 {
     impl().pipeline_repository.drop_pipelines();
 }

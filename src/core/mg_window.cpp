@@ -70,7 +70,7 @@ void glfw_error_callback(int error, const char* reason)
 // of Mg::Window. For simplicity, we only support one window for now.
 Window* s_window;
 
-Window& window_from_glfw_handle(GLFWwindow* handle)
+Window& window_from_glfw_handle(const GLFWwindow* handle) noexcept
 {
     MG_ASSERT(s_window != nullptr);
     MG_ASSERT(s_window->glfw_window() == handle);
@@ -78,7 +78,7 @@ Window& window_from_glfw_handle(GLFWwindow* handle)
 }
 
 // Creates window with given video mode settings
-GLFWwindow* create_window()
+GLFWwindow* create_window() noexcept
 {
     g_log.write_verbose("Creating window");
 
@@ -138,7 +138,7 @@ WindowSettings sanitise_settings(WindowSettings s)
 //--------------------------------------------------------------------------------------------------
 
 /** Get video mode of primary monitor. */
-VideoMode current_monitor_video_mode()
+VideoMode current_monitor_video_mode() noexcept
 {
     glfwInit();
     const GLFWvidmode* gvm = glfwGetVideoMode(glfwGetPrimaryMonitor());
@@ -149,7 +149,7 @@ Array<VideoMode> find_available_video_modes()
 {
     small_vector<VideoMode, 20> res;
 
-    auto vid_modes = []() -> span<const GLFWvidmode> {
+    const auto vid_modes = []() -> span<const GLFWvidmode> {
         int  n_modes;
         auto p_modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &n_modes);
         return { p_modes, narrow<size_t>(n_modes) };
@@ -241,14 +241,14 @@ Window::~Window()
     glfwDestroyWindow(m_window);
 }
 
-VideoMode Window::frame_buffer_size() const
+VideoMode Window::frame_buffer_size() const noexcept
 {
     int width, height;
     glfwGetFramebufferSize(m_window, &width, &height);
     return { width, height };
 }
 
-void Window::refresh()
+void Window::refresh() noexcept
 {
     // Update GLFW window
     // TODO: this is OpenGL-specific
@@ -279,13 +279,13 @@ void Window::reset()
     GLFWmonitor* monitor = m_settings.fullscreen ? glfwGetPrimaryMonitor() : nullptr;
 
     // Put window in centre of screen
-    int window_pos_x;
-    int window_pos_y;
+    int window_pos_x{};
+    int window_pos_y{};
 
     {
-        VideoMode vm = current_monitor_video_mode();
-        window_pos_x = vm.width / 2 - m_settings.video_mode.width / 2;
-        window_pos_y = vm.height / 2 - m_settings.video_mode.height / 2;
+        const VideoMode vm = current_monitor_video_mode();
+        window_pos_x       = vm.width / 2 - m_settings.video_mode.width / 2;
+        window_pos_y       = vm.height / 2 - m_settings.video_mode.height / 2;
     }
 
     glfwSetWindowMonitor(m_window,
@@ -299,7 +299,7 @@ void Window::reset()
     set_vsync(m_window, m_settings.vsync);
 }
 
-void Window::set_title(const std::string& title)
+void Window::set_title(const std::string& title) noexcept
 {
     glfwSetWindowTitle(m_window, title.c_str());
 }

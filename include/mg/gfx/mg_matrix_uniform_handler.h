@@ -56,7 +56,7 @@ class ICamera;
 class MatrixUniformHandler {
 public:
     /** Constructs new UBO for matrices. */
-    explicit MatrixUniformHandler();
+    MatrixUniformHandler();
 
     /** Set matrix UBO data to hold transformation matrices.
      * m_matrices and mvp_matrices should be equally long.
@@ -67,7 +67,7 @@ public:
     size_t set_matrices(span<const glm::mat4> m_matrices, span<const glm::mat4> mvp_matrices);
 
     /** Get matrix UBO. */
-    const UniformBuffer& ubo() const { return m_matrix_ubo; }
+    const UniformBuffer& ubo() const noexcept { return m_matrix_ubo; }
 
 private:
     UniformBuffer m_matrix_ubo;

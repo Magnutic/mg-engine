@@ -77,9 +77,12 @@ class RenderCommandList {
     friend class RenderCommandProducer;
 
 public:
-    span<const RenderCommand> render_commands() const { return m_render_commands; }
-    span<const glm::mat4>     m_transform_matrices() const { return m_m_transform_matrices; }
-    span<const glm::mat4>     mvp_transform_matrices() const { return m_mvp_transform_matrices; }
+    span<const RenderCommand> render_commands() const noexcept { return m_render_commands; }
+    span<const glm::mat4> m_transform_matrices() const noexcept { return m_m_transform_matrices; }
+    span<const glm::mat4> mvp_transform_matrices() const noexcept
+    {
+        return m_mvp_transform_matrices;
+    }
 
 private:
     std::vector<RenderCommand> m_render_commands;
@@ -99,7 +102,7 @@ public:
      * create a new one, since the former approach allows the same heap-memory buffers to be
      * re-used.
      */
-    void clear();
+    void clear() noexcept;
 
     /** Sorts and frustum culls draw list and makes render commands available as
      * RenderCommandList.
@@ -109,7 +112,7 @@ public:
      */
     const RenderCommandList& finalise(const ICamera& camera, SortFunc sort_func);
 
-    size_t size() const { return m_render_commands_unsorted.size(); }
+    size_t size() const noexcept { return m_render_commands_unsorted.size(); }
 
     struct SortKey {
         uint32_t depth;

@@ -31,7 +31,7 @@
 
 namespace Mg::gfx {
 
-const char* gl_error_string(uint32_t error_code)
+const char* gl_error_string(uint32_t error_code) noexcept
 {
     switch (error_code) {
     case 0:
@@ -55,7 +55,7 @@ const char* gl_error_string(uint32_t error_code)
     }
 }
 
-void check_gl_error(std::string_view file, std::string_view function, size_t line)
+void check_gl_error(std::string_view file, std::string_view function, size_t line) noexcept
 {
     uint32_t error_enum = glGetError();
 
@@ -72,7 +72,7 @@ void check_gl_error(std::string_view file, std::string_view function, size_t lin
 // KHR_debug extension utilities
 //--------------------------------------------------------------------------------------------------
 
-const char* source_string(uint32_t source)
+const char* source_string(uint32_t source) noexcept
 {
     switch (source) {
     case GL_DEBUG_SOURCE_API:
@@ -92,7 +92,7 @@ const char* source_string(uint32_t source)
     }
 }
 
-const char* type_string(uint32_t type)
+const char* type_string(uint32_t type) noexcept
 {
     switch (type) {
     case GL_DEBUG_TYPE_ERROR:
@@ -114,7 +114,7 @@ const char* type_string(uint32_t type)
     }
 }
 
-const char* severity_string(uint32_t severity)
+const char* severity_string(uint32_t severity) noexcept
 {
     switch (severity) {
     case GL_DEBUG_SEVERITY_HIGH:
@@ -136,7 +136,7 @@ void ogl_error_callback(uint32_t source,
                         uint32_t severity,
                         int32_t /* length */,
                         const char* msg,
-                        const void* /* user_param */)
+                        const void* /* user_param */) noexcept
 {
     auto src_str      = source_string(source);
     auto type_str     = type_string(type);

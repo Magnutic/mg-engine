@@ -38,7 +38,7 @@ namespace Mg {
 
 static double numeric_from_string(std::string_view string)
 {
-    auto [success, value] = string_to<double>(string);
+    const auto [success, value] = string_to<double>(string);
 
     if (success) { return value; }
 
@@ -109,7 +109,7 @@ std::string Config::assignment_line(std::string_view key) const
 
 bool Config::evaluate_line(std::string_view input)
 {
-    auto error = [&](std::string_view reason) {
+    const auto error = [&](std::string_view reason) {
         g_log.write_message(fmt::format("Failed to parse config assignment:\n\t'{}'\n\t{}\n\t{}",
                                         input,
                                         reason,
@@ -117,7 +117,7 @@ bool Config::evaluate_line(std::string_view input)
     };
 
     // Ignore comment
-    auto size = size_t(find(input, '#') - input.begin());
+    const auto size = narrow<size_t>( find(input, '#') - input.begin() );
     input     = trim(input.substr(0, size));
 
     if (input.empty()) { return true; }
@@ -137,7 +137,7 @@ bool Config::evaluate_line(std::string_view input)
     // If value is "-enclosed, parse it as string literal
     if (rhs.size() > 1 && rhs[0] == '"' && rhs[rhs.size() - 1] == '"') {
         bool escape = false;
-        for (char c : rhs.substr(1, rhs.size() - 2)) {
+        for (const char c : rhs.substr(1, rhs.size() - 2)) {
             if (c == '\\' && !escape) {
                 escape = true;
                 continue;
@@ -179,12 +179,14 @@ void Config::read_from_file(std::string_view filepath)
     }
 }
 
+namespace {
+
 // Helper class for write_to_file, models a configuration value assignment line.
 struct Line {
-    static auto init_key(std::string_view line)
+    static auto init_key(std::string_view line) noexcept
     {
-        auto split      = split_string_on_char(line, '#');
-        auto assignment = split_string_on_char(split.first, '=');
+        const auto split      = split_string_on_char(line, '#');
+        const auto assignment = split_string_on_char(split.first, '=');
         return trim(assignment.first);
     }
 
@@ -198,14 +200,16 @@ struct Line {
     std::string text;
 };
 
-bool operator==(const Line& l, const Line& r)
+bool operator==(const Line& l, const Line& r) noexcept
 {
     return l.key == r.key;
 }
-bool operator<(const Line& l, const Line& r)
+bool operator<(const Line& l, const Line& r) noexcept
 {
     return l.text < r.text;
 }
+
+} // namespace
 
 void Config::write_to_file(std::string_view filepath) const
 {
@@ -235,10 +239,10 @@ void Config::write_to_file(std::string_view filepath) const
 
         // Replace old lines that have equivalent keys
         if (equivalent != lines.end()) {
-            std::string& old_line = equivalent->text;
+            const std::string& old_line = equivalent->text;
 
             // While preserving comments
-            auto comment_begin = old_line.find('#');
+            const auto comment_begin = old_line.find('#');
             if (comment_begin != std::string::npos) {
                 line.text.append(" ").append(old_line.substr(comment_begin));
             }

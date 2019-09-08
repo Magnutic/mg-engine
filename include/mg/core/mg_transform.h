@@ -43,7 +43,7 @@ class Transform {
 public:
     Transform(glm::vec3 _position = glm::vec3{ 0.0f },
               glm::vec3 _scale    = glm::vec3{ 1.0f },
-              Rotation  _rotation = Rotation{})
+              Rotation  _rotation = Rotation{}) noexcept
         : position(_position), scale(_scale), rotation(_rotation)
     {}
 

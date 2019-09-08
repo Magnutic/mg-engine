@@ -66,43 +66,43 @@ Log::Log(std::string_view file_path, Prio console_verbosity, Prio log_file_verbo
         return;
     }
 
-    time_t log_open_time = time(nullptr);
-    tm&    t             = *localtime(&log_open_time);
+    const time_t log_open_time = time(nullptr);
+    const tm&    t             = *localtime(&log_open_time);
 
     *impl().writer << fmt::format("Log started at {0:%F}, {0:%T}\n", t);
 }
 
 /** Set verbosity for console output */
-void Log::set_console_verbosity(Prio prio)
+void Log::set_console_verbosity(Prio prio) noexcept
 {
     impl().console_verbosity = prio;
 }
 
 /** Set verbosity for log file output */
-void Log::set_file_verbosity(Prio prio)
+void Log::set_file_verbosity(Prio prio) noexcept
 {
     impl().log_file_verbosity = prio;
 }
 
-Log::GetVerbosityReturn Log::get_verbosity() const
+Log::GetVerbosityReturn Log::get_verbosity() const noexcept
 {
     return { impl().console_verbosity, impl().log_file_verbosity };
 }
 
-void Log::flush()
+void Log::flush() noexcept
 {
     if (impl().writer) { impl().writer->flush(); }
 }
 
-std::string_view Log::file_path() const
+std::string_view Log::file_path() const noexcept
 {
     return impl().file_path;
 }
 
-void Log::output(Prio prio, std::string_view str)
+void Log::output(Prio prio, std::string_view str) noexcept
 {
     // Prepend message type
-    const char* prefix;
+    const char* prefix = "";
 
     switch (prio) {
     case Prio::Error:
@@ -122,7 +122,6 @@ void Log::output(Prio prio, std::string_view str)
         break;
     default:
         MG_ASSERT_DEBUG(false);
-        prefix = "";
     }
 
     std::string message = fmt::format("{} {}", prefix, str);
@@ -136,8 +135,8 @@ void Log::output(Prio prio, std::string_view str)
 
     if (impl().writer && prio <= impl().log_file_verbosity) {
         // Write timestamp to log file
-        time_t msg_time = time(nullptr);
-        tm&    t        = *localtime(&msg_time);
+        const time_t msg_time = time(nullptr);
+        const tm&    t        = *localtime(&msg_time);
 
         impl().writer.value() << fmt::format("{:%T}: {}\n", t, message);
 
@@ -167,7 +166,7 @@ Log& g_log = reinterpret_cast<Log&>(log_buf); // NOLINT
 #    pragma GCC diagnostic pop
 #endif
 
-detail::LogInitialiser::LogInitialiser()
+detail::LogInitialiser::LogInitialiser() noexcept
 {
     if (nifty_counter++ == 0) { new (&g_log) Log{ defs::k_engine_log_file }; }
 }
@@ -179,20 +178,20 @@ detail::LogInitialiser::~LogInitialiser()
 
 void write_crash_log(Log& log)
 {
-    time_t crash_time = time(nullptr);
-    tm&    t          = *localtime(&crash_time);
+    const time_t crash_time = time(nullptr);
+    const tm&    t          = *localtime(&crash_time);
 
     auto out_directory_name = fmt::format("crashlog_{:%F}_{:%T}", t);
 
-    auto fp            = log.file_path();
-    auto log_path      = fs::u8path(fp.begin(), fp.end());
-    auto log_directory = log_path.parent_path();
-    auto log_filename  = log_path.filename();
+    const auto fp            = log.file_path();
+    const auto log_path      = fs::u8path(fp.begin(), fp.end());
+    const auto log_directory = log_path.parent_path();
+    const auto log_filename  = log_path.filename();
 
-    auto out_directory = log_directory /= fs::u8path(out_directory_name);
+    const auto out_directory = log_directory / fs::u8path(out_directory_name);
     fs::create_directory(out_directory);
 
-    auto outpath = out_directory /= log_filename;
+    const auto outpath = out_directory / log_filename;
 
     log.write_message(
         fmt::format("Saving crash log '{}'", fs::absolute(outpath).generic_u8string()));

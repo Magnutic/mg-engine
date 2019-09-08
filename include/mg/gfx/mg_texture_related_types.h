@@ -56,12 +56,12 @@ struct ImageSize {
     int32_t height{};
 };
 
-inline bool operator==(ImageSize lhs, ImageSize rhs)
+inline bool operator==(ImageSize lhs, ImageSize rhs) noexcept
 {
     return lhs.width == rhs.width && lhs.height == rhs.height;
 }
 
-inline bool operator!=(ImageSize lhs, ImageSize rhs)
+inline bool operator!=(ImageSize lhs, ImageSize rhs) noexcept
 {
     return !(lhs == rhs);
 }

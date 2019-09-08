@@ -43,13 +43,13 @@ namespace Mg::gfx {
 // WindowRenderTarget implementation
 //--------------------------------------------------------------------------------------------------
 
-void WindowRenderTarget::bind()
+void WindowRenderTarget::bind() noexcept
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     update_viewport();
 }
 
-void WindowRenderTarget::update_viewport()
+void WindowRenderTarget::update_viewport() noexcept
 {
     glViewport(0, 0, m_image_size.width, m_image_size.height);
 }
@@ -61,7 +61,7 @@ void WindowRenderTarget::update_viewport()
 namespace {
 
 // Create a depth/stencil renderbuffer appropriate for use with the given rendertarget settings
-uint32_t create_depth_stencil_buffer(ImageSize size)
+uint32_t create_depth_stencil_buffer(ImageSize size) noexcept
 {
     uint32_t id = 0;
     glGenRenderbuffers(1, &id);
@@ -77,7 +77,7 @@ uint32_t create_depth_stencil_buffer(ImageSize size)
 void check_framebuffer()
 {
     MG_CHECK_GL_ERROR();
-    auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    const auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
     if (status != GL_FRAMEBUFFER_COMPLETE) {
         g_log.write_error(
@@ -91,11 +91,8 @@ public:
     MG_MAKE_NON_COPYABLE(FramebufferBindGuard);
     MG_MAKE_NON_MOVABLE(FramebufferBindGuard);
 
-    FramebufferBindGuard() { glGetIntegerv(GL_FRAMEBUFFER_BINDING, &old_binding); }
-    ~FramebufferBindGuard()
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, static_cast<uint32_t>(old_binding));
-    }
+    FramebufferBindGuard() noexcept { glGetIntegerv(GL_FRAMEBUFFER_BINDING, &old_binding); }
+    ~FramebufferBindGuard() { glBindFramebuffer(GL_FRAMEBUFFER, narrow<uint32_t>(old_binding)); }
 
     GLint old_binding{};
 };
@@ -120,7 +117,7 @@ TextureRenderTarget TextureRenderTarget::with_colour_target(TextureHandle colour
     glBindFramebuffer(GL_FRAMEBUFFER, fbo_id);
 
     // Attach texture to FBO
-    auto gl_tex_id = static_cast<GLuint>(texture_node.texture.gfx_api_handle());
+    const auto gl_tex_id = static_cast<GLuint>(texture_node.texture.gfx_api_handle());
     glFramebufferTexture2D(GL_FRAMEBUFFER,
                            GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D,
@@ -181,7 +178,7 @@ TextureRenderTarget TextureRenderTarget::with_colour_and_depth_targets(TextureHa
     glBindFramebuffer(GL_FRAMEBUFFER, fbo_id);
 
     // Attach texture to FBO
-    auto colour_id = static_cast<GLuint>(colour_tex.gfx_api_handle());
+    const auto colour_id = static_cast<GLuint>(colour_tex.gfx_api_handle());
     glFramebufferTexture2D(GL_FRAMEBUFFER,
                            GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D,
@@ -189,7 +186,7 @@ TextureRenderTarget TextureRenderTarget::with_colour_and_depth_targets(TextureHa
                            mip_level);
 
     // Attach depth/stencil renderbuffer to FBO
-    auto depth_id = static_cast<GLuint>(depth_tex.gfx_api_handle());
+    const auto depth_id = static_cast<GLuint>(depth_tex.gfx_api_handle());
     glFramebufferTexture2D(GL_FRAMEBUFFER,
                            GL_DEPTH_STENCIL_ATTACHMENT,
                            GL_TEXTURE_2D,
@@ -213,7 +210,7 @@ TextureRenderTarget::~TextureRenderTarget()
     }
 
     // Delete OpenGL objects
-    GLuint fbo_id = static_cast<GLuint>(m_fbo_id.value);
+    const auto fbo_id = static_cast<GLuint>(m_fbo_id.value);
     glDeleteFramebuffers(1, &fbo_id);
 }
 
@@ -221,7 +218,7 @@ void TextureRenderTarget::bind()
 {
     MG_ASSERT(m_fbo_id != 0);
     glBindFramebuffer(GL_FRAMEBUFFER, static_cast<GLuint>(m_fbo_id.value));
-    uint32_t buffer = GL_COLOR_ATTACHMENT0;
+    const uint32_t buffer = GL_COLOR_ATTACHMENT0;
     glDrawBuffers(1, &buffer);
 
     // Set up viewport to match FBO size

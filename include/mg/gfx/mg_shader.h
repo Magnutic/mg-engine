@@ -60,18 +60,18 @@ Opt<VertexShaderHandle>   compile_vertex_shader(const std::string& code);
 Opt<FragmentShaderHandle> compile_fragment_shader(const std::string& code);
 Opt<GeometryShaderHandle> compile_geometry_shader(const std::string& code);
 
-void destroy_shader(ShaderId handle);
+void destroy_shader(ShaderId handle) noexcept;
 
 /** RAII-owning wrapper for shader handles. */
 template<ShaderStage stage> class ShaderOwner {
 public:
-    explicit ShaderOwner(TypedShaderHandle<stage> handle) : m_handle(handle) {}
+    explicit ShaderOwner(TypedShaderHandle<stage> handle) noexcept : m_handle(handle) {}
     ~ShaderOwner() { destroy_shader(m_handle); }
 
     MG_MAKE_NON_COPYABLE(ShaderOwner);
     MG_MAKE_DEFAULT_MOVABLE(ShaderOwner);
 
-    TypedShaderHandle<stage> shader_handle() const { return m_handle; }
+    TypedShaderHandle<stage> shader_handle() const noexcept { return m_handle; }
 
 private:
     TypedShaderHandle<stage> m_handle;
@@ -84,17 +84,17 @@ Opt<ShaderHandle> link_shader_program(VertexShaderHandle        vertex_shader,
                                       Opt<GeometryShaderHandle> geometry_shader,
                                       Opt<FragmentShaderHandle> fragment_shader);
 
-void destroy_shader_program(ShaderHandle handle);
+void destroy_shader_program(ShaderHandle handle) noexcept;
 
 class ShaderProgramOwner {
 public:
-    explicit ShaderProgramOwner(ShaderHandle handle) : m_handle(handle) {}
+    explicit ShaderProgramOwner(ShaderHandle handle) noexcept : m_handle(handle) {}
     ~ShaderProgramOwner() { destroy_shader_program(m_handle); }
 
     MG_MAKE_DEFAULT_MOVABLE(ShaderProgramOwner);
     MG_MAKE_NON_COPYABLE(ShaderProgramOwner);
 
-    ShaderHandle program_handle() const { return m_handle; }
+    ShaderHandle program_handle() const noexcept { return m_handle; }
 
 private:
     ShaderHandle m_handle;

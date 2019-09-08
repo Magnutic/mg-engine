@@ -68,11 +68,11 @@ private:
         while (is_whitespace(m_stream.peek())) { m_stream.advance(); }
     };
 
-    size_t lexeme_length() const { return m_stream.pos - token_start; }
+    size_t lexeme_length() const noexcept { return m_stream.pos - token_start; }
 
     template<typename T = float> void add_token(TokenType type, T literal_value = {})
     {
-        std::string_view lexeme = m_stream.data.substr(token_start, lexeme_length());
+        const std::string_view lexeme = m_stream.data.substr(token_start, lexeme_length());
         m_tokens.push_back({ type, lexeme, literal_value, m_stream.line });
     }
 
@@ -80,8 +80,8 @@ private:
     {
         while (is_ascii_digit(m_stream.peek()) || m_stream.peek() == '.') { m_stream.advance(); }
 
-        auto number_str       = m_stream.data.substr(token_start, lexeme_length());
-        auto [success, value] = string_to<float>(number_str);
+        const auto number_str = m_stream.data.substr(token_start, lexeme_length());
+        const auto [success, value] = string_to<float>(number_str);
         MG_ASSERT(success);
         add_token(TokenType::NUMERIC_LITERAL, value);
     }
@@ -129,7 +129,7 @@ private:
         auto opt_token_type = get_keyword_type(lexeme);
 
         if (opt_token_type) {
-            TokenType token_type = opt_token_type.value();
+            const TokenType token_type = opt_token_type.value();
 
             if (token_type == TokenType::VERTEX_CODE || token_type == TokenType::FRAGMENT_CODE) {
                 code_block_literal(token_type);
@@ -143,7 +143,7 @@ private:
 
     void next_token()
     {
-        char c = m_stream.advance();
+        const char c = m_stream.advance();
         switch (c) {
         case ' ':
             break;

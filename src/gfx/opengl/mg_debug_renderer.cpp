@@ -45,7 +45,7 @@ namespace Mg::gfx {
 
 namespace {
 
-const char vs_code[] = R"(
+const char* vs_code = R"(
     #version 330 core
     layout(location = 0) in vec3 vert_position;
 
@@ -57,7 +57,7 @@ const char vs_code[] = R"(
     }
 )";
 
-const char fs_code[] = R"(
+const char* fs_code = R"(
     #version 330 core
     uniform vec4 colour;
 
@@ -106,11 +106,11 @@ DebugMesh generate_mesh(span<const glm::vec3> positions, span<const uint16_t> in
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_id);
 
     glBufferData(GL_ARRAY_BUFFER,
-                 GLsizeiptr(positions.size_bytes()),
+                 narrow<GLsizeiptr>(positions.size_bytes()),
                  positions.data(),
                  GL_STATIC_DRAW);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                 GLsizeiptr(indices.size_bytes()),
+                 narrow<GLsizeiptr>(indices.size_bytes()),
                  indices.data(),
                  GL_STATIC_DRAW);
 
@@ -159,16 +159,16 @@ EllipsoidData generate_ellipsoid_verts(size_t steps)
 
     // Vertical step
     for (size_t i = 0; i < v_steps; ++i) {
-        float z_offset = (i + 1) * glm::pi<float>() / (v_steps + 1) - glm::half_pi<float>();
+        const float z_offset = (i + 1) * glm::pi<float>() / (v_steps + 1) - glm::half_pi<float>();
 
-        float z = glm::sin(z_offset);
-        float r = glm::cos(z_offset);
+        const float z = glm::sin(z_offset);
+        const float r = glm::cos(z_offset);
 
         // Horizontal step (flat circle)
         for (size_t u = 0; u < h_steps; ++u) {
-            float h_offset = u * (2.0f * glm::pi<float>() / h_steps);
-            float x        = glm::cos(h_offset) * r;
-            float y        = glm::sin(h_offset) * r;
+            const float h_offset = u * (2.0f * glm::pi<float>() / h_steps);
+            const float x        = glm::cos(h_offset) * r;
+            const float y        = glm::sin(h_offset) * r;
             data.verts.emplace_back(x, y, z);
         }
     }
@@ -180,24 +180,24 @@ EllipsoidData generate_ellipsoid_verts(size_t steps)
     const size_t top_cap_vert_index    = data.verts.size() - 1;
 
     // Index of first vertex of strip
-    auto strip_vertex_index = [&](size_t strip_index) {
+    const auto strip_vertex_index = [&](size_t strip_index) {
         MG_ASSERT_DEBUG(strip_index < v_steps);
         return 1 + strip_index * h_steps;
     };
 
     // Create a triangle by adding three vertex indices
-    auto add_tri = [&](size_t fst, size_t snd, size_t thd) {
+    const auto add_tri = [&](size_t fst, size_t snd, size_t thd) {
         data.indices.push_back(gsl::narrow_cast<uint16_t>(fst));
         data.indices.push_back(gsl::narrow_cast<uint16_t>(snd));
         data.indices.push_back(gsl::narrow_cast<uint16_t>(thd));
     };
 
     // Generate triangles for the caps at bottom and top of sphere
-    auto gen_cap_tris = [&](size_t cap_vert_index, size_t vert_strip_begin, bool top) {
+    const auto gen_cap_tris = [&](size_t cap_vert_index, size_t vert_strip_begin, bool top) {
         for (size_t i = 0; i < h_steps; ++i) {
-            size_t fst = cap_vert_index;
-            size_t snd = vert_strip_begin + (i + 1) % h_steps;
-            size_t thd = vert_strip_begin + i;
+            const size_t fst = cap_vert_index;
+            size_t       snd = vert_strip_begin + (i + 1) % h_steps;
+            size_t       thd = vert_strip_begin + i;
 
             if (top) {
                 std::swap(snd, thd); // Swap for triangle winding
@@ -209,15 +209,15 @@ EllipsoidData generate_ellipsoid_verts(size_t steps)
     gen_cap_tris(bottom_cap_vert_index, strip_vertex_index(0), false);
 
     // Generate triangles for the strips making up the rest of the sphere
-    auto gen_strip_tris = [&](size_t vert_strip_index) {
-        size_t vert_strip_begin = strip_vertex_index(vert_strip_index);
-        size_t next_strip_begin = strip_vertex_index(vert_strip_index + 1);
+    const auto gen_strip_tris = [&](size_t vert_strip_index) {
+        const size_t vert_strip_begin = strip_vertex_index(vert_strip_index);
+        const size_t next_strip_begin = strip_vertex_index(vert_strip_index + 1);
 
         for (size_t i = 0; i < h_steps; ++i) {
-            size_t fst  = vert_strip_begin + i;
-            size_t snd  = vert_strip_begin + (i + 1) % h_steps;
-            size_t thd  = next_strip_begin + i;
-            size_t frth = next_strip_begin + (i + 1) % h_steps;
+            const size_t fst  = vert_strip_begin + i;
+            const size_t snd  = vert_strip_begin + (i + 1) % h_steps;
+            const size_t thd  = next_strip_begin + i;
+            const size_t frth = next_strip_begin + (i + 1) % h_steps;
 
             add_tri(fst, snd, thd);
             add_tri(thd, snd, frth);
@@ -256,16 +256,16 @@ struct DebugRendererData {
     std::map<size_t, Sphere> spheres;
 };
 
-DebugRenderer::DebugRenderer()  = default;
-DebugRenderer::~DebugRenderer() = default;
+DebugRenderer::DebugRenderer() = default;
+DebugRenderer::~DebugRenderer()         = default;
 
-static void draw_primitive(ShaderHandle                        program,
-                           const ICamera&                      camera,
-                           const DebugMesh&                    mesh,
-                           DebugRenderer::PrimitiveDrawParams& params)
+static void draw_primitive(ShaderHandle                              program,
+                           const ICamera&                            camera,
+                           const DebugMesh&                          mesh,
+                           const DebugRenderer::PrimitiveDrawParams& params)
 {
-    glm::mat4 M = glm::translate(glm::mat4{ 1.0f }, params.centre) *
-                  params.orientation.to_matrix() * glm::scale(params.dimensions);
+    const glm::mat4 M = glm::translate(glm::mat4{ 1.0f }, params.centre) *
+                        params.orientation.to_matrix() * glm::scale(params.dimensions);
 
     opengl::use_program(program);
     opengl::set_uniform(opengl::uniform_location(program, "colour").value(), params.colour);
@@ -287,7 +287,7 @@ static void draw_primitive(ShaderHandle                        program,
     glDrawElements(GL_TRIANGLES, mesh.num_indices, GL_UNSIGNED_SHORT, nullptr);
 
     if (params.wireframe) {
-        glPolygonMode(GL_FRONT_AND_BACK, uint32_t(old_poly_mode));
+        glPolygonMode(GL_FRONT_AND_BACK, narrow<GLuint>(old_poly_mode));
         glEnable(GL_CULL_FACE);
     }
 
@@ -309,7 +309,7 @@ void DebugRenderer::draw_ellipsoid(const ICamera& camera, EllipsoidDrawParams pa
         it     = p.first;
     }
 
-    Sphere& sphere = it->second;
+    const Sphere& sphere = it->second;
     draw_primitive(impl().program.program_handle(), camera, sphere.mesh, params);
 }
 

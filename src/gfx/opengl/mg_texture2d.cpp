@@ -180,16 +180,16 @@ OpaqueHandle generate_gl_render_target_texture(const RenderTargetParams& params)
 //--------------------------------------------------------------------------------------------------
 
 // Get texture format info as required by OpenGL
-GlTextureInfo gl_texture_info(const TextureResource& texture)
+GlTextureInfo gl_texture_info(const TextureResource& texture) noexcept
 {
     GlTextureInfo info{};
 
     const auto& tex_format   = texture.format();
     const auto& tex_settings = texture.settings();
 
-    info.mip_levels = static_cast<int32_t>(tex_format.mip_levels);
-    info.width      = static_cast<int32_t>(tex_format.width);
-    info.height     = static_cast<int32_t>(tex_format.height);
+    info.mip_levels = narrow<int32_t>(tex_format.mip_levels);
+    info.width      = narrow<int32_t>(tex_format.width);
+    info.height     = narrow<int32_t>(tex_format.height);
 
     // Texture channels are all 8-bit, so far.
     info.type = GL_UNSIGNED_BYTE;
@@ -248,7 +248,7 @@ GlTextureInfo gl_texture_info(const TextureResource& texture)
 }
 
 // Set up texture sampling parameters for currently bound texture
-void set_sampling_params(const TextureResource::Settings& settings)
+void set_sampling_params(const TextureResource::Settings& settings) noexcept
 {
     GLint edge_sampling = 0;
 
@@ -307,7 +307,7 @@ void upload_compressed_mip(bool                 preallocated,
                            int32_t              mip_index,
                            const GlTextureInfo& info,
                            int32_t              size,
-                           const GLvoid*        data)
+                           const GLvoid*        data) noexcept
 {
     const auto width  = info.width >> mip_index;
     const auto height = info.height >> mip_index;
@@ -331,7 +331,7 @@ void upload_uncompressed_mip(bool                 preallocated,
                              int32_t              mip_index,
                              const GlTextureInfo& info,
                              int32_t /* size */,
-                             const GLvoid* data)
+                             const GLvoid* data) noexcept
 {
     const auto width  = info.width >> mip_index;
     const auto height = info.height >> mip_index;
@@ -347,7 +347,7 @@ void upload_uncompressed_mip(bool                 preallocated,
     // Another day in OpenGL-land!
     glTexImage2D(GL_TEXTURE_2D,
                  mip_index,
-                 static_cast<GLint>(info.internal_format),
+                 narrow<GLint>(info.internal_format),
                  width,
                  height,
                  0,
@@ -358,9 +358,9 @@ void upload_uncompressed_mip(bool                 preallocated,
     MG_CHECK_GL_ERROR();
 }
 
-OpaqueHandle generate_gl_texture_from(const TextureResource& texture_resource)
+OpaqueHandle generate_gl_texture_from(const TextureResource& texture_resource) noexcept
 {
-    GlTextureInfo info = gl_texture_info(texture_resource);
+    const GlTextureInfo info = gl_texture_info(texture_resource);
 
     GLuint texture_id{};
     glGenTextures(1, &texture_id);
@@ -385,10 +385,9 @@ OpaqueHandle generate_gl_texture_from(const TextureResource& texture_resource)
 
     // Upload texture data, mipmap by mipmap
     for (int32_t mip_index = 0; mip_index < info.mip_levels; ++mip_index) {
-        const auto mip_data = texture_resource.pixel_data(
-            narrow<TextureResource::MipIndexT>(mip_index));
-        auto pixels = static_cast<const GLvoid*>(mip_data.data.data());
-        auto size   = narrow<int32_t>(mip_data.data.size_bytes());
+        const auto mip_data = texture_resource.pixel_data(narrow<uint32_t>(mip_index));
+        auto       pixels   = mip_data.data.data();
+        auto       size     = narrow<int32_t>(mip_data.data.size_bytes());
 
         upload_function(preallocate, mip_index, info, size, pixels);
     }
@@ -410,8 +409,8 @@ Texture2D Texture2D::from_texture_resource(const TextureResource& texture_resour
     Texture2D tex(generate_gl_texture_from(texture_resource));
 
     tex.m_id                = texture_resource.resource_id();
-    tex.m_image_size.width  = int32_t(texture_resource.format().width);
-    tex.m_image_size.height = int32_t(texture_resource.format().height);
+    tex.m_image_size.width  = narrow<int32_t>(texture_resource.format().width);
+    tex.m_image_size.height = narrow<int32_t>(texture_resource.format().height);
 
     return tex;
 }
@@ -428,7 +427,7 @@ Texture2D Texture2D::render_target(const RenderTargetParams& params)
 }
 
 // Unload texture from OpenGL context
-void Texture2D::unload()
+void Texture2D::unload() noexcept
 {
     auto tex_id = static_cast<uint32_t>(gfx_api_handle());
 

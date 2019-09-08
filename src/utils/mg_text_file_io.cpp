@@ -24,6 +24,7 @@
 #include "mg/utils/mg_text_file_io.h"
 
 #include "mg/utils/mg_fopen_utf8.h"
+#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_stl_helpers.h"
 #include "mg/utils/mg_string_utils.h"
 
@@ -71,7 +72,7 @@ std::string get_line(std::istream& stream)
     line.reserve(80);
 
     while (peek_char(stream) != 0) {
-        auto c = get_char(stream);
+        const auto c = get_char(stream);
         if (c == '\n') { break; }
         line += c;
     }
@@ -83,7 +84,7 @@ std::string get_token(std::istream& stream, std::string_view delims)
 {
     if (!stream.good()) { return {}; }
 
-    auto is_delim = [&](char c) { return find(delims, c) != delims.end(); };
+    const auto is_delim = [&](const char c) { return find(delims, c) != delims.end(); };
 
     std::string token;
 
@@ -98,11 +99,11 @@ std::string get_token(std::istream& stream, std::string_view delims)
 
 char peek_char(std::istream& stream)
 {
-    int value = stream.peek();
+    const int value = stream.peek();
 
     if (value == std::char_traits<char>::eof()) { return '\0'; }
 
-    return static_cast<char>(value);
+    return narrow<char>(value);
 }
 
 char get_char(std::istream& stream)

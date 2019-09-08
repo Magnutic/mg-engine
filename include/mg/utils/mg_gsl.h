@@ -161,7 +161,8 @@ public:
     {}
 
     template<typename ContainerT> // requires ContiguousContainer<ContainerT>
-    constexpr span(ContainerT& c) MG_SPAN_NOEXCEPT : span(c.data(), size_type(c.size()))
+    constexpr span(ContainerT& c) MG_SPAN_NOEXCEPT
+        : span(c.data(), narrow_cast<size_type>(c.size()))
     {}
 
     template<typename U, size_t N>
@@ -212,7 +213,7 @@ public:
     //----------------------------------------------------------------------------------------------
     // Observers
     //----------------------------------------------------------------------------------------------
-    constexpr size_type size() const noexcept { return size_type(m_end - m_begin); }
+    constexpr size_type size() const noexcept { return narrow_cast<size_type>(m_end - m_begin); }
     constexpr size_type length() const noexcept { return size(); }
 
     constexpr bool empty() const noexcept { return size() == 0; }
@@ -273,7 +274,7 @@ span(ContainerT&) -> span<std::remove_pointer_t<decltype(std::declval<ContainerT
 //--------------------------------------------------------------------------------------------------
 
 /** Reinterpret span of standard-layout object as a span of bytes. */
-template<typename T> span<const std::byte> as_bytes(span<T> span)
+template<typename T> span<const std::byte> as_bytes(span<T> span) noexcept
 {
     return span.as_bytes();
 }
@@ -281,7 +282,7 @@ template<typename T> span<const std::byte> as_bytes(span<T> span)
 // as_writeable_bytes omitted: does that not violate strict aliasing rules?
 
 /** Reinterpret any standard-layout object as a span of bytes. */
-template<typename T> span<const std::byte> byte_representation(const T& obj)
+template<typename T> span<const std::byte> byte_representation(const T& obj) noexcept
 {
     static_assert(std::is_standard_layout_v<T>);
     return { reinterpret_cast<const std::byte*>(&obj), sizeof(obj) };

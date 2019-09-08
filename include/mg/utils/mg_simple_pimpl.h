@@ -65,8 +65,8 @@ protected:
 
     friend void swap(PImplMixin& lhs, PImplMixin& rhs) noexcept { lhs.swap(rhs); }
 
-    ImplT&       impl() { return *m_impl; }
-    const ImplT& impl() const { return *m_impl; }
+    ImplT&       impl() noexcept { return *m_impl; }
+    const ImplT& impl() const noexcept { return *m_impl; }
 
 private:
     std::unique_ptr<ImplT> m_impl;

@@ -31,8 +31,8 @@
 #include <bitset>
 
 #include "mg/utils/mg_gsl.h"
-
 #include "mg/containers/mg_slot_map.h"
+#include "mg/utils/mg_macros.h"
 
 /** Used to define new component types, e.g.
  *    MG_DEFINE_COMPONENT(Position) { float x, y; };
@@ -51,7 +51,7 @@ constexpr size_t k_max_component_types = 64;
 
 struct ComponentTag {
 protected:
-    static size_t new_family_id()
+    static size_t new_family_id() noexcept
     {
         MG_ASSERT(n_component_types < k_max_component_types - 1);
         return n_component_types++;
@@ -104,7 +104,7 @@ constexpr ComponentMask create_mask(const C* dummy, const Cs*... rest)
 /** Interface for ComponentCollection for any Component type. */
 class IComponentCollection {
 public:
-    virtual ~IComponentCollection(){};
+    MG_INTERFACE_BOILERPLATE(IComponentCollection);
     virtual void erase(Slot_map_handle handle) = 0;
 };
 

@@ -43,15 +43,15 @@ namespace Mg {
 
 static constexpr std::string_view k_white_space = " \t\f\v\n\r";
 
-bool is_whitespace(char c);
-bool is_not_whitespace(char c);
+bool is_whitespace(char c) noexcept;
+bool is_not_whitespace(char c) noexcept;
 
-inline bool is_ascii_digit(char c)
+constexpr bool is_ascii_digit(char c) noexcept
 {
     return (c >= '0' && c <= '9');
 }
 
-inline bool is_ascii_alphanumeric(char c)
+constexpr bool is_ascii_alphanumeric(char c) noexcept
 {
     return ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_' || is_ascii_digit(c));
 }
@@ -63,7 +63,7 @@ inline bool is_ascii_alphanumeric(char c)
  * @return Vector of tokens. Note that these are not copies, they are references
  * to parts of the input string.
  */
-std::vector<std::string_view> tokenise_string(std::string_view s, std::string_view delims);
+std::vector<std::string_view> tokenise_string(std::string_view s, std::string_view delims) noexcept;
 
 /** Split string on first occurrence of char c. Works on UTF-8 strings, but
  * delimiter has to be ASCII.
@@ -74,25 +74,26 @@ std::vector<std::string_view> tokenise_string(std::string_view s, std::string_vi
  * first = s, second is empty. Note that these are not copies, they are
  * references to parts of the input string.
  */
-std::pair<std::string_view, std::string_view> split_string_on_char(std::string_view s, char c);
+std::pair<std::string_view, std::string_view> split_string_on_char(std::string_view s,
+                                                                   char             c) noexcept;
 
 /** Trim whitespace from end of string.
  * @return Substring without trailing whitespace. Note that this is not a copy,
  * it is a reference to a part of the input string.
  */
-std::string_view rtrim(std::string_view str);
+std::string_view rtrim(std::string_view str) noexcept;
 
 /** Trim whitespace from beginning of string.
  * @return Substring without preceding whitespace. Note that this is not a copy,
  * it is a reference to a part of the input string.
  */
-std::string_view ltrim(std::string_view str);
+std::string_view ltrim(std::string_view str) noexcept;
 
 /** Trim whitespace from beginning and end of string.
  * @return Substring without surrounding whitespace. Note that this is not a
  * copy, it is a reference to a part of the input string.
  */
-std::string_view trim(std::string_view str);
+std::string_view trim(std::string_view str) noexcept;
 
 /** Returns the first position of any of the ASCII characters in chars. Works
  * for UTF-8 strings as long as the searched chars are ASCII.
@@ -101,13 +102,13 @@ std::string_view trim(std::string_view str);
  * @return The first position of any of the characters in chars, or
  * String::npos if none were found.
  */
-size_t find_any_of(std::string_view str, std::string_view chars);
+size_t find_any_of(std::string_view str, std::string_view chars) noexcept;
 
 /** Returns a lowercase version of an ASCII string. */
-std::string to_lower(std::string_view str);
+std::string to_lower(std::string_view str) noexcept;
 
 /** Returns a uppercase version of an ASCII string. */
-std::string to_upper(std::string_view str);
+std::string to_upper(std::string_view str) noexcept;
 
 /** Parse value from string if possible.
  * @param str std::string to convert
@@ -130,7 +131,7 @@ template<typename T> std::pair<bool, T> string_to(std::string_view str)
  * @param value Value to convert
  * @return Pair of [success, value]
  */
-template<typename T> std::string string_from(const T& value)
+template<typename T> std::string string_from(const T& value) noexcept
 {
     std::stringstream ss;
     ss << value;

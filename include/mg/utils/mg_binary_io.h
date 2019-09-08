@@ -51,25 +51,25 @@ public:
     }
 
     /** Get whether we have reached the end of the file stream. */
-    bool eof() const { return std::feof(m_file) != 0; }
+    bool eof() const noexcept { return std::feof(m_file) != 0; }
 
     /** Returns the error code associated with the filestream. */
-    int error_code() const { return std::ferror(m_file); }
+    int error_code() const noexcept { return std::ferror(m_file); }
 
     /** Get whether the file stream is open and in usable state. */
-    operator bool() const { return good(); }
+    operator bool() const noexcept { return good(); }
 
     /** Get whether the file stream is open and in usable state. */
-    bool good() const { return m_file && error_code() == 0; }
+    bool good() const noexcept { return m_file && error_code() == 0; }
 
     /** Get the current position in the file stream as byte index. */
-    long pos() const { return std::ftell(m_file); }
+    long pos() const noexcept { return std::ftell(m_file); }
 
     /** Set position in binary file stream.
      * @param pos The byte offset from file start to set as current position.
      * @return Whether position was successfully set.
      */
-    bool set_offset(long pos) { return std::fseek(m_file, pos, SEEK_SET) != 0; }
+    bool set_offset(long pos) noexcept { return std::fseek(m_file, pos, SEEK_SET) != 0; }
 
 protected:
     bool _open(std::string_view filepath, const char* openmode);
@@ -91,21 +91,21 @@ public:
     /** Get the size of the file contents in bytes (i.e. the index of the
      * last byte.
      */
-    size_t size() const;
+    size_t size() const noexcept;
 
     /** Read a value from the file stream. It is the user's responsibility to
      * avoid problems with alignment and endianness.
      * @param value_out Reference to target value.
      * @return Whether value was successfully read.
      */
-    template<typename T> bool read(T& value_out);
+    template<typename T> bool read(T& value_out) noexcept;
 
     /** Read an array of values from the file stream. It is the user's
      * responsibility to avoid problems with alignment and endianness.
      * @param out span of values to fill.
      * @return Number of values that where successfully read.
      */
-    template<typename T> size_t read_array(span<T> out);
+    template<typename T> size_t read_array(span<T> out) noexcept;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -126,14 +126,14 @@ public:
      * @param value Reference to value to write.
      * @return Whether value was successfully written.
      */
-    template<typename T> bool write(const T& value);
+    template<typename T> bool write(const T& value) noexcept;
 
     /** Writes an array of values to the file stream. It is the user's
      * responsibility to avoid problems with alignment and endianness.
      * @param values span of values to write.
      * @return Number of values that where successfully written.
      */
-    template<typename T> size_t write_array(const span<T> values);
+    template<typename T> size_t write_array(const span<T> values) noexcept;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -148,25 +148,25 @@ inline bool detail::BinaryFileHandler::_open(std::string_view filepath, const ch
 
 //--------------------------------------------------------------------------------------------------
 
-template<typename T> bool BinaryFileReader::read(T& value_out)
+template<typename T> bool BinaryFileReader::read(T& value_out) noexcept
 {
     static_assert(std::is_trivially_copyable<T>::value, "Target type is not trivially copyable.");
     return std::fread(&value_out, sizeof(T), 1, m_file) == 1;
 }
 
-template<typename T> size_t BinaryFileReader::read_array(span<T> out)
+template<typename T> size_t BinaryFileReader::read_array(span<T> out) noexcept
 {
-    if (out.size() == 0) return 0;
+    if (out.size() == 0) { return 0; }
     static_assert(std::is_trivially_copyable<T>::value, "Target type is not trivially copyable.");
-    auto size_read = std::fread(&out[0], sizeof(T), out.size(), m_file);
+    const auto size_read = std::fread(&out[0], sizeof(T), out.size(), m_file);
     return size_read;
 }
 
-inline size_t BinaryFileReader::size() const
+inline size_t BinaryFileReader::size() const noexcept
 {
-    auto cur_pos = pos();
+    const auto cur_pos = pos();
     std::fseek(m_file, 0, SEEK_END);
-    auto ret_val = pos();
+    const auto ret_val = pos();
     std::fseek(m_file, cur_pos, SEEK_SET);
     return narrow<size_t>(ret_val);
 }
@@ -179,13 +179,13 @@ inline bool BinaryFileWriter::open(std::string_view filepath, bool overwrite)
     return _open(filepath, "wb+");
 }
 
-template<typename T> bool BinaryFileWriter::write(const T& value)
+template<typename T> bool BinaryFileWriter::write(const T& value) noexcept
 {
     static_assert(std::is_trivially_copyable<T>::value, "Source type is not trivially copyable.");
     return std::fwrite(&value, sizeof(T), 1, m_file) == 1;
 }
 
-template<typename T> size_t BinaryFileWriter::write_array(const span<T> values)
+template<typename T> size_t BinaryFileWriter::write_array(const span<T> values) noexcept
 {
     static_assert(std::is_trivially_copyable<T>::value, "Source type is not trivially copyable.");
     auto size_written = std::fwrite(&values[0], sizeof(T), values.size(), m_file);

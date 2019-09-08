@@ -38,7 +38,7 @@ namespace Mg::input {
 namespace {
 
 // Name look-up cache
-std::array<std::string, Keyboard::k_num_keys> g_key_names;
+std::array<std::string, Keyboard::k_num_keys> g_key_names{};
 
 const char* default_key_name(Keyboard::Key key)
 {
@@ -335,10 +335,10 @@ float Keyboard::state(InputSource::Id id) const
 
 void Keyboard::refresh()
 {
-    auto refresh_state = [&](size_t key_id) {
-        auto glfw_key_code   = k_glfw_key_codes.at(key_id);
-        bool is_pressed      = glfwGetKey(m_window.glfw_window(), glfw_key_code) == GLFW_PRESS;
-        m_key_states[key_id] = is_pressed;
+    const auto refresh_state = [&](size_t key_id) {
+        const auto glfw_key_code = k_glfw_key_codes.at(key_id);
+        const bool is_pressed    = glfwGetKey(m_window.glfw_window(), glfw_key_code) == GLFW_PRESS;
+        m_key_states[key_id]     = is_pressed;
     };
 
     for (size_t i = 0; i < k_num_keys; ++i) { refresh_state(i); }
