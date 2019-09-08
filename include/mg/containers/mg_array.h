@@ -36,6 +36,7 @@
 
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_macros.h"
 
 #include <utility>
 
@@ -65,8 +66,8 @@ public:
 
     ~ArrayBase() { reset(); }
 
-    ArrayBase(const ArrayBase&) = delete;
-    ArrayBase& operator=(const ArrayBase&) = delete;
+    MG_MAKE_NON_COPYABLE(ArrayBase);
+    MG_MAKE_DEFAULT_MOVABLE(ArrayBase);
 
     T*       data() noexcept { return m_ptr; }
     const T* data() const noexcept { return m_ptr; }
@@ -114,6 +115,10 @@ public:
         swap(temp);
         return *this;
     }
+
+    MG_MAKE_NON_COPYABLE(ArrayUnknownSize);
+
+    ~ArrayUnknownSize() = default;
 
     void swap(ArrayUnknownSize& p) noexcept { std::swap(this->m_ptr, p.m_ptr); }
 
@@ -182,6 +187,10 @@ public:
         swap(temp);
         return *this;
     }
+
+    MG_MAKE_NON_COPYABLE(Array);
+
+    ~Array() = default;
 
     void swap(Array& p) noexcept
     {
