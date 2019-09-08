@@ -130,6 +130,7 @@ add_library(mg_engine
     utils/mg_fopen_utf8.cpp
     utils/mg_string_utils.cpp
     utils/mg_text_file_io.cpp
+	utils/mg_file_time_helper.cpp
 )
 
 # Compile using standard C++17
