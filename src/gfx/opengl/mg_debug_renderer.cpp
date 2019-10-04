@@ -37,6 +37,7 @@
 #include <glm/mat4x4.hpp>
 #include <glm/trigonometric.hpp>
 
+#include <array>
 #include <cstdint>
 #include <map>
 #include <vector>
@@ -256,8 +257,8 @@ struct DebugRendererData {
     std::map<size_t, Sphere> spheres;
 };
 
-DebugRenderer::DebugRenderer() = default;
-DebugRenderer::~DebugRenderer()         = default;
+DebugRenderer::DebugRenderer()  = default;
+DebugRenderer::~DebugRenderer() = default;
 
 static void draw_primitive(ShaderHandle                              program,
                            const ICamera&                            camera,
@@ -274,11 +275,11 @@ static void draw_primitive(ShaderHandle                              program,
 
     glBindVertexArray(mesh.vao_id);
 
-    GLint     old_poly_mode = 0;
-    GLboolean old_culling   = 0;
+    std::array<GLint, 2> old_poly_mode = { 0, 0 };
+    GLboolean            old_culling   = 0;
 
     if (params.wireframe) {
-        glGetIntegerv(GL_POLYGON_MODE, &old_poly_mode);
+        glGetIntegerv(GL_POLYGON_MODE, old_poly_mode.data());
         glGetBooleanv(GL_CULL_FACE, &old_culling);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glDisable(GL_CULL_FACE);
@@ -287,7 +288,10 @@ static void draw_primitive(ShaderHandle                              program,
     glDrawElements(GL_TRIANGLES, mesh.num_indices, GL_UNSIGNED_SHORT, nullptr);
 
     if (params.wireframe) {
-        glPolygonMode(GL_FRONT_AND_BACK, narrow<GLuint>(old_poly_mode));
+        // glGet(GL_POLYGON_MODE) returns front- and back polygon modes separately; but since
+        // GL 3.2, it is not allowed to set front- and back separately.
+        MG_ASSERT_DEBUG(old_poly_mode[0] == old_poly_mode[1]);
+        glPolygonMode(GL_FRONT_AND_BACK, narrow<GLuint>(old_poly_mode[0]));
         glEnable(GL_CULL_FACE);
     }
 
