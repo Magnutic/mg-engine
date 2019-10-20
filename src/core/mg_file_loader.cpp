@@ -51,6 +51,7 @@
 #include "mg/core/mg_runtime_error.h"
 #include "mg/utils/mg_binary_io.h"
 #include "mg/utils/mg_file_time_helper.h"
+#include "mg/utils/mg_string_utils.h"	
 
 #include <zip.h>
 
@@ -124,6 +125,13 @@ void BasicFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
 
     const auto fname = file.str_view();
     const auto path  = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
+
+	const bool file_is_under_directory = is_prefix_of(m_directory, path.generic_u8string());
+    if (!file_is_under_directory) {
+        g_log.write_error(
+            "BasicFileLoader: trying to load file which is outside file loader's directory.");
+        throw RuntimeError();
+	}
 
     BinaryFileReader reader{ path.generic_u8string() };
 
