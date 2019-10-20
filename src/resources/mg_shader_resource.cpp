@@ -72,23 +72,26 @@ std::vector<fs::path> include_dirs_for_file(std::vector<fs::path> include_direct
 // Try to parse a line as an #include directive.
 auto try_parse_line_as_include = [](std::string_view line) -> std::pair<bool, std::string> {
     const std::pair<bool, std::string> fail_value = { false, "" };
+    const SimpleInputStream::PeekMode  peekmode   = SimpleInputStream::return_eof_as_null_char;
 
     SimpleInputStream stream(line);
 
-    const auto skip_whitespace = [&stream] {
-        while (is_whitespace(stream.peek())) { stream.advance(); }
+    const auto skip_whitespace = [&] {
+        while (is_whitespace(stream.peek(peekmode))) {
+            stream.advance();
+        }
     };
 
     skip_whitespace();
-    if (!stream.match('#')) { return fail_value; }
+    if (!stream.match('#', peekmode)) { return fail_value; }
     skip_whitespace();
-    if (!stream.match("include")) { return fail_value; }
+    if (!stream.match("include", peekmode)) { return fail_value; }
     skip_whitespace();
 
     char terminator{};
 
-    if (stream.match('\"')) { terminator = '\"'; }
-    else if (stream.match('<')) {
+    if (stream.match('\"', peekmode)) { terminator = '\"'; }
+    else if (stream.match('<', peekmode)) {
         terminator = '>';
     }
     else {
@@ -97,7 +100,7 @@ auto try_parse_line_as_include = [](std::string_view line) -> std::pair<bool, st
 
     std::string include_path;
 
-    while (stream.peek() != terminator) {
+    while (stream.peek(peekmode) != terminator) {
         if (stream.is_at_end()) { return fail_value; }
         include_path += stream.advance();
     }

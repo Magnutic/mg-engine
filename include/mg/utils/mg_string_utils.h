@@ -27,6 +27,9 @@
 
 #pragma once
 
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_runtime_error.h"
+
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -166,21 +169,39 @@ public:
         return data[pos++];
     }
 
-    constexpr char peek() const noexcept
+    enum PeekMode { throw_on_eof, return_eof_as_null_char };
+    constexpr char peek(PeekMode peekmode = throw_on_eof) const
     {
-        if (is_at_end()) { return '\0'; }
+        if (is_at_end()) {
+            switch (peekmode) {
+            case throw_on_eof:
+                g_log.write_error("Unexpected end of file.");
+                throw RuntimeError{};
+            case return_eof_as_null_char:
+                return '\0';
+            }
+        }
+
         return data[pos];
     }
 
-    constexpr char peek_next(size_t n = 1) const noexcept
+    constexpr char peek_next(size_t n = 1, PeekMode peekmode = throw_on_eof) const
     {
-        if (pos + n >= data.size()) { return '\0'; }
+        if (pos + n >= data.size()) {
+            switch (peekmode) {
+            case throw_on_eof:
+                g_log.write_error("Unexpected end of file.");
+                throw RuntimeError{};
+            case return_eof_as_null_char:
+                return '\0';
+            }
+        }
         return data[pos + n];
     }
 
-    constexpr bool match(char c) noexcept
+    constexpr bool match(char c, PeekMode peekmode = throw_on_eof)
     {
-        if (peek() == c) {
+        if (peek(peekmode) == c) {
             advance();
             return true;
         }
@@ -188,10 +209,10 @@ public:
         return false;
     }
 
-    constexpr bool match(std::string_view str) noexcept
+    constexpr bool match(std::string_view str, PeekMode peekmode = throw_on_eof)
     {
         for (size_t i = 0; i < str.size(); ++i) {
-            if (peek_next(i) != str[i]) { return false; }
+            if (peek_next(i, peekmode) != str[i]) { return false; }
         }
 
         for (size_t i = 0; i < str.size(); ++i) { advance(); }
