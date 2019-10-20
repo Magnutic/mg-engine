@@ -70,7 +70,8 @@ std::vector<fs::path> include_dirs_for_file(std::vector<fs::path> include_direct
 };
 
 // Try to parse a line as an #include directive.
-auto try_parse_line_as_include = [](std::string_view line) -> std::pair<bool, std::string> {
+std::pair<bool, std::string> try_parse_line_as_include(std::string_view line)
+{
     const std::pair<bool, std::string> fail_value = { false, "" };
     const SimpleInputStream::PeekMode  peekmode   = SimpleInputStream::return_eof_as_null_char;
 
