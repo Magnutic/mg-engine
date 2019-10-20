@@ -58,7 +58,7 @@ TextureRepository::~TextureRepository() = default;
 
 TextureHandle TextureRepository::create(const TextureResource& resource)
 {
-    auto [index, ptr] = impl().nodes.construct(Texture2D::from_texture_resource(resource));
+    const auto [index, ptr] = impl().nodes.construct(Texture2D::from_texture_resource(resource));
     ptr->self_index   = index;
 
     impl().node_map.emplace_back(resource.resource_id(), ptr);
@@ -68,15 +68,15 @@ TextureHandle TextureRepository::create(const TextureResource& resource)
 
 TextureHandle TextureRepository::create_render_target(const RenderTargetParams& params)
 {
-    auto [index, ptr] = impl().nodes.construct(Texture2D::render_target(params));
+    const auto [index, ptr] = impl().nodes.construct(Texture2D::render_target(params));
     ptr->self_index   = index;
     return make_texture_handle(ptr);
 }
 
 void TextureRepository::update(const TextureResource& resource)
 {
-    Identifier resource_id = resource.resource_id();
-    auto       it = find_if(impl().node_map, [&](auto& pair) { return pair.first == resource_id; });
+    const Identifier resource_id = resource.resource_id();
+    const auto it = find_if(impl().node_map, [&](auto& pair) { return pair.first == resource_id; });
 
     // If not found, then we do not have a texture using the updated resource, so ignore.
     if (it == impl().node_map.end()) { return; }
@@ -92,10 +92,11 @@ void TextureRepository::update(const TextureResource& resource)
 
 void TextureRepository::destroy(TextureHandle handle)
 {
-    auto& texture_node = internal::texture_node(handle);
+    const auto& texture_node = internal::texture_node(handle);
     impl().nodes.destroy(texture_node.self_index);
 
-    auto it = find_if(impl().node_map, [&](auto& pair) { return pair.second == &texture_node; });
+    const auto it = find_if(impl().node_map,
+                            [&](auto& pair) { return pair.second == &texture_node; });
     if (it != impl().node_map.end()) { impl().node_map.erase(it); }
 }
 
