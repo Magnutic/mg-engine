@@ -183,6 +183,11 @@ void init()
             g_scene->root.gfx_device().texture_repository().update(*access);
             break;
         }
+        case Identifier("MeshResource").hash(): {
+            ResourceAccessGuard<MeshResource> access(event.resource);
+            g_scene->root.gfx_device().mesh_repository().update(*access);
+            break;
+        }
         case Identifier("ShaderResource").hash():
             g_scene->mesh_renderer.drop_shaders();
             g_scene->billboard_renderer.drop_shaders();

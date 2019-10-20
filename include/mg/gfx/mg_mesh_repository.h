@@ -101,6 +101,11 @@ public:
      */
     void destroy(MeshHandle handle);
 
+    /** Update the mesh that was created from resource.
+     * Used for hot-reloading of mesh files.
+     */
+    void update(const MeshResource& mesh_res);
+
     /** Create a mesh buffer of given size. This buffer allows you to create meshes sharing the same
      * underlying GPU storage buffers.
      */

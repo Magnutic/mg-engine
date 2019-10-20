@@ -27,6 +27,7 @@
 #include "mg/core/mg_log.h"
 #include "mg/resources/mg_mesh_resource.h"
 #include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_stl_helpers.h"
 
 #include "../mg_mesh_info.h"
 #include "mg_glad.h"
@@ -34,6 +35,8 @@
 #include <fmt/core.h>
 
 namespace Mg::gfx {
+
+namespace {
 
 //--------------------------------------------------------------------------------------------------
 // Internal types
@@ -54,10 +57,14 @@ public:
     MG_MAKE_NON_COPYABLE(MeshNode);
 
     // Destruction of MeshNode should destroy assocated VAO.
-    ~MeshNode()
+    ~MeshNode() { clear(); }
+
+    void clear()
     {
+        const auto vao_id = static_cast<uint32_t>(mesh_info.gfx_api_mesh_object_id);
+        if (vao_id == 0) { return; }
+
         const auto* meshname [[maybe_unused]] = mesh_info.mesh_id.c_str();
-        const auto  vao_id = static_cast<uint32_t>(mesh_info.gfx_api_mesh_object_id);
 
         MG_LOG_DEBUG(fmt::format("Deleting VAO {} (Mesh '{}')", vao_id, meshname));
         glDeleteVertexArrays(1, &vao_id);
@@ -93,6 +100,7 @@ struct BufferObject {
     MG_MAKE_NON_MOVABLE(BufferObject);
 };
 
+} // namespace
 
 //--------------------------------------------------------------------------------------------------
 
@@ -108,6 +116,8 @@ public:
 
     MeshHandle create(const MeshResource& mesh_res);
 
+    void update(const MeshResource& mesh_res);
+
     void destroy(MeshHandle handle);
 
 private:
@@ -116,18 +126,37 @@ private:
     VboIndex _make_vertex_buffer(size_t size);
     IboIndex _make_index_buffer(size_t size);
 
+    void _make_mesh_in_node(MeshNode&           node,
+                            const MeshResource& mesh_res,
+                            VboIndex            vbo_index,
+                            size_t              vbo_data_offset,
+                            IboIndex            ibo_index,
+                            size_t              ibo_data_offset);
+
     MeshHandle _make_mesh(const MeshResource& mesh_res,
                           VboIndex            vbo_index,
                           size_t              vbo_data_offset,
                           IboIndex            ibo_index,
-                          size_t              ibo_data_offset);
+                          size_t              ibo_data_offset)
+    {
+        auto [index, p_mesh_node]     = m_mesh_data.construct();
+        internal::MeshInfo& mesh_info = p_mesh_node->mesh_info;
+        mesh_info.self_index          = index;
+        _make_mesh_in_node(
+            *p_mesh_node, mesh_res, vbo_index, vbo_data_offset, ibo_index, ibo_data_offset);
+        node_map.push_back({ mesh_res.resource_id(), p_mesh_node });
+        return internal::make_mesh_handle(&mesh_info);
+    }
 
-    // Update data stored in the given  vertex index buffer
-    void _set_buffer_data(uint32_t buffer_id, size_t offset, span<const uint8_t> data);
+    void _clear_mesh_node(MeshNode& node);
 
     // Internal mesh meta-data storage
     PoolingVector<BufferObject> m_buffer_objects{ k_buffer_object_pool_size };
     PoolingVector<MeshNode>     m_mesh_data{ k_mesh_data_pool_size };
+
+    // Used for looking up a mesh node by identifier.
+    // TODO: lookup can be optimised by storing in sorted order. Use std::lower_bound.
+    std::vector<std::pair<Identifier, MeshNode*>> node_map;
 };
 
 MeshHandle MeshRepositoryImpl::create(const MeshResource& mesh_res)
@@ -137,19 +166,38 @@ MeshHandle MeshRepositoryImpl::create(const MeshResource& mesh_res)
     return _make_mesh(mesh_res, vbo_index, 0, ibo_index, 0);
 }
 
+void MeshRepositoryImpl::update(const MeshResource& mesh_res)
+{
+    const Identifier resource_id = mesh_res.resource_id();
+    const auto       it = find_if(node_map, [&](auto& pair) { return pair.first == resource_id; });
+
+    // If not found, then we do not have a mesh using the updated resource, so ignore.
+    if (it == node_map.end()) { return; }
+
+    MeshNode& node = *it->second;
+
+    const VboIndex vbo_index = _make_vertex_buffer(mesh_res.vertices().size_bytes());
+    const IboIndex ibo_index = _make_index_buffer(mesh_res.indices().size_bytes());
+
+    // Clearing the existing node and creating the new mesh within ensures MeshHandles remain valid.
+    node.clear();
+    _make_mesh_in_node(node, mesh_res, vbo_index, 0, ibo_index, 0);
+
+    g_log.write_verbose(
+        fmt::format("MeshRepository::update(): Updated {}", resource_id.str_view()));
+}
+
 void MeshRepositoryImpl::destroy(MeshHandle handle)
 {
-    auto&           mesh_info = internal::mesh_info(handle);
-    const auto      index     = mesh_info.self_index;
-    const MeshNode& node      = m_mesh_data[index];
-
-    BufferObject& vbo = m_buffer_objects[node.vertex_buffer_index];
-    if (--vbo.num_users == 0) { m_buffer_objects.destroy(node.vertex_buffer_index); }
-
-    BufferObject& ibo = m_buffer_objects[node.index_buffer_index];
-    if (--ibo.num_users == 0) { m_buffer_objects.destroy(node.index_buffer_index); }
-
+    auto&      mesh_info = internal::mesh_info(handle);
+    const auto index     = mesh_info.self_index;
+    MeshNode&  node      = m_mesh_data[index];
+    _clear_mesh_node(node);
     m_mesh_data.destroy(index);
+
+    // Erase from resource_id -> node map.
+    const auto it = find_if(node_map, [&](auto& pair) { return pair.second == &node; });
+    if (it != node_map.end()) { node_map.erase(it); }
 }
 
 VboIndex MeshRepositoryImpl::_make_vertex_buffer(size_t size)
@@ -177,35 +225,31 @@ IboIndex MeshRepositoryImpl::_make_index_buffer(size_t size)
 }
 
 // Create mesh from MeshResouce, storing data in the given vertex and index buffers
-MeshHandle MeshRepositoryImpl::_make_mesh(const MeshResource& mesh_res,
-                                          VboIndex            vbo_index,
-                                          size_t              vbo_data_offset,
-                                          IboIndex            ibo_index,
-                                          size_t              ibo_data_offset)
+void MeshRepositoryImpl::_make_mesh_in_node(MeshNode&           node,
+                                            const MeshResource& mesh_res,
+                                            VboIndex            vbo_index,
+                                            size_t              vbo_data_offset,
+                                            IboIndex            ibo_index,
+                                            size_t              ibo_data_offset)
 {
-    auto [index, p_mesh_node]     = m_mesh_data.construct();
-    internal::MeshInfo& mesh_info = p_mesh_node->mesh_info;
-
-    mesh_info.self_index = index;
-
-    mesh_info.mesh_id = mesh_res.resource_id();
-    mesh_info.centre  = mesh_res.centre();
-    mesh_info.radius  = mesh_res.radius();
+    node.mesh_info.mesh_id = mesh_res.resource_id();
+    node.mesh_info.centre  = mesh_res.centre();
+    node.mesh_info.radius  = mesh_res.radius();
 
     for (auto&& sm : mesh_res.sub_meshes()) {
-        mesh_info.submeshes.push_back({ sm.begin, sm.amount });
+        node.mesh_info.submeshes.push_back({ sm.begin, sm.amount });
     }
 
 
     uint32_t vao_id = 0;
     glGenVertexArrays(1, &vao_id);
-    mesh_info.gfx_api_mesh_object_id = static_cast<OpaqueHandle::Value>(vao_id);
+    node.mesh_info.gfx_api_mesh_object_id = static_cast<OpaqueHandle::Value>(vao_id);
 
     glBindVertexArray(vao_id);
 
     {
-        BufferObject& vbo                = m_buffer_objects[static_cast<uint32_t>(vbo_index)];
-        p_mesh_node->vertex_buffer_index = static_cast<uint32_t>(vbo_index);
+        BufferObject& vbo        = m_buffer_objects[static_cast<uint32_t>(vbo_index)];
+        node.vertex_buffer_index = static_cast<uint32_t>(vbo_index);
         ++vbo.num_users;
 
         const auto vbo_data = mesh_res.vertices().as_bytes();
@@ -217,8 +261,8 @@ MeshHandle MeshRepositoryImpl::_make_mesh(const MeshResource& mesh_res,
     }
 
     {
-        BufferObject& ibo               = m_buffer_objects[static_cast<uint32_t>(ibo_index)];
-        p_mesh_node->index_buffer_index = static_cast<uint32_t>(ibo_index);
+        BufferObject& ibo       = m_buffer_objects[static_cast<uint32_t>(ibo_index)];
+        node.index_buffer_index = static_cast<uint32_t>(ibo_index);
         ++ibo.num_users;
 
         const auto ibo_data = mesh_res.indices().as_bytes();
@@ -252,7 +296,17 @@ MeshHandle MeshRepositoryImpl::_make_mesh(const MeshResource& mesh_res,
     }
 
     glBindVertexArray(0);
-    return internal::make_mesh_handle(&mesh_info);
+}
+
+void MeshRepositoryImpl::_clear_mesh_node(MeshNode& node)
+{
+    node.clear();
+
+    BufferObject& vbo = m_buffer_objects[node.vertex_buffer_index];
+    if (--vbo.num_users == 0) { m_buffer_objects.destroy(node.vertex_buffer_index); }
+
+    BufferObject& ibo = m_buffer_objects[node.index_buffer_index];
+    if (--ibo.num_users == 0) { m_buffer_objects.destroy(node.index_buffer_index); }
 }
 
 class MeshBufferImpl {
@@ -313,8 +367,8 @@ MeshBuffer::CreateReturn MeshBuffer::create(const MeshResource& resource)
 
 //--------------------------------------------------------------------------------------------------
 
-MeshRepository::MeshRepository() = default;
-MeshRepository::~MeshRepository()         = default;
+MeshRepository::MeshRepository()  = default;
+MeshRepository::~MeshRepository() = default;
 
 MeshHandle MeshRepository::create(const MeshResource& mesh_res)
 {
@@ -324,6 +378,11 @@ MeshHandle MeshRepository::create(const MeshResource& mesh_res)
 void MeshRepository::destroy(MeshHandle handle)
 {
     impl().destroy(handle);
+}
+
+void MeshRepository::update(const MeshResource& mesh_res)
+{
+    impl().update(mesh_res);
 }
 
 MeshBuffer MeshRepository::new_mesh_buffer(VertexBufferSize vertex_buffer_size,
