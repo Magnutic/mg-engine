@@ -30,6 +30,7 @@
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 
+#include <algorithm>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -112,6 +113,20 @@ std::string to_lower(std::string_view str) noexcept;
 
 /** Returns a uppercase version of an ASCII string. */
 std::string to_upper(std::string_view str) noexcept;
+
+/** Returns whether `prefix` is a prefix of `string` (including if they are equal). */
+inline bool is_prefix_of(std::string_view prefix, std::string_view string)
+{
+    if (prefix.size() > string.size()) { return false; }
+    return std::equal(prefix.begin(), prefix.end(), string.begin());
+}
+
+/** Returns whether `suffix` is a suffix of `string` (including if they are equal). */
+inline bool is_suffix_of(std::string_view suffix, std::string_view string)
+{
+    if (suffix.size() > string.size()) { return false; }
+    return std::equal(suffix.begin(), suffix.end(), string.end() - suffix.size());
+}
 
 /** Parse value from string if possible.
  * @param str std::string to convert

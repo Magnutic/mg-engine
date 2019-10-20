@@ -19,7 +19,7 @@ TEST_CASE("tokenise_string")
     REQUIRE(tokens[2] == "a");
     REQUIRE(tokens[3] == "string");
 
-    tokens = tokenise_string("another :string:here", ":");
+    tokens = tokenise_string("another :string:here:", ":");
 
     REQUIRE(tokens.size() == 3);
     REQUIRE(tokens[0] == "another ");
@@ -101,6 +101,36 @@ TEST_CASE("string_from")
     REQUIRE(string_from(-1.0f) == "-1");
     REQUIRE(string_from(2e5f) == "200000");
     REQUIRE(string_from(1e10f) == "1e+10");
+}
+
+TEST_CASE("is_prefix_of")
+{
+    REQUIRE(is_prefix_of("_", "_"));
+    REQUIRE(is_prefix_of("_", "_abc"));
+    REQUIRE(is_prefix_of("", "_abc"));
+    REQUIRE(is_prefix_of("", ""));
+    REQUIRE(is_prefix_of("asd", "asd"));
+    REQUIRE(is_prefix_of("asd", "asdf"));
+    REQUIRE(is_prefix_of("", "asd"));
+
+    REQUIRE(!is_prefix_of("asdf", "fasd"));
+    REQUIRE(!is_prefix_of("asd", "fasd"));
+    REQUIRE(!is_prefix_of("asdasd", "asd"));
+}
+
+TEST_CASE("is_suffix_of")
+{
+    REQUIRE(is_suffix_of("_", "_"));
+    REQUIRE(is_suffix_of("_", "abc_"));
+    REQUIRE(is_suffix_of("", "abc_"));
+    REQUIRE(is_suffix_of("", ""));
+    REQUIRE(is_suffix_of("asd", "asd"));
+    REQUIRE(is_suffix_of("asd", "fasd"));
+    REQUIRE(is_suffix_of("", "fasd"));
+
+    REQUIRE(!is_suffix_of("asdf", "fasd"));
+    REQUIRE(!is_suffix_of("fasd", "asd"));
+    REQUIRE(!is_suffix_of("asdasd", "asd"));
 }
 
 TEST_CASE("PointNormalPlane")
