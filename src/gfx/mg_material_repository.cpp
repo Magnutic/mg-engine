@@ -57,7 +57,7 @@ MaterialRepository::~MaterialRepository() = default;
 
 Material* MaterialRepository::create(Identifier id, ResourceHandle<ShaderResource> shader)
 {
-    auto [index, ptr] = impl().nodes.construct(Material{ id, shader });
+    const auto [index, ptr] = impl().nodes.construct(Material{ id, shader });
     ptr->self_index   = index;
     return &ptr->material;
 }
