@@ -80,9 +80,9 @@ std::pair<std::string_view, std::string_view> split_string_on_char(std::string_v
         if (s[index] == c) { break; }
     }
 
-    if (index < s.length()) { return std::make_pair(s.substr(0, index), s.substr(index + 1)); }
+    if (index < s.length()) { return { s.substr(0, index), s.substr(index + 1) }; }
 
-    return std::make_pair(s, std::string_view{});
+    return { s, {} };
 }
 
 /** Trim whitespace from end of string. */
