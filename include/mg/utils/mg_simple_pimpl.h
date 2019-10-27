@@ -55,7 +55,19 @@ protected:
 
     PImplMixin(PImplMixin&& rhs) = default;
 
-    PImplMixin& operator=(PImplMixin rhs) noexcept { swap(rhs); }
+    PImplMixin& operator=(const PImplMixin& rhs)
+    {
+        PImplMixin tmp(rhs);
+        swap(tmp);
+        return *this;
+    }
+
+    PImplMixin& operator=(PImplMixin&& rhs) noexcept
+    {
+        PImplMixin tmp(std::move(rhs));
+        swap(tmp);
+        return *this;
+    }
 
     void swap(PImplMixin& rhs) noexcept
     {
@@ -99,7 +111,19 @@ protected:
         new (&m_impl_buffer) ImplT(std::move_if_noexcept(rhs.impl()));
     }
 
-    InPlacePImplMixin& operator=(InPlacePImplMixin rhs) noexcept { swap(rhs); }
+    InPlacePImplMixin& operator=(const InPlacePImplMixin& rhs)
+    {
+        InPlacePImplMixin tmp(rhs);
+        swap(tmp);
+        return *this;
+    }
+
+    InPlacePImplMixin& operator=(InPlacePImplMixin&& rhs) noexcept
+    {
+        InPlacePImplMixin tmp(std::move(rhs));
+        swap(tmp);
+        return *this;
+    }
 
     ~InPlacePImplMixin() { impl().~ImplT(); }
 
