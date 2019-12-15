@@ -37,6 +37,8 @@
 
 #include "shader_code/mg_mesh_renderer_shader_framework.h"
 
+#include <cstring>
+
 namespace Mg::gfx {
 
 namespace { // internal linkage

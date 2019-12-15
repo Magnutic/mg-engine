@@ -151,7 +151,7 @@ void GfxDevice::set_depth_write(bool on) noexcept
 
 void GfxDevice::set_colour_write(bool on) noexcept
 {
-    glColorMask({ on }, { on }, { on }, { on });
+    glColorMask(on, on, on, on);
 }
 
 /** Set colour & alpha to use when clearing render target. */

@@ -204,7 +204,7 @@ public:
     }
 
 private:
-    friend class iterator;
+    friend class detail::PoolingVectorIt<PoolingVector>;
 
     struct ElemIndex {
         size_t pool_index{};

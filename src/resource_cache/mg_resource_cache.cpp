@@ -59,8 +59,8 @@ void ResourceCache::refresh()
         rebuild_file_list();
     }
 
-    auto has_file_changed = [this](const ResourceCache::FileInfo& file,
-                                   std::time_t                    old_time_stamp) -> bool {
+    auto has_file_changed = [](const ResourceCache::FileInfo& file,
+                               std::time_t                    old_time_stamp) -> bool {
         const bool has_changed = file.time_stamp > old_time_stamp;
 
         if (has_changed) {
@@ -117,8 +117,10 @@ void ResourceCache::refresh()
         for (const FileInfo& file : m_file_list) {
             if (should_reload(file)) {
                 std::unique_lock entry_lock(file.entry->mutex);
-                entries_to_reload.push_back(ReloadInfo{
-                    *file.entry, file.entry->resource_type_id(), file.time_stamp, *file.loader });
+                entries_to_reload.push_back(ReloadInfo{ *file.entry,
+                                                        file.entry->resource_type_id(),
+                                                        file.time_stamp,
+                                                        *file.loader });
                 file.entry->unload();
             }
         }
@@ -180,8 +182,7 @@ void ResourceCache::rebuild_file_list()
 }
 
 // Throw ResourceNotFound exception and write details to log.
-[[noreturn]] void ResourceCache::throw_resource_not_found(Identifier filename) const
-{
+[[noreturn]] void ResourceCache::throw_resource_not_found(Identifier filename) const {
     std::string msg = "No such file. [ searched in ";
     for (auto&& p_loader : file_loaders()) { msg += fmt::format("'{}' ", p_loader->name()); }
     msg += ']';
@@ -191,8 +192,10 @@ void ResourceCache::rebuild_file_list()
 }
 
 // Log a message with nice formatting.
-static void
-log(Log::Prio prio, const ResourceCache* origin, Identifier resource, std::string_view message)
+static void log(Log::Prio            prio,
+                const ResourceCache* origin,
+                Identifier           resource,
+                std::string_view     message)
 {
     std::string msg = fmt::format("ResourceCache[{}]: {} [resource: {}]",
                                   static_cast<const void*>(origin),
@@ -224,7 +227,7 @@ bool ResourceCache::unload_unused(bool unload_all_unused) const
     // unload_unused does not modify anything in the file list itself, so shared lock suffices.
     std::shared_lock lock{ m_file_list_mutex };
 
-   const auto is_unloadable = [](const ResourceEntryBase& entry) -> bool {
+    const auto is_unloadable = [](const ResourceEntryBase& entry) -> bool {
         return entry.ref_count == 0 && entry.is_loaded();
     };
 

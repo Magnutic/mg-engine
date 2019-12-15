@@ -88,7 +88,7 @@ detail::StrMapInitialiser::StrMapInitialiser() noexcept
     if (nifty_counter++ == 0) { p_dynamic_str_map = new (&map_buf) DynamicStrMap{}; }
 }
 
-detail::StrMapInitialiser::~StrMapInitialiser() noexcept
+detail::StrMapInitialiser::~StrMapInitialiser()
 {
     if (--nifty_counter == 0) { p_dynamic_str_map->~DynamicStrMap(); }
 }
