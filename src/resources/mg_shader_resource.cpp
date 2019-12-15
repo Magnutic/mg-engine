@@ -107,7 +107,53 @@ std::pair<bool, std::string> try_parse_line_as_include(std::string_view line)
     }
 
     return { true, include_path };
-};
+}
+
+std::string assemble_shader_code(std::vector<fs::path>       include_directories,
+                                 std::string_view            code,
+                                 const ResourceLoadingInput& input,
+                                 fs::path                    source_file);
+
+std::pair<bool, std::string> get_code(const ResourceLoadingInput& input, fs::path file_path)
+{
+    try {
+        const auto file_id = Identifier::from_runtime_string(file_path.generic_u8string());
+        const ResourceHandle      file_handle = input.load_dependency<TextResource>(file_id);
+        const ResourceAccessGuard include_access(file_handle);
+        return { true, std::string(include_access->text()) };
+    }
+    catch (ResourceError&) {
+        return { false, "" };
+    }
+}
+
+std::pair<bool, std::string> get_include(const ResourceLoadingInput& input,
+                                         std::vector<fs::path>       include_directories,
+                                         std::string_view            include_file)
+{
+    std::string result;
+
+    for (auto include_directory : include_directories) {
+        const fs::path file_path = include_directory / include_file;
+
+        // Load include file as a dependency of this resource.
+        const auto [is_found, included_code] = get_code(input, file_path);
+
+        if (!is_found) { continue; }
+
+        // Add origin-tracking comment (helps debugging shader)
+        result += fmt::format(k_delimiter_comment, file_path.generic_u8string());
+
+        // Recursively assemble loaded code.
+        result += assemble_shader_code(include_dirs_for_file(include_directories, file_path),
+                                       included_code,
+                                       input,
+                                       file_path);
+        return { true, result };
+    }
+
+    return { false, "" };
+}
 
 // Helper for ShaderResource::load_resource. Assemble shader code by loading included code files.
 std::string assemble_shader_code(std::vector<fs::path>       include_directories,
@@ -115,43 +161,6 @@ std::string assemble_shader_code(std::vector<fs::path>       include_directories
                                  const ResourceLoadingInput& input,
                                  fs::path                    source_file)
 {
-    const auto get_code = [&input](fs::path file_path) -> std::pair<bool, std::string> {
-        try {
-            const auto file_id = Identifier::from_runtime_string(file_path.generic_u8string());
-            const ResourceHandle      file_handle = input.load_dependency<TextResource>(file_id);
-            const ResourceAccessGuard include_access(file_handle);
-            return { true, std::string(include_access->text()) };
-        }
-        catch (ResourceError&) {
-            return { false, "" };
-        }
-    };
-
-    const auto get_include = [&](std::string_view include_file) -> std::pair<bool, std::string> {
-        std::string result;
-
-        for (auto include_directory : include_directories) {
-            const fs::path file_path = include_directory / include_file;
-
-            // Load include file as a dependency of this resource.
-            const auto [is_found, included_code] = get_code(file_path);
-
-            if (!is_found) { continue; }
-
-            // Add origin-tracking comment (helps debugging shader)
-            result += fmt::format(k_delimiter_comment, file_path.generic_u8string());
-
-            // Recursively assemble loaded code.
-            result += assemble_shader_code(include_dirs_for_file(include_directories, file_path),
-                                           included_code,
-                                           input,
-                                           file_path);
-            return { true, result };
-        }
-
-        return { false, "" };
-    };
-
     // Read line-by-line, try to parse each line as an #include directive; if successful, include
     // the file, otherwise, insert the line as is.
     std::vector<std::string_view> lines = tokenise_string(code, "\n");
@@ -167,7 +176,7 @@ std::string assemble_shader_code(std::vector<fs::path>       include_directories
             continue;
         }
 
-        const auto [include_success, included_code] = get_include(include_path);
+        const auto [include_success, included_code] = get_include(input, include_directories, include_path);
         if (!include_success) {
             g_log.write_error(fmt::format("Could not find '{}' (#include directive in '{}'.)",
                                           include_path,
