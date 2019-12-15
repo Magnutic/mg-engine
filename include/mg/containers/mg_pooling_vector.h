@@ -1,7 +1,7 @@
 //**************************************************************************************************
 // Mg Engine
 //--------------------------------------------------------------------------------------------------
-// Copyright (c) 2018 Magnus Bergsten
+// Copyright (c) 2019 Magnus Bergsten
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -35,6 +35,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 
 namespace Mg {
 
@@ -76,6 +77,12 @@ public:
         return reinterpret_cast<T&>(m_storage[i]); // NOLINT
     }
 
+    const T& get(size_t i) const noexcept
+    {
+        MG_ASSERT_DEBUG(m_present[i]);
+        return reinterpret_cast<const T&>(m_storage[i]); // NOLINT
+    }
+
     void destroy(size_t i)
     {
         get(i).~T();
@@ -90,6 +97,8 @@ private:
     Array<bool>     m_present; // TODO: this should ideally be a bit-field instead of array of bool.
 };
 
+template<typename OwnerT> class PoolingVectorIt;
+
 } // namespace detail
 
 /** Dynamic-array data structure which grows by allocating a fixed-size 'pool' whenever it is out of
@@ -100,6 +109,15 @@ private:
  */
 template<typename T> class PoolingVector {
 public:
+    using value_type      = T;
+    using reference       = T&;
+    using pointer         = T*;
+    using const_reference = const T&;
+    using const_pointer   = const T*;
+    using size_type       = uint32_t;
+    using iterator        = detail::PoolingVectorIt<PoolingVector>;
+    using const_iterator  = detail::PoolingVectorIt<const PoolingVector>;
+
     /** Construct.
      * @param pool_size Size of each individual element-pool (in number of elements). The
      * PoolingVector will allocate storage for elements in pools of this size.
@@ -112,23 +130,24 @@ public:
     }
 
     struct ConstructReturn {
-        uint32_t index;
-        T*       ptr;
+        size_type index;
+        T*        ptr;
     };
 
     /** Construct object using supplied arguments.
      * Time complexity: constant time (but may allocate a new pool if full).
-     * @return struct of `uint32_t index; T* ptr;`
+     * @return struct of `size_type index; T* ptr;`
      */
     template<typename... Args> ConstructReturn construct(Args&&... args)
     {
         if (m_free_indices.empty()) { _grow(); }
 
-        const uint32_t index = m_free_indices.back();
+        const size_type index = m_free_indices.back();
         m_free_indices.pop_back();
 
-        const ElemIndex ei{ _internal_index(index) };
+        const ElemIndex ei{ _internal_index_unchecked(index) };
         T* ptr = &m_pools[ei.pool_index].emplace(ei.element_index, std::forward<Args>(args)...);
+        ++m_size;
 
         return { index, ptr };
     }
@@ -137,35 +156,56 @@ public:
      * other members.
      * Time complexity: constant.
      */
-    void destroy(uint32_t index)
+    void destroy(size_type index)
     {
-        const ElemIndex ei{ _internal_index(index) };
+        const ElemIndex ei = _internal_index(index);
         m_free_indices.push_back(index);
         m_pools[ei.pool_index].destroy(ei.element_index);
+        --m_size;
     }
 
-    T& operator[](uint32_t index) noexcept
+    /** Get element at index. Precondition: an element exists at index. */
+    T& operator[](size_type index) noexcept
     {
-        const ElemIndex ei{ _internal_index(index) };
+        const ElemIndex ei = _internal_index(index);
         return m_pools[ei.pool_index].get(ei.element_index);
     }
 
-    const T& operator[](uint32_t index) const noexcept
+    /** Get element at index. Precondition: an element exists at index. */
+    const T& operator[](size_type index) const noexcept
     {
-        const ElemIndex ei{ _internal_index(index) };
+        const ElemIndex ei = _internal_index(index);
         return m_pools[ei.pool_index].get(ei.element_index);
     }
 
     /** Get whether there exists an element at the given index. */
-    bool index_valid(uint32_t index) const noexcept
+    bool index_valid(size_type index) const noexcept
     {
-        const ElemIndex ei{ _internal_index_unchecked(index) };
-        if (ei.pool_index >= m_pools.size()) { return false; }
-        if (ei.element_index >= m_pool_size) { return false; }
-        return m_pools[ei.pool_index].is_present(ei.element_index);
+        return _internal_index_valid(_internal_index_unchecked(index));
+    }
+
+    iterator       begin() noexcept { return iterator(*this, 0); }
+    const_iterator begin() const noexcept { return const_iterator(*this, 0); }
+    const_iterator cbegin() const noexcept { return const_iterator(*this, 0); }
+
+    iterator       end() noexcept { return iterator(*this, _guaranteed_end_index()); }
+    const_iterator end() const noexcept { return const_iterator(*this, _guaranteed_end_index()); }
+    const_iterator cend() const noexcept { return const_iterator(*this, _guaranteed_end_index()); }
+
+    size_t pool_size() const noexcept { return m_pool_size; }
+    size_t num_pools() const noexcept { return m_pools.size(); }
+    size_t size() const noexcept { return m_size; }
+    bool   empty() const noexcept { return size() == 0; }
+
+    void clear() noexcept
+    {
+        m_pools.clear();
+        _grow();
     }
 
 private:
+    friend class iterator;
+
     struct ElemIndex {
         size_t pool_index{};
         size_t element_index{};
@@ -176,18 +216,26 @@ private:
     {
         const auto pool_index    = index / m_pool_size;
         const auto element_index = index % m_pool_size;
-
         return { pool_index, element_index };
     }
 
     ElemIndex _internal_index(size_t index) const noexcept
     {
-        const auto [pool_index, element_index] = _internal_index_unchecked(index);
+        const ElemIndex ei = _internal_index_unchecked(index);
+        MG_ASSERT(_internal_index_valid(ei));
+        return ei;
+    }
 
-        MG_ASSERT_DEBUG(pool_index < m_pools.size());
-        MG_ASSERT_DEBUG(element_index < m_pool_size);
+    bool _internal_index_valid(ElemIndex ei) const noexcept
+    {
+        return ei.pool_index < m_pools.size() && ei.element_index < m_pool_size &&
+               m_pools[ei.pool_index].is_present(ei.element_index);
+    }
 
-        return { pool_index, element_index };
+    // Return an index that is guaranteed to be past the end.
+    size_type _guaranteed_end_index() const noexcept
+    {
+        return narrow<size_type>(num_pools() * pool_size());
     }
 
     void _grow()
@@ -201,14 +249,78 @@ private:
         const size_t num_new_indices = new_index_end - new_index_start;
 
         for (size_t i = 0; i < num_new_indices; ++i) {
-            m_free_indices.push_back(uint32_t(new_index_end - 1 - i));
+            m_free_indices.push_back(size_type(new_index_end - 1 - i));
         }
     }
 
-    size_t m_pool_size{};
-
     small_vector<detail::StoragePool<T>, 1> m_pools;
-    small_vector<uint32_t, 1>               m_free_indices;
+    small_vector<size_type, 1>              m_free_indices;
+
+    size_t m_pool_size{};
+    size_t m_size{};
 };
+
+namespace detail {
+template<typename OwnerT> class PoolingVectorIt {
+public:
+    using value_type        = std::remove_reference_t<decltype(std::declval<OwnerT>()[0])>;
+    using pointer           = value_type*;
+    using reference         = value_type&;
+    using difference_type   = std::ptrdiff_t;
+    using iterator_category = std::forward_iterator_tag;
+
+    PoolingVectorIt() = default;
+
+    explicit PoolingVectorIt(OwnerT& owner, uint32_t index) : m_owner(&owner), m_index(index)
+    {
+        if (!m_owner->index_valid(m_index) && !is_past_end()) { ++(*this); }
+    }
+
+    operator PoolingVectorIt<const OwnerT>() const noexcept
+    {
+        return PoolingVectorIt<const OwnerT>(*m_owner, m_index);
+    }
+
+    value_type& operator*() const noexcept { return (*m_owner)[m_index]; }
+    value_type* operator->() const noexcept { return std::addressof((*m_owner)[m_index]); }
+
+    PoolingVectorIt operator++() noexcept
+    {
+        do {
+            ++m_index;
+        } while (!m_owner->index_valid(m_index) && !is_past_end());
+
+        return *this;
+    }
+
+    PoolingVectorIt operator++(int) noexcept
+    {
+        PoolingVectorIt tmp{ *this };
+        ++(*this);
+        return tmp;
+    }
+
+    friend bool operator==(const PoolingVectorIt lhs, const PoolingVectorIt rhs) noexcept
+    {
+        return lhs.m_owner == rhs.m_owner && lhs.m_index == rhs.m_index;
+    }
+
+    friend bool operator!=(const PoolingVectorIt lhs, const PoolingVectorIt rhs) noexcept
+    {
+        return !(lhs == rhs);
+    }
+
+private:
+    bool is_past_end() const noexcept
+    {
+        const auto pool_index = m_index / m_owner->pool_size();
+        MG_ASSERT_DEBUG(pool_index <= m_owner->num_pools());
+        return pool_index == m_owner->num_pools();
+    };
+
+    OwnerT*  m_owner = nullptr;
+    uint32_t m_index = 0;
+};
+} // namespace detail
 
 } // namespace Mg

@@ -181,3 +181,66 @@ TEST_CASE("PoolingVector basic")
         }
     }
 }
+
+TEST_CASE("PoolingVector iterators")
+{
+    Mg::PoolingVector<Type> pv(10);
+
+    for (size_t i = 0; i < 1000; ++i) {
+        auto [index, ptr] = pv.construct();
+        ptr->value        = i;
+    }
+
+    for (size_t i = 0; i < 1000; i += 7) { pv.destroy(i); }
+
+    SECTION("iterator")
+    {
+        const size_t num_elems   = pv.size();
+        size_t       num_visited = 0;
+        for (auto&& v : pv) {
+            CHECK(v.value < 1000);
+            CHECK(v.value % 7 != 0);
+            v.value = 1234;
+            ++num_visited;
+        }
+
+        CHECK(num_visited == num_elems);
+
+        for (auto&& v : pv) { CHECK(v.value == 1234); }
+
+        std::transform(pv.begin(), pv.end(), pv.begin(), [](Type t) {
+            t.value /= 2;
+            return t;
+        });
+        CHECK(std::all_of(pv.begin(), pv.end(), [](Type t) { return t.value == 617; }));
+    }
+
+    SECTION("const_iterator")
+    {
+        const auto&  cpv         = pv;
+        const size_t num_elems   = cpv.size();
+        size_t       num_visited = 0;
+        for (auto&& cv : cpv) {
+            CHECK(cv.value < 1000);
+            CHECK(cv.value % 7 != 0);
+            ++num_visited;
+        }
+
+        CHECK(num_visited == num_elems);
+    }
+
+    SECTION("iterator to const_iterator")
+    {
+        Mg::PoolingVector<Type>::iterator       it;
+        Mg::PoolingVector<Type>::const_iterator cit;
+
+        it = pv.begin();
+
+        CHECK(it != cit);
+
+        cit = it;
+
+        CHECK(it == cit);
+        CHECK(cit == it);
+    }
+}
