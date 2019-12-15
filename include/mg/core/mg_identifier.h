@@ -42,31 +42,6 @@
 #    define MG_IDENTIFIER_REPORT_HASH_COLLISION 1
 #endif
 
-namespace Mg::detail {
-
-// Providing both template and constexpr function hashing implementations since the template
-// solution seems more likely to actually result in compile-time hashing.
-
-/** Hash string literal using FNV1a algorithm. Template implementation to enable compile-time
- * hashing.
- * @tparam N length of string
- */
-template<uint32_t N, uint32_t I = N - 1> struct FnvHash {
-    MG_INLINE MG_USES_UNSIGNED_OVERFLOW static constexpr uint32_t invoke(const char (&str)[N])
-    {
-        return (FnvHash<N, I - 1>::invoke(str) ^ static_cast<uint32_t>(str[I - 1])) * 16777619u;
-    }
-};
-
-template<uint32_t N> struct FnvHash<N, 0> {
-    MG_INLINE MG_USES_UNSIGNED_OVERFLOW static constexpr uint32_t invoke(const char (&)[N])
-    {
-        return 2166136261u;
-    }
-};
-
-} // namespace Mg::detail
-
 namespace Mg {
 
 /** Hash string using FNV1a algorithm. */
@@ -82,6 +57,18 @@ MG_INLINE MG_USES_UNSIGNED_OVERFLOW constexpr uint32_t hash_fnv1a(std::string_vi
     return hash;
 }
 
+class Identifier;
+
+namespace literals {
+MG_INLINE constexpr Identifier operator""_id(const char* str, size_t len);
+MG_INLINE constexpr uint32_t   operator""_hash(const char* str, size_t len)
+{
+    return hash_fnv1a({ str, len });
+}
+} // namespace literals
+
+using namespace literals;
+
 /** Identifier class that is more efficient than using strings for certain purposes (e.g. hashmap
  * key). Identifier objects contain only a 32-bit hash of the string from which they were created
  * and a char pointer to the original string.
@@ -96,7 +83,7 @@ public:
     /** Construct an Identifier from a string literal. */
     template<unsigned int N>
     MG_INLINE constexpr Identifier(const char (&str)[N])
-        : m_str(str), m_hash{ detail::FnvHash<N>::invoke(str) }
+        : Identifier(str, hash_fnv1a({ str, N - 1 }))
     {}
 
     /** Constructs an Identifier from a dynamic string: this is slower as it requires run-time
@@ -118,14 +105,27 @@ public:
     constexpr std::string_view str_view() const noexcept { return m_str; };
 
 private:
+    // Allow operator""_id to access private constructor.
+    friend constexpr Identifier literals::operator""_id(const char* str, size_t len);
+
     // Construct from dynamic string (comparatively costly). Invoked by `from_runtime_string()`.
     Identifier(std::string_view str) : m_hash{ hash_fnv1a(str) } { set_full_string(str); }
+
+    // Internal constructor.
+    constexpr Identifier(const char* str, uint32_t hash) : m_str(str), m_hash(hash) {}
 
     void set_full_string(std::string_view str);
 
     const char* m_str;
     uint32_t    m_hash;
 };
+
+namespace literals {
+MG_INLINE constexpr Identifier operator""_id(const char* str, size_t len)
+{
+    return Identifier(str, hash_fnv1a({ str, len }));
+}
+} // namespace literals
 
 // Identifier should be trivially copyable (for performance reasons and to allow memcpy-aliasing).
 static_assert(std::is_trivially_copyable_v<Identifier>);
