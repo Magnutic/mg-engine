@@ -14,10 +14,6 @@
 
 namespace {
 
-using namespace Mg;
-using namespace Mg::gfx;
-using namespace Mg::input;
-
 void main_loop();
 
 // Global scene pointer. Since this is just a small sample, I feel okay with using a global.
@@ -30,24 +26,24 @@ void setup_config()
     cfg.set_default_value("mouse_sensitivity_y", 0.002f);
 }
 
-Mg::gfx::MeshHandle load_mesh(Identifier file)
+Mg::gfx::MeshHandle load_mesh(Mg::Identifier file)
 {
-    auto access = g_scene->resource_cache.access_resource<MeshResource>(file);
+    auto access = g_scene->resource_cache.access_resource<Mg::MeshResource>(file);
     return g_scene->root.gfx_device().mesh_repository().create(*access);
 }
 
 Mg::gfx::TextureHandle load_texture(std::string_view file)
 {
-    auto file_name = Identifier::from_runtime_string(fmt::format("textures/{}.dds", file));
-    auto access    = g_scene->resource_cache.access_resource<TextureResource>(file_name);
+    auto file_name = Mg::Identifier::from_runtime_string(fmt::format("textures/{}.dds", file));
+    auto access    = g_scene->resource_cache.access_resource<Mg::TextureResource>(file_name);
     return g_scene->root.gfx_device().texture_repository().create(*access);
 }
 
-Mg::gfx::Material* load_material(Identifier file, std::initializer_list<Identifier> options)
+Mg::gfx::Material* load_material(Mg::Identifier file, std::initializer_list<Mg::Identifier> options)
 {
-    auto handle = g_scene->resource_cache.resource_handle<ShaderResource>(
+    auto handle = g_scene->resource_cache.resource_handle<Mg::ShaderResource>(
         "shaders/default.mgshader");
-    Material* m = g_scene->root.gfx_device().material_repository().create(file, handle);
+    Mg::gfx::Material* m = g_scene->root.gfx_device().material_repository().create(file, handle);
 
     for (auto o : options) { m->set_option(o, true); }
 
@@ -58,9 +54,9 @@ Mg::gfx::Material* load_material(Identifier file, std::initializer_list<Identifi
     return m;
 }
 
-Model load_model(Identifier                        mesh_file,
-                 span<const MaterialAssignment>    material_files,
-                 std::initializer_list<Identifier> options)
+Model load_model(Mg::Identifier                        mesh_file,
+                 Mg::span<const MaterialAssignment>    material_files,
+                 std::initializer_list<Mg::Identifier> options)
 {
     Model model;
 
@@ -68,18 +64,20 @@ Model load_model(Identifier                        mesh_file,
 
     for (auto&& [submesh_index, material_fname] : material_files) {
         model.material_bindings.push_back(
-            MaterialBinding{ submesh_index, load_material(material_fname, options) });
+            Mg::gfx::MaterialBinding{ submesh_index, load_material(material_fname, options) });
     }
 
     return model;
 }
 
-InputMap make_input_map(Window& w)
+Mg::input::InputMap make_input_map(Mg::Window& w)
 {
+    using namespace Mg::input;
+
     const auto& kb    = w.keyboard;
     const auto& mouse = w.mouse;
 
-    InputMap input;
+    Mg::input::InputMap input;
 
     // clang-format off
     input.bind("forward",          kb.key(Keyboard::Key::W));
@@ -91,23 +89,25 @@ InputMap make_input_map(Window& w)
     input.bind("fullscreen",       kb.key(Keyboard::Key::F4));
     input.bind("exit",             kb.key(Keyboard::Key::Esc));
     input.bind("toggle_debug_vis", kb.key(Keyboard::Key::F));
+    input.bind("toggle_glflush", mouse.button(Mouse::Button::right));
 
     input.bind("look_x", mouse.axis(Mouse::Axis::delta_x));
     input.bind("look_y", mouse.axis(Mouse::Axis::delta_y));
-    // clang-format on
+    // clang-format o
 
     return input;
 }
 
-BlurTargets make_blur_targets(VideoMode video_mode)
+BlurTargets make_blur_targets(Mg::VideoMode video_mode)
 {
+    using namespace Mg::gfx;
     static constexpr int32_t k_num_mip_levels = 4;
 
     BlurTargets blur_targets;
 
     {
         RenderTargetParams params{};
-        params.filter_mode    = TextureFilterMode::Linear;
+        params.filter_mode    = Mg::gfx::TextureFilterMode::Linear;
         params.width          = video_mode.width >> 2;
         params.height         = video_mode.height >> 2;
         params.num_mip_levels = k_num_mip_levels;
@@ -137,8 +137,10 @@ BlurTargets make_blur_targets(VideoMode video_mode)
     return blur_targets;
 }
 
-Mg::gfx::TextureRenderTarget make_hdr_target(VideoMode mode)
+Mg::gfx::TextureRenderTarget make_hdr_target(Mg::VideoMode mode)
 {
+    using namespace Mg::gfx;
+
     RenderTargetParams params{};
     params.filter_mode      = TextureFilterMode::Linear;
     params.width            = mode.width;
@@ -160,6 +162,8 @@ Mg::gfx::TextureRenderTarget make_hdr_target(VideoMode mode)
 
 void init()
 {
+    using namespace Mg::literals;
+
     setup_config();
 
     auto& window = g_scene->root.window();
@@ -170,32 +174,32 @@ void init()
             if (is_focused) { g_scene->resource_cache.refresh(); }
         });
 
-        WindowSettings window_settings = read_display_settings(g_scene->root.config());
+        Mg::WindowSettings window_settings = read_display_settings(g_scene->root.config());
         window.set_title("Mg Engine Example Application");
         window.apply_settings(window_settings);
-        window.set_cursor_lock_mode(CursorLockMode::LOCKED);
+        window.set_cursor_lock_mode(Mg::CursorLockMode::LOCKED);
     }
 
-    g_scene->resource_cache.set_resource_reload_callback([](const FileChangedEvent& event) {
+    g_scene->resource_cache.set_resource_reload_callback([](const Mg::FileChangedEvent& event) {
         switch (event.resource_type.hash()) {
-        case Identifier("TextureResource").hash(): {
-            ResourceAccessGuard<TextureResource> access(event.resource);
+        case "TextureResource"_hash: {
+            Mg::ResourceAccessGuard<Mg::TextureResource> access(event.resource);
             g_scene->root.gfx_device().texture_repository().update(*access);
             break;
         }
-        case Identifier("MeshResource").hash(): {
-            ResourceAccessGuard<MeshResource> access(event.resource);
+        case "MeshResource"_hash: {
+            Mg::ResourceAccessGuard<Mg::MeshResource> access(event.resource);
             g_scene->root.gfx_device().mesh_repository().update(*access);
             break;
         }
-        case Identifier("ShaderResource").hash():
+        case "ShaderResource"_hash:
             g_scene->mesh_renderer.drop_shaders();
             g_scene->billboard_renderer.drop_shaders();
             g_scene->post_renderer.drop_shaders();
             break;
 
         default:
-            g_log.write_verbose(fmt::format("Resource '{}' was updated, but ignored.",
+            Mg::g_log.write_verbose(fmt::format("Resource '{}' was updated, but ignored.",
                                             event.resource.resource_id().str_view()));
         }
     });
@@ -206,7 +210,7 @@ void init()
     g_scene->root.gfx_device().set_clear_colour(0.0125f, 0.01275f, 0.025f);
 
     g_scene->camera.set_aspect_ratio(window.aspect_ratio());
-    g_scene->camera.field_of_view         = { FieldOfView::DEGREES, 80.0f };
+    g_scene->camera.field_of_view         = 80_degrees;
     g_scene->current_state.cam_position.z = 1.0f;
     g_scene->prev_state                   = g_scene->current_state;
 
@@ -241,34 +245,33 @@ void init()
         auto& res_cache     = g_scene->resource_cache;
 
         // Create post-process materials
-        auto bloom_handle = res_cache.resource_handle<ShaderResource>(
+        auto bloom_handle = res_cache.resource_handle<Mg::ShaderResource>(
             "shaders/post_process_bloom.mgshader");
         g_scene->bloom_material = material_repo.create("bloom_material", bloom_handle);
 
-        auto blur_handle = res_cache.resource_handle<ShaderResource>(
+        auto blur_handle = res_cache.resource_handle<Mg::ShaderResource>(
             "shaders/post_process_blur.mgshader");
         g_scene->blur_material = material_repo.create("blur_material", blur_handle);
 
         // Create billboard material
-        auto handle = g_scene->resource_cache.resource_handle<ShaderResource>(
+        auto handle = g_scene->resource_cache.resource_handle<Mg::ShaderResource>(
             "shaders/simple_billboard.mgshader");
         g_scene->billboard_material = material_repo.create("billboard_material", handle);
         g_scene->billboard_material->set_sampler("sampler_diffuse", load_texture("light_t"));
     }
 
     // Create a lot of random lights
-    // I know rand / srand is not much good but this is just a little sample.
     std::srand(0xdeadbeef);
 
     for (size_t i = 0; i < k_num_lights; ++i) {
         auto pos = glm::vec3(rand(), rand(), 0.0f);
-        pos /= RAND_MAX;
+        pos /= float(RAND_MAX);
         pos -= glm::vec3(0.5f, 0.5f, 0.0f);
         pos *= 15.0f;
         pos.z += 1.125f;
 
-        glm::vec4 light_colour(rand(), rand(), rand(), RAND_MAX);
-        light_colour /= RAND_MAX;
+        glm::vec4 light_colour(rand(), rand(), rand(), float(RAND_MAX));
+        light_colour /= float(RAND_MAX);
 
         float s = float(sin(i * 0.2f));
 
@@ -276,7 +279,7 @@ void init()
 
         // Draw a billboard sprite for each light
         {
-            Billboard& billboard = g_scene->billboard_render_list.add();
+            Mg::gfx::Billboard& billboard = g_scene->billboard_render_list.add();
             billboard.pos        = pos;
             billboard.colour     = light_colour * 10.0f;
             billboard.colour.a   = 1.0f;
@@ -284,13 +287,13 @@ void init()
         }
 
         g_scene->scene_lights.push_back(
-            make_point_light(pos, light_colour * 100.0f, k_light_radius));
+            Mg::gfx::make_point_light(pos, light_colour * 100.0f, k_light_radius));
     }
 
     main_loop();
 }
 
-std::array<float, 3> camera_acceleration(InputMap& input_map)
+std::array<float, 3> camera_acceleration(Mg::input::InputMap& input_map)
 {
     auto forward_acc = camera_acc * (input_map.is_held("forward") - input_map.is_held("backward"));
     auto right_acc   = camera_acc * (input_map.is_held("right") - input_map.is_held("left"));
@@ -330,7 +333,7 @@ void time_step()
     float cam_yaw   = state.cam_rotation.yaw() - mouse_delta_x;
 
     // Set rotation from euler angles, clamping pitch between straight down & straight up.
-    state.cam_rotation = Rotation{
+    state.cam_rotation = Mg::Rotation{
         { glm::clamp(cam_pitch, -glm::half_pi<float>() + 0.0001f, glm::half_pi<float>() - 0.0001f),
           0.0f,
           cam_yaw }
@@ -362,7 +365,7 @@ void time_step()
 
     // Fullscreen switching
     if (input.was_pressed("fullscreen")) {
-        WindowSettings s = window.settings();
+        Mg::WindowSettings s = window.settings();
         s.fullscreen     = !s.fullscreen;
         s.video_mode     = {}; // reset resolution etc. to defaults
         window.apply_settings(s);
@@ -390,18 +393,20 @@ Scene::State lerp(const Scene::State& fst, const Scene::State& snd, double x)
 {
     Scene::State output;
     output.cam_position = glm::mix(fst.cam_position, snd.cam_position, x);
-    output.cam_rotation = Rotation::mix(fst.cam_rotation, snd.cam_rotation, float(x));
+    output.cam_rotation = Mg::Rotation::mix(fst.cam_rotation, snd.cam_rotation, float(x));
 
     return output;
 }
 
-void add_to_render_list(const Model& model, RenderCommandProducer& renderlist)
+void add_to_render_list(const Model& model, Mg::gfx::RenderCommandProducer& renderlist)
 {
     renderlist.add_mesh(model.mesh, model.transform, model.material_bindings);
 }
 
 void render_bloom()
 {
+    using namespace Mg::gfx;
+
     constexpr size_t k_num_blur_iterations = 3;
     const size_t     num_blur_targets      = g_scene->blur_targets.hor_pass_targets.size();
 
@@ -410,7 +415,7 @@ void render_bloom()
         TextureRenderTarget& vert_target = g_scene->blur_targets.vert_pass_targets[mip_i];
 
         // Source mip-level will be [0, 0, 1, 2, 3, ...]
-        auto source_mipmap = max(0, static_cast<int>(mip_i) - 1);
+        auto source_mipmap = Mg::max(0, static_cast<int>(mip_i) - 1);
         g_scene->blur_material->set_parameter("source_mip_level", source_mipmap);
 
         // For the first mip level, we read from the HDR target, then from previous blur-target mip
@@ -440,13 +445,13 @@ void render_light_debug_geometry()
 {
     auto& gfx = g_scene->root.gfx_device();
 
-    gfx.set_depth_test(DepthFunc::NONE);
+    gfx.set_depth_test(Mg::gfx::DepthFunc::NONE);
     gfx.set_use_blending(true);
-    gfx.set_blend_mode(c_blend_mode_alpha);
+    gfx.set_blend_mode(Mg::gfx::c_blend_mode_alpha);
 
-    for (const Light& light : g_scene->scene_lights) {
+    for (const Mg::gfx::Light& light : g_scene->scene_lights) {
         if (light.vector.w == 0.0) { continue; }
-        DebugRenderer::EllipsoidDrawParams params;
+        Mg::gfx::DebugRenderer::EllipsoidDrawParams params;
         params.centre     = glm::vec3(light.vector);
         params.colour     = glm::vec4(normalize(light.colour), 0.15f);
         params.dimensions = glm::vec3(std::sqrt(light.range_sqr));
@@ -454,7 +459,7 @@ void render_light_debug_geometry()
         g_scene->debug_renderer.draw_ellipsoid(g_scene->camera, params);
     }
 
-    gfx.set_depth_test(DepthFunc::LESS);
+    gfx.set_depth_test(Mg::gfx::DepthFunc::LESS);
     gfx.set_use_blending(false);
 }
 
@@ -468,7 +473,7 @@ void render_scene(double lerp_factor)
 
     // Draw meshes
     {
-        RenderCommandProducer& render_command_producer = g_scene->render_command_producer;
+        Mg::gfx::RenderCommandProducer& render_command_producer = g_scene->render_command_producer;
         render_command_producer.clear();
 
         for (auto&& model : g_scene->scene_models) {
@@ -479,7 +484,7 @@ void render_scene(double lerp_factor)
         gfx.clear();
 
         const auto& commands = render_command_producer.finalise(g_scene->camera,
-                                                                SortFunc::NEAR_TO_FAR);
+                                                                Mg::gfx::SortFunc::NEAR_TO_FAR);
         auto        time     = static_cast<float>(g_scene->root.time_since_init());
         g_scene->mesh_renderer.render(g_scene->camera,
                                       commands,
@@ -508,7 +513,6 @@ void render_scene(double lerp_factor)
     if (g_scene->draw_debug) { render_light_debug_geometry(); }
 
     g_scene->root.window().refresh();
-    gfx.synchronise();
 }
 
 void main_loop()
@@ -524,7 +528,7 @@ void main_loop()
         ++n_frames;
 
         if (g_scene->time - last_fps_write > 1.0) {
-            g_log.write_verbose(fmt::format("{} FPS", n_frames));
+            Mg::g_log.write_verbose(fmt::format("{} FPS", n_frames));
             last_fps_write = g_scene->time;
             n_frames       = 0;
         }
