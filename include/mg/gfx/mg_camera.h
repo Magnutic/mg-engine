@@ -28,13 +28,12 @@
 #pragma once
 
 #include <glm/common.hpp>
-#include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/mat4x4.hpp>
-#include <glm/trigonometric.hpp>
 #include <glm/vec3.hpp>
 
 #include "mg/core/mg_transform.h"
+#include "mg/utils/mg_angle.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_math_utils.h"
@@ -53,24 +52,6 @@ public:
 
 private:
     float m_near, m_far;
-};
-
-class FieldOfView {
-public:
-    enum Type { RADIANS, DEGREES };
-    FieldOfView(Type type, float value) : m_value(type == DEGREES ? glm::radians(value) : value)
-    {
-        MG_ASSERT(m_value > 0.0f);
-        MG_ASSERT(m_value < glm::two_pi<float>());
-    }
-
-    MG_MAKE_DEFAULT_COPYABLE(FieldOfView);
-    MG_MAKE_DEFAULT_MOVABLE(FieldOfView);
-
-    float get_as(Type type) const { return (type == DEGREES ? glm::degrees(m_value) : m_value); }
-
-private:
-    float m_value{};
 };
 
 class ICamera {
@@ -98,7 +79,7 @@ public:
     /** Construct a camera.
      * @param fov Field Of View angle, in degrees.
      * @param z_range Depth clipping range. */
-    Camera(FieldOfView fov          = { FieldOfView::DEGREES, 75.0f },
+    Camera(Angle      fov          = 75_degrees,
            float       aspect_ratio = 4.0f / 3.0f,
            DepthRange  z_range      = { 0.1f, 2000.0f }) noexcept
         : field_of_view(fov), m_depth_range{ z_range }
@@ -106,7 +87,7 @@ public:
         set_aspect_ratio(aspect_ratio);
     }
 
-    FieldOfView field_of_view;
+    Angle field_of_view;
 
     /** Set depth clipping range. */
     void set_depth_range(DepthRange z_range) noexcept { m_depth_range = z_range; }
@@ -125,7 +106,7 @@ public:
 
     glm::mat4 proj_matrix() const override
     {
-        return glm::perspective(field_of_view.get_as(FieldOfView::RADIANS),
+        return glm::perspective(field_of_view.radians(),
                                 m_aspect,
                                 m_depth_range.near(),
                                 m_depth_range.far());
