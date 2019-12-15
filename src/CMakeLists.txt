@@ -64,6 +64,7 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/resources/mg_shader_types.h
     ${MG_HEADER_DIR}/mg/resources/mg_texture_resource.h
     ${MG_HEADER_DIR}/mg/resources/shader_parser/mg_shader_parser.h
+    ${MG_HEADER_DIR}/mg/utils/mg_angle.h
     ${MG_HEADER_DIR}/mg/utils/mg_assert.h
     ${MG_HEADER_DIR}/mg/utils/mg_binary_io.h
     ${MG_HEADER_DIR}/mg/utils/mg_fopen_utf8.h
