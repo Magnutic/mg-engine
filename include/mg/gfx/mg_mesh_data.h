@@ -117,4 +117,17 @@ struct SubMesh {
     Identifier name{ "" };
 };
 
+/** A non-owning view over the data required to define a mesh. */
+struct MeshDataView {
+    span<const Vertex>            vertices;
+    span<const uint_vertex_index> indices;
+    span<const SubMesh>           sub_meshes;
+
+    struct BoundingInfo {
+        glm::vec3 centre = {};
+        float     radius = 0.0f;
+    };
+    Opt<BoundingInfo> bounding_info;
+};
+
 } // namespace Mg
