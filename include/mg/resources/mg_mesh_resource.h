@@ -41,6 +41,11 @@ class MeshResource final : public BaseResource {
 public:
     using BaseResource::BaseResource;
 
+    gfx::MeshDataView data_view() const noexcept
+    {
+        return { vertices(), indices(), sub_meshes(), { { centre(), radius() } } };
+    }
+
     span<const gfx::SubMesh>           sub_meshes() const noexcept { return span{ m_sub_meshes }; }
     span<const gfx::Vertex>            vertices() const noexcept { return span{ m_vertices }; }
     span<const gfx::uint_vertex_index> indices() const noexcept { return span{ m_indices }; }

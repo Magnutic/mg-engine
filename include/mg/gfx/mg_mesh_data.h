@@ -36,6 +36,7 @@
 
 #include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_vector_normalised.h"
 
 namespace Mg::gfx {
