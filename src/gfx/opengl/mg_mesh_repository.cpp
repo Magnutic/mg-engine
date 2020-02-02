@@ -247,13 +247,9 @@ bool MeshRepositoryImpl::update(Identifier mesh_id, const MeshDataView& data)
         return false;
     }
 
-    // Clearing the existing node and creating the new mesh within ensures MeshHandles remain valid.
-    node->clear();
-
+    // Use the existing node to ensure MeshHandles remain valid.
     _make_mesh_in_node(*node, mesh_id, _mesh_params_from_mesh_data(data));
-
     g_log.write_verbose(fmt::format("MeshRepository::update(): Updated {}", mesh_id.str_view()));
-
     return true;
 }
 
@@ -301,6 +297,8 @@ void MeshRepositoryImpl::_make_mesh_in_node(MeshNode& node,
                                             Identifier mesh_id,
                                             const MakeMeshParams& params)
 {
+    node.clear();
+
     node.mesh_info.mesh_id = mesh_id;
     node.mesh_info.centre = params.centre;
     node.mesh_info.radius = params.radius;
