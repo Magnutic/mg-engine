@@ -138,8 +138,8 @@ void ogl_error_callback(uint32_t source,
                         const char* msg,
                         const void* /* user_param */) noexcept
 {
-    auto src_str      = source_string(source);
-    auto type_str     = type_string(type);
+    auto src_str = source_string(source);
+    auto type_str = type_string(type);
     auto severity_str = severity_string(severity);
 
     Log::Prio prio;

@@ -10,7 +10,7 @@
 static uint32_t testFNV1a(const char* str)
 {
     const size_t length = strlen(str);
-    uint32_t     hash   = 2166136261u;
+    uint32_t hash = 2166136261u;
 
     for (size_t i = 0; i < length; ++i) {
         hash ^= static_cast<uint32_t>(*str++);
@@ -49,7 +49,7 @@ TEST_CASE("String hash test")
     REQUIRE(id2.str_view() == "id0");
     REQUIRE(id2.str_view() == "id0");
 
-    std::string    long_string = "a string that is long enough to not be subject to SSO";
+    std::string long_string = "a string that is long enough to not be subject to SSO";
     Mg::Identifier dynamic_long_identifier = Mg::Identifier::from_runtime_string(long_string);
 
     REQUIRE(dynamic_long_identifier ==
@@ -63,11 +63,11 @@ TEST_CASE("Hash collisions")
     // https://softwareengineering.stackexchange.com/questions/49550/which-hashing-algorithm-is-best-for-uniqueness-and-speed#145633
 
     Mg::Identifier altarage = "altarage";
-    Mg::Identifier zinke    = "zinke";
+    Mg::Identifier zinke = "zinke";
     REQUIRE(altarage != zinke);
 
     Mg::Identifier costarring = "costarring";
-    Mg::Identifier liquid     = "liquid";
+    Mg::Identifier liquid = "liquid";
     REQUIRE(costarring != liquid);
 
     Mg::Identifier declinate = "declinate";
@@ -75,7 +75,7 @@ TEST_CASE("Hash collisions")
     REQUIRE(declinate != macallums);
 
     Mg::Identifier other_altarage = "altarage";
-    auto           runtime_zinke  = Mg::Identifier::from_runtime_string(std::string("zin") + "ke");
+    auto runtime_zinke = Mg::Identifier::from_runtime_string(std::string("zin") + "ke");
     REQUIRE(other_altarage != zinke);
     REQUIRE(altarage != runtime_zinke);
 

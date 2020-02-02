@@ -8,7 +8,7 @@
 TEST_CASE("Config")
 {
     std::string_view file = "data/test-config.cfg";
-    Mg::Config       config;
+    Mg::Config config;
 
     config.set_default_value("var0", 10);
     config.set_default_value("int_value", 0);

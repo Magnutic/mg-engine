@@ -63,7 +63,8 @@ public:
     void calculate_delim_planes(glm::mat4 P) noexcept;
 
     /** Find min or max extent of view space sphere within light grid. */
-    size_t extents(const glm::vec3& pos_view, float radius_sqr, bool horizontal, bool get_max) noexcept;
+    size_t
+    extents(const glm::vec3& pos_view, float radius_sqr, bool horizontal, bool get_max) noexcept;
 
     /** Get extents of sphere in slice planes. (Used in clustered rendering, for tiled rendering,
      * extents() is sufficient.)
@@ -71,8 +72,8 @@ public:
     static std::pair<size_t, size_t> depth_extents(float depth, float radius) noexcept
     {
         static const float log2_max_dist = std::log2(float{ MG_LIGHT_GRID_FAR_PLANE });
-        constexpr float    grid_depth    = float{ MG_LIGHT_GRID_DEPTH };
-        constexpr float    grid_bias     = float{ MG_LIGHT_GRID_DEPTH_BIAS };
+        constexpr float grid_depth = float{ MG_LIGHT_GRID_DEPTH };
+        constexpr float grid_bias = float{ MG_LIGHT_GRID_DEPTH_BIAS };
 
         const float fmin_z = (std::log2(depth - radius) / log2_max_dist) * grid_depth + grid_bias;
         const float fmax_z = (std::log2(depth + radius) / log2_max_dist) * grid_depth + grid_bias;
@@ -92,7 +93,7 @@ private:
     // TODO: consider orthographic projections -- for those, _all but_ D are zero.
     struct DelimPlane {
         float A_or_B = 0.0f; // A, in case delimiter is horizontal; otherwise B.
-        float C      = 0.0f;
+        float C = 0.0f;
     };
 
     /** Signed square distance between view-space position and tile delimiter plane.
@@ -103,8 +104,8 @@ private:
     float signed_sqr_distance(const DelimPlane& plane, float offset, float depth) noexcept;
 
     // View-space tile delimiter plane -- the planes that divide the screen into tiles.
-    std::array<DelimPlane, MG_LIGHT_GRID_WIDTH + 1>  m_delim_plane_vert; // Facing negative x
-    std::array<DelimPlane, MG_LIGHT_GRID_HEIGHT + 1> m_delim_plane_hor;  // Facing negative y
+    std::array<DelimPlane, MG_LIGHT_GRID_WIDTH + 1> m_delim_plane_vert; // Facing negative x
+    std::array<DelimPlane, MG_LIGHT_GRID_HEIGHT + 1> m_delim_plane_hor; // Facing negative y
 
     // Cache camera projection matrix, so that we know whether tile-delimiter-planes need to be
     // re-calculated or not.

@@ -60,7 +60,7 @@ public:
 
     struct CreateReturn {
         Opt<MeshHandle> opt_mesh;
-        ReturnCode      return_code;
+        ReturnCode return_code;
     };
 
     CreateReturn create(const MeshResource& resource);
@@ -117,7 +117,7 @@ public:
      * underlying GPU storage buffers.
      */
     MeshBuffer new_mesh_buffer(VertexBufferSize vertex_buffer_size,
-                               IndexBufferSize  index_buffer_size);
+                               IndexBufferSize index_buffer_size);
 };
 
 } // namespace Mg::gfx

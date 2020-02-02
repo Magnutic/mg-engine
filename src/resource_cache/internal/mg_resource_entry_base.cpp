@@ -44,17 +44,17 @@ void ResourceEntryBase::load_resource()
 
     // Load raw data.
     const auto file_size = loader().file_size(resource_id());
-    auto       file_data = Array<std::byte>::make(file_size);
+    auto file_data = Array<std::byte>::make(file_size);
     loader().load_file(resource_id(), file_data);
 
     // Structure providing interface needed for resources to load data.
     ResourceLoadingInput input{ std::move(file_data), owning_cache(), *this };
 
     // Init contained resource.
-    BaseResource& resource    = create_resource();
-    m_resource_type_id        = resource.type_id();
-    m_has_been_loaded         = true;
-    m_time_stamp              = loader().file_time_stamp(resource_id());
+    BaseResource& resource = create_resource();
+    m_resource_type_id = resource.type_id();
+    m_has_been_loaded = true;
+    m_time_stamp = loader().file_time_stamp(resource_id());
     LoadResourceResult result = resource.load_resource(input);
 
     switch (result.result_code) {

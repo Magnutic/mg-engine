@@ -56,7 +56,7 @@ using GeometryShaderHandle = TypedShaderHandle<ShaderStage::Geometry>;
 /** Handle to a fragment shader. */
 using FragmentShaderHandle = TypedShaderHandle<ShaderStage::Fragment>;
 
-Opt<VertexShaderHandle>   compile_vertex_shader(const std::string& code);
+Opt<VertexShaderHandle> compile_vertex_shader(const std::string& code);
 Opt<FragmentShaderHandle> compile_fragment_shader(const std::string& code);
 Opt<GeometryShaderHandle> compile_geometry_shader(const std::string& code);
 
@@ -80,7 +80,7 @@ private:
 enum class ShaderHandle : uint64_t;
 
 /** Construct a shader program by linking the supplied Shaders */
-Opt<ShaderHandle> link_shader_program(VertexShaderHandle        vertex_shader,
+Opt<ShaderHandle> link_shader_program(VertexShaderHandle vertex_shader,
                                       Opt<GeometryShaderHandle> geometry_shader,
                                       Opt<FragmentShaderHandle> fragment_shader);
 

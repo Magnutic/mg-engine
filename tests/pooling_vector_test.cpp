@@ -11,7 +11,7 @@ struct Type {
     Type(size_t v) : value(v) {}
 
     Type(const Type&) = default;
-    Type(Type&&)      = default;
+    Type(Type&&) = default;
     Type& operator=(const Type&) = default;
     Type& operator=(Type&&) = default;
 
@@ -38,7 +38,7 @@ void insert(Mg::PoolingVector<Type>& pv, uint32_t)
     auto num_elems_before = Mg::InstanceCounter<Type>::get_counter();
 
     auto [index, ptr] = pv.construct();
-    ptr->value        = index;
+    ptr->value = index;
 
     CHECK(Mg::InstanceCounter<Type>::get_counter() == num_elems_before + 1);
 }
@@ -47,7 +47,9 @@ void destroy(Mg::PoolingVector<Type>& pv, uint32_t index)
 {
     auto num_elems_before = Mg::InstanceCounter<Type>::get_counter();
 
-    if (!pv.index_valid(index)) { return; }
+    if (!pv.index_valid(index)) {
+        return;
+    }
     pv.destroy(index);
 
     CHECK(Mg::InstanceCounter<Type>::get_counter() == num_elems_before - 1);
@@ -57,7 +59,9 @@ void access(Mg::PoolingVector<Type>& pv, uint32_t index)
 {
     auto num_elems_before = Mg::InstanceCounter<Type>::get_counter();
 
-    if (!pv.index_valid(index)) { return; }
+    if (!pv.index_valid(index)) {
+        return;
+    }
     CHECK(pv[index].get_value_checked() == index);
 
     CHECK(Mg::InstanceCounter<Type>::get_counter() == num_elems_before);
@@ -155,11 +159,15 @@ TEST_CASE("PoolingVector basic")
             Mg::PoolingVector<Type> pv(256);
 
             static constexpr size_t num_elems = 10000;
-            for (size_t i = 0; i < num_elems; ++i) { pv.construct(i); }
+            for (size_t i = 0; i < num_elems; ++i) {
+                pv.construct(i);
+            }
 
             CHECK(Mg::InstanceCounter<Type>::get_counter() == num_elems);
 
-            for (uint32_t i = 0; i < num_elems; ++i) { CHECK(pv[i].get_value_checked() == i); }
+            for (uint32_t i = 0; i < num_elems; ++i) {
+                CHECK(pv[i].get_value_checked() == i);
+            }
         }
 
         CHECK(Mg::InstanceCounter<Type>::get_counter() == 0);
@@ -168,14 +176,14 @@ TEST_CASE("PoolingVector basic")
 
     SECTION("pseudrandom")
     {
-        std::mt19937                            g{ 75571296 };
+        std::mt19937 g{ 75571296 };
         std::uniform_int_distribution<uint32_t> dist(static_cast<uint32_t>(g()));
 
         static constexpr size_t num_iterations = 10000;
         for (size_t i = 0; i < num_iterations; ++i) {
             const auto count = static_cast<uint32_t>(Mg::InstanceCounter<Type>::get_counter());
-            auto       op    = dist(g) % std::size(operations);
-            auto       index = dist(g) % (count > 0 ? count : 1);
+            auto op = dist(g) % std::size(operations);
+            auto index = dist(g) % (count > 0 ? count : 1);
 
             operations[op](pv2, index);
         }
@@ -188,15 +196,17 @@ TEST_CASE("PoolingVector iterators")
 
     for (size_t i = 0; i < 1000; ++i) {
         auto [index, ptr] = pv.construct();
-        ptr->value        = i;
+        ptr->value = i;
     }
 
-    for (size_t i = 0; i < 1000; i += 7) { pv.destroy(i); }
+    for (size_t i = 0; i < 1000; i += 7) {
+        pv.destroy(i);
+    }
 
     SECTION("iterator")
     {
-        const size_t num_elems   = pv.size();
-        size_t       num_visited = 0;
+        const size_t num_elems = pv.size();
+        size_t num_visited = 0;
         for (auto&& v : pv) {
             CHECK(v.value < 1000);
             CHECK(v.value % 7 != 0);
@@ -206,7 +216,9 @@ TEST_CASE("PoolingVector iterators")
 
         CHECK(num_visited == num_elems);
 
-        for (auto&& v : pv) { CHECK(v.value == 1234); }
+        for (auto&& v : pv) {
+            CHECK(v.value == 1234);
+        }
 
         std::transform(pv.begin(), pv.end(), pv.begin(), [](Type t) {
             t.value /= 2;
@@ -217,9 +229,9 @@ TEST_CASE("PoolingVector iterators")
 
     SECTION("const_iterator")
     {
-        const auto&  cpv         = pv;
-        const size_t num_elems   = cpv.size();
-        size_t       num_visited = 0;
+        const auto& cpv = pv;
+        const size_t num_elems = cpv.size();
+        size_t num_visited = 0;
         for (auto&& cv : cpv) {
             CHECK(cv.value < 1000);
             CHECK(cv.value % 7 != 0);
@@ -231,7 +243,7 @@ TEST_CASE("PoolingVector iterators")
 
     SECTION("iterator to const_iterator")
     {
-        Mg::PoolingVector<Type>::iterator       it;
+        Mg::PoolingVector<Type>::iterator it;
         Mg::PoolingVector<Type>::const_iterator cit;
 
         it = pv.begin();

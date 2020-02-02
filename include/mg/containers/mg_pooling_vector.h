@@ -57,15 +57,19 @@ public:
     ~StoragePool()
     {
         for (size_t i = 0; i < m_storage.size(); ++i) {
-            if (m_present[i]) { destroy(i); }
+            if (m_present[i]) {
+                destroy(i);
+            }
         }
     }
 
     template<typename... Args> T& emplace(size_t i, Args&&... args)
     {
-        if (m_present[i]) { destroy(i); }
+        if (m_present[i]) {
+            destroy(i);
+        }
 
-        T* ptr       = new (&m_storage[i]) T(std::forward<Args>(args)...);
+        T* ptr = new (&m_storage[i]) T(std::forward<Args>(args)...);
         m_present[i] = true;
 
         return *ptr;
@@ -94,7 +98,7 @@ public:
 private:
     using StorageT = std::aligned_storage_t<sizeof(T), alignof(T)>;
     Array<StorageT> m_storage;
-    Array<bool>     m_present; // TODO: this should ideally be a bit-field instead of array of bool.
+    Array<bool> m_present; // TODO: this should ideally be a bit-field instead of array of bool.
 };
 
 template<typename OwnerT> class PoolingVectorIt;
@@ -109,14 +113,14 @@ template<typename OwnerT> class PoolingVectorIt;
  */
 template<typename T> class PoolingVector {
 public:
-    using value_type      = T;
-    using reference       = T&;
-    using pointer         = T*;
+    using value_type = T;
+    using reference = T&;
+    using pointer = T*;
     using const_reference = const T&;
-    using const_pointer   = const T*;
-    using size_type       = uint32_t;
-    using iterator        = detail::PoolingVectorIt<PoolingVector>;
-    using const_iterator  = detail::PoolingVectorIt<const PoolingVector>;
+    using const_pointer = const T*;
+    using size_type = uint32_t;
+    using iterator = detail::PoolingVectorIt<PoolingVector>;
+    using const_iterator = detail::PoolingVectorIt<const PoolingVector>;
 
     /** Construct.
      * @param pool_size Size of each individual element-pool (in number of elements). The
@@ -131,7 +135,7 @@ public:
 
     struct ConstructReturn {
         size_type index;
-        T*        ptr;
+        T* ptr;
     };
 
     /** Construct object using supplied arguments.
@@ -140,7 +144,9 @@ public:
      */
     template<typename... Args> ConstructReturn construct(Args&&... args)
     {
-        if (m_free_indices.empty()) { _grow(); }
+        if (m_free_indices.empty()) {
+            _grow();
+        }
 
         const size_type index = m_free_indices.back();
         m_free_indices.pop_back();
@@ -184,18 +190,18 @@ public:
         return _internal_index_valid(_internal_index_unchecked(index));
     }
 
-    iterator       begin() noexcept { return iterator(*this, 0); }
+    iterator begin() noexcept { return iterator(*this, 0); }
     const_iterator begin() const noexcept { return const_iterator(*this, 0); }
     const_iterator cbegin() const noexcept { return const_iterator(*this, 0); }
 
-    iterator       end() noexcept { return iterator(*this, _guaranteed_end_index()); }
+    iterator end() noexcept { return iterator(*this, _guaranteed_end_index()); }
     const_iterator end() const noexcept { return const_iterator(*this, _guaranteed_end_index()); }
     const_iterator cend() const noexcept { return const_iterator(*this, _guaranteed_end_index()); }
 
     size_t pool_size() const noexcept { return m_pool_size; }
     size_t num_pools() const noexcept { return m_pools.size(); }
     size_t size() const noexcept { return m_size; }
-    bool   empty() const noexcept { return size() == 0; }
+    bool empty() const noexcept { return size() == 0; }
 
     void clear() noexcept
     {
@@ -214,7 +220,7 @@ private:
     // Index of and within the respective pool.
     ElemIndex _internal_index_unchecked(size_t index) const noexcept
     {
-        const auto pool_index    = index / m_pool_size;
+        const auto pool_index = index / m_pool_size;
         const auto element_index = index % m_pool_size;
         return { pool_index, element_index };
     }
@@ -245,7 +251,7 @@ private:
         m_pools.emplace_back(m_pool_size);
 
         const size_t new_index_start = (m_pools.size() - 1) * m_pool_size;
-        const size_t new_index_end   = new_index_start + m_pool_size;
+        const size_t new_index_end = new_index_start + m_pool_size;
         const size_t num_new_indices = new_index_end - new_index_start;
 
         for (size_t i = 0; i < num_new_indices; ++i) {
@@ -254,7 +260,7 @@ private:
     }
 
     small_vector<detail::StoragePool<T>, 1> m_pools;
-    small_vector<size_type, 1>              m_free_indices;
+    small_vector<size_type, 1> m_free_indices;
 
     size_t m_pool_size{};
     size_t m_size{};
@@ -263,17 +269,19 @@ private:
 namespace detail {
 template<typename OwnerT> class PoolingVectorIt {
 public:
-    using value_type        = std::remove_reference_t<decltype(std::declval<OwnerT>()[0])>;
-    using pointer           = value_type*;
-    using reference         = value_type&;
-    using difference_type   = std::ptrdiff_t;
+    using value_type = std::remove_reference_t<decltype(std::declval<OwnerT>()[0])>;
+    using pointer = value_type*;
+    using reference = value_type&;
+    using difference_type = std::ptrdiff_t;
     using iterator_category = std::forward_iterator_tag;
 
     PoolingVectorIt() = default;
 
     explicit PoolingVectorIt(OwnerT& owner, uint32_t index) : m_owner(&owner), m_index(index)
     {
-        if (!m_owner->index_valid(m_index) && !is_past_end()) { ++(*this); }
+        if (!m_owner->index_valid(m_index) && !is_past_end()) {
+            ++(*this);
+        }
     }
 
     operator PoolingVectorIt<const OwnerT>() const noexcept
@@ -318,7 +326,7 @@ private:
         return pool_index == m_owner->num_pools();
     };
 
-    OwnerT*  m_owner = nullptr;
+    OwnerT* m_owner = nullptr;
     uint32_t m_index = 0;
 };
 } // namespace detail

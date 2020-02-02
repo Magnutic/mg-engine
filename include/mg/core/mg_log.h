@@ -28,8 +28,8 @@
 
 #pragma once
 
-#include "mg/utils/mg_simple_pimpl.h"
 #include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_simple_pimpl.h"
 
 #include <string_view>
 #include <utility>
@@ -53,8 +53,8 @@ public:
     enum class Prio { Error, Warning, Message, Verbose, Debug };
 
     explicit Log(std::string_view file_path,
-                 Prio             console_verbosity  = Prio::Debug,
-                 Prio             log_file_verbosity = Prio::Debug);
+                 Prio console_verbosity = Prio::Debug,
+                 Prio log_file_verbosity = Prio::Debug);
 
     Log(const Log& other) = delete;
     Log& operator=(const Log& other) = delete;

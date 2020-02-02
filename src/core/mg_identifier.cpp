@@ -74,23 +74,27 @@ struct DynamicStrMap {
     StringList string_list;
 
     std::unordered_map<uint32_t, PerHashStrings> map;
-    std::mutex                                   mutex;
+    std::mutex mutex;
 };
 
-int                                           nifty_counter;
+int nifty_counter;
 std::aligned_storage_t<sizeof(DynamicStrMap)> map_buf;
-DynamicStrMap*                                p_dynamic_str_map = nullptr;
+DynamicStrMap* p_dynamic_str_map = nullptr;
 
 } // namespace
 
 detail::StrMapInitialiser::StrMapInitialiser() noexcept
 {
-    if (nifty_counter++ == 0) { p_dynamic_str_map = new (&map_buf) DynamicStrMap{}; }
+    if (nifty_counter++ == 0) {
+        p_dynamic_str_map = new (&map_buf) DynamicStrMap{};
+    }
 }
 
 detail::StrMapInitialiser::~StrMapInitialiser()
 {
-    if (--nifty_counter == 0) { p_dynamic_str_map->~DynamicStrMap(); }
+    if (--nifty_counter == 0) {
+        p_dynamic_str_map->~DynamicStrMap();
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -105,7 +109,7 @@ void Identifier::set_full_string(std::string_view str)
 {
     std::unique_lock<std::mutex> lock{ p_dynamic_str_map->mutex };
 
-    auto& map         = p_dynamic_str_map->map;
+    auto& map = p_dynamic_str_map->map;
     auto& string_list = p_dynamic_str_map->string_list;
 
     // Find element corresponding to the hash in the dynamic string map.
@@ -115,10 +119,10 @@ void Identifier::set_full_string(std::string_view str)
         // Hash not found in map; insert the string.
         string_list.push_front(std::string(str));
         const StringList::iterator it_begin = string_list.begin();
-        const StringList::iterator it_end   = std::next(it_begin);
+        const StringList::iterator it_end = std::next(it_begin);
 
         std::tie(it, std::ignore) = map.insert({ m_hash, { it_begin, it_end } });
-        m_str                     = it_begin->c_str();
+        m_str = it_begin->c_str();
         return;
     }
 
@@ -144,7 +148,7 @@ void Identifier::set_full_string(std::string_view str)
 
         // If not, insert it.
         auto new_string_it = string_list.insert_after(per_hash_strings.begin(), std::string(str));
-        m_str              = new_string_it->c_str();
+        m_str = new_string_it->c_str();
     }
 }
 

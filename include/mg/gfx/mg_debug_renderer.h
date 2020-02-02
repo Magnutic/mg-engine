@@ -55,9 +55,9 @@ public:
     struct PrimitiveDrawParams {
         glm::vec3 centre{ 0.0f };
         glm::vec3 dimensions{ 1.0f };
-        Rotation  orientation;
+        Rotation orientation;
         glm::vec4 colour{ 1.0f };
-        bool      wireframe = false;
+        bool wireframe = false;
     };
 
     struct BoxDrawParams : PrimitiveDrawParams {};

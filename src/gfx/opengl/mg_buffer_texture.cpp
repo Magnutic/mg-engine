@@ -34,7 +34,7 @@ namespace Mg::gfx {
 uint32_t buffer_texture_type_to_gl_enums(BufferTexture::Type type)
 {
     using Channels = BufferTexture::Channels;
-    using Fmt      = BufferTexture::Format;
+    using Fmt = BufferTexture::Format;
     using BitDepth = BufferTexture::BitDepth;
 
     switch (type.channels) {

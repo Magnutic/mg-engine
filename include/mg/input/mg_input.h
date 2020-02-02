@@ -56,11 +56,11 @@ public:
     InputSource(const IInputDevice& dev, InputSource::Id id) noexcept : m_device(&dev), m_id(id) {}
 
     std::string description() const;
-    float       state() const;
+    float state() const;
 
 private:
     const IInputDevice* m_device;
-    InputSource::Id     m_id;
+    InputSource::Id m_id;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -73,7 +73,7 @@ public:
     MG_INTERFACE_BOILERPLATE(IInputDevice);
 
 protected:
-    virtual float       state(InputSource::Id) const       = 0;
+    virtual float state(InputSource::Id) const = 0;
     virtual std::string description(InputSource::Id) const = 0;
 };
 
@@ -120,11 +120,11 @@ public:
 private:
     struct State {
         float current_state = 0.0f;
-        float prev_state    = 0.0f;
+        float prev_state = 0.0f;
     };
 
     std::unordered_map<Identifier, InputSource> m_commands;
-    std::unordered_map<Identifier, State>       m_command_states;
+    std::unordered_map<Identifier, State> m_command_states;
 };
 
 } // namespace Mg::input

@@ -107,12 +107,16 @@ void set_vsync(GLFWwindow* window, bool enable)
     // Update vsync settings, which is part of OpenGL context
     // Make context current for this thread and then switch back
     GLFWwindow* context = glfwGetCurrentContext();
-    if (context != window) { glfwMakeContextCurrent(window); }
+    if (context != window) {
+        glfwMakeContextCurrent(window);
+    }
 
     g_log.write_message(fmt::format("{} vsync.", enable ? "Enabling" : "Disabling"));
     glfwSwapInterval(enable ? 1 : 0);
 
-    if (context != window) { glfwMakeContextCurrent(context); }
+    if (context != window) {
+        glfwMakeContextCurrent(context);
+    }
 }
 
 // Make sure settings are reasonable (fall back to defaults for invalid settings).
@@ -125,7 +129,7 @@ WindowSettings sanitise_settings(WindowSettings s)
         }
         else {
             g_log.write_verbose("Mg::Window: no resolution specified, using defaults.");
-            s.video_mode.width  = defs::k_default_res_x;
+            s.video_mode.width = defs::k_default_res_x;
             s.video_mode.height = defs::k_default_res_y;
         }
     }
@@ -150,7 +154,7 @@ Array<VideoMode> find_available_video_modes()
     small_vector<VideoMode, 20> res;
 
     const auto vid_modes = []() -> span<const GLFWvidmode> {
-        int  n_modes;
+        int n_modes;
         auto p_modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &n_modes);
         return { p_modes, narrow<size_t>(n_modes) };
     };
@@ -158,10 +162,12 @@ Array<VideoMode> find_available_video_modes()
     // Iterate through modes and add relevant ones (24bpp) to list
     for (const auto& mode : vid_modes()) {
         // Ignore resolutions with weird bit-depths
-        if (mode.redBits != 8 || mode.blueBits != 8 || mode.greenBits != 8) { continue; }
+        if (mode.redBits != 8 || mode.blueBits != 8 || mode.greenBits != 8) {
+            continue;
+        }
 
         VideoMode vm;
-        vm.width  = mode.width;
+        vm.width = mode.width;
         vm.height = mode.height;
 
         res.push_back(vm);
@@ -186,7 +192,9 @@ std::unique_ptr<Window> Window::make(WindowSettings settings, const std::string&
 
     GLFWwindow* window = create_window();
 
-    if (window == nullptr) { return {}; }
+    if (window == nullptr) {
+        return {};
+    }
 
     set_vsync(window, settings.vsync);
 
@@ -284,8 +292,8 @@ void Window::reset()
 
     {
         const VideoMode vm = current_monitor_video_mode();
-        window_pos_x       = vm.width / 2 - m_settings.video_mode.width / 2;
-        window_pos_y       = vm.height / 2 - m_settings.video_mode.height / 2;
+        window_pos_x = vm.width / 2 - m_settings.video_mode.width / 2;
+        window_pos_y = vm.height / 2 - m_settings.video_mode.height / 2;
     }
 
     glfwSetWindowMonitor(m_window,
@@ -323,7 +331,9 @@ void Window::release_cursor()
 // Mark window as focused when user clicks within window
 void Window::mouse_button_callback(int button, bool pressed)
 {
-    if (button != GLFW_MOUSE_BUTTON_LEFT || !pressed) { return; }
+    if (button != GLFW_MOUSE_BUTTON_LEFT || !pressed) {
+        return;
+    }
 
     if (!is_cursor_locked_to_window() && get_cursor_lock_mode() == CursorLockMode::LOCKED) {
         lock_cursor_to_window();
@@ -337,10 +347,14 @@ void Window::focus_callback(bool focused)
                                     focused ? "received" : "lost"));
 
     // Release cursor if it was locked to this window
-    if (is_cursor_locked_to_window() && !focused) { release_cursor(); }
+    if (is_cursor_locked_to_window() && !focused) {
+        release_cursor();
+    }
 
     // Forward to user-specified focus callback function.
-    if (m_focus_callback) { m_focus_callback(focused); }
+    if (m_focus_callback) {
+        m_focus_callback(focused);
+    }
 }
 
 // Keep render target's size equal to framebuffer size.
@@ -367,7 +381,7 @@ void Window::window_size_callback(int width, int height)
                         width,
                         height));
 
-        conf.width  = width;
+        conf.width = width;
         conf.height = height;
     }
     else {

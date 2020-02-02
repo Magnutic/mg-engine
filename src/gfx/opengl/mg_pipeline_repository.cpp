@@ -127,10 +127,10 @@ std::string shader_input_layout_code(const Material& material)
 }
 
 struct ShaderCompileResult {
-    Opt<VertexShaderHandle>   opt_vs;
+    Opt<VertexShaderHandle> opt_vs;
     Opt<GeometryShaderHandle> opt_gs;
     Opt<FragmentShaderHandle> opt_fs;
-    ShaderErrorFlags::Value   error_flags = 0;
+    ShaderErrorFlags::Value error_flags = 0;
 };
 
 ShaderCompileResult compile_shader(const ShaderCode& code)
@@ -138,19 +138,27 @@ ShaderCompileResult compile_shader(const ShaderCode& code)
     ShaderCompileResult result;
 
     result.opt_vs = compile_vertex_shader(code.vertex.code);
-    if (!result.opt_vs) { result.error_flags |= ShaderErrorFlags::VertexShader; }
+    if (!result.opt_vs) {
+        result.error_flags |= ShaderErrorFlags::VertexShader;
+    }
 
     if (!code.geometry.code.empty()) {
         result.opt_gs = compile_geometry_shader(code.geometry.code);
-        if (!result.opt_gs) { result.error_flags |= ShaderErrorFlags::GeometryShader; }
+        if (!result.opt_gs) {
+            result.error_flags |= ShaderErrorFlags::GeometryShader;
+        }
     }
 
     if (!code.fragment.code.empty()) {
         result.opt_fs = compile_fragment_shader(code.fragment.code);
-        if (!result.opt_fs) { result.error_flags |= ShaderErrorFlags::FragmentShader; }
+        if (!result.opt_fs) {
+            result.error_flags |= ShaderErrorFlags::FragmentShader;
+        }
     }
 
-    if (result.error_flags != 0) { log_shader_error(code, result.error_flags); }
+    if (result.error_flags != 0) {
+        log_shader_error(code, result.error_flags);
+    }
 
     return result;
 }
@@ -185,7 +193,7 @@ Pipeline& PipelineRepository::get_or_make_pipeline(const Material& material)
     const auto id = material.pipeline_identifier();
 
     auto has_same_id = [id](auto& elem) { return elem.id == id; };
-    auto it          = find_if(m_pipelines, has_same_id);
+    auto it = find_if(m_pipelines, has_same_id);
 
     const bool was_found = (it != m_pipelines.end());
 
@@ -199,7 +207,7 @@ PipelineRepository::PipelineNode& PipelineRepository::make_pipeline(const Materi
     g_log.write_message(
         fmt::format("PipelineRepository: compiling variant of shader '{}'.", shader_name));
 
-    ShaderCode          shader_code    = assemble_shader_code(material);
+    ShaderCode shader_code = assemble_shader_code(material);
     ShaderCompileResult compile_result = compile_shader(shader_code);
 
     auto compile_fallback_shader = [&]() -> ShaderCompileResult {
@@ -212,7 +220,9 @@ PipelineRepository::PipelineNode& PipelineRepository::make_pipeline(const Materi
         return compile_shader(shader_code);
     };
 
-    if (compile_result.error_flags != 0) { compile_result = compile_fallback_shader(); }
+    if (compile_result.error_flags != 0) {
+        compile_result = compile_fallback_shader();
+    }
 
     PipelineInputLayout additional_input_layout;
     {
@@ -245,9 +255,9 @@ PipelineRepository::PipelineNode& PipelineRepository::make_pipeline(const Materi
             log_shader_link_error();
 
             ShaderCompileResult fallback_result = compile_fallback_shader();
-            create_params.vertex_shader         = fallback_result.opt_vs.value();
-            create_params.geometry_shader       = fallback_result.opt_gs;
-            create_params.fragment_shader       = fallback_result.opt_fs;
+            create_params.vertex_shader = fallback_result.opt_vs.value();
+            create_params.geometry_shader = fallback_result.opt_gs;
+            create_params.fragment_shader = fallback_result.opt_fs;
 
             opt_pipeline = Pipeline::make(create_params);
         }

@@ -58,8 +58,8 @@ class ICamera {
 public:
     MG_INTERFACE_BOILERPLATE(ICamera);
 
-    virtual glm::mat4 proj_matrix() const      = 0;
-    virtual glm::mat4 view_matrix() const      = 0;
+    virtual glm::mat4 proj_matrix() const = 0;
+    virtual glm::mat4 view_matrix() const = 0;
     virtual glm::mat4 view_proj_matrix() const = 0;
 
     /** Get world space position of projection's origin. */
@@ -79,9 +79,9 @@ public:
     /** Construct a camera.
      * @param fov Field Of View angle, in degrees.
      * @param z_range Depth clipping range. */
-    Camera(Angle      fov          = 75_degrees,
-           float       aspect_ratio = 4.0f / 3.0f,
-           DepthRange  z_range      = { 0.1f, 2000.0f }) noexcept
+    Camera(Angle fov = 75_degrees,
+           float aspect_ratio = 4.0f / 3.0f,
+           DepthRange z_range = { 0.1f, 2000.0f }) noexcept
         : field_of_view(fov), m_depth_range{ z_range }
     {
         set_aspect_ratio(aspect_ratio);
@@ -136,7 +136,7 @@ public:
     Rotation rotation{};
 
 private:
-    float      m_aspect{};
+    float m_aspect{};
     DepthRange m_depth_range;
 };
 

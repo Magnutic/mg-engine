@@ -52,7 +52,7 @@ public:
 protected:
     template<typename ResT> friend class ResourceAccessGuard;
 
-    Identifier         m_id      = "";
+    Identifier m_id = "";
     ResourceEntryBase* m_p_entry = nullptr;
 };
 

@@ -45,13 +45,13 @@ namespace Mg::gfx {
 namespace {
 
 /** Wrapper for calling convention (GLAPIENTRY) */
-static void APIENTRY ogl_error_callback_wrapper(uint32_t      source,
-                                                uint32_t      type,
-                                                uint32_t      id,
-                                                uint32_t      severity,
-                                                int32_t       length,
+static void APIENTRY ogl_error_callback_wrapper(uint32_t source,
+                                                uint32_t type,
+                                                uint32_t id,
+                                                uint32_t severity,
+                                                int32_t length,
                                                 const GLchar* msg,
-                                                const void*   user_param)
+                                                const void* user_param)
 {
     ogl_error_callback(source, type, id, severity, length, msg, user_param);
 }
@@ -62,8 +62,8 @@ static void APIENTRY ogl_error_callback_wrapper(uint32_t      source,
 static GfxDevice* p_gfx_device = nullptr;
 
 struct GfxDeviceData {
-    MeshRepository     mesh_repository;
-    TextureRepository  texture_repository;
+    MeshRepository mesh_repository;
+    TextureRepository texture_repository;
     MaterialRepository material_repository;
 };
 
@@ -122,11 +122,11 @@ GfxDevice::~GfxDevice()
 void GfxDevice::set_blend_mode(BlendMode blend_mode) noexcept
 {
     const auto col_mode = static_cast<uint32_t>(blend_mode.colour);
-    const auto a_mode   = static_cast<uint32_t>(blend_mode.alpha);
-    const auto src_col  = static_cast<uint32_t>(blend_mode.src_colour);
-    const auto dst_col  = static_cast<uint32_t>(blend_mode.dst_colour);
-    const auto srcA     = static_cast<uint32_t>(blend_mode.src_alpha);
-    const auto dstA     = static_cast<uint32_t>(blend_mode.dst_alpha);
+    const auto a_mode = static_cast<uint32_t>(blend_mode.alpha);
+    const auto src_col = static_cast<uint32_t>(blend_mode.src_colour);
+    const auto dst_col = static_cast<uint32_t>(blend_mode.dst_colour);
+    const auto srcA = static_cast<uint32_t>(blend_mode.src_alpha);
+    const auto dstA = static_cast<uint32_t>(blend_mode.dst_alpha);
 
     glBlendEquationSeparate(col_mode, a_mode);
     glBlendFuncSeparate(src_col, dst_col, srcA, dstA);
@@ -169,7 +169,9 @@ void GfxDevice::clear(bool colour, bool depth, bool stencil) noexcept
 /** Set which culling function to use. */
 void GfxDevice::set_culling(CullFunc culling) noexcept
 {
-    if (culling == CullFunc::NONE) { glDisable(GL_CULL_FACE); }
+    if (culling == CullFunc::NONE) {
+        glDisable(GL_CULL_FACE);
+    }
     else {
         glEnable(GL_CULL_FACE);
         glCullFace(static_cast<uint32_t>(culling));
@@ -179,7 +181,9 @@ void GfxDevice::set_culling(CullFunc culling) noexcept
 /** Set whether to use blending when rendering to target. */
 void GfxDevice::set_use_blending(bool enable) noexcept
 {
-    if (enable) { glEnable(GL_BLEND); }
+    if (enable) {
+        glEnable(GL_BLEND);
+    }
     else {
         glDisable(GL_BLEND);
     }

@@ -47,7 +47,9 @@ public:
     BinaryFileHandler() = default;
     ~BinaryFileHandler()
     {
-        if (m_file) { std::fclose(m_file); }
+        if (m_file) {
+            std::fclose(m_file);
+        }
     }
 
     /** Get whether we have reached the end of the file stream. */
@@ -156,7 +158,9 @@ template<typename T> bool BinaryFileReader::read(T& value_out) noexcept
 
 template<typename T> size_t BinaryFileReader::read_array(span<T> out) noexcept
 {
-    if (out.size() == 0) { return 0; }
+    if (out.size() == 0) {
+        return 0;
+    }
     static_assert(std::is_trivially_copyable<T>::value, "Target type is not trivially copyable.");
     const auto size_read = std::fread(&out[0], sizeof(T), out.size(), m_file);
     return size_read;
@@ -175,7 +179,9 @@ inline size_t BinaryFileReader::size() const noexcept
 
 inline bool BinaryFileWriter::open(std::string_view filepath, bool overwrite)
 {
-    if (overwrite) { return _open(filepath, "wb"); }
+    if (overwrite) {
+        return _open(filepath, "wb");
+    }
     return _open(filepath, "wb+");
 }
 

@@ -7,7 +7,7 @@
 
 // Event
 struct E {
-    int              index;
+    int index;
     std::string_view value;
 };
 
@@ -18,7 +18,7 @@ using S = Mg::Subject<E>;
 struct O : public Mg::Observer<E> {
     explicit O(int index, std::string_view expected) : index(index), expected(expected) {}
 
-    int         index = 0;
+    int index = 0;
     std::string expected{};
 
     int num_notifications_received = 0;
@@ -28,11 +28,15 @@ struct O : public Mg::Observer<E> {
     {
         ++num_notifications_received;
 
-        if (e.index != index) { return; }
+        if (e.index != index) {
+            return;
+        }
 
         ++num_notifications_for_this;
 
-        if (e.value != expected) { throw - 1; }
+        if (e.value != expected) {
+            throw - 1;
+        }
     }
 };
 
@@ -62,7 +66,7 @@ TEST_CASE("Basic observer test")
 
 TEST_CASE("Remove_observer")
 {
-    S    s;
+    S s;
     auto po1 = std::make_unique<O>(1, "po1");
     auto po2 = std::make_unique<O>(2, "po2");
     auto po3 = std::make_unique<O>(3, "po3");
@@ -115,7 +119,7 @@ TEST_CASE("Obsever: Remove during notification")
     struct SelfDestructObserver : Mg::Observer<int> {
         explicit SelfDestructObserver(int i) : id(i) {}
 
-        int id                         = 0;
+        int id = 0;
         int num_notifications_received = 0;
         int num_notifications_for_this = 0;
 
@@ -123,7 +127,9 @@ TEST_CASE("Obsever: Remove during notification")
         {
             ++num_notifications_received;
 
-            if (i != id) { return; }
+            if (i != id) {
+                return;
+            }
 
             ++num_notifications_for_this;
             detach();

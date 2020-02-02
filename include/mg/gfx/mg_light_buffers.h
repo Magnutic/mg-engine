@@ -46,10 +46,10 @@ struct LightBuffers {
     BufferTexture tile_data_texture;
 };
 
-void update_light_data(LightBuffers&     light_data_out,
+void update_light_data(LightBuffers& light_data_out,
                        span<const Light> lights,
-                       const ICamera&    cam,
-                       LightGrid&        grid);
+                       const ICamera& cam,
+                       LightGrid& grid);
 
 
 } // namespace Mg::gfx

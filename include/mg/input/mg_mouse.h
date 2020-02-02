@@ -61,7 +61,7 @@ public:
     void refresh();
 
 protected:
-    float       state(InputSource::Id id) const override;
+    float state(InputSource::Id id) const override;
     std::string description(InputSource::Id id) const override;
 
 private:

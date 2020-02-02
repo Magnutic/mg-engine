@@ -173,7 +173,7 @@ private:
     GLFWwindow* m_window = nullptr;
 
     CursorLockMode m_cursor_lock_mode = CursorLockMode::UNLOCKED;
-    bool           m_is_cursor_locked = false;
+    bool m_is_cursor_locked = false;
 };
 
 } // namespace Mg

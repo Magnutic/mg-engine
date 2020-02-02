@@ -35,14 +35,14 @@ class Config;
 
 struct VideoMode {
     // Values of zero mean 'use default value'.
-    int32_t width  = 0;
+    int32_t width = 0;
     int32_t height = 0;
 };
 
 struct WindowSettings {
     VideoMode video_mode = {};
-    bool      fullscreen = {};
-    bool      vsync      = {};
+    bool fullscreen = {};
+    bool vsync = {};
 };
 
 /** Read video mode settings from supplied Config. */

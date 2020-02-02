@@ -61,7 +61,7 @@ class Identifier;
 
 namespace literals {
 MG_INLINE constexpr Identifier operator""_id(const char* str, size_t len);
-MG_INLINE constexpr uint32_t   operator""_hash(const char* str, size_t len)
+MG_INLINE constexpr uint32_t operator""_hash(const char* str, size_t len)
 {
     return hash_fnv1a({ str, len });
 }
@@ -117,7 +117,7 @@ private:
     void set_full_string(std::string_view str);
 
     const char* m_str;
-    uint32_t    m_hash;
+    uint32_t m_hash;
 };
 
 namespace literals {

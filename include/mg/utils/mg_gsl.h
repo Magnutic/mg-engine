@@ -107,15 +107,15 @@ template<typename T> auto& at(T& container, size_t index)
  */
 template<typename T> class span {
 public:
-    using element_type    = T;
-    using value_type      = std::remove_cv_t<T>;
-    using size_type       = std::size_t;
+    using element_type = T;
+    using value_type = std::remove_cv_t<T>;
+    using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
 
-    using pointer   = T*;
+    using pointer = T*;
     using reference = T&;
 
-    using iterator       = T*;
+    using iterator = T*;
     using const_iterator = const T*;
 
     //----------------------------------------------------------------------------------------------
@@ -126,7 +126,9 @@ public:
 
     constexpr span(std::nullptr_t, size_type len = 0) MG_SPAN_NOEXCEPT : span()
     {
-        if constexpr (MG_CHECK_SPAN_CONSTRUCTION) { MG_ASSERT(len == 0); }
+        if constexpr (MG_CHECK_SPAN_CONSTRUCTION) {
+            MG_ASSERT(len == 0);
+        }
     }
 
     // Basic, safety-checking constructor. All other constructors delegate to this one.
@@ -144,9 +146,11 @@ public:
                       "type. This would invoke the slicing problem.");
 
         m_begin = begin; // Not using initialisation lists in order to let static_asserts trigger
-        m_end   = end;   // before pointer assignment type errors (gives clearer error messages).
+        m_end = end;     // before pointer assignment type errors (gives clearer error messages).
 
-        if constexpr (MG_CHECK_SPAN_CONSTRUCTION) { sanity_check(); }
+        if constexpr (MG_CHECK_SPAN_CONSTRUCTION) {
+            sanity_check();
+        }
     }
 
     template<typename U>
@@ -172,7 +176,7 @@ public:
     template<typename U> constexpr span& operator=(const span<U>& rhs) noexcept
     {
         m_begin = rhs.m_begin;
-        m_end   = rhs.m_end;
+        m_end = rhs.m_end;
         return *this;
     }
 
@@ -181,7 +185,9 @@ public:
     //----------------------------------------------------------------------------------------------
     constexpr T& operator[](size_type i) const MG_SPAN_NOEXCEPT
     {
-        if constexpr (MG_CHECK_SPAN_ACCESS) { MG_ASSERT(i < size()); }
+        if constexpr (MG_CHECK_SPAN_ACCESS) {
+            MG_ASSERT(i < size());
+        }
         return *(m_begin + i);
     }
 
@@ -226,10 +232,10 @@ public:
     //----------------------------------------------------------------------------------------------
     // Iterator access
     //----------------------------------------------------------------------------------------------
-    constexpr iterator       begin() const noexcept { return m_begin; }
+    constexpr iterator begin() const noexcept { return m_begin; }
     constexpr const_iterator cbegin() const noexcept { return m_begin; }
 
-    constexpr iterator       end() const noexcept { return m_end; }
+    constexpr iterator end() const noexcept { return m_end; }
     constexpr const_iterator cend() const noexcept { return m_end; }
 
     //----------------------------------------------------------------------------------------------

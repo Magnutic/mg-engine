@@ -49,7 +49,9 @@ template<typename T> inline T normalise(float value) noexcept
     static_assert(std::is_integral<T>::value, "Can only normalise to integers");
 
     // Wrap around if value is outside normalised range
-    if (value > 1.0f) { value -= static_cast<T>(value); }
+    if (value > 1.0f) {
+        value -= static_cast<T>(value);
+    }
     else if (value < -1.0f) {
         value += static_cast<T>(value);
     }

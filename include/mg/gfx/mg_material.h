@@ -56,21 +56,21 @@ public:
     explicit Material(Identifier material_id, ResourceHandle<ShaderResource> shader);
 
     struct Sampler {
-        Identifier          name{ "" };
+        Identifier name{ "" };
         shader::SamplerType type{};
-        TextureHandle       sampler{};
+        TextureHandle sampler{};
     };
 
     struct Parameter {
-        Identifier            name{ "" };
+        Identifier name{ "" };
         shader::ParameterType type{};
     };
 
     using Option = Identifier;
 
-    using Samplers   = small_vector<Sampler, defs::k_max_samplers_per_material>;
+    using Samplers = small_vector<Sampler, defs::k_max_samplers_per_material>;
     using Parameters = small_vector<Parameter, 4>;
-    using Options    = small_vector<Option, 10>;
+    using Options = small_vector<Option, 10>;
 
     /** Get the list of samplers (texture inputs) for this material. */
     const Samplers& samplers() const noexcept { return m_samplers; }
@@ -130,14 +130,14 @@ public:
     }
 
 private:
-    void _set_parameter_impl(Identifier            name,
+    void _set_parameter_impl(Identifier name,
                              span<const std::byte> param_value,
                              shader::ParameterType param_type);
 
 private:
-    Samplers   m_samplers{};
+    Samplers m_samplers{};
     Parameters m_params{};
-    Options    m_options{};
+    Options m_options{};
 
     // State of Options represented as a bit-field
     uint32_t m_option_flags{};
@@ -146,12 +146,12 @@ private:
         uint8_t buffer[defs::k_material_parameters_buffer_size];
 
         const uint8_t* data() const noexcept { return &buffer[0]; }
-        size_t         size() const noexcept { return defs::k_material_parameters_buffer_size; }
+        size_t size() const noexcept { return defs::k_material_parameters_buffer_size; }
     };
 
     ParamsBuffer m_parameter_data{};
 
-    Identifier                     m_id{ "" };
+    Identifier m_id{ "" };
     ResourceHandle<ShaderResource> m_shader;
 };
 

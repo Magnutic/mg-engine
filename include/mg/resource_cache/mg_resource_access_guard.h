@@ -58,7 +58,9 @@ public:
     ResourceAccessGuard(BaseResourceHandle handle)
         : m_entry(handle.m_p_entry), m_lock(handle.m_p_entry->mutex)
     {
-        if (!m_entry->is_loaded()) { m_entry->load_resource(); }
+        if (!m_entry->is_loaded()) {
+            m_entry->load_resource();
+        }
         m_entry->last_access = std::time(nullptr);
         ++m_entry->ref_count;
 
@@ -87,19 +89,19 @@ public:
     ResT& operator*() & noexcept { return _deref(); }
     ResT* operator->() & noexcept { return &_deref(); }
 
-    ResT*       get() & noexcept { return &_deref(); }
+    ResT* get() & noexcept { return &_deref(); }
     const ResT* get() const& noexcept { return &_deref(); }
 
     // Disallow dereferencing rvalue ResourceAccessGuard.
     // ResourceAccessGuard is intended to remain on the stack for the duration of the resource use,
     // this prevents simple mistakes violating that intention.
-    const ResT& operator*() const&&  = delete;
+    const ResT& operator*() const&& = delete;
     const ResT* operator->() const&& = delete;
 
-    ResT& operator*() &&  = delete;
+    ResT& operator*() && = delete;
     ResT* operator->() && = delete;
 
-    ResT*       get() &&      = delete;
+    ResT* get() && = delete;
     const ResT* get() const&& = delete;
 
 private:
@@ -109,7 +111,7 @@ private:
         return resource;
     }
 
-    ResourceEntryBase*                        m_entry = nullptr;
+    ResourceEntryBase* m_entry = nullptr;
     std::shared_lock<std::shared_timed_mutex> m_lock;
 };
 

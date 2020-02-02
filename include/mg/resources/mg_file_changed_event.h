@@ -40,7 +40,7 @@ using time_point = std::chrono::system_clock::time_point;
  */
 struct FileChangedEvent {
     BaseResourceHandle resource;
-    Identifier         resource_type;
-    std::time_t        time_stamp;
+    Identifier resource_type;
+    std::time_t time_stamp;
 };
 } // namespace Mg

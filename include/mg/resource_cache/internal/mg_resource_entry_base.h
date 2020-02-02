@@ -54,9 +54,9 @@ class ResourceCache;
  */
 class ResourceEntryBase {
 public:
-    ResourceEntryBase(Identifier     resource_id,
-                      IFileLoader&   loader,
-                      std::time_t    time_stamp,
+    ResourceEntryBase(Identifier resource_id,
+                      IFileLoader& loader,
+                      std::time_t time_stamp,
                       ResourceCache& owning_cache) noexcept
         : m_p_loader(&loader)
         , m_p_owning_cache(&owning_cache)
@@ -69,7 +69,7 @@ public:
 
     virtual ~ResourceEntryBase() {}
 
-    virtual BaseResource&       get_resource()       = 0;
+    virtual BaseResource& get_resource() = 0;
     virtual const BaseResource& get_resource() const = 0;
 
     /** Load the resource. */
@@ -103,7 +103,7 @@ public:
     IFileLoader& loader() const noexcept { return *m_p_loader; }
 
     struct Dependency {
-        Identifier  dependency_id;
+        Identifier dependency_id;
         std::time_t time_stamp;
     };
 
@@ -117,14 +117,14 @@ public:
     std::time_t last_access{};
 
     mutable std::shared_timed_mutex mutex;
-    std::atomic_uint32_t            ref_count{};
+    std::atomic_uint32_t ref_count{};
 
 protected:
-    IFileLoader*   m_p_loader       = nullptr;
+    IFileLoader* m_p_loader = nullptr;
     ResourceCache* m_p_owning_cache = nullptr;
-    Identifier     m_resource_id;
-    Identifier     m_resource_type_id = "<unset>";
-    std::time_t    m_time_stamp{};
+    Identifier m_resource_id;
+    Identifier m_resource_type_id = "<unset>";
+    std::time_t m_time_stamp{};
 
     // Has the resource ever been loaded? (Only required for sanity checking.)
     bool m_has_been_loaded = false;

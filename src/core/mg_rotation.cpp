@@ -38,7 +38,7 @@ Rotation Rotation::rotation_between_vectors(glm::vec3 fst, glm::vec3 snd) noexce
     snd = glm::normalize(snd);
 
     const float cos_theta = glm::dot(fst, snd);
-    glm::vec3   rotation_axis{};
+    glm::vec3 rotation_axis{};
 
     if (cos_theta < -1.0f + 0.001f) {
         // Special case when vectors in opposite directions:
@@ -57,7 +57,7 @@ Rotation Rotation::rotation_between_vectors(glm::vec3 fst, glm::vec3 snd) noexce
 
     rotation_axis = cross(fst, snd);
 
-    const float s    = std::sqrt((1.0f + cos_theta) * 2.0f);
+    const float s = std::sqrt((1.0f + cos_theta) * 2.0f);
     const float invs = 1.0f / s;
 
     return Rotation{ glm::quat{
@@ -67,7 +67,7 @@ Rotation Rotation::rotation_between_vectors(glm::vec3 fst, glm::vec3 snd) noexce
 Rotation Rotation::look_to(glm::vec3 dir, glm::vec3 up) noexcept
 {
     dir = normalize(dir);
-    up  = normalize(up);
+    up = normalize(up);
 
     const Rotation rot = rotation_between_vectors(world_vector::forward, dir);
 

@@ -40,9 +40,9 @@ struct ParseResult {
     std::string vertex_code;
     std::string fragment_code;
 
-    std::vector<shader::Sampler>   samplers;
+    std::vector<shader::Sampler> samplers;
     std::vector<shader::Parameter> parameters;
-    std::vector<shader::Option>    options;
+    std::vector<shader::Option> options;
 
     shader::Tag::Value tags = {};
 };

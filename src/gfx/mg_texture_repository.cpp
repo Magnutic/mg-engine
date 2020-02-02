@@ -53,13 +53,13 @@ struct TextureRepositoryData {
     std::vector<std::pair<Identifier, internal::TextureNode*>> node_map;
 };
 
-TextureRepository::TextureRepository()  = default;
+TextureRepository::TextureRepository() = default;
 TextureRepository::~TextureRepository() = default;
 
 TextureHandle TextureRepository::create(const TextureResource& resource)
 {
     const auto [index, ptr] = impl().nodes.construct(Texture2D::from_texture_resource(resource));
-    ptr->self_index   = index;
+    ptr->self_index = index;
 
     impl().node_map.emplace_back(resource.resource_id(), ptr);
 
@@ -69,7 +69,7 @@ TextureHandle TextureRepository::create(const TextureResource& resource)
 TextureHandle TextureRepository::create_render_target(const RenderTargetParams& params)
 {
     const auto [index, ptr] = impl().nodes.construct(Texture2D::render_target(params));
-    ptr->self_index   = index;
+    ptr->self_index = index;
     return make_texture_handle(ptr);
 }
 
@@ -79,10 +79,12 @@ void TextureRepository::update(const TextureResource& resource)
     const auto it = find_if(impl().node_map, [&](auto& pair) { return pair.first == resource_id; });
 
     // If not found, then we do not have a texture using the updated resource, so ignore.
-    if (it == impl().node_map.end()) { return; }
+    if (it == impl().node_map.end()) {
+        return;
+    }
 
-    internal::TextureNode* p_node      = it->second;
-    Texture2D              new_texture = Texture2D::from_texture_resource(resource);
+    internal::TextureNode* p_node = it->second;
+    Texture2D new_texture = Texture2D::from_texture_resource(resource);
 
     std::swap(p_node->texture, new_texture);
 
@@ -97,7 +99,9 @@ void TextureRepository::destroy(TextureHandle handle)
 
     const auto it = find_if(impl().node_map,
                             [&](auto& pair) { return pair.second == &texture_node; });
-    if (it != impl().node_map.end()) { impl().node_map.erase(it); }
+    if (it != impl().node_map.end()) {
+        impl().node_map.erase(it);
+    }
 }
 
 } // namespace Mg::gfx

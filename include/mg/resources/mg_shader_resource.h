@@ -43,9 +43,9 @@ class ShaderResource : public BaseResource {
 public:
     using BaseResource::BaseResource;
 
-    span<const shader::Sampler>   samplers() const noexcept { return m_samplers; }
+    span<const shader::Sampler> samplers() const noexcept { return m_samplers; }
     span<const shader::Parameter> parameters() const noexcept { return m_parameters; }
-    span<const shader::Option>    options() const noexcept { return m_options; }
+    span<const shader::Option> options() const noexcept { return m_options; }
 
     std::string_view vertex_code() const noexcept { return m_vertex_code; }
     std::string_view fragment_code() const noexcept { return m_fragment_code; }
@@ -63,8 +63,8 @@ protected:
 
 private:
     std::vector<shader::Parameter> m_parameters;
-    std::vector<shader::Sampler>   m_samplers;
-    std::vector<shader::Option>    m_options;
+    std::vector<shader::Sampler> m_samplers;
+    std::vector<shader::Option> m_options;
 
     std::string m_vertex_code;
     std::string m_fragment_code;

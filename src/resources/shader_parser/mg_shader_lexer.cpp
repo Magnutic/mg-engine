@@ -50,11 +50,11 @@ public:
     }
 
 private:
-    SimpleInputStream  m_stream{ "" };
+    SimpleInputStream m_stream{ "" };
     std::vector<Token> m_tokens;
 
     size_t token_start = 0;
-    void   lex_error(std::string_view reason)
+    void lex_error(std::string_view reason)
     {
         g_log.write_error(fmt::format("Error parsing at line {} col {}: {}",
                                       m_stream.line,
@@ -65,7 +65,9 @@ private:
 
     void skip_whitespace()
     {
-        while (is_whitespace(m_stream.peek())) { m_stream.advance(); }
+        while (is_whitespace(m_stream.peek())) {
+            m_stream.advance();
+        }
     };
 
     size_t lexeme_length() const noexcept { return m_stream.pos - token_start; }
@@ -78,7 +80,9 @@ private:
 
     void numeric_literal()
     {
-        while (is_ascii_digit(m_stream.peek()) || m_stream.peek() == '.') { m_stream.advance(); }
+        while (is_ascii_digit(m_stream.peek()) || m_stream.peek() == '.') {
+            m_stream.advance();
+        }
 
         const auto number_str = m_stream.data.substr(token_start, lexeme_length());
         const auto [success, value] = string_to<float>(number_str);
@@ -100,9 +104,15 @@ private:
 
         for (size_t brace_level = 1; brace_level > 0; m_stream.advance()) {
             const char c = m_stream.peek();
-            if (c == '{') { ++brace_level; }
-            if (c == '}') { --brace_level; }
-            if (c == '\0') { lex_error(fmt::format("Unexpected end-of-file in code block.")); }
+            if (c == '{') {
+                ++brace_level;
+            }
+            if (c == '}') {
+                --brace_level;
+            }
+            if (c == '\0') {
+                lex_error(fmt::format("Unexpected end-of-file in code block."));
+            }
         }
 
         const auto code_length = m_stream.pos - code_start_pos - 1;
@@ -113,7 +123,9 @@ private:
 
     void identifier()
     {
-        while (is_ascii_alphanumeric(m_stream.peek())) { m_stream.advance(); }
+        while (is_ascii_alphanumeric(m_stream.peek())) {
+            m_stream.advance();
+        }
 
         auto lexeme = m_stream.data.substr(token_start, lexeme_length());
 
@@ -176,7 +188,8 @@ private:
             break;
         case '/':
             if (m_stream.peek() == '/') {
-                while (m_stream.advance() != '\n' && !m_stream.is_at_end()) {}
+                while (m_stream.advance() != '\n' && !m_stream.is_at_end()) {
+                }
                 break;
             }
             [[fallthrough]];

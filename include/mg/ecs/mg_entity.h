@@ -213,19 +213,21 @@ private:
 
     void find_match()
     {
-        while (m_it != m_collection.m_entity_data.end() && !match()) { ++m_it; }
+        while (m_it != m_collection.m_entity_data.end() && !match()) {
+            ++m_it;
+        }
     }
 
-    EntityCollection&              m_collection;
+    EntityCollection& m_collection;
     Slot_map<EntityData>::iterator m_it;
-    ComponentMask                  m_mask = create_mask(std::add_pointer_t<Cs>{ nullptr }...);
+    ComponentMask m_mask = create_mask(std::add_pointer_t<Cs>{ nullptr }...);
 };
 
 // Dereference iterator
 template<typename... Cs> std::tuple<Entity, Cs*...> EntityCollection::iterator<Cs...>::operator*()
 {
-    Entity entity     = m_collection.m_entity_data.make_handle(m_it);
-    auto&  components = m_collection.m_component_lists[m_it->component_list_handle];
+    Entity entity = m_collection.m_entity_data.make_handle(m_it);
+    auto& components = m_collection.m_component_lists[m_it->component_list_handle];
 
     return std::tuple<Entity, Cs*...>{
         entity, &m_collection.get_component<Cs>(components[Cs::ComponentTypeId])...
@@ -262,7 +264,7 @@ template<typename C, typename... Ts> C& EntityCollection::add_component(Entity e
     MG_ASSERT(!has_component(entity, C::ComponentTypeId));
 
     auto& components = component_collection<C>();
-    auto  handle     = components.emplace(std::forward<Ts>(args)...);
+    auto handle = components.emplace(std::forward<Ts>(args)...);
 
     component_handle_ref(entity, C::ComponentTypeId) = handle;
     component_mask_ref(entity).set(C::ComponentTypeId);
@@ -277,7 +279,7 @@ template<typename C> void EntityCollection::remove_component(Entity entity)
     MG_ASSERT(has_component<C>(entity) && "Removing non-existent component.");
 
     auto& collection = component_collection<C>();
-    auto& handle     = component_handle_ref(entity, C::ComponentTypeId);
+    auto& handle = component_handle_ref(entity, C::ComponentTypeId);
     collection.erase(handle);
 
     // Reset component handle (not strictly necessary but safer)

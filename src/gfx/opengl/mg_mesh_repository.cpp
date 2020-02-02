@@ -66,7 +66,9 @@ public:
     void clear()
     {
         const auto vao_id = static_cast<uint32_t>(mesh_info.gfx_api_mesh_object_id);
-        if (vao_id == 0) { return; }
+        if (vao_id == 0) {
+            return;
+        }
 
         const auto* meshname [[maybe_unused]] = mesh_info.mesh_id.c_str();
 
@@ -90,8 +92,8 @@ struct BufferObject {
     enum class Type { Vertex, Index };
 
     uint32_t gfx_api_id{ 0 };
-    int32_t  num_users{ 0 }; // Number of meshes whose data resides in this buffer
-    Type     type{};
+    int32_t num_users{ 0 }; // Number of meshes whose data resides in this buffer
+    Type type{};
 
     BufferObject() = default;
     ~BufferObject()
@@ -104,7 +106,7 @@ struct BufferObject {
     MG_MAKE_NON_MOVABLE(BufferObject);
 };
 
-MeshDataView::BoundingInfo calculate_mesh_bounding_info(span<const Vertex>            vertices,
+MeshDataView::BoundingInfo calculate_mesh_bounding_info(span<const Vertex> vertices,
                                                         span<const uint_vertex_index> indices)
 {
     MG_ASSERT(!vertices.empty() && !indices.empty());
@@ -138,7 +140,7 @@ class MeshRepositoryImpl {
     // Size of the pools allocated for the internal data structures, in number of elements.
     // This is a fairly arbitrary choice:  larger pools may make allocations more rare and provide
     // better data locality but could also waste space if the pool is never filled.
-    static constexpr size_t k_mesh_data_pool_size     = 512;
+    static constexpr size_t k_mesh_data_pool_size = 512;
     static constexpr size_t k_buffer_object_pool_size = 512;
 
 public:
@@ -153,7 +155,9 @@ public:
     MeshNode* get(Identifier mesh_id) const
     {
         const auto it = find_if(node_map, [&](auto& pair) { return pair.first == mesh_id; });
-        if (it == node_map.end()) { return nullptr; }
+        if (it == node_map.end()) {
+            return nullptr;
+        }
         return it->second;
     }
 
@@ -166,14 +170,14 @@ private:
     struct MakeMeshParams {
         // Where to put the data
         VboIndex vbo_index;
-        size_t   vbo_data_offset;
+        size_t vbo_data_offset;
         IboIndex ibo_index;
-        size_t   ibo_data_offset;
+        size_t ibo_data_offset;
 
         // Data itself
         MeshDataView mesh_data;
-        glm::vec3    centre;
-        float        radius;
+        glm::vec3 centre;
+        float radius;
     };
 
     MakeMeshParams _mesh_params_from_mesh_data(const MeshDataView& data)
@@ -181,14 +185,14 @@ private:
         const auto [centre, radius] = data.bounding_info.value_or(
             calculate_mesh_bounding_info(data.vertices, data.indices));
 
-        MakeMeshParams params  = {};
-        params.vbo_index       = _make_vertex_buffer(data.vertices.size_bytes());
-        params.ibo_index       = _make_index_buffer(data.indices.size_bytes());
+        MakeMeshParams params = {};
+        params.vbo_index = _make_vertex_buffer(data.vertices.size_bytes());
+        params.ibo_index = _make_index_buffer(data.indices.size_bytes());
         params.vbo_data_offset = 0;
         params.ibo_data_offset = 0;
-        params.centre          = centre;
-        params.radius          = radius;
-        params.mesh_data       = data;
+        params.centre = centre;
+        params.radius = radius;
+        params.mesh_data = data;
 
         return params;
     }
@@ -197,9 +201,9 @@ private:
 
     MeshHandle _make_mesh(Identifier mesh_id, const MakeMeshParams& params)
     {
-        auto [index, p_mesh_node]     = m_mesh_data.construct();
+        auto [index, p_mesh_node] = m_mesh_data.construct();
         internal::MeshInfo& mesh_info = p_mesh_node->mesh_info;
-        mesh_info.self_index          = index;
+        mesh_info.self_index = index;
         _make_mesh_in_node(*p_mesh_node, mesh_id, params);
         node_map.push_back({ mesh_id, p_mesh_node });
         return internal::make_mesh_handle(&mesh_info);
@@ -209,7 +213,7 @@ private:
 
     // Internal mesh meta-data storage
     PoolingVector<BufferObject> m_buffer_objects{ k_buffer_object_pool_size };
-    PoolingVector<MeshNode>     m_mesh_data{ k_mesh_data_pool_size };
+    PoolingVector<MeshNode> m_mesh_data{ k_mesh_data_pool_size };
 
     // Used for looking up a mesh node by identifier.
     // TODO: lookup can be optimised by storing in sorted order. Use std::lower_bound.
@@ -220,11 +224,11 @@ MeshHandle MeshRepositoryImpl::create(Identifier mesh_id, const MeshDataView& me
 {
     // Check precondition
     const bool has_vertices = !mesh_data.vertices.empty();
-    const bool has_indices  = !mesh_data.indices.empty();
+    const bool has_indices = !mesh_data.indices.empty();
 
     if (!has_vertices || !has_indices) {
         const std::string problem = !has_vertices ? "no vertex data" : "no index data";
-        const std::string msg     = fmt::format("MeshRepository: cannot create mesh '{}': {}.",
+        const std::string msg = fmt::format("MeshRepository: cannot create mesh '{}': {}.",
                                             mesh_id.str_view(),
                                             problem);
         throw std::runtime_error(msg);
@@ -239,7 +243,9 @@ bool MeshRepositoryImpl::update(Identifier mesh_id, const MeshDataView& data)
     MeshNode* node = get(mesh_id);
 
     // If not found, then we do not have a mesh using the updated resource, so ignore.
-    if (!node) { return false; }
+    if (!node) {
+        return false;
+    }
 
     // Clearing the existing node and creating the new mesh within ensures MeshHandles remain valid.
     node->clear();
@@ -253,21 +259,23 @@ bool MeshRepositoryImpl::update(Identifier mesh_id, const MeshDataView& data)
 
 void MeshRepositoryImpl::destroy(MeshHandle handle)
 {
-    auto&      mesh_info = internal::mesh_info(handle);
-    const auto index     = mesh_info.self_index;
-    MeshNode&  node      = m_mesh_data[index];
+    auto& mesh_info = internal::mesh_info(handle);
+    const auto index = mesh_info.self_index;
+    MeshNode& node = m_mesh_data[index];
     _clear_mesh_node(node);
     m_mesh_data.destroy(index);
 
     // Erase from resource_id -> node map.
     const auto it = find_if(node_map, [&](auto& pair) { return pair.second == &node; });
-    if (it != node_map.end()) { node_map.erase(it); }
+    if (it != node_map.end()) {
+        node_map.erase(it);
+    }
 }
 
 VboIndex MeshRepositoryImpl::_make_vertex_buffer(size_t size)
 {
     auto [vbo_index, p_vbo] = m_buffer_objects.construct();
-    p_vbo->type             = BufferObject::Type::Vertex;
+    p_vbo->type = BufferObject::Type::Vertex;
 
     glGenBuffers(1, &p_vbo->gfx_api_id);
     glBindBuffer(GL_ARRAY_BUFFER, p_vbo->gfx_api_id);
@@ -279,7 +287,7 @@ VboIndex MeshRepositoryImpl::_make_vertex_buffer(size_t size)
 IboIndex MeshRepositoryImpl::_make_index_buffer(size_t size)
 {
     auto [ibo_index, p_ibo] = m_buffer_objects.construct();
-    p_ibo->type             = BufferObject::Type::Index;
+    p_ibo->type = BufferObject::Type::Index;
 
     glGenBuffers(1, &p_ibo->gfx_api_id);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, p_ibo->gfx_api_id);
@@ -289,13 +297,13 @@ IboIndex MeshRepositoryImpl::_make_index_buffer(size_t size)
 }
 
 // Create mesh from MeshResouce, storing data in the given vertex and index buffers
-void MeshRepositoryImpl::_make_mesh_in_node(MeshNode&             node,
-                                            Identifier            mesh_id,
+void MeshRepositoryImpl::_make_mesh_in_node(MeshNode& node,
+                                            Identifier mesh_id,
                                             const MakeMeshParams& params)
 {
     node.mesh_info.mesh_id = mesh_id;
-    node.mesh_info.centre  = params.centre;
-    node.mesh_info.radius  = params.radius;
+    node.mesh_info.centre = params.centre;
+    node.mesh_info.radius = params.radius;
 
     for (auto&& sm : params.mesh_data.sub_meshes) {
         node.mesh_info.submeshes.push_back({ sm.begin, sm.amount });
@@ -308,8 +316,8 @@ void MeshRepositoryImpl::_make_mesh_in_node(MeshNode&             node,
     glBindVertexArray(vao_id);
 
     {
-        const auto    vbo_index  = static_cast<uint32_t>(params.vbo_index);
-        BufferObject& vbo        = m_buffer_objects[vbo_index];
+        const auto vbo_index = static_cast<uint32_t>(params.vbo_index);
+        BufferObject& vbo = m_buffer_objects[vbo_index];
         node.vertex_buffer_index = vbo_index;
         ++vbo.num_users;
 
@@ -322,8 +330,8 @@ void MeshRepositoryImpl::_make_mesh_in_node(MeshNode&             node,
     }
 
     {
-        const auto    ibo_index = static_cast<uint32_t>(params.ibo_index);
-        BufferObject& ibo       = m_buffer_objects[ibo_index];
+        const auto ibo_index = static_cast<uint32_t>(params.ibo_index);
+        BufferObject& ibo = m_buffer_objects[ibo_index];
         node.index_buffer_index = ibo_index;
         ++ibo.num_users;
 
@@ -335,11 +343,13 @@ void MeshRepositoryImpl::_make_mesh_in_node(MeshNode&             node,
                         ibo_data.data());
     }
 
-    uint32_t  attrib_i = 0;
-    uintptr_t offset   = 0;
-    uint32_t  stride   = 0;
+    uint32_t attrib_i = 0;
+    uintptr_t offset = 0;
+    uint32_t stride = 0;
 
-    for (const VertexAttribute& a : g_attrib_array) { stride += a.size; }
+    for (const VertexAttribute& a : g_attrib_array) {
+        stride += a.size;
+    }
 
     for (const VertexAttribute& a : g_attrib_array) {
         const GLvoid* gl_offset{};
@@ -365,17 +375,21 @@ void MeshRepositoryImpl::_clear_mesh_node(MeshNode& node)
     node.clear();
 
     BufferObject& vbo = m_buffer_objects[node.vertex_buffer_index];
-    if (--vbo.num_users == 0) { m_buffer_objects.destroy(node.vertex_buffer_index); }
+    if (--vbo.num_users == 0) {
+        m_buffer_objects.destroy(node.vertex_buffer_index);
+    }
 
     BufferObject& ibo = m_buffer_objects[node.index_buffer_index];
-    if (--ibo.num_users == 0) { m_buffer_objects.destroy(node.index_buffer_index); }
+    if (--ibo.num_users == 0) {
+        m_buffer_objects.destroy(node.index_buffer_index);
+    }
 }
 
 class MeshBufferImpl {
 public:
     MeshBufferImpl(MeshRepositoryImpl& mesh_repository,
-                   VertexBufferSize    vertex_buffer_size,
-                   IndexBufferSize     index_buffer_size)
+                   VertexBufferSize vertex_buffer_size,
+                   IndexBufferSize index_buffer_size)
         : m_mesh_repository(&mesh_repository)
         , m_vbo_size(static_cast<size_t>(vertex_buffer_size))
         , m_ibo_size(static_cast<size_t>(index_buffer_size))
@@ -427,7 +441,7 @@ MeshBuffer::CreateReturn MeshBuffer::create(const MeshResource& resource)
 
 //--------------------------------------------------------------------------------------------------
 
-MeshRepository::MeshRepository()  = default;
+MeshRepository::MeshRepository() = default;
 MeshRepository::~MeshRepository() = default;
 
 MeshHandle MeshRepository::create(const MeshResource& mesh_res)
@@ -443,7 +457,9 @@ MeshHandle MeshRepository::create(const MeshDataView& mesh_data, Identifier mesh
 Opt<MeshHandle> MeshRepository::get(Identifier mesh_id) const
 {
     const MeshNode* node = impl().get(mesh_id);
-    if (!node) { return nullopt; }
+    if (!node) {
+        return nullopt;
+    }
     return internal::make_mesh_handle(&node->mesh_info);
 }
 
@@ -458,7 +474,7 @@ bool MeshRepository::update(const MeshResource& mesh_res)
 }
 
 MeshBuffer MeshRepository::new_mesh_buffer(VertexBufferSize vertex_buffer_size,
-                                           IndexBufferSize  index_buffer_size)
+                                           IndexBufferSize index_buffer_size)
 {
     return MeshBuffer{ impl(), vertex_buffer_size, index_buffer_size };
 }

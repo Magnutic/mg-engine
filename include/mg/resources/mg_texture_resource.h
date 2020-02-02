@@ -88,8 +88,8 @@ public:
      * binary data. */
     struct Format {
         PixelFormat pixel_format;
-        DimT        width, height;
-        MipIndexT   mip_levels;
+        DimT width, height;
+        MipIndexT mip_levels;
     };
 
     /** Configurable settings for this texture. */
@@ -112,7 +112,7 @@ public:
 
     struct MipLevelData {
         span<const std::byte> data;
-        DimT                  width, height;
+        DimT width, height;
     };
 
     using BaseResource::BaseResource;
@@ -140,8 +140,8 @@ protected:
     LoadResourceResult load_resource_impl(const ResourceLoadingInput& input) override;
 
 private:
-    Format           m_format;
-    Settings         m_settings;
+    Format m_format;
+    Settings m_settings;
     Array<std::byte> m_pixel_data;
 };
 

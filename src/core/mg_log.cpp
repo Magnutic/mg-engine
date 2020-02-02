@@ -41,17 +41,17 @@ namespace fs = std::filesystem;
 
 struct LogData {
     LogData(std::string_view file_path_,
-            Log::Prio        console_verbosity_,
-            Log::Prio        log_file_verbosity_)
+            Log::Prio console_verbosity_,
+            Log::Prio log_file_verbosity_)
         : console_verbosity(console_verbosity_)
         , log_file_verbosity(log_file_verbosity_)
         , file_path(file_path_)
     {}
 
-    Log::Prio console_verbosity  = Log::Prio::Verbose;
+    Log::Prio console_verbosity = Log::Prio::Verbose;
     Log::Prio log_file_verbosity = Log::Prio::Verbose;
 
-    std::string        file_path;
+    std::string file_path;
     Opt<std::ofstream> writer;
 };
 
@@ -67,7 +67,7 @@ Log::Log(std::string_view file_path, Prio console_verbosity, Prio log_file_verbo
     }
 
     const time_t log_open_time = time(nullptr);
-    const tm&    t             = *localtime(&log_open_time);
+    const tm& t = *localtime(&log_open_time);
 
     *impl().writer << fmt::format("Log started at {0:%F}, {0:%T}\n", t);
 }
@@ -91,7 +91,9 @@ Log::GetVerbosityReturn Log::get_verbosity() const noexcept
 
 void Log::flush() noexcept
 {
-    if (impl().writer) { impl().writer->flush(); }
+    if (impl().writer) {
+        impl().writer->flush();
+    }
 }
 
 std::string_view Log::file_path() const noexcept
@@ -136,20 +138,22 @@ void Log::output(Prio prio, std::string_view str) noexcept
     if (impl().writer && prio <= impl().log_file_verbosity) {
         // Write timestamp to log file
         const time_t msg_time = time(nullptr);
-        const tm&    t        = *localtime(&msg_time);
+        const tm& t = *localtime(&msg_time);
 
         impl().writer.value() << fmt::format("{:%T}: {}\n", t, message);
 
         // If message was a warning or error, make sure it's written to file
         // immediately (perhaps a crash is imminent!)
-        if (prio <= Prio::Warning) { impl().writer->flush(); }
+        if (prio <= Prio::Warning) {
+            impl().writer->flush();
+        }
     }
 }
 
 //--------------------------------------------------------------------------------------------------
 
 // Nifty counter initialisation for engine log
-static size_t                              nifty_counter;
+static size_t nifty_counter;
 static std::aligned_storage_t<sizeof(Log)> log_buf;
 
 // GCC 7 helpfully warns against strict aliasing violations when using reinterpret_cast; but, as I
@@ -168,25 +172,29 @@ Log& g_log = reinterpret_cast<Log&>(log_buf); // NOLINT
 
 detail::LogInitialiser::LogInitialiser() noexcept
 {
-    if (nifty_counter++ == 0) { new (&g_log) Log{ defs::k_engine_log_file }; }
+    if (nifty_counter++ == 0) {
+        new (&g_log) Log{ defs::k_engine_log_file };
+    }
 }
 
 detail::LogInitialiser::~LogInitialiser()
 {
-    if (--nifty_counter == 0) { (&g_log)->~Log(); }
+    if (--nifty_counter == 0) {
+        (&g_log)->~Log();
+    }
 }
 
 void write_crash_log(Log& log)
 {
     const time_t crash_time = time(nullptr);
-    const tm&    t          = *localtime(&crash_time);
+    const tm& t = *localtime(&crash_time);
 
     auto out_directory_name = fmt::format("crashlog_{:%F}_{:%T}", t);
 
-    const auto fp            = log.file_path();
-    const auto log_path      = fs::u8path(fp.begin(), fp.end());
+    const auto fp = log.file_path();
+    const auto log_path = fs::u8path(fp.begin(), fp.end());
     const auto log_directory = log_path.parent_path();
-    const auto log_filename  = log_path.filename();
+    const auto log_filename = log_path.filename();
 
     const auto out_directory = log_directory / fs::u8path(out_directory_name);
     fs::create_directory(out_directory);

@@ -111,7 +111,7 @@ private:
      * plane's normal) from plane to point in 3D space.
      */
     friend constexpr float signed_distance_to_plane(PointNormalPlane plane,
-                                                    glm::vec3        point) noexcept
+                                                    glm::vec3 point) noexcept
     {
         return plane.a * point.x + plane.b * point.y + plane.c * point.z + plane.d;
     }

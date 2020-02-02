@@ -47,7 +47,10 @@ public:
     span<std::byte> bytes() noexcept { return span{ m_buffer.begin(), m_buffer.end() }; }
 
     /** Access byte stream. */
-    span<const std::byte> bytes() const noexcept { return span{ m_buffer.begin(), m_buffer.end() }; }
+    span<const std::byte> bytes() const noexcept
+    {
+        return span{ m_buffer.begin(), m_buffer.end() };
+    }
 
     Identifier type_id() const override { return "RawResource"; }
 

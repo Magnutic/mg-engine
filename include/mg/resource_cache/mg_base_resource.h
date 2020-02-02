@@ -47,7 +47,7 @@ struct LoadResourceResult {
         return { ResultCode::DataError, std::string(reason) };
     }
 
-    ResultCode  result_code;
+    ResultCode result_code;
     std::string error_reason;
 };
 

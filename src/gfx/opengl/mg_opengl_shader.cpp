@@ -72,12 +72,12 @@ Opt<UniformLocation> uniform_location(ShaderHandle program, std::string_view uni
     return location == -1 ? nullopt : make_opt(UniformLocation{ location });
 }
 
-bool set_uniform_block_binding(ShaderHandle      program,
-                               std::string_view  block_name,
+bool set_uniform_block_binding(ShaderHandle program,
+                               std::string_view block_name,
                                UniformBufferSlot slot) noexcept
 {
     const Opt<GLuint> opt_block_index = uniform_block_index(gl_program_id(program), block_name);
-    const auto        slot_index      = static_cast<GLuint>(slot);
+    const auto slot_index = static_cast<GLuint>(slot);
 
     if (opt_block_index) {
         glUniformBlockBinding(gl_program_id(program), *opt_block_index, slot_index);

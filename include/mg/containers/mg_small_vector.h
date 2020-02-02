@@ -65,11 +65,15 @@ private:
 // https://creativecommons.org/licenses/by-sa/3.0/
 template<class ForwardIt> ForwardIt rotate(ForwardIt first, ForwardIt n_first, ForwardIt last)
 {
-    if (first == n_first) { return last; }
-    if (n_first == last) { return first; }
+    if (first == n_first) {
+        return last;
+    }
+    if (n_first == last) {
+        return first;
+    }
 
-    ForwardIt read      = n_first;
-    ForwardIt write     = first;
+    ForwardIt read = n_first;
+    ForwardIt write = first;
     ForwardIt next_read = first; // Read position for when "read" hits "last".
 
     while (read != last) {
@@ -90,8 +94,12 @@ template<class InputIt1, class InputIt2>
 int range_compare(InputIt1 first1, InputIt1 last1, InputIt2 first2, InputIt2 last2)
 {
     for (; (first1 != last1) && (first2 != last2); ++first1, ++first2) {
-        if (*first1 < *first2) { return -1; }
-        if (*first2 < *first1) { return 1; }
+        if (*first1 < *first2) {
+            return -1;
+        }
+        if (*first2 < *first1) {
+            return 1;
+        }
     }
 
     if (first1 == last1 && first2 == last2) {
@@ -145,15 +153,15 @@ template<typename T, std::size_t num_local_elems> class small_vector {
 public:
     using value_type = T;
 
-    using size_type       = std::size_t;
+    using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
 
-    using reference       = value_type&;
+    using reference = value_type&;
     using const_reference = const value_type&;
-    using pointer         = T*;
-    using const_pointer   = const T*;
+    using pointer = T*;
+    using const_pointer = const T*;
 
-    using iterator       = pointer;
+    using iterator = pointer;
     using const_iterator = const_pointer;
 
 
@@ -168,13 +176,17 @@ public:
     small_vector(const small_vector& rhs) : small_vector()
     {
         reserve(rhs.size());
-        for (const T& elem : rhs) { push_back(elem); }
+        for (const T& elem : rhs) {
+            push_back(elem);
+        }
     }
 
     small_vector(small_vector&& rhs) noexcept : small_vector()
     {
         if (rhs.uses_local_storage()) {
-            for (T& elem : rhs) { push_back(std::move_if_noexcept(elem)); }
+            for (T& elem : rhs) {
+                push_back(std::move_if_noexcept(elem));
+            }
         }
         else {
             _switch_to_external_storage(std::move(rhs.m_external_buffer), rhs.capacity());
@@ -186,7 +198,9 @@ public:
     /** Construct small_vector with `count` number of copies of `value`. */
     explicit small_vector(size_type count, const T& value) : small_vector()
     {
-        while (count--) { push_back(value); }
+        while (count--) {
+            push_back(value);
+        }
     }
 
     /** Construct small_vector with `count` number of default-constructed elements.
@@ -198,7 +212,9 @@ public:
     small_vector(std::initializer_list<T> init) : small_vector()
     {
         reserve(init.size());
-        for (const T& elem : init) { push_back(elem); }
+        for (const T& elem : init) {
+            push_back(elem);
+        }
     }
 
     // Assignment
@@ -253,13 +269,13 @@ public:
         return data()[index];
     }
 
-    reference       operator[](size_type index) noexcept { return at(index); }
+    reference operator[](size_type index) noexcept { return at(index); }
     const_reference operator[](size_type index) const noexcept { return at(index); };
 
-    reference       front() { return at(0); }
+    reference front() { return at(0); }
     const_reference front() const { return at(0); }
 
-    reference       back() { return at(size() - 1); }
+    reference back() { return at(size() - 1); }
     const_reference back() const { return at(size() - 1); }
 
     pointer data() noexcept { return reinterpret_cast<pointer>(_storage_ptr()); }
@@ -269,11 +285,11 @@ public:
     // Iterators
     // ---------------------------------------------------------------------------------------------
 
-    iterator       begin() noexcept { return data(); }
+    iterator begin() noexcept { return data(); }
     const_iterator begin() const noexcept { return data(); }
     const_iterator cbegin() const noexcept { return data(); }
 
-    iterator       end() noexcept { return data() + size(); }
+    iterator end() noexcept { return data() + size(); }
     const_iterator end() const noexcept { return data() + size(); }
     const_iterator cend() const noexcept { return data() + size(); }
 
@@ -305,7 +321,9 @@ public:
      */
     void reserve(size_type new_capacity)
     {
-        if (new_capacity <= capacity()) { return; }
+        if (new_capacity <= capacity()) {
+            return;
+        }
 
         MG_SMALL_VECTOR_ASSERT(new_capacity < max_size());
         _switch_to_external_storage(ExternalBuffer::allocate(new_capacity), new_capacity);
@@ -313,12 +331,14 @@ public:
 
     void shrink_to_fit()
     {
-        if (uses_local_storage()) { return; }
+        if (uses_local_storage()) {
+            return;
+        }
 
         auto buf = ExternalBuffer::allocate(size());
         _move_elems_between_buffers(m_external_buffer.get(), buf.get(), size());
         m_external_buffer = std::move(buf);
-        m_capacity        = size();
+        m_capacity = size();
     }
 
     /** Returns the number of elements that this container is able to store without further memory
@@ -335,9 +355,13 @@ public:
     void clear() noexcept
     {
         size_type index = size();
-        while (index != 0) { _destroy_at(--index); }
+        while (index != 0) {
+            _destroy_at(--index);
+        }
 
-        if (!uses_local_storage()) { _switch_to_local_storage(0); }
+        if (!uses_local_storage()) {
+            _switch_to_local_storage(0);
+        }
 
         m_size = 0;
     }
@@ -350,7 +374,9 @@ public:
     {
         auto index = _distance(cbegin(), pos);
         reserve(size() + count);
-        while (count--) { emplace_back(value); }
+        while (count--) {
+            emplace_back(value);
+        }
         _move_last_n_to_pos(index, 1);
         return begin() + index;
     }
@@ -385,7 +411,9 @@ public:
         size_type index = _distance(cbegin(), pos);
         reserve(size() + init.size());
 
-        for (const T& value : init) { emplace_back(value); }
+        for (const T& value : init) {
+            emplace_back(value);
+        }
 
         _move_last_n_to_pos(index, init.size());
         return begin() + index;
@@ -404,9 +432,9 @@ public:
     /** Erase a range of elements. */
     iterator erase(const_iterator first, const_iterator last)
     {
-        iterator ret     = begin() + _distance(cbegin(), first);
-        auto     new_end = _move_to_end(first, _distance(first, last));
-        auto     it      = end();
+        iterator ret = begin() + _distance(cbegin(), first);
+        auto new_end = _move_to_end(first, _distance(first, last));
+        auto it = end();
         while (it-- != new_end) {
             it->~T();
             --m_size;
@@ -438,7 +466,9 @@ public:
 
             // If k_growth_factor is not large enough, new_capacity might not be any larger.
             // This is especially likely to happen if initial capacity was very small.
-            if (new_capacity == capacity()) { new_capacity += 1; }
+            if (new_capacity == capacity()) {
+                new_capacity += 1;
+            }
             auto new_buffer = ExternalBuffer::allocate(new_capacity);
 
             // Construct new elem at end-position in newly allocated buffer.
@@ -533,7 +563,9 @@ private:
         MG_SMALL_VECTOR_ASSERT(uses_local_storage());
         MG_SMALL_VECTOR_ASSERT(rhs.uses_local_storage());
 
-        if (trivial_copy) { _swap_local_trivial(rhs); }
+        if (trivial_copy) {
+            _swap_local_trivial(rhs);
+        }
         else {
             _swap_local_non_trivial(rhs);
         }
@@ -548,8 +580,8 @@ private:
 
         // Cannot swap bit fields
         const auto tmp = m_size;
-        m_size         = rhs.m_size;
-        rhs.m_size     = tmp;
+        m_size = rhs.m_size;
+        rhs.m_size = tmp;
     }
 
     // Swap implementation for the case where both operands use local storage and the element
@@ -578,7 +610,9 @@ private:
         }
 
         // Swap those elements which exist at the same index in both vectors
-        for (size_type i = 0; i < small_size; ++i) { swap((*this)[i], rhs[i]); }
+        for (size_type i = 0; i < small_size; ++i) {
+            swap((*this)[i], rhs[i]);
+        }
 
         // Remove the (moved-from) values at the end of the larger vector
         large_vec._shrink_to(small_size);
@@ -596,8 +630,8 @@ private:
 
         // Cannot swap bit fields
         const auto tmp = m_size;
-        m_size         = rhs.m_size;
-        rhs.m_size     = tmp;
+        m_size = rhs.m_size;
+        rhs.m_size = tmp;
     }
 
     // Swap for the case where this is using local storage, and rhs is using external storage.
@@ -637,7 +671,9 @@ private:
             T tmp(std::forward<Args>(args)...);
             reserve(count);
 
-            while (size() < count) { _construct_at(m_size++, tmp); }
+            while (size() < count) {
+                _construct_at(m_size++, tmp);
+            }
         }
 
         _shrink_to(count);
@@ -662,7 +698,7 @@ private:
     // Strong exception-safety. (noexcept commented out due to warnings.)
     void _move_elems_between_buffers(elem_data_t* src,
                                      elem_data_t* dst,
-                                     size_type    num) /* noexcept(nothrow_move) */
+                                     size_type num) /* noexcept(nothrow_move) */
     {
         MG_SMALL_VECTOR_ASSERT(src != nullptr);
         MG_SMALL_VECTOR_ASSERT(dst != nullptr);
@@ -687,7 +723,9 @@ private:
         }
 
         // If successful, destroy original elements
-        for (i = 0; i < num; ++i) { reinterpret_cast<pointer>(&src[num - 1 - i])->~T(); }
+        for (i = 0; i < num; ++i) {
+            reinterpret_cast<pointer>(&src[num - 1 - i])->~T();
+        }
     }
 
     // Switch to local buffer for element storage. (noexcept commented due to warnings).
@@ -699,7 +737,7 @@ private:
         // Since m_capacity is in union with local buffer, we need to copy it before writing to
         // local buffer.
         const size_type tmp_capacity = m_capacity;
-        ExternalBuffer  tmp_buffer   = std::move(m_external_buffer);
+        ExternalBuffer tmp_buffer = std::move(m_external_buffer);
 
         // Try to move -- with strong exception guarantee.
         try {
@@ -713,13 +751,13 @@ private:
             throw;
         }
 
-        m_size                  = elems_to_move;
+        m_size = elems_to_move;
         m_uses_external_storage = 0;
     }
 
     // Switch to new external buffer for element storage.
     void _switch_to_external_storage(ExternalBuffer&& new_buffer,
-                                     size_type        new_capacity) noexcept(nothrow_move)
+                                     size_type new_capacity) noexcept(nothrow_move)
     {
         MG_SMALL_VECTOR_ASSERT(new_capacity >= size());
 
@@ -730,8 +768,8 @@ private:
             new (&m_external_buffer) ExternalBuffer();
         }
 
-        m_external_buffer       = std::move(new_buffer);
-        m_capacity              = new_capacity;
+        m_external_buffer = std::move(new_buffer);
+        m_capacity = new_capacity;
         m_uses_external_storage = 1;
     }
 
@@ -768,7 +806,7 @@ private:
     union {
         elem_data_t m_buffer[num_local_elems];
         struct {
-            size_type      m_capacity;
+            size_type m_capacity;
             ExternalBuffer m_external_buffer;
         };
     };

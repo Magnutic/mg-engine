@@ -39,11 +39,11 @@ struct GlTextureInfo {
     uint32_t internal_format;
     uint32_t format;
     uint32_t type;
-    int32_t  mip_levels;
-    int32_t  width;
-    int32_t  height;
-    float    aniso;
-    bool     compressed;
+    int32_t mip_levels;
+    int32_t width;
+    int32_t height;
+    float aniso;
+    bool compressed;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -106,15 +106,15 @@ uint32_t gl_type_for_format(RenderTargetParams::Format format)
 
 GlTextureInfo gl_texture_info_for_render_target(const RenderTargetParams& params)
 {
-    GlTextureInfo tex_info   = {};
-    tex_info.compressed      = false;
-    tex_info.format          = gl_format_for_format(params.texture_format);
+    GlTextureInfo tex_info = {};
+    tex_info.compressed = false;
+    tex_info.format = gl_format_for_format(params.texture_format);
     tex_info.internal_format = gl_internal_format_for_format(params.texture_format);
-    tex_info.type            = gl_type_for_format(params.texture_format);
-    tex_info.width           = params.width;
-    tex_info.height          = params.height;
-    tex_info.mip_levels      = params.num_mip_levels;
-    tex_info.aniso           = 0.0f;
+    tex_info.type = gl_type_for_format(params.texture_format);
+    tex_info.width = params.width;
+    tex_info.height = params.height;
+    tex_info.mip_levels = params.num_mip_levels;
+    tex_info.aniso = 0.0f;
     return tex_info;
 }
 
@@ -152,7 +152,7 @@ OpaqueHandle generate_gl_render_target_texture(const RenderTargetParams& params)
     }
     else {
         for (auto i = 0; i < info.mip_levels; ++i) {
-            const auto mip_width  = info.width >> i;
+            const auto mip_width = info.width >> i;
             const auto mip_height = info.height >> i;
 
             // Allocate storage for texture target
@@ -184,12 +184,12 @@ GlTextureInfo gl_texture_info(const TextureResource& texture) noexcept
 {
     GlTextureInfo info{};
 
-    const auto& tex_format   = texture.format();
+    const auto& tex_format = texture.format();
     const auto& tex_settings = texture.settings();
 
     info.mip_levels = narrow<int32_t>(tex_format.mip_levels);
-    info.width      = narrow<int32_t>(tex_format.width);
-    info.height     = narrow<int32_t>(tex_format.height);
+    info.width = narrow<int32_t>(tex_format.width);
+    info.height = narrow<int32_t>(tex_format.height);
 
     // Texture channels are all 8-bit, so far.
     info.type = GL_UNSIGNED_BYTE;
@@ -205,7 +205,7 @@ GlTextureInfo gl_texture_info(const TextureResource& texture) noexcept
     // Pick OpenGL pixel format
     switch (tex_format.pixel_format) {
     case TextureResource::PixelFormat::DXT1:
-        info.compressed      = true;
+        info.compressed = true;
         info.internal_format = tex_settings.dxt1_has_alpha
                                    ? sRGB ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT
                                           : GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
@@ -214,30 +214,30 @@ GlTextureInfo gl_texture_info(const TextureResource& texture) noexcept
         break;
 
     case TextureResource::PixelFormat::DXT3:
-        info.compressed      = true;
+        info.compressed = true;
         info.internal_format = sRGB ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT
                                     : GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
         break;
 
     case TextureResource::PixelFormat::DXT5:
-        info.compressed      = true;
+        info.compressed = true;
         info.internal_format = sRGB ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT
                                     : GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
         break;
 
     case TextureResource::PixelFormat::ATI2:
-        info.compressed      = true;
+        info.compressed = true;
         info.internal_format = GL_COMPRESSED_RG_RGTC2;
         break;
 
     case TextureResource::PixelFormat::BGR:
         info.internal_format = GL_RGB8;
-        info.format          = GL_BGR;
+        info.format = GL_BGR;
         break;
 
     case TextureResource::PixelFormat::BGRA:
         info.internal_format = GL_RGBA8;
-        info.format          = GL_BGRA;
+        info.format = GL_BGRA;
         break;
     }
 
@@ -303,13 +303,13 @@ void set_sampling_params(const TextureResource::Settings& settings) noexcept
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
 }
 
-void upload_compressed_mip(bool                 preallocated,
-                           int32_t              mip_index,
+void upload_compressed_mip(bool preallocated,
+                           int32_t mip_index,
                            const GlTextureInfo& info,
-                           int32_t              size,
-                           const GLvoid*        data) noexcept
+                           int32_t size,
+                           const GLvoid* data) noexcept
 {
-    const auto width  = info.width >> mip_index;
+    const auto width = info.width >> mip_index;
     const auto height = info.height >> mip_index;
 
     if (preallocated) {
@@ -327,13 +327,13 @@ void upload_compressed_mip(bool                 preallocated,
     MG_CHECK_GL_ERROR();
 }
 
-void upload_uncompressed_mip(bool                 preallocated,
-                             int32_t              mip_index,
+void upload_uncompressed_mip(bool preallocated,
+                             int32_t mip_index,
                              const GlTextureInfo& info,
                              int32_t /* size */,
                              const GLvoid* data) noexcept
 {
-    const auto width  = info.width >> mip_index;
+    const auto width = info.width >> mip_index;
     const auto height = info.height >> mip_index;
 
     if (preallocated) {
@@ -386,8 +386,8 @@ OpaqueHandle generate_gl_texture_from(const TextureResource& texture_resource) n
     // Upload texture data, mipmap by mipmap
     for (int32_t mip_index = 0; mip_index < info.mip_levels; ++mip_index) {
         const auto mip_data = texture_resource.pixel_data(narrow<uint32_t>(mip_index));
-        auto       pixels   = mip_data.data.data();
-        auto       size     = narrow<int32_t>(mip_data.data.size_bytes());
+        auto pixels = mip_data.data.data();
+        auto size = narrow<int32_t>(mip_data.data.size_bytes());
 
         upload_function(preallocate, mip_index, info, size, pixels);
     }
@@ -408,8 +408,8 @@ Texture2D Texture2D::from_texture_resource(const TextureResource& texture_resour
 {
     Texture2D tex(generate_gl_texture_from(texture_resource));
 
-    tex.m_id                = texture_resource.resource_id();
-    tex.m_image_size.width  = narrow<int32_t>(texture_resource.format().width);
+    tex.m_id = texture_resource.resource_id();
+    tex.m_image_size.width = narrow<int32_t>(texture_resource.format().width);
     tex.m_image_size.height = narrow<int32_t>(texture_resource.format().height);
 
     return tex;
@@ -419,8 +419,8 @@ Texture2D Texture2D::render_target(const RenderTargetParams& params)
 {
     Texture2D tex(generate_gl_render_target_texture(params));
 
-    tex.m_id                = params.render_target_id;
-    tex.m_image_size.width  = params.width;
+    tex.m_id = params.render_target_id;
+    tex.m_image_size.width = params.width;
     tex.m_image_size.height = params.height;
 
     return tex;

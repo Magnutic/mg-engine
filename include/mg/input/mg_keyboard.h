@@ -89,7 +89,7 @@ protected:
     std::string description(InputSource::Id id) const override;
 
 private:
-    const Window&           m_window;
+    const Window& m_window;
     std::bitset<k_num_keys> m_key_states;
 };
 

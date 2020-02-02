@@ -47,13 +47,13 @@ class MaterialRepository;
 
 /** Types of comparison functions to use in depth testing. */
 enum class DepthFunc {
-    NONE     = 0,
-    LESS     = 0x201,
-    EQUAL    = 0x202,
-    LEQUAL   = 0x203,
-    GREATER  = 0x204,
+    NONE = 0,
+    LESS = 0x201,
+    EQUAL = 0x202,
+    LEQUAL = 0x203,
+    GREATER = 0x204,
     NOTEQUAL = 0x205,
-    GEQUAL   = 0x206,
+    GEQUAL = 0x206,
 };
 
 /** Types of functions to use in culling. */
@@ -102,8 +102,8 @@ public:
     /** Synchronise application with graphics device. */
     void synchronise() noexcept;
 
-    MeshRepository&     mesh_repository() noexcept;
-    TextureRepository&  texture_repository() noexcept;
+    MeshRepository& mesh_repository() noexcept;
+    TextureRepository& texture_repository() noexcept;
     MaterialRepository& material_repository() noexcept;
 };
 

@@ -37,7 +37,7 @@ namespace Mg {
 static std::wstring utf8_to_wstring(std::string_view str)
 {
     std::wstring_convert<std::codecvt_utf8<wchar_t>> myconv("");
-    const span<const char>                           bytes{ str.data(), str.size() };
+    const span<const char> bytes{ str.data(), str.size() };
     return myconv.from_bytes(bytes.begin(), bytes.end());
 }
 

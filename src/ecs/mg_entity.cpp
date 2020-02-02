@@ -32,14 +32,16 @@ size_t ComponentTag::n_component_types = 0;
 // Reset EntityCollection, destroying all entities and components
 void EntityCollection::reset() noexcept
 {
-    for (auto& ptr : m_component_collections) { ptr.release(); }
+    for (auto& ptr : m_component_collections) {
+        ptr.release();
+    }
     m_entity_data.clear();
     m_component_lists.clear();
 }
 
 Entity EntityCollection::create_entity()
 {
-    Entity entity                      = m_entity_data.emplace();
+    Entity entity = m_entity_data.emplace();
     data(entity).component_list_handle = m_component_lists.emplace();
     return entity;
 }
@@ -63,8 +65,8 @@ void EntityCollection::delete_entity(Entity entity)
 
 Slot_map_handle& EntityCollection::component_handle_ref(Entity entity, size_t component_type_id)
 {
-    const auto& list_handle  = data(entity).component_list_handle;
-    auto&       handle_array = m_component_lists[list_handle];
+    const auto& list_handle = data(entity).component_list_handle;
+    auto& handle_array = m_component_lists[list_handle];
     return handle_array.at(component_type_id);
 }
 

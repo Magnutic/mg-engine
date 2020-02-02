@@ -42,14 +42,14 @@ namespace Mg {
 class Transform {
 public:
     Transform(glm::vec3 _position = glm::vec3{ 0.0f },
-              glm::vec3 _scale    = glm::vec3{ 1.0f },
-              Rotation  _rotation = Rotation{}) noexcept
+              glm::vec3 _scale = glm::vec3{ 1.0f },
+              Rotation _rotation = Rotation{}) noexcept
         : position(_position), scale(_scale), rotation(_rotation)
     {}
 
     glm::vec3 position;
     glm::vec3 scale;
-    Rotation  rotation;
+    Rotation rotation;
 
     /** Gets the transformation matrix for this transform. */
     glm::mat4 matrix() const

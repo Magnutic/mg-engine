@@ -38,26 +38,26 @@
 namespace Mg {
 
 struct MeshHeader {
-    uint32_t  four_cc      = 0;    // Filetype identifier
-    uint32_t  version      = 0;    // Mesh format version
-    uint32_t  n_vertices   = 0;    // Number of unique vertices
-    uint32_t  n_indices    = 0;    // Number of vertex indices
-    uint32_t  n_sub_meshes = 0;    // Number of submeshes
-    glm::vec3 centre       = {};   // Mesh centre coordinate
-    float     radius       = 0.0f; // Mesh radius
-    glm::vec3 abb_min      = {};   // Axis-aligned bounding box
-    glm::vec3 abb_max      = {};   // Axis-aligned bounding box
+    uint32_t four_cc = 0;      // Filetype identifier
+    uint32_t version = 0;      // Mesh format version
+    uint32_t n_vertices = 0;   // Number of unique vertices
+    uint32_t n_indices = 0;    // Number of vertex indices
+    uint32_t n_sub_meshes = 0; // Number of submeshes
+    glm::vec3 centre = {};     // Mesh centre coordinate
+    float radius = 0.0f;       // Mesh radius
+    glm::vec3 abb_min = {};    // Axis-aligned bounding box
+    glm::vec3 abb_max = {};    // Axis-aligned bounding box
 };
 
 static_assert(std::is_trivially_copyable_v<MeshHeader>);
 
-constexpr uint32_t mesh_4cc              = 0x444D474Du; // = MGMD
+constexpr uint32_t mesh_4cc = 0x444D474Du; // = MGMD
 constexpr uint32_t k_mesh_format_version = 1;
 
 LoadResourceResult MeshResource::load_resource_impl(const ResourceLoadingInput& input)
 {
-    const std::string_view fname      = resource_id().str_view();
-    span<const std::byte>  bytestream = input.resource_data();
+    const std::string_view fname = resource_id().str_view();
+    span<const std::byte> bytestream = input.resource_data();
 
     MeshHeader header;
     {
@@ -84,16 +84,16 @@ LoadResourceResult MeshResource::load_resource_impl(const ResourceLoadingInput& 
 
     // Allocate memory for mesh data
     m_sub_meshes = Array<gfx::SubMesh>::make(header.n_sub_meshes);
-    m_vertices   = Array<gfx::Vertex>::make(header.n_vertices);
-    m_indices    = Array<gfx::uint_vertex_index>::make(header.n_indices);
+    m_vertices = Array<gfx::Vertex>::make(header.n_vertices);
+    m_indices = Array<gfx::uint_vertex_index>::make(header.n_indices);
 
     enum class Stride : size_t;
     enum class ElemSize : size_t;
     // Load bytestream data into arrays. Array size controls number of elements to read.
     auto load_to_array =
         [&bytestream](auto& array_out, Opt<ElemSize> elem_size = {}, Opt<Stride> stride = {}) {
-            using TargetT           = std::decay_t<decltype(array_out[0])>;
-            const auto size         = elem_size ? size_t(*elem_size) : sizeof(TargetT);
+            using TargetT = std::decay_t<decltype(array_out[0])>;
+            const auto size = elem_size ? size_t(*elem_size) : sizeof(TargetT);
             const auto stride_value = stride ? size_t(*stride) : size;
 
             // Sanity check
@@ -101,7 +101,9 @@ LoadResourceResult MeshResource::load_resource_impl(const ResourceLoadingInput& 
             MG_ASSERT(size <= sizeof(TargetT));
 
             for (size_t i = 0; i < array_out.size(); ++i) {
-                if (size > bytestream.size()) { return false; }
+                if (size > bytestream.size()) {
+                    return false;
+                }
                 std::memcpy(&array_out[i], bytestream.data(), size);
                 bytestream = bytestream.subspan(stride_value);
             }
@@ -115,8 +117,12 @@ LoadResourceResult MeshResource::load_resource_impl(const ResourceLoadingInput& 
     success = success && load_to_array(m_vertices);
     success = success && load_to_array(m_indices);
 
-    if (!success) { return LoadResourceResult::data_error("Missing mesh data."); }
-    if (!validate()) { return LoadResourceResult::data_error("Mesh validation failed."); }
+    if (!success) {
+        return LoadResourceResult::data_error("Missing mesh data.");
+    }
+    if (!validate()) {
+        return LoadResourceResult::data_error("Mesh validation failed.");
+    }
 
     return LoadResourceResult::success();
 }
@@ -131,8 +137,8 @@ bool MeshResource::validate() const
 
     // Check data
     const auto n_sub_meshes = sub_meshes().size();
-    const auto n_vertices   = vertices().size();
-    const auto n_indices    = narrow<size_t>(indices().size());
+    const auto n_vertices = vertices().size();
+    const auto n_indices = narrow<size_t>(indices().size());
 
     // Check triangle-list validity
     if (n_sub_meshes % 3 != 0) {
@@ -140,7 +146,9 @@ bool MeshResource::validate() const
     }
 
     // Check submeshes
-    if (n_sub_meshes == 0) { mesh_error("No submeshes present."); }
+    if (n_sub_meshes == 0) {
+        mesh_error("No submeshes present.");
+    }
 
     for (size_t i = 0; i < n_sub_meshes; ++i) {
         const gfx::SubMesh& sm = sub_meshes()[i];
@@ -177,7 +185,9 @@ void MeshResource::calculate_bounds() noexcept
     // Calculate centre position
     m_centre = {};
 
-    for (const gfx::Vertex& v : m_vertices) { m_centre += v.position; }
+    for (const gfx::Vertex& v : m_vertices) {
+        m_centre += v.position;
+    }
 
     m_centre /= m_vertices.size();
 
@@ -185,9 +195,9 @@ void MeshResource::calculate_bounds() noexcept
     float radius_sqr = 0.0f;
 
     for (const gfx::Vertex& v : m_vertices) {
-        const auto  diff           = m_centre - v.position;
+        const auto diff = m_centre - v.position;
         const float new_radius_sqr = glm::dot(diff, diff);
-        radius_sqr                 = glm::max(radius_sqr, new_radius_sqr);
+        radius_sqr = glm::max(radius_sqr, new_radius_sqr);
     }
 
     m_radius = glm::sqrt(radius_sqr);

@@ -47,12 +47,12 @@ template<ShaderStage stage> struct ShaderStageCode {
     std::string code;
 };
 
-using VertexShaderCode   = ShaderStageCode<ShaderStage::Vertex>;
+using VertexShaderCode = ShaderStageCode<ShaderStage::Vertex>;
 using GeometryShaderCode = ShaderStageCode<ShaderStage::Geometry>;
 using FragmentShaderCode = ShaderStageCode<ShaderStage::Fragment>;
 
 struct ShaderCode {
-    VertexShaderCode   vertex;
+    VertexShaderCode vertex;
     GeometryShaderCode geometry;
     FragmentShaderCode fragment;
 };
@@ -61,9 +61,9 @@ class PipelineRepository {
 public:
     struct Config {
         PipelinePrototype pipeline_prototype;
-        ShaderCode        preamble_shader_code;
-        ShaderCode        on_error_shader_code;
-        uint32_t          material_params_ubo_slot;
+        ShaderCode preamble_shader_code;
+        ShaderCode on_error_shader_code;
+        uint32_t material_params_ubo_slot;
     };
 
     class BindingContext {
@@ -72,7 +72,7 @@ public:
         BindingContext(PipelinePrototype& prototype) : prototype_context(prototype) {}
 
         PipelinePrototypeContext prototype_context;
-        const Pipeline*          currently_bound_pipeline = nullptr;
+        const Pipeline* currently_bound_pipeline = nullptr;
     };
 
     MG_MAKE_NON_COPYABLE(PipelineRepository);
@@ -111,18 +111,18 @@ public:
 
 private:
     struct PipelineNode {
-        Pipeline           pipeline;
+        Pipeline pipeline;
         PipelineIdentifier id;
     };
 
-    Pipeline&     get_or_make_pipeline(const Material& material);
+    Pipeline& get_or_make_pipeline(const Material& material);
     PipelineNode& make_pipeline(const Material& material);
-    ShaderCode    assemble_shader_code(const Material& material);
+    ShaderCode assemble_shader_code(const Material& material);
 
 private:
-    Config                    m_config;
+    Config m_config;
     std::vector<PipelineNode> m_pipelines;
-    UniformBuffer             m_material_params_ubo{ defs::k_material_parameters_buffer_size };
+    UniformBuffer m_material_params_ubo{ defs::k_material_parameters_buffer_size };
 };
 
 } // namespace Mg::gfx

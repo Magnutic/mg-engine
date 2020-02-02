@@ -308,7 +308,9 @@ std::string Keyboard::description(InputSource::Id id) const
 
     // Check if name is in g_key_names cache
     std::string& name = g_key_names.at(id);
-    if (name != "") { return name; }
+    if (name != "") {
+        return name;
+    }
 
     // Ask GLFW for localised key name
     // TODO: bug in GLFW < 3.3 makes this return LATIN-1 instead of UTF-8 when run in an X11 env.
@@ -337,11 +339,13 @@ void Keyboard::refresh()
 {
     const auto refresh_state = [&](size_t key_id) {
         const auto glfw_key_code = k_glfw_key_codes.at(key_id);
-        const bool is_pressed    = glfwGetKey(m_window.glfw_window(), glfw_key_code) == GLFW_PRESS;
-        m_key_states[key_id]     = is_pressed;
+        const bool is_pressed = glfwGetKey(m_window.glfw_window(), glfw_key_code) == GLFW_PRESS;
+        m_key_states[key_id] = is_pressed;
     };
 
-    for (size_t i = 0; i < k_num_keys; ++i) { refresh_state(i); }
+    for (size_t i = 0; i < k_num_keys; ++i) {
+        refresh_state(i);
+    }
 }
 
 } // namespace Mg::input

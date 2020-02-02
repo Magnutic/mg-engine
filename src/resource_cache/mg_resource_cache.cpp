@@ -36,11 +36,13 @@ namespace {
 std::string format_time(std::time_t time)
 {
     const auto* time_gm = std::gmtime(&time);
-    if (!time_gm) { return "<INVALID TIME>"; }
+    if (!time_gm) {
+        return "<INVALID TIME>";
+    }
 
     constexpr size_t maxlen = 100;
-    std::string      time_string(maxlen, ' ');
-    const auto       len = std::strftime(time_string.data(), maxlen, "%c %Z", time_gm);
+    std::string time_string(maxlen, ' ');
+    const auto len = std::strftime(time_string.data(), maxlen, "%c %Z", time_gm);
     time_string.resize(len);
     return time_string;
 }
@@ -60,7 +62,7 @@ void ResourceCache::refresh()
     }
 
     auto has_file_changed = [](const ResourceCache::FileInfo& file,
-                               std::time_t                    old_time_stamp) -> bool {
+                               std::time_t old_time_stamp) -> bool {
         const bool has_changed = file.time_stamp > old_time_stamp;
 
         if (has_changed) {
@@ -86,7 +88,9 @@ void ResourceCache::refresh()
     // Should the resource corresponding to the given file be re-loaded (i.e. has its file or those
     // of any of its dependencies changed)?
     const auto should_reload = [&](const FileInfo& fi) -> bool {
-        if (fi.entry == nullptr) { return false; }
+        if (fi.entry == nullptr) {
+            return false;
+        }
 
         std::shared_lock entry_lock{ fi.entry->mutex };
 
@@ -95,7 +99,9 @@ void ResourceCache::refresh()
         }
 
         // First, check whether resource file has been updated.
-        if (has_file_changed(fi, fi.entry->time_stamp())) { return true; }
+        if (has_file_changed(fi, fi.entry->time_stamp())) {
+            return true;
+        }
 
         // Then, check whether dependencies have been updated.
         return dependencies_were_updated(*fi.entry);
@@ -103,9 +109,9 @@ void ResourceCache::refresh()
 
     struct ReloadInfo {
         ResourceEntryBase& entry;
-        Identifier         resource_type_id;
-        std::time_t        new_time_stamp;
-        IFileLoader&       new_loader;
+        Identifier resource_type_id;
+        std::time_t new_time_stamp;
+        IFileLoader& new_loader;
     };
     std::vector<ReloadInfo> entries_to_reload;
 
@@ -117,10 +123,8 @@ void ResourceCache::refresh()
         for (const FileInfo& file : m_file_list) {
             if (should_reload(file)) {
                 std::unique_lock entry_lock(file.entry->mutex);
-                entries_to_reload.push_back(ReloadInfo{ *file.entry,
-                                                        file.entry->resource_type_id(),
-                                                        file.time_stamp,
-                                                        *file.loader });
+                entries_to_reload.push_back(ReloadInfo{
+                    *file.entry, file.entry->resource_type_id(), file.time_stamp, *file.loader });
                 file.entry->unload();
             }
         }
@@ -145,7 +149,9 @@ const ResourceCache::FileInfo* ResourceCache::file_info(Identifier file) const
 {
     // m_file_list is sorted by filename hash, so we can look up with binary search.
     auto it = std::lower_bound(m_file_list.begin(), m_file_list.end(), file, cmp_filename);
-    if (it == m_file_list.end() || it->filename != file) { return nullptr; }
+    if (it == m_file_list.end() || it->filename != file) {
+        return nullptr;
+    }
     return std::addressof(*it);
 }
 
@@ -169,7 +175,7 @@ void ResourceCache::rebuild_file_list()
         // Update old FileInfo, if new record has greater time stamp.
         if (file_record.time_stamp > it->time_stamp) {
             it->time_stamp = file_record.time_stamp;
-            it->loader     = &loader;
+            it->loader = &loader;
         }
     };
 
@@ -177,14 +183,19 @@ void ResourceCache::rebuild_file_list()
         MG_ASSERT(p_loader != nullptr);
         g_log.write_verbose(fmt::format("Refreshing file list for '{}'", p_loader->name()));
 
-        for (auto&& fr : p_loader->available_files()) { update_file_list(fr, *p_loader); }
+        for (auto&& fr : p_loader->available_files()) {
+            update_file_list(fr, *p_loader);
+        }
     }
 }
 
 // Throw ResourceNotFound exception and write details to log.
-[[noreturn]] void ResourceCache::throw_resource_not_found(Identifier filename) const {
+[[noreturn]] void ResourceCache::throw_resource_not_found(Identifier filename) const
+{
     std::string msg = "No such file. [ searched in ";
-    for (auto&& p_loader : file_loaders()) { msg += fmt::format("'{}' ", p_loader->name()); }
+    for (auto&& p_loader : file_loaders()) {
+        msg += fmt::format("'{}' ", p_loader->name());
+    }
     msg += ']';
 
     log_error(filename, msg);
@@ -192,10 +203,8 @@ void ResourceCache::rebuild_file_list()
 }
 
 // Log a message with nice formatting.
-static void log(Log::Prio            prio,
-                const ResourceCache* origin,
-                Identifier           resource,
-                std::string_view     message)
+static void
+log(Log::Prio prio, const ResourceCache* origin, Identifier resource, std::string_view message)
 {
     std::string msg = fmt::format("ResourceCache[{}]: {} [resource: {}]",
                                   static_cast<const void*>(origin),
@@ -233,12 +242,16 @@ bool ResourceCache::unload_unused(bool unload_all_unused) const
 
     const auto try_unload = [&](const FileInfo& file_info) -> bool {
         using namespace std::chrono_literals;
-        if (file_info.entry == nullptr || file_info.entry->ref_count != 0) { return false; }
+        if (file_info.entry == nullptr || file_info.entry->ref_count != 0) {
+            return false;
+        }
 
         ResourceEntryBase& entry = *file_info.entry;
-        std::unique_lock   entry_lock{ entry.mutex, 100ms };
+        std::unique_lock entry_lock{ entry.mutex, 100ms };
 
-        if (!entry_lock.owns_lock() || !is_unloadable(entry)) { return false; }
+        if (!entry_lock.owns_lock() || !is_unloadable(entry)) {
+            return false;
+        }
 
         entry.unload();
         log_verbose(file_info.filename, "Unloaded unused resource.");
@@ -250,7 +263,9 @@ bool ResourceCache::unload_unused(bool unload_all_unused) const
         size_t num_unloaded = 0;
 
         for (const FileInfo& file_info : m_file_list) {
-            if (try_unload(file_info)) { ++num_unloaded; }
+            if (try_unload(file_info)) {
+                ++num_unloaded;
+            }
         }
 
         return num_unloaded > 0;
@@ -259,18 +274,26 @@ bool ResourceCache::unload_unused(bool unload_all_unused) const
     // Create vector of FileInfos sorted so that ResourceEntry with earliest last-access time
     // comes first (and thus unload resources in least-recently-used order).
     std::vector<const FileInfo*> file_infos;
-    for (const FileInfo& file_info : m_file_list) { file_infos.push_back(&file_info); }
+    for (const FileInfo& file_info : m_file_list) {
+        file_infos.push_back(&file_info);
+    }
 
     const auto lru_order = [](const FileInfo* l, const FileInfo* r) {
-        if (l->entry == nullptr) { return false; }
-        if (r->entry == nullptr) { return true; }
+        if (l->entry == nullptr) {
+            return false;
+        }
+        if (r->entry == nullptr) {
+            return true;
+        }
         return l->entry->last_access < r->entry->last_access;
     };
 
     sort(file_infos, lru_order);
 
     for (const FileInfo* p_file_info : file_infos) {
-        if (try_unload(*p_file_info)) { return true; }
+        if (try_unload(*p_file_info)) {
+            return true;
+        }
     }
 
     return false;

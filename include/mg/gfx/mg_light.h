@@ -35,14 +35,14 @@ namespace Mg::gfx {
 struct Light {
     glm::vec4 vector;
     glm::vec3 colour;
-    float     range_sqr;
+    float range_sqr;
 };
 
 inline Light make_point_light(glm::vec3 position, glm::vec3 colour, float range)
 {
     Light l;
-    l.vector    = glm::vec4{ position, 1.0f };
-    l.colour    = colour;
+    l.vector = glm::vec4{ position, 1.0f };
+    l.colour = colour;
     l.range_sqr = range * range;
     return l;
 }

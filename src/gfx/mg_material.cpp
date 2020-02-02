@@ -91,7 +91,7 @@ void Material::set_sampler(Identifier name, TextureHandle texture)
         throw RuntimeError();
     }
 
-    m_samplers[*opt_index].name    = name;
+    m_samplers[*opt_index].name = name;
     m_samplers[*opt_index].sampler = texture;
 }
 
@@ -106,7 +106,9 @@ void Material::set_option(Identifier option, bool enabled)
         throw RuntimeError();
     }
 
-    if (enabled) { m_option_flags |= (1u << index); }
+    if (enabled) {
+        m_option_flags |= (1u << index);
+    }
     else {
         m_option_flags &= ~(1u << index);
     }
@@ -130,7 +132,9 @@ Opt<size_t> Material::sampler_index(Identifier name)
 {
     for (size_t i = 0; i < m_samplers.size(); ++i) {
         auto&& sampler = m_samplers[i];
-        if (sampler.name == name) { return i; }
+        if (sampler.name == name) {
+            return i;
+        }
     }
     return nullopt;
 }
@@ -171,8 +175,8 @@ size_t offset_for_param_type(shader::ParameterType type) noexcept
 }
 
 // Print error message when the wrong type is passed into Material::set_parameter
-void wrong_type_error(Identifier            material_id,
-                      Identifier            param_id,
+void wrong_type_error(Identifier material_id,
+                      Identifier param_id,
                       shader::ParameterType expected,
                       shader::ParameterType actual)
 {
@@ -188,7 +192,7 @@ void wrong_type_error(Identifier            material_id,
 
 } // namespace
 
-void Material::_set_parameter_impl(Identifier            name,
+void Material::_set_parameter_impl(Identifier name,
                                    span<const std::byte> param_value,
                                    shader::ParameterType param_type)
 {
@@ -241,7 +245,9 @@ std::string Material::debug_print() const
 
     oss << "\n\tOptions: {";
 
-    for (const Option& o : options()) { oss << "\n\t\t" << o.c_str() << " = " << get_option(o); };
+    for (const Option& o : options()) {
+        oss << "\n\t\t" << o.c_str() << " = " << get_option(o);
+    };
 
     oss << (options().empty() ? "}" : "\n\t}");
 

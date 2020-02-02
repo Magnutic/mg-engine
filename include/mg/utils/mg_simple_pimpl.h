@@ -77,7 +77,7 @@ protected:
 
     friend void swap(PImplMixin& lhs, PImplMixin& rhs) noexcept { lhs.swap(rhs); }
 
-    ImplT&       impl() noexcept { return *m_impl; }
+    ImplT& impl() noexcept { return *m_impl; }
     const ImplT& impl() const noexcept { return *m_impl; }
 
 private:
@@ -135,7 +135,7 @@ protected:
 
     friend void swap(InPlacePImplMixin& lhs, InPlacePImplMixin& rhs) noexcept { lhs.swap(rhs); }
 
-    ImplT&       impl() { return *reinterpret_cast<ImplT*>(&m_impl_buffer); }
+    ImplT& impl() { return *reinterpret_cast<ImplT*>(&m_impl_buffer); }
     const ImplT& impl() const { return *reinterpret_cast<const ImplT*>(&m_impl_buffer); }
 
 private:

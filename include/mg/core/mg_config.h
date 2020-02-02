@@ -45,7 +45,7 @@ class ConfigVariable {
 public:
     struct Value {
         std::string string;
-        double      numeric = 0.0;
+        double numeric = 0.0;
     };
 
     ConfigVariable(std::string_view key, double value) : ConfigVariable(key) { set(value); }
@@ -59,15 +59,15 @@ public:
     void set(double value);
 
     std::string_view key() const noexcept { return m_key; }
-    uint32_t         key_hash() const noexcept { return m_key_hash; }
-    const Value&     value() const noexcept { return m_value; }
+    uint32_t key_hash() const noexcept { return m_key_hash; }
+    const Value& value() const noexcept { return m_value; }
 
 private:
     ConfigVariable(std::string_view key) : m_key(key), m_key_hash(hash_fnv1a(key)) {}
 
     std::string m_key;
-    uint32_t    m_key_hash;
-    Value       m_value;
+    uint32_t m_key_hash;
+    Value m_value;
 };
 
 } // namespace detail
@@ -157,13 +157,15 @@ private:
     template<typename T> void _set_value(std::string_view key, const T& value)
     {
         auto p_cvar = at(key);
-        if (p_cvar != nullptr) { p_cvar->set(value); }
+        if (p_cvar != nullptr) {
+            p_cvar->set(value);
+        }
         else {
             m_values.emplace_back(key, value);
         }
     }
 
-    detail::ConfigVariable*       at(std::string_view key);
+    detail::ConfigVariable* at(std::string_view key);
     const detail::ConfigVariable* at(std::string_view key) const;
 
     std::vector<detail::ConfigVariable> m_values;

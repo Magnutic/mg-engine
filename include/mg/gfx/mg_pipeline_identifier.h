@@ -36,7 +36,7 @@ namespace Mg::gfx {
 /** Identifies which Pipeline is to be used for a Material. */
 struct PipelineIdentifier {
     Identifier shader_resource_id;
-    uint32_t   option_flags;
+    uint32_t option_flags;
 
     friend bool operator==(const PipelineIdentifier& lhs, const PipelineIdentifier& rhs)
     {

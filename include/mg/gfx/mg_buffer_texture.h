@@ -43,7 +43,7 @@ public:
 
     struct Type {
         Channels channels;
-        Format   fmt;
+        Format fmt;
         BitDepth bit_depth;
     };
 
@@ -68,7 +68,7 @@ public:
 private:
     OpaqueHandle m_tex_id;
     OpaqueHandle m_buf_id;
-    size_t       m_buffer_size = 0;
+    size_t m_buffer_size = 0;
 };
 
 } // namespace Mg::gfx

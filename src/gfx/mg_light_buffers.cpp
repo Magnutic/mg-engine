@@ -53,8 +53,8 @@ static_assert(sizeof(LightBlock) <= 16 * 1024);
 constexpr BufferTexture::Type light_index_tex_type()
 {
     BufferTexture::Type type{};
-    type.channels  = BufferTexture::Channels::R; // red: light index
-    type.fmt       = BufferTexture::Format::UNSIGNED;
+    type.channels = BufferTexture::Channels::R; // red: light index
+    type.fmt = BufferTexture::Format::UNSIGNED;
     type.bit_depth = BufferTexture::BitDepth::BITS_16;
     return type;
 }
@@ -62,20 +62,20 @@ constexpr BufferTexture::Type light_index_tex_type()
 constexpr BufferTexture::Type light_grid_tex_type()
 {
     BufferTexture::Type type{};
-    type.channels  = BufferTexture::Channels::RG; // red: offset, green: amount.
-    type.fmt       = BufferTexture::Format::UNSIGNED;
+    type.channels = BufferTexture::Channels::RG; // red: offset, green: amount.
+    type.fmt = BufferTexture::Format::UNSIGNED;
     type.bit_depth = BufferTexture::BitDepth::BITS_32;
     return type;
 }
 
 struct ClusterData {
-    uint16_t                                        num_lights;
+    uint16_t num_lights;
     std::array<uint16_t, MG_MAX_LIGHTS_PER_CLUSTER> light_indices;
 };
 
-using ClusterArray    = std::array<ClusterData, MG_LIGHT_GRID_SIZE>;
+using ClusterArray = std::array<ClusterData, MG_LIGHT_GRID_SIZE>;
 using LightIndexArray = std::array<uint16_t, MG_LIGHT_GRID_SIZE * MG_MAX_LIGHTS_PER_CLUSTER>;
-using LightGridData   = std::array<uint32_t, MG_LIGHT_GRID_SIZE * 2u>;
+using LightGridData = std::array<uint32_t, MG_LIGHT_GRID_SIZE * 2u>;
 
 static_assert(std::is_trivially_copyable_v<ClusterArray>);
 static_assert(std::is_trivially_copyable_v<LightIndexArray>);
@@ -100,9 +100,9 @@ void add_light_to_cluster(size_t light_index, glm::uvec3 cluster, ClusterArray& 
 // upload to the GPU. These are reserved and re-used between invocations of update_light_data to
 // avoid costly large dynamic memory allocations -- putting them on the stack would not work, as the
 // required memory is too large.
-auto clusters          = std::make_unique<ClusterArray>();
+auto clusters = std::make_unique<ClusterArray>();
 auto light_index_array = std::make_unique<LightIndexArray>();
-auto light_grid_data   = std::make_unique<LightGridData>();
+auto light_grid_data = std::make_unique<LightGridData>();
 
 } // namespace
 
@@ -114,10 +114,10 @@ LightBuffers::LightBuffers() noexcept
     , tile_data_texture{ light_grid_tex_type(), sizeof(LightGridData) }
 {}
 
-void update_light_data(LightBuffers&     light_data_out,
+void update_light_data(LightBuffers& light_data_out,
                        span<const Light> lights,
-                       const ICamera&    cam,
-                       LightGrid&        grid)
+                       const ICamera& cam,
+                       LightGrid& grid)
 {
     std::memset(clusters.get(), 0, sizeof(ClusterArray)); // Reset cluster data
 
@@ -128,10 +128,12 @@ void update_light_data(LightBuffers&     light_data_out,
     for (size_t light_index = 0; light_index < lights.size(); ++light_index) {
         const Light& l = lights[light_index];
 
-        if (l.vector.w == 0.0) { continue; }
+        if (l.vector.w == 0.0) {
+            continue;
+        }
 
         const glm::vec3 light_pos_world = glm::vec3(l.vector);
-        const glm::vec3 light_pos_view  = V * glm::vec4(light_pos_world, 1.0f);
+        const glm::vec3 light_pos_view = V * glm::vec4(light_pos_world, 1.0f);
 
         // Early out if light is entirely behind camera
         if (light_pos_view.z > 0.0f && light_pos_view.z * light_pos_view.z >= l.range_sqr) {
@@ -161,7 +163,7 @@ void update_light_data(LightBuffers&     light_data_out,
     uint32_t light_index_accumulator = 0;
 
     for (size_t cluster_index = 0; cluster_index < clusters->size(); ++cluster_index) {
-        const ClusterData& cluster             = (*clusters)[cluster_index];
+        const ClusterData& cluster = (*clusters)[cluster_index];
         (*light_grid_data)[cluster_index * 2u] = light_index_accumulator;
 
         for (uint16_t i = 0; i < cluster.num_lights; ++i) {

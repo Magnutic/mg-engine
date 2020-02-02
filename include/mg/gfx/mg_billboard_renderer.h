@@ -47,7 +47,7 @@ class Material;
 namespace BillboardSetting {
 using Value = uint8_t;
 enum Flags : Value {
-    A_TEST          = 0x1, // discard fragment when alpha < 0.5
+    A_TEST = 0x1,          // discard fragment when alpha < 0.5
     FADE_WHEN_CLOSE = 0x2, // shrink and fade billboards near camera to reduce overdraw
     FIXED_SIZE = 0x4 // radius as proportion of view height (same size irrespective of distance)
 };
@@ -56,7 +56,7 @@ enum Flags : Value {
 struct Billboard {
     glm::vec3 pos;
     glm::vec4 colour;
-    float     radius;
+    float radius;
 };
 
 /** List of billboards to render. */

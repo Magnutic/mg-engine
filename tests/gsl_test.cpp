@@ -95,7 +95,7 @@ TEST_CASE("Disallows construction from a std array of incompatible type")
         2L,
         3L,
     } };
-    span<int>           v(arr);
+    span<int> v(arr);
 #endif
 }
 
@@ -117,7 +117,7 @@ TEST_CASE("Disallows slicing construction from container")
         int b;
         B(int _a, int _b) : A(_a), b(_b) {}
     };
-    auto    vec = std::vector<B>({ { 1, 2 }, { 3, 4 } });
+    auto vec = std::vector<B>({ { 1, 2 }, { 3, 4 } });
     span<A> v(vec);
 #endif
 }
@@ -149,7 +149,7 @@ TEST_CASE("Disallows slicing construction from ptr")
         int b;
         B(int _a, int _b) : A(_a), b(_b) {}
     };
-    B       b(1, 2);
+    B b(1, 2);
     span<A> v(&b, 1);
 #endif
 }
@@ -168,7 +168,7 @@ TEST_CASE("Terminates construction from two pointers in the wrong order")
     struct F {
         static void blow()
         {
-            int       a[2];
+            int a[2];
             span<int> v(&a[1], &a[0]);
         }
     };
@@ -181,7 +181,7 @@ TEST_CASE("Terminates construction from a null pointer and a non zero size")
     struct F {
         static void blow()
         {
-            int*      p = nullptr;
+            int* p = nullptr;
             span<int> v(p, 42);
         }
     };
@@ -289,7 +289,7 @@ TEST_CASE("Allows to default construct")
 
 TEST_CASE("Allows to construct from a nullptr and a zero size")
 {
-    span<int>       v(nullptr, 0);
+    span<int> v(nullptr, 0);
     span<const int> w(nullptr, 0);
 
     REQUIRE(v.size() == size_t(0));
@@ -305,7 +305,7 @@ TEST_CASE("Allows to construct from two pointers")
         1, 2, 3, 4, 5, 6, 7, 8, 9,
     };
 
-    span<int>       v(arr, arr + (sizeof(arr) / sizeof(arr[0])));
+    span<int> v(arr, arr + (sizeof(arr) / sizeof(arr[0])));
     span<const int> w(arr, arr + (sizeof(arr) / sizeof(arr[0])));
 
     REQUIRE(std::equal(v.begin(), v.end(), arr));
@@ -329,7 +329,7 @@ TEST_CASE("Allows to construct from a non null pointer and a size")
         1, 2, 3, 4, 5, 6, 7, 8, 9,
     };
 
-    span<int>       v(arr, (sizeof(arr) / sizeof(arr[0])));
+    span<int> v(arr, (sizeof(arr) / sizeof(arr[0])));
     span<const int> w(arr, (sizeof(arr) / sizeof(arr[0])));
 
     REQUIRE(std::equal(v.begin(), v.end(), arr));
@@ -351,7 +351,7 @@ TEST_CASE("Allows to construct from a temporary pointer and a size")
 {
     int x = 42;
 
-    span<int>       v(&x, 1);
+    span<int> v(&x, 1);
     span<const int> w(&x, 1);
 
     REQUIRE(std::equal(v.begin(), v.end(), &x));
@@ -372,13 +372,13 @@ TEST_CASE("Allows to construct from any pointer and a zero size")
     struct F {
         static void null()
         {
-            int*      p = nullptr;
+            int* p = nullptr;
             span<int> v(p, size_t(0));
         }
         static void nonnull()
         {
-            int       i = 7;
-            int*      p = &i;
+            int i = 7;
+            int* p = &i;
             span<int> v(p, size_t(0));
         }
     };
@@ -393,7 +393,7 @@ TEST_CASE("Allows to construct from a C array")
         1, 2, 3, 4, 5, 6, 7, 8, 9,
     };
 
-    span<int>       v(arr);
+    span<int> v(arr);
     span<const int> w(arr);
 
     REQUIRE(std::equal(v.begin(), v.end(), arr));
@@ -419,7 +419,7 @@ TEST_CASE(
     };
 
     {
-        span<int>       v(arr, (sizeof(arr) / sizeof(arr[0])));
+        span<int> v(arr, (sizeof(arr) / sizeof(arr[0])));
         span<const int> w(arr, (sizeof(arr) / sizeof(arr[0])));
 
         REQUIRE(std::equal(v.begin(), v.end(), arr));
@@ -427,7 +427,7 @@ TEST_CASE(
     }
 
     {
-        span<int>       v(arr, 3);
+        span<int> v(arr, 3);
         span<const int> w(arr, 3);
 
         REQUIRE(std::equal(v.begin(), v.end(), arr, arr + 3));
@@ -468,7 +468,7 @@ TEST_CASE("Allows to construct from a std array")
         9,
     } };
 
-    span<int>       v(arr);
+    span<int> v(arr);
     span<const int> w(arr);
 
     REQUIRE(std::equal(v.begin(), v.end(), arr.begin()));
@@ -499,7 +499,7 @@ TEST_CASE("Allows to construct from a std vector")
         1, 2, 3, 4, 5, 6, 7, 8, 9,
     };
 
-    span<int>       v(vec);
+    span<int> v(vec);
     span<const int> w(vec);
 
     REQUIRE(std::equal(v.begin(), v.end(), vec.begin()));
@@ -508,7 +508,7 @@ TEST_CASE("Allows to construct from a std vector")
 
 TEST_CASE("Allows to construct from a const std vector")
 {
-    const auto      vec = std::vector<int>({ 1, 2, 3, 4, 5, 6, 7, 8, 9 });
+    const auto vec = std::vector<int>({ 1, 2, 3, 4, 5, 6, 7, 8, 9 });
     span<const int> v(vec);
 }
 
@@ -517,10 +517,10 @@ TEST_CASE("Allows to copy construct from another of the same type")
     int arr[] = {
         1, 2, 3, 4, 5, 6, 7, 8, 9,
     };
-    span<int>       v(arr);
+    span<int> v(arr);
     span<const int> w(arr);
 
-    span<int>       x(v);
+    span<int> x(v);
     span<const int> y(w);
 
     REQUIRE(std::equal(x.begin(), x.end(), arr));
@@ -532,7 +532,7 @@ TEST_CASE("Allows to copy construct from another of a compatible type")
     int arr[] = {
         1, 2, 3, 4, 5, 6, 7, 8, 9,
     };
-    span<int>       v(arr);
+    span<int> v(arr);
     span<const int> w(arr);
 
     span<const volatile int> x(v);
@@ -563,8 +563,8 @@ TEST_CASE("Allows to copy assign from another of the same type")
     int arr[] = {
         1, 2, 3, 4, 5, 6, 7, 8, 9,
     };
-    span<int>       v(arr);
-    span<int>       s;
+    span<int> v(arr);
+    span<int> s;
     span<const int> t;
 
     s = v;
@@ -579,7 +579,7 @@ TEST_CASE("Allows to move assign from another of the same type")
     int arr[] = {
         1, 2, 3, 4, 5, 6, 7, 8, 9,
     };
-    span<int>       v;
+    span<int> v;
     span<const int> w;
 
     v = span<int>(arr);
@@ -595,9 +595,9 @@ TEST_CASE("Allows to create a subspan of the first n elements")
         1, 2, 3, 4, 5,
     };
     span<int> v(arr);
-    size_t    count = 3;
+    size_t count = 3;
 
-    span<int>       s = v.first(count);
+    span<int> s = v.first(count);
     span<const int> t = v.first(count);
 
     REQUIRE(s.size() == count);
@@ -612,9 +612,9 @@ TEST_CASE("Allows to create a subspan of the last n elements")
         1, 2, 3, 4, 5,
     };
     span<int> v(arr);
-    size_t    count = 3;
+    size_t count = 3;
 
-    span<int>       s = v.last(count);
+    span<int> s = v.last(count);
     span<const int> t = v.last(count);
 
     REQUIRE(s.size() == count);
@@ -631,9 +631,9 @@ TEST_CASE("Allows to create a subspan starting at a given offset")
         3,
     };
     span<int> v(arr);
-    size_t    offset = 1;
+    size_t offset = 1;
 
-    span<int>       s = v.subspan(offset);
+    span<int> s = v.subspan(offset);
     span<const int> t = v.subspan(offset);
 
     REQUIRE(s.size() == v.size() - offset);
@@ -650,10 +650,10 @@ TEST_CASE("Allows to create a subspan starting at a given offset with a given le
         3,
     };
     span<int> v(arr);
-    size_t    offset = 1;
-    size_t    length = 1;
+    size_t offset = 1;
+    size_t length = 1;
 
-    span<int>       s = v.subspan(offset, length);
+    span<int> s = v.subspan(offset, length);
     span<const int> t = v.subspan(offset, length);
 
     REQUIRE(s.size() == length);
@@ -670,9 +670,9 @@ TEST_CASE("Allows to create an empty subspan at full offset")
         3,
     };
     span<int> v(arr);
-    size_t    offset = v.size();
+    size_t offset = v.size();
 
-    span<int>       s = v.subspan(offset);
+    span<int> s = v.subspan(offset);
     span<const int> t = v.subspan(offset);
 
     REQUIRE(s.empty());
@@ -687,10 +687,10 @@ TEST_CASE("Allows to create an empty subspan at full offset with zero length")
         3,
     };
     span<int> v(arr);
-    size_t    offset = v.size();
-    size_t    length = 0;
+    size_t offset = v.size();
+    size_t length = 0;
 
-    span<int>       s = v.subspan(offset, length);
+    span<int> s = v.subspan(offset, length);
     span<const int> t = v.subspan(offset, length);
 
     REQUIRE(s.empty());
@@ -732,7 +732,7 @@ TEST_CASE("Allows to observe an element via array indexing")
         2,
         3,
     };
-    span<int>       v(arr);
+    span<int> v(arr);
     span<int> const w(arr);
 
     for (size_t i = 0; i < v.size(); ++i) {
@@ -748,7 +748,7 @@ TEST_CASE("Allows to observe an element via data")
         2,
         3,
     };
-    span<int>       v(arr);
+    span<int> v(arr);
     span<int> const w(arr);
 
     REQUIRE(*v.data() == *v.begin());
@@ -767,7 +767,7 @@ TEST_CASE("Allows to change an element via array indexing")
         2,
         3,
     };
-    span<int>       v(arr);
+    span<int> v(arr);
     span<int> const w(arr);
 
     v[1] = 22;
@@ -802,7 +802,7 @@ TEST_CASE("Allows to change an element via data")
         3,
     };
 
-    span<int>       v(arr);
+    span<int> v(arr);
     span<int> const w(arr);
 
     *v.data() = 22;
@@ -821,7 +821,7 @@ TEST_CASE("Allows to test for empty via empty empty case")
 
 TEST_CASE("Allows to test for empty via empty non empty case")
 {
-    int       a[] = { 1 };
+    int a[] = { 1 };
     span<int> v(a);
 
     REQUIRE(!(v.empty()));
@@ -931,7 +931,7 @@ TEST_CASE("Allows to view the elements as read only bytes")
 
     std::byte* b = is_little_endian() ? le : be;
 
-    span<int>             va(a);
+    span<int> va(a);
     span<const std::byte> vb(va.as_bytes());
     span<const std::byte> vc(as_bytes(va));
 
@@ -977,11 +977,13 @@ TEST_CASE("Allows to copy a span to another span of a different element type")
     };
 
     span<char> src(a);
-    span<int>  dst(b);
+    span<int> dst(b);
 
     std::copy(src.begin(), src.end(), dst.begin());
 
-    for (span<int>::size_type i = 0; i < src.size(); ++i) { REQUIRE(src[i] == dst[i]); }
+    for (span<int>::size_type i = 0; i < src.size(); ++i) {
+        REQUIRE(src[i] == dst[i]);
+    }
 }
 
 #if (MG_HAVE_CLASS_TEMPLATE_DEDUCTION)
@@ -991,7 +993,7 @@ TEST_CASE("Deduces from pointer pair")
     std::array<int, 2> a{ { 0, 1 } };
 
     auto begin = &a[0];
-    auto end   = begin + a.size();
+    auto end = begin + a.size();
     span v(begin, end);
     REQUIRE((std::is_same_v<span<int>, decltype(v)>));
 }
@@ -1001,7 +1003,7 @@ TEST_CASE("Deduces from const pointer pair")
     std::array<const int, 2> a{ { 0, 1 } };
 
     auto begin = &a[0];
-    auto end   = begin + a.size();
+    auto end = begin + a.size();
     span v(begin, end);
     REQUIRE((std::is_same_v<span<const int>, decltype(v)>));
 }
@@ -1011,7 +1013,7 @@ TEST_CASE("Deduces from pointer and length")
     std::array<int, 2> a{ { 0, 1 } };
 
     auto begin = &a[0];
-    auto end   = begin + a.size();
+    auto end = begin + a.size();
     span v(begin, end);
     REQUIRE((std::is_same_v<span<int>, decltype(v)>));
 }
@@ -1021,30 +1023,30 @@ TEST_CASE("Deduces from const pointer and length")
     std::array<const int, 2> a{ { 0, 1 } };
 
     auto begin = &a[0];
-    auto end   = begin + a.size();
+    auto end = begin + a.size();
     span v(begin, end);
     REQUIRE((std::is_same_v<span<const int>, decltype(v)>));
 }
 
 TEST_CASE("Deduces from other span")
 {
-    int       i;
+    int i;
     span<int> vi(&i, 1);
-    span      v(vi);
+    span v(vi);
     REQUIRE((std::is_same_v<span<int>, decltype(v)>));
 }
 
 TEST_CASE("Deduces from other const span")
 {
-    int             i;
+    int i;
     span<const int> vi(&i, 1);
-    span            v(vi);
+    span v(vi);
     REQUIRE((std::is_same_v<span<const int>, decltype(v)>));
 }
 
 TEST_CASE("Deduces from array")
 {
-    int  a[] = { 1, 2, 3, 4 };
+    int a[] = { 1, 2, 3, 4 };
     span v(a);
     REQUIRE((std::is_same_v<span<int>, decltype(v)>));
 }
@@ -1052,42 +1054,42 @@ TEST_CASE("Deduces from array")
 TEST_CASE("Deduces from const array")
 {
     const int a[] = { 1, 2, 3, 4 };
-    span      v(a);
+    span v(a);
     REQUIRE((std::is_same_v<span<const int>, decltype(v)>));
 }
 
 TEST_CASE("Deduces from std array")
 {
     std::array<int, 4> a{ { 0, 1, 2, 3 } };
-    span               v(a);
+    span v(a);
     REQUIRE((std::is_same_v<span<int>, decltype(v)>));
 }
 
 TEST_CASE("Deduces from const std array")
 {
     const std::array<int, 4> a{ { 0, 1, 2, 3 } };
-    span                     v(a);
+    span v(a);
     REQUIRE((std::is_same_v<span<const int>, decltype(v)>));
 }
 
 TEST_CASE("Deduces from std array of const")
 {
     std::array<const int, 4> a{ { 0, 1, 2, 3 } };
-    span                     v(a);
+    span v(a);
     REQUIRE((std::is_same_v<span<const int>, decltype(v)>));
 }
 
 TEST_CASE("Deduces from std vector")
 {
     std::vector<int> vec({ 1, 2, 3, 4, 5 });
-    span             v(vec);
+    span v(vec);
     REQUIRE((std::is_same_v<span<int>, decltype(v)>));
 }
 
 TEST_CASE("Deduces from const std vector")
 {
     const std::vector<int> vec({ 1, 2, 3, 4, 5 });
-    span                   v(vec);
+    span v(vec);
     REQUIRE((std::is_same_v<span<const int>, decltype(v)>));
 }
 

@@ -58,7 +58,7 @@ static constexpr auto k_delimiter_comment = R"(
 // The search directories for a recursive #include statement, i.e. the same as
 // include_directories but also the included file's directory.
 std::vector<fs::path> include_dirs_for_file(std::vector<fs::path> include_directories,
-                                            fs::path              included_file)
+                                            fs::path included_file)
 {
     const auto file_directory = included_file.parent_path();
 
@@ -73,7 +73,7 @@ std::vector<fs::path> include_dirs_for_file(std::vector<fs::path> include_direct
 std::pair<bool, std::string> try_parse_line_as_include(std::string_view line)
 {
     const std::pair<bool, std::string> fail_value = { false, "" };
-    const SimpleInputStream::PeekMode  peekmode   = SimpleInputStream::return_eof_as_null_char;
+    const SimpleInputStream::PeekMode peekmode = SimpleInputStream::return_eof_as_null_char;
 
     SimpleInputStream stream(line);
 
@@ -84,14 +84,20 @@ std::pair<bool, std::string> try_parse_line_as_include(std::string_view line)
     };
 
     skip_whitespace();
-    if (!stream.match('#', peekmode)) { return fail_value; }
+    if (!stream.match('#', peekmode)) {
+        return fail_value;
+    }
     skip_whitespace();
-    if (!stream.match("include", peekmode)) { return fail_value; }
+    if (!stream.match("include", peekmode)) {
+        return fail_value;
+    }
     skip_whitespace();
 
     char terminator{};
 
-    if (stream.match('\"', peekmode)) { terminator = '\"'; }
+    if (stream.match('\"', peekmode)) {
+        terminator = '\"';
+    }
     else if (stream.match('<', peekmode)) {
         terminator = '>';
     }
@@ -102,23 +108,25 @@ std::pair<bool, std::string> try_parse_line_as_include(std::string_view line)
     std::string include_path;
 
     while (stream.peek(peekmode) != terminator) {
-        if (stream.is_at_end()) { return fail_value; }
+        if (stream.is_at_end()) {
+            return fail_value;
+        }
         include_path += stream.advance();
     }
 
     return { true, include_path };
 }
 
-std::string assemble_shader_code(std::vector<fs::path>       include_directories,
-                                 std::string_view            code,
+std::string assemble_shader_code(std::vector<fs::path> include_directories,
+                                 std::string_view code,
                                  const ResourceLoadingInput& input,
-                                 fs::path                    source_file);
+                                 fs::path source_file);
 
 std::pair<bool, std::string> get_code(const ResourceLoadingInput& input, fs::path file_path)
 {
     try {
         const auto file_id = Identifier::from_runtime_string(file_path.generic_u8string());
-        const ResourceHandle      file_handle = input.load_dependency<TextResource>(file_id);
+        const ResourceHandle file_handle = input.load_dependency<TextResource>(file_id);
         const ResourceAccessGuard include_access(file_handle);
         return { true, std::string(include_access->text()) };
     }
@@ -128,8 +136,8 @@ std::pair<bool, std::string> get_code(const ResourceLoadingInput& input, fs::pat
 }
 
 std::pair<bool, std::string> get_include(const ResourceLoadingInput& input,
-                                         std::vector<fs::path>       include_directories,
-                                         std::string_view            include_file)
+                                         std::vector<fs::path> include_directories,
+                                         std::string_view include_file)
 {
     std::string result;
 
@@ -139,7 +147,9 @@ std::pair<bool, std::string> get_include(const ResourceLoadingInput& input,
         // Load include file as a dependency of this resource.
         const auto [is_found, included_code] = get_code(input, file_path);
 
-        if (!is_found) { continue; }
+        if (!is_found) {
+            continue;
+        }
 
         // Add origin-tracking comment (helps debugging shader)
         result += fmt::format(k_delimiter_comment, file_path.generic_u8string());
@@ -156,15 +166,15 @@ std::pair<bool, std::string> get_include(const ResourceLoadingInput& input,
 }
 
 // Helper for ShaderResource::load_resource. Assemble shader code by loading included code files.
-std::string assemble_shader_code(std::vector<fs::path>       include_directories,
-                                 std::string_view            code,
+std::string assemble_shader_code(std::vector<fs::path> include_directories,
+                                 std::string_view code,
                                  const ResourceLoadingInput& input,
-                                 fs::path                    source_file)
+                                 fs::path source_file)
 {
     // Read line-by-line, try to parse each line as an #include directive; if successful, include
     // the file, otherwise, insert the line as is.
     std::vector<std::string_view> lines = tokenise_string(code, "\n");
-    std::string                   assembled_code;
+    std::string assembled_code;
 
     for (const auto line : lines) {
         const auto [line_is_include, include_path] = try_parse_line_as_include(line);
@@ -176,7 +186,8 @@ std::string assemble_shader_code(std::vector<fs::path>       include_directories
             continue;
         }
 
-        const auto [include_success, included_code] = get_include(input, include_directories, include_path);
+        const auto [include_success,
+                    included_code] = get_include(input, include_directories, include_path);
         if (!include_success) {
             g_log.write_error(fmt::format("Could not find '{}' (#include directive in '{}'.)",
                                           include_path,
@@ -197,14 +208,14 @@ LoadResourceResult ShaderResource::load_resource_impl(const ResourceLoadingInput
 
     try {
         shader::ParseResult parse_result = shader::parse_shader(shader_resource_definition);
-        m_parameters                     = std::move(parse_result.parameters);
-        m_samplers                       = std::move(parse_result.samplers);
-        m_options                        = std::move(parse_result.options);
+        m_parameters = std::move(parse_result.parameters);
+        m_samplers = std::move(parse_result.samplers);
+        m_options = std::move(parse_result.options);
 
-        const auto filepath            = fs::path(resource_id().str_view());
+        const auto filepath = fs::path(resource_id().str_view());
         const auto include_directories = include_dirs_for_file({}, filepath);
 
-        m_vertex_code   = assemble_shader_code(include_directories,
+        m_vertex_code = assemble_shader_code(include_directories,
                                              parse_result.vertex_code,
                                              input,
                                              filepath);
@@ -234,7 +245,9 @@ std::string ShaderResource::debug_print() const
     oss << "ShaderResource '" << resource_id().c_str() << "'\n";
 
     oss << "Options:\n";
-    for (auto&& o : options()) { oss << "\t" << o.name.c_str() << "\n"; }
+    for (auto&& o : options()) {
+        oss << "\t" << o.name.c_str() << "\n";
+    }
 
     oss << "Parameters:\n";
     for (auto&& p : parameters()) {

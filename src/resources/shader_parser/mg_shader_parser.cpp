@@ -105,14 +105,16 @@ public:
     {
         expect_next(TokenType::CURLY_LEFT);
 
-        while (peek_token().type != TokenType::CURLY_RIGHT) { statement_parser(); }
+        while (peek_token().type != TokenType::CURLY_RIGHT) {
+            statement_parser();
+        }
 
         expect_next(TokenType::CURLY_RIGHT);
     }
 
     void parse_sampler_declaration()
     {
-        auto&       type_token = next_token();
+        auto& type_token = next_token();
         SamplerType sampler_type{};
 
         switch (type_token.type) {
@@ -156,11 +158,11 @@ public:
 
         switch (type_token.type) {
         case TokenType::INT:
-            p.type  = ParameterType::Int;
+            p.type = ParameterType::Int;
             value.x = parse_numeric();
             break;
         case TokenType::FLOAT:
-            p.type  = ParameterType::Float;
+            p.type = ParameterType::Float;
             value.x = parse_numeric();
             break;
         case TokenType::VEC2:
@@ -212,7 +214,7 @@ public:
             parse_error("Expected = (i.e. default value for option, true|false).", equal_token);
         }
 
-        bool  default_value{};
+        bool default_value{};
         auto& value_token = next_token();
         switch (value_token.type) {
         case TokenType::TRUE:
@@ -284,7 +286,7 @@ public:
         return *m_current_token;
     }
 
-    const Token& expect_next(TokenType             expected_type,
+    const Token& expect_next(TokenType expected_type,
                              Opt<std::string_view> additional_message = nullopt)
     {
         auto& t = next_token();
@@ -309,9 +311,9 @@ public:
     ParseResult take_result() noexcept { return std::move(m_result); }
 
 private:
-    std::vector<Token>           m_tokens;
+    std::vector<Token> m_tokens;
     decltype(m_tokens)::iterator m_current_token{};
-    ParseResult                  m_result;
+    ParseResult m_result;
 };
 
 } // namespace

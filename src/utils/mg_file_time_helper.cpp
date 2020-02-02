@@ -47,7 +47,7 @@ std::time_t last_write_time_t(const std::filesystem::path& file)
 
 #ifdef _MSC_VER
     // For MSVC, manually convert to time_t.
-    FILETIME   ft;
+    FILETIME ft;
     SYSTEMTIME st;
 
     // filesystem time stamps are supposed to be binary compatible with Windows FILETIME objects in
@@ -60,12 +60,12 @@ std::time_t last_write_time_t(const std::filesystem::path& file)
     }
 
     std::tm tm;
-    tm.tm_sec   = st.wSecond;
-    tm.tm_min   = st.wMinute;
-    tm.tm_hour  = st.wHour;
-    tm.tm_mday  = st.wDay;
-    tm.tm_mon   = st.wMonth - 1;
-    tm.tm_year  = st.wYear - 1900;
+    tm.tm_sec = st.wSecond;
+    tm.tm_min = st.wMinute;
+    tm.tm_hour = st.wHour;
+    tm.tm_mday = st.wDay;
+    tm.tm_mon = st.wMonth - 1;
+    tm.tm_year = st.wYear - 1900;
     tm.tm_isdst = -1;
 
     return std::mktime(&tm);

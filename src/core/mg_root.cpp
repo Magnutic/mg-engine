@@ -49,8 +49,8 @@ namespace Mg {
 struct RootData {
     std::chrono::high_resolution_clock::time_point start_time;
 
-    std::unique_ptr<Config>         config;
-    std::unique_ptr<Window>         window;
+    std::unique_ptr<Config> config;
+    std::unique_ptr<Window> window;
     std::unique_ptr<gfx::GfxDevice> gfx_device;
 };
 

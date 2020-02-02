@@ -40,18 +40,22 @@ static double numeric_from_string(std::string_view string)
 {
     const auto [success, value] = string_to<double>(string);
 
-    if (success) { return value; }
+    if (success) {
+        return value;
+    }
 
     auto low_str = to_lower(string);
 
-    if (low_str == "true") { return 1.0; }
+    if (low_str == "true") {
+        return 1.0;
+    }
 
     return 0.0;
 }
 
 void detail::ConfigVariable::set(std::string_view value)
 {
-    m_value.string  = std::string(value);
+    m_value.string = std::string(value);
     m_value.numeric = numeric_from_string(value);
 }
 
@@ -60,7 +64,7 @@ void detail::ConfigVariable::set(double value)
     std::stringstream ss;
     ss << value;
 
-    m_value.string  = ss.str();
+    m_value.string = ss.str();
     m_value.numeric = value;
 }
 
@@ -71,23 +75,27 @@ template<typename T> T Config::as(std::string_view key) const
     const auto& v = at(key);
     MG_ASSERT(v != nullptr);
 
-    if constexpr (std::is_integral_v<T>) { return round<T>(v->value().numeric); }
+    if constexpr (std::is_integral_v<T>) {
+        return round<T>(v->value().numeric);
+    }
 
-    if constexpr (std::is_floating_point_v<T>) { return static_cast<T>(v->value().numeric); }
+    if constexpr (std::is_floating_point_v<T>) {
+        return static_cast<T>(v->value().numeric);
+    }
 }
 
 // Explicit instantiations for numeric types
-template bool     Config::as<bool>(std::string_view) const;
-template int8_t   Config::as<int8_t>(std::string_view) const;
-template int16_t  Config::as<int16_t>(std::string_view) const;
-template int32_t  Config::as<int32_t>(std::string_view) const;
-template int64_t  Config::as<int64_t>(std::string_view) const;
-template uint8_t  Config::as<uint8_t>(std::string_view) const;
+template bool Config::as<bool>(std::string_view) const;
+template int8_t Config::as<int8_t>(std::string_view) const;
+template int16_t Config::as<int16_t>(std::string_view) const;
+template int32_t Config::as<int32_t>(std::string_view) const;
+template int64_t Config::as<int64_t>(std::string_view) const;
+template uint8_t Config::as<uint8_t>(std::string_view) const;
 template uint16_t Config::as<uint16_t>(std::string_view) const;
 template uint32_t Config::as<uint32_t>(std::string_view) const;
 template uint64_t Config::as<uint64_t>(std::string_view) const;
-template float    Config::as<float>(std::string_view) const;
-template double   Config::as<double>(std::string_view) const;
+template float Config::as<float>(std::string_view) const;
+template double Config::as<double>(std::string_view) const;
 
 std::string Config::assignment_line(std::string_view key) const
 {
@@ -117,10 +125,12 @@ bool Config::evaluate_line(std::string_view input)
     };
 
     // Ignore comment
-    const auto size = narrow<size_t>( find(input, '#') - input.begin() );
-    input     = trim(input.substr(0, size));
+    const auto size = narrow<size_t>(find(input, '#') - input.begin());
+    input = trim(input.substr(0, size));
 
-    if (input.empty()) { return true; }
+    if (input.empty()) {
+        return true;
+    }
 
     auto [key, rhs] = split_string_on_char(input, '=');
 
@@ -142,7 +152,9 @@ bool Config::evaluate_line(std::string_view input)
                 escape = true;
                 continue;
             }
-            if (c == '"' && !escape) { return false; }
+            if (c == '"' && !escape) {
+                return false;
+            }
 
             value += c;
             escape = false;
@@ -185,7 +197,7 @@ namespace {
 struct Line {
     static auto init_key(std::string_view line) noexcept
     {
-        const auto split      = split_string_on_char(line, '#');
+        const auto split = split_string_on_char(line, '#');
         const auto assignment = split_string_on_char(split.first, '=');
         return trim(assignment.first);
     }
@@ -195,7 +207,7 @@ struct Line {
         key_hash = hash_fnv1a(key);
     }
 
-    uint32_t    key_hash;
+    uint32_t key_hash;
     std::string key;
     std::string text;
 };
@@ -221,16 +233,22 @@ void Config::write_to_file(std::string_view filepath) const
         // Read in old lines from config file if it exists
         Opt<std::ifstream> reader = io::make_input_filestream(filepath);
 
-        while (reader && reader->good()) { lines.emplace_back(io::get_line(*reader)); }
+        while (reader && reader->good()) {
+            lines.emplace_back(io::get_line(*reader));
+        }
     }
 
     // Remove blank lines at end of file
-    while (!lines.empty() && lines.back().text.empty()) { lines.erase(lines.end() - 1); }
+    while (!lines.empty() && lines.back().text.empty()) {
+        lines.erase(lines.end() - 1);
+    }
 
     std::vector<Line> new_lines;
 
     // Format new config lines
-    for (auto& cvar : m_values) { new_lines.emplace_back(assignment_line(cvar.key())); }
+    for (auto& cvar : m_values) {
+        new_lines.emplace_back(assignment_line(cvar.key()));
+    }
 
     std::sort(new_lines.begin(), new_lines.end());
 
@@ -262,7 +280,9 @@ void Config::write_to_file(std::string_view filepath) const
         return;
     }
 
-    for (auto& l : lines) { io::write_line(*writer, l.text); }
+    for (auto& l : lines) {
+        io::write_line(*writer, l.text);
+    }
 }
 
 // Shared const and non-const implementation of Config::at.
@@ -275,7 +295,9 @@ auto at_impl(std::string_view key, CVarVector& values) -> decltype(values.data()
         return cvar.key_hash() == key_hash && cvar.key() == key;
     });
 
-    if (it == values.end()) { return nullptr; }
+    if (it == values.end()) {
+        return nullptr;
+    }
 
     return std::addressof(*it);
 }

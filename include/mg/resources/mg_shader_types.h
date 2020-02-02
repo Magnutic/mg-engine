@@ -55,8 +55,12 @@ inline std::string_view sampler_type_to_string(SamplerType type) noexcept
 
 inline Opt<SamplerType> string_to_sampler_type(std::string_view str) noexcept
 {
-    if (str == "sampler2D") { return SamplerType::Sampler2D; }
-    if (str == "samplerCube") { return SamplerType::SamplerCube; }
+    if (str == "sampler2D") {
+        return SamplerType::Sampler2D;
+    }
+    if (str == "samplerCube") {
+        return SamplerType::SamplerCube;
+    }
     return nullopt;
 }
 
@@ -79,39 +83,47 @@ inline std::string_view parameter_type_to_string(ParameterType type) noexcept
 
 inline Opt<ParameterType> string_to_parameter_type(std::string_view str) noexcept
 {
-    if (str == "int") { return ParameterType::Int; }
-    if (str == "float") { return ParameterType::Float; }
-    if (str == "vec2") { return ParameterType::Vec2; }
-    if (str == "vec4") { return ParameterType::Vec4; }
+    if (str == "int") {
+        return ParameterType::Int;
+    }
+    if (str == "float") {
+        return ParameterType::Float;
+    }
+    if (str == "vec2") {
+        return ParameterType::Vec2;
+    }
+    if (str == "vec4") {
+        return ParameterType::Vec4;
+    }
     return nullopt;
 }
 
 namespace Tag {
 using Value = uint32_t;
 enum Flags : Value {
-    OPAQUE                    = 1 << 0,
-    UNLIT                     = 1 << 1,
+    OPAQUE = 1 << 0,
+    UNLIT = 1 << 1,
     DEFINES_VERTEX_PREPROCESS = 1 << 2,
-    DEFINES_LIGHT_MODEL       = 1 << 3,
+    DEFINES_LIGHT_MODEL = 1 << 3,
 };
 } // namespace Tag
 
 struct Sampler {
-    Identifier  name{ "" };
+    Identifier name{ "" };
     SamplerType type{};
 };
 
 struct Parameter {
     static constexpr size_t k_max_size = 4 * sizeof(float);
 
-    Identifier                        name{ "" };
-    ParameterType                     type{};
+    Identifier name{ "" };
+    ParameterType type{};
     std::array<std::byte, k_max_size> value{};
 };
 
 struct Option {
     Identifier name{ "" };
-    bool       default_value = false;
+    bool default_value = false;
 };
 
 } // namespace shader

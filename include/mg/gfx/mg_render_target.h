@@ -56,7 +56,7 @@ class WindowRenderTarget : public IRenderTarget {
     friend class ::Mg::Window;
 
 public:
-    void      bind() noexcept final;
+    void bind() noexcept final;
     ImageSize image_size() const noexcept final { return m_image_size; }
 
     void update_viewport() noexcept;
@@ -74,7 +74,7 @@ private:
 
 /** Data format for colour/alpha render target. */
 enum class ColourFormat {
-    RGBA8   = 0x8058, /** Red/Green/Blue/Alpha channels of 8-bit unsigned int */
+    RGBA8 = 0x8058,   /** Red/Green/Blue/Alpha channels of 8-bit unsigned int */
     RGBA16F = 0x881A, /** Red/Green/Blue/Alpha channels of 16-bit float */
     RGBA32F = 0x8814, /** Red/Green/Blue/Alpha channels of 32-bit float */
 };
@@ -104,7 +104,7 @@ public:
 
     static TextureRenderTarget with_colour_and_depth_targets(TextureHandle colour_target,
                                                              TextureHandle depth_target,
-                                                             int32_t       mip_level = 0);
+                                                             int32_t mip_level = 0);
 
     MG_MAKE_DEFAULT_MOVABLE(TextureRenderTarget);
     MG_MAKE_NON_COPYABLE(TextureRenderTarget);

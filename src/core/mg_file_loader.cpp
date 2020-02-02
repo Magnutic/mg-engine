@@ -51,7 +51,7 @@
 #include "mg/core/mg_runtime_error.h"
 #include "mg/utils/mg_binary_io.h"
 #include "mg/utils/mg_file_time_helper.h"
-#include "mg/utils/mg_string_utils.h"	
+#include "mg/utils/mg_string_utils.h"
 
 #include <zip.h>
 
@@ -71,11 +71,13 @@ Array<FileRecord> BasicFileLoader::available_files()
 {
     small_vector<FileRecord, 48> index;
 
-    fs::path   root_dir{ m_directory };
+    fs::path root_dir{ m_directory };
     const auto search_options = fs::directory_options::follow_directory_symlink;
 
     for (auto& file : fs::recursive_directory_iterator{ root_dir, search_options }) {
-        if (fs::is_directory(file)) { continue; }
+        if (fs::is_directory(file)) {
+            continue;
+        }
 
         const auto last_write_time = last_write_time_t(file.path());
 
@@ -96,8 +98,8 @@ Array<FileRecord> BasicFileLoader::available_files()
 
 bool BasicFileLoader::file_exists(Identifier file)
 {
-    const auto fname     = file.str_view();
-    fs::path   file_path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
+    const auto fname = file.str_view();
+    fs::path file_path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
     return fs::exists(file_path);
 }
 
@@ -105,8 +107,8 @@ uintmax_t BasicFileLoader::file_size(Identifier file)
 {
     MG_ASSERT(file_exists(file));
 
-    const auto fname     = file.str_view();
-    fs::path   file_path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
+    const auto fname = file.str_view();
+    fs::path file_path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
     return fs::file_size(file_path);
 }
 
@@ -114,8 +116,8 @@ std::time_t BasicFileLoader::file_time_stamp(Identifier file)
 {
     MG_ASSERT(file_exists(file));
 
-    const auto fname     = file.str_view();
-    fs::path   file_path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
+    const auto fname = file.str_view();
+    fs::path file_path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
     return last_write_time_t(file_path);
 }
 
@@ -124,14 +126,14 @@ void BasicFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
     MG_ASSERT(target_buffer.size() >= file_size(file));
 
     const auto fname = file.str_view();
-    const auto path  = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
+    const auto path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
 
-	const bool file_is_under_directory = is_prefix_of(m_directory, path.generic_u8string());
+    const bool file_is_under_directory = is_prefix_of(m_directory, path.generic_u8string());
     if (!file_is_under_directory) {
         g_log.write_error(
             "BasicFileLoader: trying to load file which is outside file loader's directory.");
         throw RuntimeError();
-	}
+    }
 
     BinaryFileReader reader{ path.generic_u8string() };
 
@@ -158,13 +160,15 @@ void ZipFileLoader::open_zip_archive()
 {
     if (m_archive_file != nullptr) {
         const auto* error = zip_get_error(m_archive_file);
-        if (error->sys_err == 0 && error->zip_err == 0) { return; }
+        if (error->sys_err == 0 && error->zip_err == 0) {
+            return;
+        }
 
         // If something is wrong, try to close and re-open archive
         close_zip_archive();
     }
 
-    int zip_error  = 0;
+    int zip_error = 0;
     m_archive_file = zip_open(m_archive_name.data(), ZIP_RDONLY, &zip_error);
 
     if (m_archive_file == nullptr) {
@@ -204,7 +208,9 @@ Array<FileRecord> ZipFileLoader::available_files()
         struct zip_stat stat = {};
         zip_stat(m_archive_file, filename, 0, &stat);
 
-        if ((stat.valid & ZIP_STAT_MTIME) != 0) { last_write_time = stat.mtime; }
+        if ((stat.valid & ZIP_STAT_MTIME) != 0) {
+            last_write_time = stat.mtime;
+        }
         else {
             constexpr auto msg = "Failed to get time stamp of file '{}' in archive '{}'.";
             g_log.write_warning(fmt::format(msg, filename, m_archive_name));
@@ -220,7 +226,7 @@ bool ZipFileLoader::file_exists(Identifier file)
 {
     open_zip_archive();
     struct zip_stat sb {};
-    const int       result = zip_stat(m_archive_file, file.c_str(), 0, &sb);
+    const int result = zip_stat(m_archive_file, file.c_str(), 0, &sb);
 
     return (result != -1);
 }
@@ -229,7 +235,9 @@ struct zip_stat zip_stat_helper(zip_t* archive, Identifier file_path)
 {
     struct zip_stat sb {};
 
-    if (zip_stat(archive, file_path.c_str(), 0, &sb) != -1) { return sb; }
+    if (zip_stat(archive, file_path.c_str(), 0, &sb) != -1) {
+        return sb;
+    }
 
     g_log.write_error(
         fmt::format("ZipFileLoader::file_size(): Could not find file '{}'", file_path.c_str()));
@@ -301,7 +309,9 @@ void ZipFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
         throw RuntimeError();
     };
 
-    if (index == -1) { error_throw("could not find file in archive"); }
+    if (index == -1) {
+        error_throw("could not find file in archive");
+    }
 
     auto uindex = narrow<uint64_t>(index);
 
@@ -310,7 +320,9 @@ void ZipFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
     zip_stat_index(m_archive_file, uindex, 0, &file_info);
 
     // Check for errors
-    if ((file_info.valid & ZIP_STAT_SIZE) == 0) { error_throw("could not read file size"); }
+    if ((file_info.valid & ZIP_STAT_SIZE) == 0) {
+        error_throw("could not read file size");
+    }
 
     // Open file within archive
     auto zip_file = make_zip_handle(zip_fopen_index(m_archive_file, uindex, 0));
@@ -328,7 +340,9 @@ void ZipFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
     // Read data from file
     const auto bytes_read = zip_fread(zip_file.get(), target_buffer.data(), file_info.size);
 
-    if (bytes_read == -1) { error_throw("could not read data"); }
+    if (bytes_read == -1) {
+        error_throw("could not read data");
+    }
 
     MG_ASSERT(size_t(bytes_read) <= target_buffer.size());
 }

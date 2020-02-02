@@ -112,13 +112,17 @@ public:
             std::shared_lock lock{ m_file_list_mutex };
 
             FileInfo* p_file_info = file_info(file);
-            if (!p_file_info) { throw_resource_not_found(file); }
+            if (!p_file_info) {
+                throw_resource_not_found(file);
+            }
 
             ResourceEntryBase& entry = get_or_create_resource_entry<ResT>(*p_file_info);
             handle = ResourceHandle<ResT>(file, static_cast<ResourceEntry<ResT>&>(entry));
         }
 
-        if (load_resource_immediately) { ResourceAccessGuard access(handle); }
+        if (load_resource_immediately) {
+            ResourceAccessGuard access(handle);
+        }
 
         return handle;
     }
@@ -144,8 +148,10 @@ public:
     std::time_t file_time_stamp(Identifier file) const
     {
         std::shared_lock lock{ m_file_list_mutex };
-        auto             p_file_info = file_info(file);
-        if (!p_file_info) { throw_resource_not_found(file); }
+        auto p_file_info = file_info(file);
+        if (!p_file_info) {
+            throw_resource_not_found(file);
+        }
         return p_file_info->time_stamp;
     }
 
@@ -183,8 +189,8 @@ private:
     FileChangeCallbackT m_resource_reload_callback;
 
     struct FileInfo {
-        Identifier   filename;
-        std::time_t  time_stamp;
+        Identifier filename;
+        std::time_t time_stamp;
         IFileLoader* loader;
 
         // ResourceEntry associated with this file. Nullptr if not loaded.
@@ -196,7 +202,7 @@ private:
 
     // Get pointer to FileInfo record for the given filename, or nullptr if no such file exists.
     const FileInfo* file_info(Identifier file) const;
-    FileInfo*       file_info(Identifier file)
+    FileInfo* file_info(Identifier file)
     {
         return const_cast<FileInfo*>(static_cast<const ResourceCache*>(this)->file_info(file));
     }

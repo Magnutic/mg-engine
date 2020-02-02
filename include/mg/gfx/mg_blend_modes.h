@@ -31,24 +31,24 @@ namespace Mg::gfx {
 
 /** Types of functions to use in blending */
 enum class BlendFunc {
-    ADD              = 0x8006,
-    SUBTRACT         = 0x800A,
+    ADD = 0x8006,
+    SUBTRACT = 0x800A,
     REVERSE_SUBTRACT = 0x800B,
-    MIN              = 0x8007,
-    MAX              = 0x8008
+    MIN = 0x8007,
+    MAX = 0x8008
 };
 
 /** Parameters for blend functions */
 enum class BlendParam {
-    ZERO                 = 0x0000,
-    ONE                  = 0x0001,
-    SRC_COLOUR           = 0x0300,
+    ZERO = 0x0000,
+    ONE = 0x0001,
+    SRC_COLOUR = 0x0300,
     ONE_MINUS_SRC_COLOUR = 0x0301,
-    SRC_ALPHA            = 0x0302,
-    ONE_MINUS_SRC_ALPHA  = 0x0303,
-    DST_ALPHA            = 0x0304,
-    ONE_MINUS_DST_ALPHA  = 0x0305,
-    DST_COLOUR           = 0x0306,
+    SRC_ALPHA = 0x0302,
+    ONE_MINUS_SRC_ALPHA = 0x0303,
+    DST_ALPHA = 0x0304,
+    ONE_MINUS_DST_ALPHA = 0x0305,
+    DST_COLOUR = 0x0306,
     ONE_MINUS_DST_COLOUR = 0x0307
 };
 
@@ -57,8 +57,8 @@ enum class BlendParam {
  * https://www.opengl.org/wiki/Blending
  */
 struct BlendMode {
-    BlendFunc  colour;
-    BlendFunc  alpha;
+    BlendFunc colour;
+    BlendFunc alpha;
     BlendParam src_colour;
     BlendParam dst_colour;
     BlendParam src_alpha;

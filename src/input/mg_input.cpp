@@ -70,7 +70,9 @@ std::vector<Identifier> InputMap::commands() const
     std::vector<Identifier> ret_val;
     ret_val.reserve(m_commands.size());
 
-    for (auto&& p : m_commands) { ret_val.push_back(p.first); }
+    for (auto&& p : m_commands) {
+        ret_val.push_back(p.first);
+    }
 
     return ret_val;
 }
@@ -78,7 +80,7 @@ std::vector<Identifier> InputMap::commands() const
 void InputMap::refresh()
 {
     for (auto& [id, state] : m_command_states) {
-        state.prev_state    = state.current_state;
+        state.prev_state = state.current_state;
         state.current_state = m_commands.at(id).state();
     }
 }

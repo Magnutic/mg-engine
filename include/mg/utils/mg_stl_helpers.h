@@ -53,13 +53,15 @@ template<typename ContT, typename F> auto find_if(ContT&& container, F&& predica
 
 /** Find mapped element in map by key. Returns nullptr if no such key exists. */
 template<typename MapT,
-         typename KeyT  = typename MapT::key_type,
+         typename KeyT = typename MapT::key_type,
          typename ElemT = typename MapT::mapped_type>
 ElemT* find_in_map(MapT& map, const KeyT& key)
 {
     auto it = map.find(key);
 
-    if (it == map.end()) { return nullptr; }
+    if (it == map.end()) {
+        return nullptr;
+    }
 
     return std::addressof(it->second);
 }
@@ -93,7 +95,9 @@ index_where_result index_where(ContT&& container, F&& predicate)
     size_t index = 0;
 
     for (auto&& elem : container) {
-        if (predicate(elem)) { break; }
+        if (predicate(elem)) {
+            break;
+        }
         ++index;
     }
 

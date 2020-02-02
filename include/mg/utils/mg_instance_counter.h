@@ -37,7 +37,7 @@ namespace detail {
 // Store counter here to make sure only one set of counter variables is created for each type T --
 // other template parameters of InstanceCounter should not affect it.
 template<typename T> struct CounterValues {
-    static inline int s_counter      = 0;
+    static inline int s_counter = 0;
     static inline int s_counter_move = 0;
 };
 } // namespace detail
@@ -74,9 +74,11 @@ public:
         check_rhs("Copy constructing", rhs);
 
         m_initialised = true;
-        m_moved_from  = rhs.m_moved_from;
+        m_moved_from = rhs.m_moved_from;
 
-        if (!rhs.is_moved_from()) { ++detail::CounterValues<T>::s_counter; }
+        if (!rhs.is_moved_from()) {
+            ++detail::CounterValues<T>::s_counter;
+        }
 
         ++detail::CounterValues<T>::s_counter_move;
     }
@@ -86,7 +88,7 @@ public:
         check_rhs("Move constructing", rhs);
 
         m_initialised = true;
-        m_moved_from  = rhs.m_moved_from;
+        m_moved_from = rhs.m_moved_from;
         ++detail::CounterValues<T>::s_counter_move;
         rhs.m_moved_from = true;
     }
@@ -94,20 +96,28 @@ public:
     ~InstanceCounter()
     {
         m_initialised = false;
-        m_destroyed   = true;
+        m_destroyed = true;
         --detail::CounterValues<T>::s_counter_move;
-        if (!is_moved_from()) { --detail::CounterValues<T>::s_counter; }
+        if (!is_moved_from()) {
+            --detail::CounterValues<T>::s_counter;
+        }
     }
 
     InstanceCounter& operator=(const InstanceCounter& rhs)
     {
         check_rhs("Copy assigning", rhs);
 
-        if (allow_self_assignment && this == &rhs) { return *this; }
+        if (allow_self_assignment && this == &rhs) {
+            return *this;
+        }
 
-        if (!is_moved_from() && rhs.is_moved_from()) { --detail::CounterValues<T>::s_counter; }
+        if (!is_moved_from() && rhs.is_moved_from()) {
+            --detail::CounterValues<T>::s_counter;
+        }
 
-        if (is_moved_from() && !rhs.is_moved_from()) { ++detail::CounterValues<T>::s_counter; }
+        if (is_moved_from() && !rhs.is_moved_from()) {
+            ++detail::CounterValues<T>::s_counter;
+        }
 
         m_moved_from = rhs.m_moved_from;
         return *this;
@@ -117,11 +127,15 @@ public:
     {
         check_rhs("Move assigning", rhs);
 
-        if (allow_self_assignment && this == &rhs) { return *this; }
+        if (allow_self_assignment && this == &rhs) {
+            return *this;
+        }
 
-        if (!is_moved_from()) { --detail::CounterValues<T>::s_counter; }
+        if (!is_moved_from()) {
+            --detail::CounterValues<T>::s_counter;
+        }
 
-        m_moved_from     = rhs.m_moved_from;
+        m_moved_from = rhs.m_moved_from;
         rhs.m_moved_from = true;
         return *this;
     }
@@ -150,13 +164,21 @@ private:
             error = true;
         };
 
-        if (!allow_self_assignment && this == &rhs) { notify_error("self-assignment"); }
+        if (!allow_self_assignment && this == &rhs) {
+            notify_error("self-assignment");
+        }
 
-        if (!rhs.is_initialised()) { notify_error("rhs is unitialised"); }
+        if (!rhs.is_initialised()) {
+            notify_error("rhs is unitialised");
+        }
 
-        if (!allow_copy_from_moved && rhs.is_moved_from()) { notify_error("rhs is moved-from"); }
+        if (!allow_copy_from_moved && rhs.is_moved_from()) {
+            notify_error("rhs is moved-from");
+        }
 
-        if (rhs.is_destroyed()) { notify_error("rhs is destroyed"); }
+        if (rhs.is_destroyed()) {
+            notify_error("rhs is destroyed");
+        }
 
         if (error) {
             ss << "(this: " << this << ", rhs: " << &rhs << ")";
@@ -165,8 +187,8 @@ private:
     }
 
     bool m_initialised = false;
-    bool m_destroyed   = false;
-    bool m_moved_from  = false;
+    bool m_destroyed = false;
+    bool m_moved_from = false;
 };
 
 } // namespace Mg

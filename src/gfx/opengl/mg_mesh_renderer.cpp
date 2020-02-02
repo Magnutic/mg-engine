@@ -43,12 +43,12 @@ namespace Mg::gfx {
 
 namespace { // internal linkage
 
-constexpr uint32_t k_matrix_ubo_slot          = 0;
-constexpr uint32_t k_frame_ubo_slot           = 1;
-constexpr uint32_t k_light_ubo_slot           = 2;
+constexpr uint32_t k_matrix_ubo_slot = 0;
+constexpr uint32_t k_frame_ubo_slot = 1;
+constexpr uint32_t k_light_ubo_slot = 2;
 constexpr uint32_t k_material_params_ubo_slot = 3;
 
-constexpr uint32_t k_sampler_tile_data_index   = 8;
+constexpr uint32_t k_sampler_tile_data_index = 8;
 constexpr uint32_t k_sampler_light_index_index = 9; // Index of sampler for light indices
 
 /** Location of '_matrix_index' vertex attribute in shader code. */
@@ -57,8 +57,8 @@ constexpr uint32_t k_matrix_index_vertex_attrib_location = 8;
 // Parameters used to calculate cluster slice from fragment depth
 struct ClusterGridParams {
     glm::vec2 z_param{};
-    float     scale = 0.0f;
-    float     bias  = 0.0f;
+    float scale = 0.0f;
+    float bias = 0.0f;
 };
 
 /** Frame-global UBO block */
@@ -103,17 +103,17 @@ FrameBlock make_frame_block(const ICamera& camera, float current_time, float cam
     static const float scale = MG_LIGHT_GRID_DEPTH / std::log2(float{ MG_LIGHT_GRID_FAR_PLANE });
 
     const auto depth_range = camera.depth_range();
-    const auto z_near      = depth_range.near();
-    const auto z_far       = depth_range.far();
-    const auto c           = std::log2(2.0f * z_far * z_near);
+    const auto z_near = depth_range.near();
+    const auto z_far = depth_range.far();
+    const auto c = std::log2(2.0f * z_far * z_near);
 
     FrameBlock frame_block;
     frame_block.camera_position_and_time = glm::vec4(camera.get_position(), current_time);
-    frame_block.viewport_size            = viewport_size;
+    frame_block.viewport_size = viewport_size;
 
     frame_block.cluster_grid_params.z_param = glm::vec2(z_near - z_far, z_near + z_far);
-    frame_block.cluster_grid_params.scale   = -scale;
-    frame_block.cluster_grid_params.bias    = float{ MG_LIGHT_GRID_DEPTH_BIAS } + c * scale;
+    frame_block.cluster_grid_params.scale = -scale;
+    frame_block.cluster_grid_params.bias = float{ MG_LIGHT_GRID_DEPTH_BIAS } + c * scale;
 
     frame_block.camera_exposure = camera_exposure;
 
@@ -157,7 +157,7 @@ struct MeshRendererData {
     UniformBuffer m_frame_ubo{ sizeof(FrameBlock) };
 
     LightBuffers m_light_buffers;
-    LightGrid    m_light_grid;
+    LightGrid m_light_grid;
 
     uint32_t m_num_lights = 0;
 };
@@ -187,7 +187,7 @@ make_binding_context(MeshRendererData& data, const ICamera& cam, RenderParameter
 void draw_elements(size_t num_elements, size_t starting_element) noexcept
 {
     const uintptr_t begin = starting_element * sizeof(uint_vertex_index);
-    GLvoid*         gl_begin{};
+    GLvoid* gl_begin{};
     std::memcpy(&gl_begin, &begin, sizeof(begin));
     glDrawElements(GL_TRIANGLES, narrow<int32_t>(num_elements), GL_UNSIGNED_SHORT, gl_begin);
 }
@@ -212,20 +212,20 @@ void MeshRenderer::drop_shaders()
     impl().pipeline_repository.drop_pipelines();
 }
 
-void MeshRenderer::render(const ICamera&           cam,
+void MeshRenderer::render(const ICamera& cam,
                           const RenderCommandList& command_list,
-                          span<const Light>        lights,
-                          RenderParameters         params)
+                          span<const Light> lights,
+                          RenderParameters params)
 {
-    auto            current_vao      = uint32_t(-1);
+    auto current_vao = uint32_t(-1);
     const Material* current_material = nullptr;
 
     update_light_data(impl().m_light_buffers, lights, cam, impl().m_light_grid);
 
     PipelineRepository::BindingContext binding_context = make_binding_context(impl(), cam, params);
 
-    const auto render_commands         = command_list.render_commands();
-    size_t     matrix_update_countdown = 1;
+    const auto render_commands = command_list.render_commands();
+    size_t matrix_update_countdown = 1;
 
     for (uint32_t i = 0; i < render_commands.size(); ++i) {
         if (--matrix_update_countdown == 0) {

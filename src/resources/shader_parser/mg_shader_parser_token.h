@@ -150,17 +150,19 @@ inline Opt<TokenType> get_keyword_type(std::string_view lexeme) noexcept
     } };
 
     for (const auto [str, token_type] : keywords) {
-        if (str == lexeme) { return token_type; }
+        if (str == lexeme) {
+            return token_type;
+        }
     }
 
     return nullopt;
 }
 
 struct Token {
-    TokenType                             type{};
-    std::string_view                      lexeme{};
+    TokenType type{};
+    std::string_view lexeme{};
     std::variant<float, std::string_view> literal_value;
-    size_t                                line{};
+    size_t line{};
 };
 
 inline float numeric_value(const Token& token) noexcept

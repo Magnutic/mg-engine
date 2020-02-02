@@ -52,7 +52,9 @@ PipelinePrototypeContext::PipelinePrototypeContext(const PipelinePrototype& prot
         glDisable(GL_DEPTH_TEST);
     }
 
-    if (settings.culling_mode == CullingMode::None) { glDisable(GL_CULL_FACE); }
+    if (settings.culling_mode == CullingMode::None) {
+        glDisable(GL_CULL_FACE);
+    }
     else {
         glEnable(GL_CULL_FACE);
         glCullFace(static_cast<GLenum>(settings.culling_mode));
@@ -60,12 +62,12 @@ PipelinePrototypeContext::PipelinePrototypeContext(const PipelinePrototype& prot
 
     if (settings.enable_blending) {
         glEnable(GL_BLEND);
-        const auto colour     = static_cast<GLenum>(settings.blend_mode.colour);
-        const auto alpha      = static_cast<GLenum>(settings.blend_mode.alpha);
+        const auto colour = static_cast<GLenum>(settings.blend_mode.colour);
+        const auto alpha = static_cast<GLenum>(settings.blend_mode.alpha);
         const auto src_colour = static_cast<GLenum>(settings.blend_mode.src_colour);
         const auto dst_colour = static_cast<GLenum>(settings.blend_mode.dst_colour);
-        const auto src_alpha  = static_cast<GLenum>(settings.blend_mode.src_alpha);
-        const auto dst_alpha  = static_cast<GLenum>(settings.blend_mode.dst_alpha);
+        const auto src_alpha = static_cast<GLenum>(settings.blend_mode.src_alpha);
+        const auto dst_alpha = static_cast<GLenum>(settings.blend_mode.dst_alpha);
 
         glBlendEquationSeparate(colour, alpha);
         glBlendFuncSeparate(src_colour, dst_colour, src_alpha, dst_alpha);
@@ -108,8 +110,8 @@ Opt<Pipeline> Pipeline::make(const CreationParameters& params)
     return opt_program_handle.map(make_pipeline);
 }
 
-Pipeline::Pipeline(OpaqueHandle               internal_handle,
-                   const PipelinePrototype&   prototype,
+Pipeline::Pipeline(OpaqueHandle internal_handle,
+                   const PipelinePrototype& prototype,
                    const PipelineInputLayout& additional_input_layout)
     : m_internal_handle(std::move(internal_handle)), m_p_prototype(&prototype)
 {
@@ -119,7 +121,7 @@ Pipeline::Pipeline(OpaqueHandle               internal_handle,
 
     const auto set_input_location = [shader_handle](const PipelineInputLocation& input_location) {
         auto&& [input_name, type, location] = input_location;
-        auto name                           = input_name.str_view();
+        auto name = input_name.str_view();
 
         const auto log_error = [&] {
             g_log.write_message(fmt::format(
@@ -136,7 +138,9 @@ Pipeline::Pipeline(OpaqueHandle               internal_handle,
 
         case PipelineInputType::Sampler2D: {
             auto uniform_index = uniform_location(shader_handle, name);
-            if (uniform_index) { set_sampler_binding(*uniform_index, TextureUnit{ location }); }
+            if (uniform_index) {
+                set_sampler_binding(*uniform_index, TextureUnit{ location });
+            }
             success = uniform_index.has_value();
             break;
         }
@@ -146,11 +150,17 @@ Pipeline::Pipeline(OpaqueHandle               internal_handle,
             break;
         }
 
-        if (!success) { log_error(); }
+        if (!success) {
+            log_error();
+        }
     };
 
-    for (auto&& location : prototype.common_input_layout) { set_input_location(location); }
-    for (auto&& location : additional_input_layout) { set_input_location(location); }
+    for (auto&& location : prototype.common_input_layout) {
+        set_input_location(location);
+    }
+    for (auto&& location : additional_input_layout) {
+        set_input_location(location);
+    }
 
     MG_CHECK_GL_ERROR();
 }
@@ -179,8 +189,8 @@ PipelineInputBinding::PipelineInputBinding(uint32_t location, const UniformBuffe
 void bind_pipeline_input_set(span<const PipelineInputBinding> bindings)
 {
     for (const PipelineInputBinding& binding : bindings) {
-        const auto     gl_object_id = static_cast<GLuint>(binding.gfx_resource_handle());
-        const uint32_t location     = binding.location();
+        const auto gl_object_id = static_cast<GLuint>(binding.gfx_resource_handle());
+        const uint32_t location = binding.location();
 
         switch (binding.type()) {
         case PipelineInputType::BufferTexture: {

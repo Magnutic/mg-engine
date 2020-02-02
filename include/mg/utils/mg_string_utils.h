@@ -79,7 +79,7 @@ std::vector<std::string_view> tokenise_string(std::string_view s, std::string_vi
  * references to parts of the input string.
  */
 std::pair<std::string_view, std::string_view> split_string_on_char(std::string_view s,
-                                                                   char             c) noexcept;
+                                                                   char c) noexcept;
 
 /** Trim whitespace from end of string.
  * @return Substring without trailing whitespace. Note that this is not a copy,
@@ -117,14 +117,18 @@ std::string to_upper(std::string_view str) noexcept;
 /** Returns whether `prefix` is a prefix of `string` (including if they are equal). */
 inline bool is_prefix_of(std::string_view prefix, std::string_view string)
 {
-    if (prefix.size() > string.size()) { return false; }
+    if (prefix.size() > string.size()) {
+        return false;
+    }
     return std::equal(prefix.begin(), prefix.end(), string.begin());
 }
 
 /** Returns whether `suffix` is a suffix of `string` (including if they are equal). */
 inline bool is_suffix_of(std::string_view suffix, std::string_view string)
 {
-    if (suffix.size() > string.size()) { return false; }
+    if (suffix.size() > string.size()) {
+        return false;
+    }
     return std::equal(suffix.begin(), suffix.end(), string.end() - suffix.size());
 }
 
@@ -136,11 +140,13 @@ inline bool is_suffix_of(std::string_view suffix, std::string_view string)
 template<typename T> std::pair<bool, T> string_to(std::string_view str)
 {
     bool success = false;
-    T    value{};
+    T value{};
 
     std::stringstream ss{ std::string(str) };
 
-    if (ss >> value) { success = ss.eof(); }
+    if (ss >> value) {
+        success = ss.eof();
+    }
 
     return { success, value };
 };
@@ -167,13 +173,15 @@ public:
     constexpr explicit SimpleInputStream(std::string_view str) noexcept : data(str) {}
 
     std::string_view data{};
-    size_t           pos         = 0;
-    size_t           line        = 1;
-    size_t           pos_in_line = 1;
+    size_t pos = 0;
+    size_t line = 1;
+    size_t pos_in_line = 1;
 
     constexpr char advance() noexcept
     {
-        if (is_at_end()) { return '\0'; }
+        if (is_at_end()) {
+            return '\0';
+        }
 
         if (data[pos] == '\n') {
             ++line;
@@ -227,10 +235,14 @@ public:
     constexpr bool match(std::string_view str, PeekMode peekmode = throw_on_eof)
     {
         for (size_t i = 0; i < str.size(); ++i) {
-            if (peek_next(i, peekmode) != str[i]) { return false; }
+            if (peek_next(i, peekmode) != str[i]) {
+                return false;
+            }
         }
 
-        for (size_t i = 0; i < str.size(); ++i) { advance(); }
+        for (size_t i = 0; i < str.size(); ++i) {
+            advance();
+        }
         return true;
     }
 

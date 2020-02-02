@@ -30,7 +30,7 @@ namespace Mg {
 LoadResourceResult RawResource::load_resource_impl(const ResourceLoadingInput& input)
 {
     span<const std::byte> data = input.resource_data();
-    m_buffer                   = Array<std::byte>::make_copy(data);
+    m_buffer = Array<std::byte>::make_copy(data);
     return LoadResourceResult::success();
 }
 

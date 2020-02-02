@@ -46,8 +46,8 @@ public:
         return { vertices(), indices(), sub_meshes(), { { centre(), radius() } } };
     }
 
-    span<const gfx::SubMesh>           sub_meshes() const noexcept { return span{ m_sub_meshes }; }
-    span<const gfx::Vertex>            vertices() const noexcept { return span{ m_vertices }; }
+    span<const gfx::SubMesh> sub_meshes() const noexcept { return span{ m_sub_meshes }; }
+    span<const gfx::Vertex> vertices() const noexcept { return span{ m_vertices }; }
     span<const gfx::uint_vertex_index> indices() const noexcept { return span{ m_indices }; }
 
     /** Get model-space centre coordinate (mean vertex coordinate). */
@@ -70,12 +70,12 @@ protected:
     LoadResourceResult load_resource_impl(const ResourceLoadingInput& input) override;
 
 private:
-    Array<gfx::SubMesh>           m_sub_meshes;
-    Array<gfx::Vertex>            m_vertices;
+    Array<gfx::SubMesh> m_sub_meshes;
+    Array<gfx::Vertex> m_vertices;
     Array<gfx::uint_vertex_index> m_indices;
 
     glm::vec3 m_centre{};
-    float     m_radius = 0.0f;
+    float m_radius = 0.0f;
 };
 
 } // namespace Mg

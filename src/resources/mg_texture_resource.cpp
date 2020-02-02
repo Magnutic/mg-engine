@@ -40,38 +40,38 @@ namespace {
 //--------------------------------------------------------------------------------------------------
 
 // DDS_header.dwFlags
-constexpr uint32_t DDSD_CAPS        = 0x00000001;
-constexpr uint32_t DDSD_HEIGHT      = 0x00000002;
-constexpr uint32_t DDSD_WIDTH       = 0x00000004;
-constexpr uint32_t DDSD_PITCH       = 0x00000008;
+constexpr uint32_t DDSD_CAPS = 0x00000001;
+constexpr uint32_t DDSD_HEIGHT = 0x00000002;
+constexpr uint32_t DDSD_WIDTH = 0x00000004;
+constexpr uint32_t DDSD_PITCH = 0x00000008;
 constexpr uint32_t DDSD_PIXELFORMAT = 0x00001000;
 constexpr uint32_t DDSD_MIPMAPCOUNT = 0x00020000;
-constexpr uint32_t DDSD_LINEARSIZE  = 0x00080000;
-constexpr uint32_t DDSD_DEPTH       = 0x00800000;
+constexpr uint32_t DDSD_LINEARSIZE = 0x00080000;
+constexpr uint32_t DDSD_DEPTH = 0x00800000;
 
 // DDS_header.ddspf.dwFlags
 constexpr uint32_t DDPF_ALPHAPIXELS = 0x00000001;
-constexpr uint32_t DDPF_FOURCC      = 0x00000004;
-constexpr uint32_t DDPF_INDEXED     = 0x00000020;
-constexpr uint32_t DDPF_RGB         = 0x00000040;
+constexpr uint32_t DDPF_FOURCC = 0x00000004;
+constexpr uint32_t DDPF_INDEXED = 0x00000020;
+constexpr uint32_t DDPF_RGB = 0x00000040;
 
 // DDS_header.dwCaps1
 constexpr uint32_t DDSCAPS_COMPLEX = 0x00000008;
 constexpr uint32_t DDSCAPS_TEXTURE = 0x00001000;
-constexpr uint32_t DDSCAPS_MIPMAP  = 0x00400000;
+constexpr uint32_t DDSCAPS_MIPMAP = 0x00400000;
 
 // DDS_header.dwCaps2
-constexpr uint32_t DDSCAPS2_CUBEMAP           = 0x00000200;
+constexpr uint32_t DDSCAPS2_CUBEMAP = 0x00000200;
 constexpr uint32_t DDSCAPS2_CUBEMAP_POSITIVEX = 0x00000400;
 constexpr uint32_t DDSCAPS2_CUBEMAP_NEGATIVEX = 0x00000800;
 constexpr uint32_t DDSCAPS2_CUBEMAP_POSITIVEY = 0x00001000;
 constexpr uint32_t DDSCAPS2_CUBEMAP_NEGATIVEY = 0x00002000;
 constexpr uint32_t DDSCAPS2_CUBEMAP_POSITIVEZ = 0x00004000;
 constexpr uint32_t DDSCAPS2_CUBEMAP_NEGATIVEZ = 0x00008000;
-constexpr uint32_t DDSCAPS2_VOLUME            = 0x00200000;
+constexpr uint32_t DDSCAPS2_VOLUME = 0x00200000;
 
 // DDS_HEADER.DDS_PIXELFORMAT.dwFourCC
-constexpr uint32_t DDS  = 0x20534444;
+constexpr uint32_t DDS = 0x20534444;
 constexpr uint32_t DXT1 = 0x31545844;
 constexpr uint32_t DXT2 = 0x32545844;
 constexpr uint32_t DXT3 = 0x33545844;
@@ -91,24 +91,24 @@ struct DDS_PIXELFORMAT {
 };
 
 struct DDS_HEADER {
-    uint32_t        dwSize;
-    uint32_t        dwFlags;
-    uint32_t        dwHeight;
-    uint32_t        dwWidth;
-    uint32_t        dwPitchOrLinearSize;
-    uint32_t        dwDepth;
-    uint32_t        dwMipMapCount;
-    uint32_t        dwReserved1[11];
+    uint32_t dwSize;
+    uint32_t dwFlags;
+    uint32_t dwHeight;
+    uint32_t dwWidth;
+    uint32_t dwPitchOrLinearSize;
+    uint32_t dwDepth;
+    uint32_t dwMipMapCount;
+    uint32_t dwReserved1[11];
     DDS_PIXELFORMAT ddspf;
-    uint32_t        dwCaps;
-    uint32_t        dwCaps2;
-    uint32_t        dwCaps3;
-    uint32_t        dwCaps4;
-    uint32_t        dwReserved2;
+    uint32_t dwCaps;
+    uint32_t dwCaps2;
+    uint32_t dwCaps3;
+    uint32_t dwCaps4;
+    uint32_t dwReserved2;
 };
 
 struct PixelFormatResult {
-    bool                         valid;
+    bool valid;
     TextureResource::PixelFormat format;
 };
 /** Determine pixel format of DDS file. Nullopt if format is unsupported. */
@@ -189,7 +189,9 @@ LoadResourceResult TextureResource::load_resource_impl(const ResourceLoadingInpu
     uint32_t four_cc;
     std::memcpy(&four_cc, dds_data.data(), 4);
 
-    if (four_cc != DDS) { return LoadResourceResult::data_error("Not a DDS texture."); }
+    if (four_cc != DDS) {
+        return LoadResourceResult::data_error("Not a DDS texture.");
+    }
 
     // Read header
     DDS_HEADER header{};
@@ -197,7 +199,9 @@ LoadResourceResult TextureResource::load_resource_impl(const ResourceLoadingInpu
 
     // Determine texture's pixel format
     auto [valid, pixel_format] = dds_pf_to_pixel_format(header.ddspf);
-    if (!valid) { return LoadResourceResult::data_error("Unsupported DDS format."); }
+    if (!valid) {
+        return LoadResourceResult::data_error("Unsupported DDS format.");
+    }
 
     // Get location and size of pixel data
     const auto pixel_data_offset = sizeof(DDS_HEADER) + 4;
@@ -205,8 +209,8 @@ LoadResourceResult TextureResource::load_resource_impl(const ResourceLoadingInpu
     const auto size = dds_data.length() - pixel_data_offset;
 
     // Size sanity check
-    const auto width        = narrow<DimT>(header.dwWidth);
-    const auto height       = narrow<DimT>(header.dwHeight);
+    const auto width = narrow<DimT>(header.dwWidth);
+    const auto height = narrow<DimT>(header.dwHeight);
     const auto num_mip_maps = narrow<MipIndexT>(header.dwMipMapCount);
 
     auto num_blocks = num_blocks_by_img_size(width, height);
@@ -238,13 +242,15 @@ LoadResourceResult TextureResource::load_resource_impl(const ResourceLoadingInpu
 
     // Set up texture format info struct
     m_format.pixel_format = pixel_format;
-    m_format.width        = width;
-    m_format.height       = height;
-    m_format.mip_levels   = num_mip_maps;
+    m_format.width = width;
+    m_format.height = height;
+    m_format.mip_levels = num_mip_maps;
 
     // DDS files without mipmapping (sometimes?) claim to have 0 mipmaps,
     // but for consistency we always count the base image as a mipmap.
-    if (m_format.mip_levels == 0) { m_format.mip_levels = 1; }
+    if (m_format.mip_levels == 0) {
+        m_format.mip_levels = 1;
+    }
 
     // Copy pixel data
     span<const std::byte> data(&dds_data[pixel_data_offset], sane_size);
@@ -255,12 +261,12 @@ LoadResourceResult TextureResource::load_resource_impl(const ResourceLoadingInpu
 
 TextureResource::MipLevelData TextureResource::pixel_data(MipIndexT mip_index) const noexcept
 {
-    auto width  = m_format.width;
+    auto width = m_format.width;
     auto height = m_format.height;
 
-    size_t     offset     = 0;
+    size_t offset = 0;
     const auto block_size = block_size_by_format(m_format.pixel_format);
-    auto       size       = num_blocks_by_img_size(width, height) * block_size;
+    auto size = num_blocks_by_img_size(width, height) * block_size;
 
     for (MipIndexT i = 0; i < mip_index; ++i) {
         offset += size;

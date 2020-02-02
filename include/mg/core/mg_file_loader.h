@@ -48,7 +48,7 @@ namespace Mg {
 
 /** Record representing a single file available in a IFileLoader. */
 struct FileRecord {
-    Identifier  name{ "" };
+    Identifier name{ "" };
     std::time_t time_stamp{};
 };
 
@@ -125,7 +125,7 @@ private:
     void close_zip_archive() noexcept;
 
     std::string m_archive_name;
-    zip_t*      m_archive_file = nullptr;
+    zip_t* m_archive_file = nullptr;
 };
 
 } // namespace Mg

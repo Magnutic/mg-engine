@@ -51,9 +51,9 @@ using SubMeshInfo = small_vector<SubMeshRange, 4>;
 /** Internal mesh structure. @see MeshRepository */
 struct MeshInfo {
     SubMeshInfo submeshes;
-    glm::vec3   centre{};
-    float       radius{};
-    Identifier  mesh_id{ "" };
+    glm::vec3 centre{};
+    float radius{};
+    Identifier mesh_id{ "" };
 
     // Identifier for the mesh object (vertex array object) in the graphics API.
     OpaqueHandle::Value gfx_api_mesh_object_id{};

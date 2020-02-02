@@ -46,17 +46,21 @@ Material* material_for_submesh(span<const MaterialBinding> material_bindings, si
         return mb.sub_mesh_index == sub_mesh_index;
     });
 
-    if (it != material_bindings.end()) { return it->material; }
+    if (it != material_bindings.end()) {
+        return it->material;
+    }
 
-    if (sub_mesh_index == 0) { return nullptr; }
+    if (sub_mesh_index == 0) {
+        return nullptr;
+    }
 
     return material_for_submesh(material_bindings, 0);
 }
 
 } // namespace
 
-void RenderCommandProducer::add_mesh(MeshHandle                  mesh,
-                                     const Transform&            transform,
+void RenderCommandProducer::add_mesh(MeshHandle mesh,
+                                     const Transform& transform,
                                      span<const MaterialBinding> material_bindings)
 {
     const internal::MeshInfo& md = internal::mesh_info(mesh);
@@ -78,11 +82,11 @@ void RenderCommandProducer::add_mesh(MeshHandle                  mesh,
             RenderCommand& command = m_render_commands_unsorted.emplace_back();
 
             command.gfx_api_mesh_object_id = md.gfx_api_mesh_object_id;
-            command.centre                 = md.centre;
-            command.begin                  = md.submeshes[i].begin;
-            command.amount                 = md.submeshes[i].amount;
-            command.material               = material;
-            command.radius                 = md.radius;
+            command.centre = md.centre;
+            command.begin = md.submeshes[i].begin;
+            command.amount = md.submeshes[i].amount;
+            command.material = material;
+            command.radius = md.radius;
         }
     }
 }
@@ -115,7 +119,7 @@ bool cmp_draw_call(RenderCommandProducer::SortKey lhs, RenderCommandProducer::So
 bool in_view(const glm::mat4& M, const glm::mat4& MVP, glm::vec3 centre, float radius)
 {
     const glm::vec3 scale{ M[0][0], M[1][1], M[2][2] };
-    const float     scale_factor = std::max(std::max(scale.x, scale.y), scale.z);
+    const float scale_factor = std::max(std::max(scale.x, scale.y), scale.z);
 
     return !frustum_cull(MVP, centre, scale_factor * radius);
 }
@@ -130,7 +134,7 @@ uint32_t render_command_fingerpint(const RenderCommand& command) noexcept
 {
     // TODO: This fingerprint is not much good
     const uint32_t mesh_fingerprint = static_cast<uint8_t>(command.gfx_api_mesh_object_id);
-    uintptr_t      mat_ptr_as_int{};
+    uintptr_t mat_ptr_as_int{};
     std::memcpy(&mat_ptr_as_int, &command.material, sizeof(command.material));
     const auto material_fingerprint = narrow_cast<uint32_t>(mat_ptr_as_int);
     return (material_fingerprint << 8) | mesh_fingerprint;
@@ -146,12 +150,12 @@ const RenderCommandList& RenderCommandProducer::finalise(const ICamera& camera, 
 
     for (uint32_t i = 0; i < size(); ++i) {
         const RenderCommand& command = m_render_commands_unsorted[i];
-        const glm::mat4&     M       = m_m_transform_matrices_unsorted[i];
+        const glm::mat4& M = m_m_transform_matrices_unsorted[i];
 
         // Find distance to camera for sorting
         // Store depth in cm to get better precision as uint32_t
         const glm::vec3 translation = M[3];
-        const auto      depth       = view_depth_in_cm(camera, translation);
+        const auto depth = view_depth_in_cm(camera, translation);
 
         const uint32_t command_fingerprint = render_command_fingerpint(command);
 
@@ -173,8 +177,8 @@ const RenderCommandList& RenderCommandProducer::finalise(const ICamera& camera, 
 
     for (const SortKey& key : m_keys) {
         const RenderCommand& command = m_render_commands_unsorted[key.index];
-        const glm::mat4&     M       = m_m_transform_matrices_unsorted[key.index];
-        const glm::mat4      MVP     = VP * M;
+        const glm::mat4& M = m_m_transform_matrices_unsorted[key.index];
+        const glm::mat4 MVP = VP * M;
 
         if (in_view(M, MVP, command.centre, command.radius)) {
             m_commands.m_render_commands.emplace_back(m_render_commands_unsorted[key.index]);

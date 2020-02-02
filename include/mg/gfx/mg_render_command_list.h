@@ -54,7 +54,7 @@ enum class SortFunc { NEAR_TO_FAR, FAR_TO_NEAR };
 struct RenderCommand {
     // May be expanded with different types of commands, flags?
     glm::vec3 centre{};
-    float     radius{};
+    float radius{};
 
     OpaqueHandle::Value gfx_api_mesh_object_id{};
 
@@ -66,7 +66,7 @@ struct RenderCommand {
 
 /** Tells which material to use for a given submesh (by numeric index). */
 struct MaterialBinding {
-    size_t    sub_mesh_index = 0;
+    size_t sub_mesh_index = 0;
     Material* material{};
 };
 
@@ -86,15 +86,15 @@ public:
 
 private:
     std::vector<RenderCommand> m_render_commands;
-    std::vector<glm::mat4>     m_m_transform_matrices;
-    std::vector<glm::mat4>     m_mvp_transform_matrices;
+    std::vector<glm::mat4> m_m_transform_matrices;
+    std::vector<glm::mat4> m_mvp_transform_matrices;
 };
 
 /** Interface for producing RenderCommandList. */
 class RenderCommandProducer {
 public:
-    void add_mesh(MeshHandle                  mesh,
-                  const Transform&            transform,
+    void add_mesh(MeshHandle mesh,
+                  const Transform& transform,
                   span<const MaterialBinding> material_bindings);
 
     /** Removes all added render commands, resetting the state of the RenderCommandProducer.
@@ -126,7 +126,7 @@ private:
     std::vector<SortKey> m_keys;
 
     std::vector<RenderCommand> m_render_commands_unsorted;
-    std::vector<glm::mat4>     m_m_transform_matrices_unsorted;
+    std::vector<glm::mat4> m_m_transform_matrices_unsorted;
 };
 
 } // namespace Mg::gfx

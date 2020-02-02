@@ -14,7 +14,7 @@ TEST_CASE("ThreadPool: timing test")
     puts("Starting timing_test");
 
     Mg::ThreadPool pool{ 2 };
-    size_t         job_count = 2;
+    size_t job_count = 2;
 
     auto start_time = high_resolution_clock::now();
 
@@ -25,7 +25,7 @@ TEST_CASE("ThreadPool: timing test")
     pool.await_all_jobs();
 
     auto end_time = high_resolution_clock::now();
-    auto diff     = duration_cast<milliseconds>(end_time - start_time).count();
+    auto diff = duration_cast<milliseconds>(end_time - start_time).count();
 
     // Check that jobs ran in parallel
     // TODO: quite brittle. Is there a better way?

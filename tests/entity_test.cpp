@@ -10,7 +10,7 @@ MG_DEFINE_COMPONENT(TestComponent)
     TestComponent() = default;
     TestComponent(uint32_t val, std::string str) : value(val), string(std::move(str)) {}
 
-    uint32_t    value  = 0;
+    uint32_t value = 0;
     std::string string = "Hello I am a string :D";
 };
 
@@ -32,7 +32,7 @@ MG_DEFINE_COMPONENT(IndexPairComponent)
 
 TEST_CASE("Entity")
 {
-    constexpr static size_t   num_elems = 8192;
+    constexpr static size_t num_elems = 8192;
     Mg::ecs::EntityCollection ent_col{ num_elems };
 
     SECTION("constructible") {}
@@ -49,9 +49,13 @@ TEST_CASE("Entity")
     {
         std::vector<Mg::ecs::Entity> handles;
 
-        for (size_t i = 0; i < 1024; ++i) { handles.push_back(ent_col.create_entity()); }
+        for (size_t i = 0; i < 1024; ++i) {
+            handles.push_back(ent_col.create_entity());
+        }
 
-        for (auto& h : handles) { ent_col.delete_entity(h); }
+        for (auto& h : handles) {
+            ent_col.delete_entity(h);
+        }
 
         REQUIRE(ent_col.num_entities() == 0);
     }
@@ -84,12 +88,12 @@ TEST_CASE("Entity")
         auto handle2 = ent_col.create_entity();
         ent_col.add_component<Position>(handle2, 42.0f, 69.0f);
 
-        auto&       component   = ent_col.get_component<TestComponent>(handle0);
+        auto& component = ent_col.get_component<TestComponent>(handle0);
         std::string member_copy = component.string;
         ent_col.delete_entity(handle0);
 
         auto& component2 = ent_col.get_component<TestComponent>(handle1);
-        member_copy      = component2.string;
+        member_copy = component2.string;
         REQUIRE(member_copy == "Yes this is string?");
         REQUIRE(ent_col.get_component<TestComponent>(handle1).string == member_copy);
 
@@ -138,8 +142,9 @@ TEST_CASE("Entity")
         for (uint32_t i = 0; i < num_elems; ++i) {
             es[i] = ent_col.create_entity();
 
-            ent_col.add_component<IndexPairComponent>(
-                es[i], i, static_cast<uint32_t>(num_elems - i));
+            ent_col.add_component<IndexPairComponent>(es[i],
+                                                      i,
+                                                      static_cast<uint32_t>(num_elems - i));
         }
 
         for (uint32_t i = 0; i < num_elems; ++i) {
@@ -152,10 +157,10 @@ TEST_CASE("Entity")
             auto entity = std::get<Mg::ecs::Entity>(cs);
             CHECK(ent_col.has_component<IndexPairComponent>(entity));
 
-            auto&    d    = ent_col.get_component<IndexPairComponent>(entity);
+            auto& d = ent_col.get_component<IndexPairComponent>(entity);
             uint32_t temp = d.elem1;
-            d.elem1       = d.elem2;
-            d.elem2       = temp;
+            d.elem1 = d.elem2;
+            d.elem2 = temp;
         }
 
         for (uint32_t i = 0; i < num_elems; ++i) {
@@ -166,7 +171,7 @@ TEST_CASE("Entity")
 
         for (auto cs : ent_col.get_with_components()) {
             auto entity = std::get<Mg::ecs::Entity>(cs);
-            auto mask   = ent_col.component_mask(entity);
+            auto mask = ent_col.component_mask(entity);
             CHECK(mask[IndexPairComponent::ComponentTypeId]);
         }
     }

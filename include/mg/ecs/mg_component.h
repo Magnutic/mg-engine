@@ -30,8 +30,8 @@
 
 #include <bitset>
 
-#include "mg/utils/mg_gsl.h"
 #include "mg/containers/mg_slot_map.h"
+#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
 
 /** Used to define new component types, e.g.

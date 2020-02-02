@@ -82,13 +82,13 @@ struct RenderTargetParams {
 
     Identifier render_target_id{ "<anonymous render target texture>" };
 
-    int32_t width  = 0;
+    int32_t width = 0;
     int32_t height = 0;
 
     int32_t num_mip_levels = 1;
 
     TextureFilterMode filter_mode{};
-    Format            texture_format{};
+    Format texture_format{};
 };
 
 } // namespace Mg::gfx

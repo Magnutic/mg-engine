@@ -50,7 +50,7 @@ public:
 
     // Allow base class to access resource member.
     // ResT is assumed to be derived from BaseResource, as all resource types have to be.
-    ResT&       get_resource() noexcept override { return m_resource.value(); }
+    ResT& get_resource() noexcept override { return m_resource.value(); }
     const ResT& get_resource() const noexcept override { return m_resource.value(); }
 
     void unload() override

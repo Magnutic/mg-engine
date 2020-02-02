@@ -6,7 +6,7 @@
 TEST_CASE("ResourceCache test")
 {
     constexpr static const char directory_name[] = "data/test-archive";
-    constexpr static const char archive_name[]   = "data/test-archive.zip";
+    constexpr static const char archive_name[] = "data/test-archive.zip";
 
     Mg::ResourceCache cache(std::make_unique<Mg::BasicFileLoader>(directory_name),
                             std::make_unique<Mg::ZipFileLoader>(archive_name));
@@ -17,7 +17,9 @@ TEST_CASE("ResourceCache test")
     {
         auto has_loader_with_name = [&](std::string_view name) {
             for (auto&& p_loader : cache.file_loaders()) {
-                if (p_loader->name() == name) { return true; }
+                if (p_loader->name() == name) {
+                    return true;
+                }
             }
             return false;
         };
@@ -76,7 +78,7 @@ TEST_CASE("ResourceCache test")
         puts("Starting get_file_contents test");
 
         auto res_access = cache.access_resource<Mg::TextResource>("test-file-2.txt");
-        auto text       = res_access->text();
+        auto text = res_access->text();
         REQUIRE(text == "test-file-2");
     }
 
@@ -87,7 +89,7 @@ TEST_CASE("ResourceCache test")
 
         {
             auto res_access = cache.access_resource<Mg::TextResource>("test-file-2.txt");
-            auto text       = res_access->text();
+            auto text = res_access->text();
             REQUIRE(!text.empty());
             REQUIRE(cache.is_cached("test-file-2.txt"));
         }
@@ -101,11 +103,11 @@ TEST_CASE("ResourceCache test")
         puts("Starting resource_access test");
 
         auto access0 = cache.access_resource<Mg::TextResource>("test-file-1.txt");
-        auto text0   = access0->text();
+        auto text0 = access0->text();
         REQUIRE(text0 == "test-file-1");
 
         auto access1 = cache.access_resource<Mg::TextResource>("test-file-2.txt");
-        auto text1   = access1->text();
+        auto text1 = access1->text();
         REQUIRE(text1 == "test-file-2");
 
         cache.access_resource<Mg::TextResource>("test-file-3.txt");

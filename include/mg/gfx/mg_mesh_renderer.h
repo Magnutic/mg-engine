@@ -58,10 +58,10 @@ public:
     void drop_shaders();
 
     /** Render the supplied list of meshes. */
-    void render(const ICamera&           cam,
+    void render(const ICamera& cam,
                 const RenderCommandList& command_list,
-                span<const Light>        lights,
-                RenderParameters         params);
+                span<const Light> lights,
+                RenderParameters params);
 };
 
 } // namespace Mg::gfx

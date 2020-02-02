@@ -52,13 +52,13 @@ struct MaterialRepositoryData {
     PoolingVector<MaterialNode> nodes{ k_material_node_pool_size };
 };
 
-MaterialRepository::MaterialRepository()  = default;
+MaterialRepository::MaterialRepository() = default;
 MaterialRepository::~MaterialRepository() = default;
 
 Material* MaterialRepository::create(Identifier id, ResourceHandle<ShaderResource> shader)
 {
     const auto [index, ptr] = impl().nodes.construct(Material{ id, shader });
-    ptr->self_index   = index;
+    ptr->self_index = index;
     return &ptr->material;
 }
 

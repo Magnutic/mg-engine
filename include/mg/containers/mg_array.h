@@ -52,13 +52,13 @@ namespace detail {
 // Base type common to Mg::Array and Mg::ArrayUnkownSize
 template<typename T, typename DeleterT = DefaultArrayDelete<T>> class ArrayBase {
 public:
-    using value_type      = T;
-    using size_type       = size_t;
-    using pointer         = T*;
-    using const_pointer   = const T*;
-    using reference       = T&;
+    using value_type = T;
+    using size_type = size_t;
+    using pointer = T*;
+    using const_pointer = const T*;
+    using reference = T&;
     using const_reference = const T&;
-    using deleter         = DeleterT;
+    using deleter = DeleterT;
 
     ArrayBase() = default;
 
@@ -69,7 +69,7 @@ public:
     MG_MAKE_NON_COPYABLE(ArrayBase);
     MG_MAKE_DEFAULT_MOVABLE(ArrayBase);
 
-    T*       data() noexcept { return m_ptr; }
+    T* data() noexcept { return m_ptr; }
     const T* data() const noexcept { return m_ptr; }
 
 protected:
@@ -84,7 +84,7 @@ protected:
     T* release() noexcept
     {
         T* ret = m_ptr;
-        m_ptr  = nullptr;
+        m_ptr = nullptr;
         return ret;
     }
 
@@ -122,7 +122,7 @@ public:
 
     void swap(ArrayUnknownSize& p) noexcept { std::swap(this->m_ptr, p.m_ptr); }
 
-    T&       operator[](size_t i) noexcept { return this->m_ptr[i]; }
+    T& operator[](size_t i) noexcept { return this->m_ptr[i]; }
     const T& operator[](size_t i) const noexcept { return this->m_ptr[i]; }
 };
 
@@ -134,7 +134,7 @@ template<typename T> class Array : public detail::ArrayBase<T> {
     using Base = detail::ArrayBase<T>;
 
 public:
-    using iterator       = T*;
+    using iterator = T*;
     using const_iterator = const T*;
 
     static Array make(size_t size) { return Array(new T[size](), size); }
@@ -145,8 +145,8 @@ public:
             std::byte storage[sizeof(T)];
         };
 
-        block*       p_storage = nullptr;
-        size_t       i         = 0;
+        block* p_storage = nullptr;
+        size_t i = 0;
         const size_t num_elems = data.size();
 
         try {
@@ -154,7 +154,9 @@ public:
             p_storage = new block[num_elems];
 
             // Construct copies in storage.
-            for (; i < num_elems; ++i) { new (&p_storage[i]) T(data[i]); }
+            for (; i < num_elems; ++i) {
+                new (&p_storage[i]) T(data[i]);
+            }
         }
         catch (...) {
             // If an exception was thrown, destroy all the so-far constructed objects in reverse
@@ -198,8 +200,8 @@ public:
         std::swap(m_size, p.m_size);
     }
 
-    iterator       begin() noexcept { return this->m_ptr; }
-    iterator       end() noexcept { return this->m_ptr + m_size; } // NOLINT
+    iterator begin() noexcept { return this->m_ptr; }
+    iterator end() noexcept { return this->m_ptr + m_size; } // NOLINT
     const_iterator begin() const noexcept { return this->m_ptr; }
     const_iterator end() const noexcept { return this->m_ptr + m_size; } // NOLINT
     const_iterator cbegin() const noexcept { return this->m_ptr; }

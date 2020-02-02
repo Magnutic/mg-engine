@@ -52,14 +52,8 @@ public:
     {
         return { lhs.radians() - rhs.radians() };
     }
-    constexpr friend Angle operator*(Angle lhs, float f) noexcept
-    {
-        return { lhs.radians() * f };
-    }
-    constexpr friend Angle operator/(Angle lhs, float f) noexcept
-    {
-        return { lhs.radians() / f };
-    }
+    constexpr friend Angle operator*(Angle lhs, float f) noexcept { return { lhs.radians() * f }; }
+    constexpr friend Angle operator/(Angle lhs, float f) noexcept { return { lhs.radians() / f }; }
 
     friend Angle angle_difference(Angle lhs, Angle rhs) noexcept
     {
@@ -96,8 +90,8 @@ private:
     // public constructor.
     constexpr Angle(float angle_radians) : m_angle_radians(angle_radians) {}
 
-    static constexpr float pi         = 3.14159265358979323846233f;
-    static constexpr float two_pi     = 2.0f * pi;
+    static constexpr float pi = 3.14159265358979323846233f;
+    static constexpr float two_pi = 2.0f * pi;
     static constexpr float deg_to_rad = pi / 180.0f;
     static constexpr float rad_to_deg = 180.0f / pi;
 

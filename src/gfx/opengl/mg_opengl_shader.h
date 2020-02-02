@@ -65,8 +65,8 @@ void set_sampler_binding(UniformLocation location, TextureUnit unit) noexcept;
 /** Bind Shader's block with name block_name to the given uniform buffer slot.
  * @return Whether successful (i.e. block_name corresponds to an active uniform block).
  */
-[[nodiscard]] bool set_uniform_block_binding(ShaderHandle      program,
-                                             std::string_view  block_name,
+[[nodiscard]] bool set_uniform_block_binding(ShaderHandle program,
+                                             std::string_view block_name,
                                              UniformBufferSlot slot) noexcept;
 
 } // namespace Mg::gfx::opengl

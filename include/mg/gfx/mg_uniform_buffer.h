@@ -64,7 +64,7 @@ public:
 
 private:
     OpaqueHandle m_internal_ubo_id;
-    size_t       m_size = 0;
+    size_t m_size = 0;
 };
 
 } // namespace Mg::gfx

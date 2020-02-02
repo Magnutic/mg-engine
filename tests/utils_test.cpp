@@ -9,8 +9,8 @@ using namespace Mg;
 
 TEST_CASE("tokenise_string")
 {
-    auto             tokens = tokenise_string(" \t this is \ta string   ", " \t");
-    std::string      string = "hello";
+    auto tokens = tokenise_string(" \t this is \ta string   ", " \t");
+    std::string string = "hello";
     std::string_view string_span{ string };
 
     REQUIRE(tokens.size() == 4);
@@ -139,7 +139,7 @@ TEST_CASE("PointNormalPlane")
     glm::vec3 point{ 5.0f, 5.0f, 5.0f };
 
     auto sgn_dist = signed_distance_to_plane(p, point);
-    auto dist     = distance_to_plane(p, point);
+    auto dist = distance_to_plane(p, point);
 
     REQUIRE(sgn_dist == Approx(-1.0f / std::sqrt(2.0f)));
     REQUIRE(dist == Approx(1.0f / std::sqrt(2.0f)));

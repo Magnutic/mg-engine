@@ -42,10 +42,10 @@ const float quad_vertices[] = { -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,
 
 // Texture units 8 & 9 are reserved for input colour and depth texture, respectively.
 constexpr uint32_t k_input_colour_texture_unit = 8;
-constexpr uint32_t k_input_depth_texture_unit  = 9;
+constexpr uint32_t k_input_depth_texture_unit = 9;
 
 constexpr uint32_t k_material_params_ubo_slot = 0;
-constexpr uint32_t k_frame_block_ubo_slot     = 1;
+constexpr uint32_t k_frame_block_ubo_slot = 1;
 
 struct FrameBlock {
     float z_near;
@@ -154,11 +154,11 @@ void init(PostProcessRendererData& data)
 }
 
 void setup_render_pipeline(PostProcessRendererData& data,
-                           const Material&          material,
-                           TextureHandle            input_colour,
-                           Opt<TextureHandle>       input_depth,
-                           float                    z_near,
-                           float                    z_far)
+                           const Material& material,
+                           TextureHandle input_colour,
+                           Opt<TextureHandle> input_depth,
+                           float z_near,
+                           float z_far)
 {
     FrameBlock frame_block{ z_near, z_far };
     data.frame_block_ubo.set_data(byte_representation(frame_block));
@@ -195,7 +195,7 @@ PostProcessRenderer::~PostProcessRenderer()
 }
 
 void PostProcessRenderer::post_process(const Material& material,
-                                       TextureHandle   input_colour) noexcept
+                                       TextureHandle input_colour) noexcept
 {
     setup_render_pipeline(impl(), material, input_colour, nullopt, 0.0f, 0.0f);
 
@@ -207,10 +207,10 @@ void PostProcessRenderer::post_process(const Material& material,
 }
 
 void PostProcessRenderer::post_process(const Material& material,
-                                       TextureHandle   input_colour,
-                                       TextureHandle   input_depth,
-                                       float           z_near,
-                                       float           z_far) noexcept
+                                       TextureHandle input_colour,
+                                       TextureHandle input_depth,
+                                       float z_near,
+                                       float z_far) noexcept
 {
     setup_render_pipeline(impl(), material, input_colour, input_depth, z_near, z_far);
 

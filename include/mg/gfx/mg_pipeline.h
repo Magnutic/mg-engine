@@ -48,11 +48,11 @@ enum class PolygonMode { Points = 0x1b00, Lines = 0x1b01, Fill = 0x1b02 };
 
 /** Types of comparison functions to use in depth testing. */
 enum class DepthTestMode {
-    Less         = 0x201,
-    Equal        = 0x202,
-    LessEqual    = 0x203,
-    Greater      = 0x204,
-    NotEqual     = 0x205,
+    Less = 0x201,
+    Equal = 0x202,
+    LessEqual = 0x203,
+    Greater = 0x204,
+    NotEqual = 0x205,
     GreaterEqual = 0x206,
 };
 
@@ -63,9 +63,9 @@ enum class CullingMode { None, Front = 0x404, Back = 0x405 };
 enum class PipelineInputType { BufferTexture, Sampler2D, UniformBuffer };
 
 struct PipelineInputLocation {
-    Identifier        input_name;
+    Identifier input_name;
     PipelineInputType type;
-    uint32_t          location;
+    uint32_t location;
 };
 
 using PipelineInputLayout = small_vector<PipelineInputLocation, 10>;
@@ -73,16 +73,16 @@ using PipelineInputLayout = small_vector<PipelineInputLocation, 10>;
 struct PipelineSettings {
     PipelineSettings()
     {
-        colour_write    = true;
-        depth_write     = true;
-        depth_test      = true;
+        colour_write = true;
+        depth_write = true;
+        depth_test = true;
         enable_blending = false;
     }
 
-    PolygonMode   polygon_mode    = PolygonMode::Fill;
+    PolygonMode polygon_mode = PolygonMode::Fill;
     DepthTestMode depth_test_mode = DepthTestMode::LessEqual;
-    CullingMode   culling_mode    = CullingMode::Back;
-    BlendMode     blend_mode      = c_blend_mode_alpha;
+    CullingMode culling_mode = CullingMode::Back;
+    BlendMode blend_mode = c_blend_mode_alpha;
 
     bool colour_write : 1;
     bool depth_write : 1;
@@ -92,7 +92,7 @@ struct PipelineSettings {
 
 /** PipelinePrototype represents shared configuration for a set of similar pipelines. */
 struct PipelinePrototype {
-    PipelineSettings    settings;
+    PipelineSettings settings;
     PipelineInputLayout common_input_layout;
 };
 
@@ -102,11 +102,11 @@ struct PipelinePrototype {
 class Pipeline {
 public:
     struct CreationParameters {
-        VertexShaderHandle         vertex_shader;
-        Opt<GeometryShaderHandle>  geometry_shader;
-        Opt<FragmentShaderHandle>  fragment_shader;
+        VertexShaderHandle vertex_shader;
+        Opt<GeometryShaderHandle> geometry_shader;
+        Opt<FragmentShaderHandle> fragment_shader;
         const PipelineInputLayout& additional_input_layout;
-        const PipelinePrototype&   prototype;
+        const PipelinePrototype& prototype;
     };
 
     static Opt<Pipeline> make(const CreationParameters& params);
@@ -119,13 +119,13 @@ public:
     const PipelinePrototype& prototype() const noexcept { return *m_p_prototype; };
 
 private:
-    Pipeline(OpaqueHandle               internal_handle,
-             const PipelinePrototype&   prototype,
+    Pipeline(OpaqueHandle internal_handle,
+             const PipelinePrototype& prototype,
              const PipelineInputLayout& additional_input_layout);
 
     friend class PipelinePrototypeContext;
 
-    OpaqueHandle             m_internal_handle;
+    OpaqueHandle m_internal_handle;
     const PipelinePrototype* m_p_prototype;
 };
 
@@ -156,8 +156,8 @@ public:
     PipelineInputBinding(uint32_t location, const UniformBuffer& ubo);
 
     OpaqueHandle::Value gfx_resource_handle() const { return m_gfx_resource_handle; }
-    PipelineInputType   type() const { return m_type; }
-    uint32_t            location() const { return m_location; }
+    PipelineInputType type() const { return m_type; }
+    uint32_t location() const { return m_location; }
 
 private:
     PipelineInputBinding(uint32_t location, OpaqueHandle::Value handle, PipelineInputType type)
@@ -165,8 +165,8 @@ private:
     {}
 
     OpaqueHandle::Value m_gfx_resource_handle;
-    PipelineInputType   m_type;
-    uint32_t            m_location;
+    PipelineInputType m_type;
+    uint32_t m_location;
 };
 
 /** Bind the set of input resources as input to pipelines. A binding remains valid even if the

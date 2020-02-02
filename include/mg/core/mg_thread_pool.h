@@ -75,11 +75,11 @@ private:
     void execute_job_loop();
 
 private:
-    std::vector<std::thread>          m_threads; // Worker threads
-    std::queue<std::function<void()>> m_queue;   // Job queue
+    std::vector<std::thread> m_threads;        // Worker threads
+    std::queue<std::function<void()>> m_queue; // Job queue
 
-    bool   m_exiting  = false; // Whether ThreadPool is being destroyed
-    size_t m_num_jobs = 0;     // Number of unstarted + started and unfinished jobs
+    bool m_exiting = false; // Whether ThreadPool is being destroyed
+    size_t m_num_jobs = 0;  // Number of unstarted + started and unfinished jobs
 
     // Worker threads without jobs await this condition variable
     std::condition_variable m_job_available_var;
@@ -121,7 +121,9 @@ ThreadPool::~ThreadPool()
 
     // Join all threads
     for (auto& thread : m_threads) {
-        if (thread.joinable()) { thread.join(); }
+        if (thread.joinable()) {
+            thread.join();
+        }
     }
 }
 
@@ -171,7 +173,9 @@ void ThreadPool::execute_job_loop()
             // Wait until a job is available (or the pool is being destroyed)
             m_job_available_var.wait(lock, [this] { return m_queue.size() > 0 || m_exiting; });
 
-            if (m_exiting) { return; }
+            if (m_exiting) {
+                return;
+            }
 
             current_job = m_queue.front();
             m_queue.pop();

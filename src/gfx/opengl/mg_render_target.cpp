@@ -100,12 +100,12 @@ public:
 } // namespace
 
 TextureRenderTarget TextureRenderTarget::with_colour_target(TextureHandle colour_target,
-                                                            DepthType     depth_type,
-                                                            int32_t       mip_level)
+                                                            DepthType depth_type,
+                                                            int32_t mip_level)
 {
     TextureRenderTarget trt;
     trt.m_colour_target = colour_target;
-    trt.m_mip_level     = mip_level;
+    trt.m_mip_level = mip_level;
 
     const auto& texture_node = internal::texture_node(colour_target);
 
@@ -145,11 +145,11 @@ TextureRenderTarget TextureRenderTarget::with_colour_target(TextureHandle colour
 
 TextureRenderTarget TextureRenderTarget::with_colour_and_depth_targets(TextureHandle colour_target,
                                                                        TextureHandle depth_target,
-                                                                       int32_t       mip_level)
+                                                                       int32_t mip_level)
 {
     MG_ASSERT(colour_target != depth_target);
     const auto& colour_tex = internal::texture_node(colour_target).texture;
-    const auto& depth_tex  = internal::texture_node(depth_target).texture;
+    const auto& depth_tex = internal::texture_node(depth_target).texture;
 
     if (colour_tex.image_size() != depth_tex.image_size()) {
         g_log.write_warning(
@@ -167,8 +167,8 @@ TextureRenderTarget TextureRenderTarget::with_colour_and_depth_targets(TextureHa
 
     TextureRenderTarget trt;
     trt.m_colour_target = colour_target;
-    trt.m_depth_target  = depth_target;
-    trt.m_mip_level     = mip_level;
+    trt.m_depth_target = depth_target;
+    trt.m_mip_level = mip_level;
 
     // Create frame buffer object (FBO)
     GLuint fbo_id = 0;

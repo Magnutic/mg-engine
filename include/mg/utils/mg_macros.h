@@ -80,9 +80,9 @@
 
 /** Define special member functions for virtual interfaces (defaulted + virtual destructor) */
 #define MG_INTERFACE_BOILERPLATE(class_name)            \
-    class_name()                  = default;            \
+    class_name() = default;                             \
     class_name(const class_name&) = default;            \
     class_name& operator=(const class_name&) = default; \
-    class_name(class_name&&)                 = default; \
+    class_name(class_name&&) = default;                 \
     class_name& operator=(class_name&&) = default;      \
     virtual ~class_name() {}

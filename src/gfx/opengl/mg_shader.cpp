@@ -53,7 +53,7 @@ GLenum shader_stage_to_gl_enum(ShaderStage stage) noexcept
 template<ShaderStage stage> Opt<TypedShaderHandle<stage>> compile_shader(const std::string& code)
 {
     const auto gl_shader_type = shader_stage_to_gl_enum(stage);
-    const auto code_c_str     = code.c_str();
+    const auto code_c_str = code.c_str();
 
     // Upload and compile shader.
     const auto id = glCreateShader(gl_shader_type);
@@ -161,7 +161,7 @@ public:
         _shader.map([&](ShaderId id) { glDetachShader(_program, narrow<GLuint>(id.value)); });
     }
 
-    GLuint        _program{};
+    GLuint _program{};
     Opt<ShaderId> _shader{};
 };
 
@@ -171,16 +171,18 @@ public:
 // ShaderProgram implementation
 //--------------------------------------------------------------------------------------------------
 
-Opt<ShaderHandle> link_shader_program(VertexShaderHandle        vertex_shader,
+Opt<ShaderHandle> link_shader_program(VertexShaderHandle vertex_shader,
                                       Opt<GeometryShaderHandle> geometry_shader,
                                       Opt<FragmentShaderHandle> fragment_shader)
 {
-    const GLuint      program_id = glCreateProgram();
+    const GLuint program_id = glCreateProgram();
     ShaderAttachGuard guard_vs(program_id, vertex_shader);
     ShaderAttachGuard guard_gs(program_id, geometry_shader);
     ShaderAttachGuard guard_fs(program_id, fragment_shader);
 
-    if (link_program(program_id)) { return ShaderHandle(program_id); }
+    if (link_program(program_id)) {
+        return ShaderHandle(program_id);
+    }
 
     return nullopt;
 }

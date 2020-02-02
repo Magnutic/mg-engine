@@ -54,7 +54,7 @@ namespace Mg::gfx {
 namespace {
 
 // Binding slots for UniformBufferObjects.
-constexpr uint32_t k_camera_ubo_slot          = 0;
+constexpr uint32_t k_camera_ubo_slot = 0;
 constexpr uint32_t k_material_params_ubo_slot = 1;
 
 //--------------------------------------------------------------------------------------------------
@@ -232,8 +232,8 @@ BillboardRenderer::BillboardRenderer()
     glGenBuffers(1, &vbo_id);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
 
-    uint32_t      index  = 0;
-    intptr_t      offset = 0;
+    uint32_t index = 0;
+    intptr_t offset = 0;
     const int32_t stride = sizeof(Billboard);
 
     // Tell OpenGL how to interpret the vertex buffer.
@@ -264,19 +264,21 @@ BillboardRenderer::~BillboardRenderer()
     glDeleteBuffers(1, &vbo_id);
 }
 
-void BillboardRenderer::render(const ICamera&             camera,
+void BillboardRenderer::render(const ICamera& camera,
                                const BillboardRenderList& render_list,
-                               const Material&            material)
+                               const Material& material)
 {
-    if (render_list.view().empty()) { return; }
+    if (render_list.view().empty()) {
+        return;
+    }
 
     const auto& billboards = render_list.view();
     update_buffer(impl(), billboards);
 
     {
         CameraBlock camera_block{};
-        camera_block.VP                         = camera.view_proj_matrix();
-        camera_block.P                          = camera.proj_matrix();
+        camera_block.VP = camera.view_proj_matrix();
+        camera_block.P = camera.proj_matrix();
         camera_block.cam_pos_xyz_aspect_ratio_w = glm::vec4(camera.get_position(),
                                                             camera.aspect_ratio());
 

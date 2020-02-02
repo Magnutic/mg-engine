@@ -15,10 +15,10 @@ WindowSettings read_display_settings(Config& cfg)
     WindowSettings s;
 
     // Get window configuration
-    s.video_mode.width  = cfg.as<int32_t>("r_display_width");
+    s.video_mode.width = cfg.as<int32_t>("r_display_width");
     s.video_mode.height = cfg.as<int32_t>("r_display_height");
-    s.fullscreen        = cfg.as<bool>("r_fullscreen");
-    s.vsync             = cfg.as<bool>("r_vsync");
+    s.fullscreen = cfg.as<bool>("r_fullscreen");
+    s.vsync = cfg.as<bool>("r_vsync");
 
     return s;
 }

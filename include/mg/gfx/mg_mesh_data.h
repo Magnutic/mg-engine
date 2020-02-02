@@ -44,27 +44,27 @@ namespace Mg::gfx {
 /** Vertex attributes describe how vertex data is to be interpreted. */
 struct VertexAttribute {
     enum class Type : uint32_t {
-        BYTE   = 0x1400,
-        UBYTE  = 0x1401,
-        SHORT  = 0x1402,
+        BYTE = 0x1400,
+        UBYTE = 0x1401,
+        SHORT = 0x1402,
         USHORT = 0x1403,
-        INT    = 0x1404,
-        UINT   = 0x1405,
-        FLOAT  = 0x1406,
+        INT = 0x1404,
+        UINT = 0x1405,
+        FLOAT = 0x1406,
         DOUBLE = 0x140A,
-        HALF   = 0x140B,
-        FIXED  = 0x140C
+        HALF = 0x140B,
+        FIXED = 0x140C
     };
 
-    uint32_t num;        // Number of elements for attribute (e.g. 3 for a vec3)
-    uint32_t size;       // Size in bytes for attribute
-    Type     type;       // Type of attribute, OpenGL type enum values
-    bool     normalised; // Whether integral data is to be interpreted as normalised (i.e. int range
-                         // converted to [-1.0, 1.0])
+    uint32_t num;    // Number of elements for attribute (e.g. 3 for a vec3)
+    uint32_t size;   // Size in bytes for attribute
+    Type type;       // Type of attribute, OpenGL type enum values
+    bool normalised; // Whether integral data is to be interpreted as normalised (i.e. int range
+                     // converted to [-1.0, 1.0])
 };
 
 // Unsigned integer type used to represent mesh-vertex indices.
-using uint_vertex_index                = uint16_t;
+using uint_vertex_index = uint16_t;
 constexpr auto k_max_vertices_per_mesh = std::numeric_limits<uint_vertex_index>::max();
 
 // I expect the struct elements to be naturally aligned and not padded, but deactivate padding just
@@ -89,7 +89,7 @@ struct Vertex {
     // Joint bindings (for skinned/animated meshes). Describes which (up to) four joints affect this
     // vertex, and how much.
     std::array<uint8_t, 4> joint_id{ { 0, 0, 0, 0 } };
-    vec4_normalised        joint_weights{ 0.0f, 0.0f, 0.0f, 0.0f };
+    vec4_normalised joint_weights{ 0.0f, 0.0f, 0.0f, 0.0f };
 };
 
 #pragma pack(pop)
@@ -113,22 +113,22 @@ constexpr std::array<gfx::VertexAttribute, 8> g_attrib_array{
  * rendered with a different material).
  */
 struct SubMesh {
-    uint32_t   begin  = 0;
-    uint32_t   amount = 0;
+    uint32_t begin = 0;
+    uint32_t amount = 0;
     Identifier name{ "" };
 };
 
 /** A non-owning view over the data required to define a mesh. */
 struct MeshDataView {
-    span<const Vertex>            vertices;
+    span<const Vertex> vertices;
     span<const uint_vertex_index> indices;
-    span<const SubMesh>           sub_meshes;
+    span<const SubMesh> sub_meshes;
 
     struct BoundingInfo {
         glm::vec3 centre = {};
-        float     radius = 0.0f;
+        float radius = 0.0f;
     };
     Opt<BoundingInfo> bounding_info;
 };
 
-} // namespace Mg
+} // namespace Mg::gfx

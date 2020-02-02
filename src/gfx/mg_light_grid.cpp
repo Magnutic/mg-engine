@@ -37,7 +37,9 @@ namespace Mg::gfx {
 void LightGrid::calculate_delim_planes(glm::mat4 P) noexcept
 {
     // If projection has not changed, we can re-use the previous planes
-    if (P == m_prev_projection) { return; }
+    if (P == m_prev_projection) {
+        return;
+    }
     m_prev_projection = P;
 
     const auto scale = glm::vec2{ MG_LIGHT_GRID_WIDTH, MG_LIGHT_GRID_HEIGHT } / 2.0f;
@@ -52,7 +54,7 @@ void LightGrid::calculate_delim_planes(glm::mat4 P) noexcept
         const glm::vec4 col4{ 0.0f, 0.0f, 1.0f, 0.0f };
 
         // Extract left frustum plane
-        const auto left       = glm::normalize(col4 + col1);
+        const auto left = glm::normalize(col4 + col1);
         m_delim_plane_vert[i] = DelimPlane{ left.x, left.z };
     }
 
@@ -64,37 +66,43 @@ void LightGrid::calculate_delim_planes(glm::mat4 P) noexcept
         const glm::vec4 col4{ 0.0f, 0.0f, 1.0f, 0.0f };
 
         // Extract bottom frustum plane
-        const auto bottom    = glm::normalize(col4 + col2);
+        const auto bottom = glm::normalize(col4 + col2);
         m_delim_plane_hor[u] = DelimPlane{ bottom.y, bottom.z };
     }
 }
 
 size_t LightGrid::extents(const glm::vec3& pos_view,
-                          float            radius_sqr,
-                          bool             horizontal,
-                          bool             get_max) noexcept
+                          float radius_sqr,
+                          bool horizontal,
+                          bool get_max) noexcept
 {
     const int cmp_sign = get_max ? -1 : 1;
 
     const auto planes = horizontal ? span{ m_delim_plane_hor } : span{ m_delim_plane_vert };
 
     const float offset = horizontal ? pos_view.y : pos_view.x;
-    const float depth  = pos_view.z;
+    const float depth = pos_view.z;
 
     size_t min = 0;
     size_t max = horizontal ? MG_LIGHT_GRID_HEIGHT : MG_LIGHT_GRID_WIDTH;
 
-    if (signed_sqr_distance(planes[min], offset, depth) < cmp_sign * radius_sqr) { return 0; }
-    if (signed_sqr_distance(planes[max], offset, depth) > cmp_sign * radius_sqr) { return max; }
+    if (signed_sqr_distance(planes[min], offset, depth) < cmp_sign * radius_sqr) {
+        return 0;
+    }
+    if (signed_sqr_distance(planes[max], offset, depth) > cmp_sign * radius_sqr) {
+        return max;
+    }
 
     while (max - min > 1u) {
-        const size_t      pivot       = min + (max - min) / 2;
+        const size_t pivot = min + (max - min) / 2;
         const DelimPlane& pivot_plane = planes[pivot]; // NOLINT
 
         const float dist_sqr_signed = signed_sqr_distance(pivot_plane, offset, depth);
 
         // Is light completely over delimiter
-        if (dist_sqr_signed > cmp_sign * radius_sqr) { min = pivot; }
+        if (dist_sqr_signed > cmp_sign * radius_sqr) {
+            min = pivot;
+        }
         else {
             max = pivot;
         }
