@@ -134,6 +134,11 @@ bool MeshResource::validate() const
     const auto n_vertices   = vertices().size();
     const auto n_indices    = narrow<size_t>(indices().size());
 
+    // Check triangle-list validity
+    if (n_sub_meshes % 3 != 0) {
+        mesh_error("Mesh is not a triangle-list (number of indices not divisible by three).");
+    }
+
     // Check submeshes
     if (n_sub_meshes == 0) { mesh_error("No submeshes present."); }
 
