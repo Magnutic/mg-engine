@@ -35,7 +35,8 @@ namespace Mg {
 
 // These functions use forwarding references (Cont&& container) instead of lvalue references
 // (Cont& container) as parameters. This is useful when the argument is a non-owning range (e.g.
-// gsl::span) which was returned by value from a function.
+// gsl::span) which was returned by value from a function, but risks causing dangling references if
+// used on rvalue containers.
 
 /** Find element in container by iterating over elements. */
 template<typename ContT, typename ElemT = typename ContT::value_type>
