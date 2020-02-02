@@ -56,16 +56,18 @@ constexpr uint32_t k_mesh_format_version = 1;
 
 LoadResourceResult MeshResource::load_resource_impl(const ResourceLoadingInput& input)
 {
-    const auto                  fname      = resource_id().str_view();
-    const span<const std::byte> bytestream = input.resource_data();
+    const std::string_view fname      = resource_id().str_view();
+    span<const std::byte>  bytestream = input.resource_data();
 
     MeshHeader header;
     {
         MG_ASSERT(bytestream.size() >= sizeof(header));
-        // Cast here is redundant but GCC-8 warns otherwise (probably a bug?)
-        auto data = reinterpret_cast<const uint8_t*>(bytestream.data()); // NOLINT
-        std::memcpy(&header, data, sizeof(header));
+        std::memcpy(&header, bytestream.data(), sizeof(header));
+        bytestream = bytestream.subspan(sizeof(header));
     }
+
+    m_centre = header.centre;
+    m_radius = header.radius;
 
     if (header.four_cc != mesh_4cc) {
         return LoadResourceResult::data_error(fmt::format("Invalid data (4CC mismatch).", fname));
@@ -85,38 +87,35 @@ LoadResourceResult MeshResource::load_resource_impl(const ResourceLoadingInput& 
     m_vertices   = Array<gfx::Vertex>::make(header.n_vertices);
     m_indices    = Array<gfx::uint_vertex_index>::make(header.n_indices);
 
-    auto offset = sizeof(MeshHeader);
+    enum class Stride : size_t;
+    enum class ElemSize : size_t;
+    // Load bytestream data into arrays. Array size controls number of elements to read.
+    auto load_to_array =
+        [&bytestream](auto& array_out, Opt<ElemSize> elem_size = {}, Opt<Stride> stride = {}) {
+            using TargetT           = std::decay_t<decltype(array_out[0])>;
+            const auto size         = elem_size ? size_t(*elem_size) : sizeof(TargetT);
+            const auto stride_value = stride ? size_t(*stride) : size;
 
-    // Load binary data into span
-    const auto load_to = [&](auto span, size_t stride, size_t bytes_to_read = 0) {
-        using data_type = typename decltype(span)::value_type;
-        static_assert(std::is_trivially_copyable_v<data_type>);
-        const auto size = bytes_to_read == 0 ? sizeof(data_type) : bytes_to_read;
+            // Sanity check
+            static_assert(std::is_trivially_copyable_v<TargetT>);
+            MG_ASSERT(size <= sizeof(TargetT));
 
-        for (size_t i = 0; i < span.size(); ++i) {
-            if (offset + size > bytestream.size()) { return false; }
+            for (size_t i = 0; i < array_out.size(); ++i) {
+                if (size > bytestream.size()) { return false; }
+                std::memcpy(&array_out[i], bytestream.data(), size);
+                bytestream = bytestream.subspan(stride_value);
+            }
 
-            const void* ptr = &(bytestream[offset]);
-            std::memcpy(&span[i], ptr, size);
-            offset += size + stride;
-        }
-
-        return true;
-    };
+            return true;
+        };
 
     bool success = true;
     // Skip unused 'material_index' from submesh header
-    success = success && load_to(span{ m_sub_meshes }, 4, 8);
-    success = success && load_to(span{ m_vertices }, 0);
-    success = success && load_to(span{ m_indices }, 0);
+    success = success && load_to_array(m_sub_meshes, ElemSize{ 8 }, Stride{ 12 });
+    success = success && load_to_array(m_vertices);
+    success = success && load_to_array(m_indices);
 
     if (!success) { return LoadResourceResult::data_error("Missing mesh data."); }
-
-    m_centre = header.centre;
-    m_radius = header.radius;
-
-    MG_ASSERT(offset <= bytestream.size());
-
     if (!validate()) { return LoadResourceResult::data_error("Mesh validation failed."); }
 
     return LoadResourceResult::success();
