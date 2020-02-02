@@ -130,16 +130,6 @@ MeshDataView::BoundingInfo calculate_mesh_bounding_info(span<const Vertex>      
     return { centre, radius };
 }
 
-MeshDataView mesh_data_view_from_resource(const MeshResource& mesh_res)
-{
-    MeshDataView result;
-    result.vertices   = mesh_res.vertices();
-    result.indices    = mesh_res.indices();
-    result.sub_meshes = mesh_res.sub_meshes();
-    result.bounding_info = { mesh_res.centre(), mesh_res.radius() };
-    return result;
-}
-
 } // namespace
 
 //--------------------------------------------------------------------------------------------------
@@ -403,9 +393,9 @@ public:
             return { nullopt, MeshBuffer::ReturnCode::Index_buffer_full };
         }
 
-        const MeshDataView mesh_data   = mesh_data_view_from_resource(resource);
-        const MeshHandle   mesh_handle = m_mesh_repository->_make_mesh(
-            resource.resource_id(), m_mesh_repository->_mesh_params_from_mesh_data(mesh_data));
+        const MeshHandle mesh_handle = m_mesh_repository->_make_mesh(
+            resource.resource_id(),
+            m_mesh_repository->_mesh_params_from_mesh_data(resource.data_view()));
 
         m_vbo_offset += resource.vertices().size_bytes();
         m_ibo_offset += resource.indices().size_bytes();
@@ -442,7 +432,7 @@ MeshRepository::~MeshRepository() = default;
 
 MeshHandle MeshRepository::create(const MeshResource& mesh_res)
 {
-    return impl().create(mesh_res.resource_id(), mesh_data_view_from_resource(mesh_res));
+    return impl().create(mesh_res.resource_id(), mesh_res.data_view());
 }
 
 MeshHandle MeshRepository::create(const MeshDataView& mesh_data, Identifier mesh_id)
@@ -464,7 +454,7 @@ void MeshRepository::destroy(MeshHandle handle)
 
 bool MeshRepository::update(const MeshResource& mesh_res)
 {
-    return impl().update(mesh_res.resource_id(), mesh_data_view_from_resource(mesh_res));
+    return impl().update(mesh_res.resource_id(), mesh_res.data_view());
 }
 
 MeshBuffer MeshRepository::new_mesh_buffer(VertexBufferSize vertex_buffer_size,
