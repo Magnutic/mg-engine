@@ -27,9 +27,8 @@
 
 #pragma once
 
+#include "mg/gfx/mg_mesh_data.h"
 #include "mg/gfx/mg_mesh_handle.h"
-#include "mg/gfx/mg_submesh.h"
-#include "mg/gfx/mg_vertex.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_optional.h"

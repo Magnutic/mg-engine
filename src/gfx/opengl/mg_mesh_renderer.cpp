@@ -28,9 +28,9 @@
 #include "mg/gfx/mg_light_grid.h"
 #include "mg/gfx/mg_material.h"
 #include "mg/gfx/mg_matrix_uniform_handler.h"
+#include "mg/gfx/mg_mesh_data.h"
 #include "mg/gfx/mg_pipeline_repository.h"
 #include "mg/gfx/mg_render_command_list.h"
-#include "mg/gfx/mg_vertex.h"
 
 #include "mg_gl_debug.h"
 #include "mg_glad.h"

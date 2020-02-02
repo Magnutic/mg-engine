@@ -33,6 +33,7 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/gfx/mg_material.h
     ${MG_HEADER_DIR}/mg/gfx/mg_material_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_matrix_uniform_handler.h
+    ${MG_HEADER_DIR}/mg/gfx/mg_mesh_data.h
     ${MG_HEADER_DIR}/mg/gfx/mg_mesh_renderer.h
     ${MG_HEADER_DIR}/mg/gfx/mg_mesh_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_post_process.h
@@ -45,8 +46,6 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/gfx/mg_texture2d.h
     ${MG_HEADER_DIR}/mg/gfx/mg_texture_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_uniform_buffer.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_vertex.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_vertex_attribute.h
     ${MG_HEADER_DIR}/mg/input/mg_input.h
     ${MG_HEADER_DIR}/mg/input/mg_joy.h
     ${MG_HEADER_DIR}/mg/input/mg_keyboard.h

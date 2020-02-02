@@ -28,8 +28,7 @@
 #pragma once
 
 #include "mg/containers/mg_array.h"
-#include "mg/gfx/mg_submesh.h"
-#include "mg/gfx/mg_vertex.h"
+#include "mg/gfx/mg_mesh_data.h"
 #include "mg/resource_cache/mg_base_resource.h"
 #include "mg/utils/mg_gsl.h"
 
@@ -42,9 +41,9 @@ class MeshResource final : public BaseResource {
 public:
     using BaseResource::BaseResource;
 
-    span<const SubMesh>           sub_meshes() const noexcept { return span{ m_sub_meshes }; }
-    span<const Vertex>            vertices() const noexcept { return span{ m_vertices }; }
-    span<const uint_vertex_index> indices() const noexcept { return span{ m_indices }; }
+    span<const gfx::SubMesh>           sub_meshes() const noexcept { return span{ m_sub_meshes }; }
+    span<const gfx::Vertex>            vertices() const noexcept { return span{ m_vertices }; }
+    span<const gfx::uint_vertex_index> indices() const noexcept { return span{ m_indices }; }
 
     /** Get model-space centre coordinate (mean vertex coordinate). */
     glm::vec3 centre() const noexcept { return m_centre; }
@@ -66,9 +65,9 @@ protected:
     LoadResourceResult load_resource_impl(const ResourceLoadingInput& input) override;
 
 private:
-    Array<SubMesh>           m_sub_meshes;
-    Array<Vertex>            m_vertices;
-    Array<uint_vertex_index> m_indices;
+    Array<gfx::SubMesh>           m_sub_meshes;
+    Array<gfx::Vertex>            m_vertices;
+    Array<gfx::uint_vertex_index> m_indices;
 
     glm::vec3 m_centre{};
     float     m_radius = 0.0f;

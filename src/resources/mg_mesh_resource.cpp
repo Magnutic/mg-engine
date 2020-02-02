@@ -81,9 +81,9 @@ LoadResourceResult MeshResource::load_resource_impl(const ResourceLoadingInput& 
     }
 
     // Allocate memory for mesh data
-    m_sub_meshes = Array<SubMesh>::make(header.n_sub_meshes);
-    m_vertices   = Array<Vertex>::make(header.n_vertices);
-    m_indices    = Array<uint_vertex_index>::make(header.n_indices);
+    m_sub_meshes = Array<gfx::SubMesh>::make(header.n_sub_meshes);
+    m_vertices   = Array<gfx::Vertex>::make(header.n_vertices);
+    m_indices    = Array<gfx::uint_vertex_index>::make(header.n_indices);
 
     auto offset = sizeof(MeshHeader);
 
@@ -139,7 +139,7 @@ bool MeshResource::validate() const
     if (n_sub_meshes == 0) { mesh_error("No submeshes present."); }
 
     for (size_t i = 0; i < n_sub_meshes; ++i) {
-        const SubMesh& sm = sub_meshes()[i];
+        const gfx::SubMesh& sm = sub_meshes()[i];
         if (sm.begin >= n_indices || size_t{ sm.begin } + sm.amount > n_indices) {
             mesh_error(fmt::format("Invalid submesh at index {}", i));
             return false;
@@ -148,7 +148,7 @@ bool MeshResource::validate() const
 
     // Check indices
     for (size_t i = 0; i < n_indices; ++i) {
-        const uint_vertex_index& vi = indices()[i];
+        const gfx::uint_vertex_index& vi = indices()[i];
         if (vi >= n_vertices) {
             mesh_error(fmt::format("Index data out of bounds at index {}, was {}.", i, vi));
             return false;
@@ -156,9 +156,9 @@ bool MeshResource::validate() const
     }
 
     // Check vertices
-    if (n_vertices > k_max_vertices_per_mesh) {
+    if (n_vertices > gfx::k_max_vertices_per_mesh) {
         mesh_error(fmt::format("Too many vertices. Max is '{}', was '{}'",
-                               k_max_vertices_per_mesh,
+                               gfx::k_max_vertices_per_mesh,
                                n_vertices));
 
         return false;
@@ -173,14 +173,14 @@ void MeshResource::calculate_bounds() noexcept
     // Calculate centre position
     m_centre = {};
 
-    for (const Vertex& v : m_vertices) { m_centre += v.position; }
+    for (const gfx::Vertex& v : m_vertices) { m_centre += v.position; }
 
     m_centre /= m_vertices.size();
 
     // Calculate mesh radius (distance from centre to most distance vertex)
     float radius_sqr = 0.0f;
 
-    for (const Vertex& v : m_vertices) {
+    for (const gfx::Vertex& v : m_vertices) {
         const auto  diff           = m_centre - v.position;
         const float new_radius_sqr = glm::dot(diff, diff);
         radius_sqr                 = glm::max(radius_sqr, new_radius_sqr);
