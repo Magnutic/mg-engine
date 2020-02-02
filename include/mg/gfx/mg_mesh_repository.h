@@ -28,6 +28,9 @@
 #pragma once
 
 #include "mg/gfx/mg_mesh_handle.h"
+#include "mg/gfx/mg_submesh.h"
+#include "mg/gfx/mg_vertex.h"
+#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_simple_pimpl.h"
@@ -84,6 +87,18 @@ enum class IndexBufferSize : size_t;
 
 class MeshRepositoryImpl;
 
+struct MeshDataView {
+    span<const Vertex>            vertices;
+    span<const uint_vertex_index> indices;
+    span<const SubMesh>           sub_meshes;
+
+    struct BoundingInfo {
+        glm::vec3 centre = {};
+        float     radius = 0.0f;
+    };
+    Opt<BoundingInfo> bounding_info;
+};
+
 /** Creates, stores, and updates meshes. */
 class MeshRepository : PImplMixin<MeshRepositoryImpl> {
 public:
@@ -95,6 +110,10 @@ public:
     /** Create a new mesh using the given mesh resource. */
     MeshHandle create(const MeshResource& mesh_res);
 
+    MeshHandle create(const MeshDataView& mesh_data, Identifier mesh_id);
+
+    Opt<MeshHandle> get(Identifier mesh_id) const;
+
     /** Destroy the given mesh. Unless another mesh uses the same GPU data buffers (as would be the
      * case if meshes were created using the same `Mg::gfx::MeshBuffer`), then the GPU buffers will
      * be freed.
@@ -103,8 +122,9 @@ public:
 
     /** Update the mesh that was created from resource.
      * Used for hot-reloading of mesh files.
+     * Returns true if a mesh was updated; false if no matching mesh existed in the repository.
      */
-    void update(const MeshResource& mesh_res);
+    bool update(const MeshResource& mesh_res);
 
     /** Create a mesh buffer of given size. This buffer allows you to create meshes sharing the same
      * underlying GPU storage buffers.
