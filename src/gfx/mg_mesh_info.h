@@ -46,7 +46,7 @@ struct SubMeshRange {
     uint32_t amount;
 };
 
-using SubMeshInfo = small_vector<SubMeshRange, 8>;
+using SubMeshInfo = small_vector<SubMeshRange, 4>;
 
 /** Internal mesh structure. @see MeshRepository */
 struct MeshInfo {
