@@ -26,5 +26,5 @@ If you have used CMake before, you know what to do.
 **TODO** add more specific build instructions for different platforms.
 
 ## License
-Mg Engine is zlib-licensed.
+Mg Engine is licensed under the BSD 3-clause license, see LICENSE.txt.
 
