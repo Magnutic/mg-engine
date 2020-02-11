@@ -94,12 +94,12 @@ public:
         {
             std::shared_lock lock{ m_file_list_mutex };
 
-            FileInfo* p_file_info = file_info(file);
-            if (!p_file_info) {
+            Opt<FileInfo&> opt_file_info = file_info(file);
+            if (!opt_file_info) {
                 throw_resource_not_found(file);
             }
 
-            ResourceEntryBase& entry = get_or_create_resource_entry<ResT>(*p_file_info);
+            ResourceEntryBase& entry = get_or_create_resource_entry<ResT>(opt_file_info.value());
             handle = ResourceHandle<ResT>(file, static_cast<ResourceEntry<ResT>&>(entry));
         }
 
@@ -124,28 +124,26 @@ public:
     bool file_exists(Identifier file) const
     {
         std::shared_lock lock{ m_file_list_mutex };
-        return file_info(file) != nullptr;
+        return file_info(file) != nullopt;
     }
 
     /** Returns the time stamp of the given file. Throws if file does not exist in file list. */
     std::time_t file_time_stamp(Identifier file) const
     {
         std::shared_lock lock{ m_file_list_mutex };
-        auto p_file_info = file_info(file);
-        if (!p_file_info) {
-            throw_resource_not_found(file);
-        }
-        return p_file_info->time_stamp;
+        return file_info(file)
+            .map([](const FileInfo& fi) { return fi.time_stamp; })
+            .or_else([&] { throw_resource_not_found(file); })
+            .value();
     }
 
     /** Returns whether the resource with given id is currently cached in this ResourceCache. */
     bool is_cached(Identifier resource_id) const
     {
         std::shared_lock lock{ m_file_list_mutex };
-        if (const FileInfo* p_file_info = file_info(resource_id); p_file_info != nullptr) {
-            return p_file_info->entry != nullptr && p_file_info->entry->is_loaded();
-        }
-        return false;
+        return file_info(resource_id)
+            .map([](const FileInfo& fi) { return fi.entry && fi.entry->is_loaded(); })
+            .value_or(false);
     }
 
     /** Unload the least-recently-used resource which is not currently in use.
@@ -184,11 +182,8 @@ private:
     void rebuild_file_list();
 
     // Get pointer to FileInfo record for the given filename, or nullptr if no such file exists.
-    const FileInfo* file_info(Identifier file) const;
-    FileInfo* file_info(Identifier file)
-    {
-        return const_cast<FileInfo*>(static_cast<const ResourceCache*>(this)->file_info(file));
-    }
+    Opt<const FileInfo&> file_info(Identifier file) const;
+    Opt<FileInfo&> file_info(Identifier file);
 
     // Get ResourceEntry corresponding to the given FileInfo. If this is the first time the
     // ResourceEntry is requested, then create it.

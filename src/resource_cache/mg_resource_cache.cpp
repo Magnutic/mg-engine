@@ -94,7 +94,6 @@ void ResourceCache::refresh()
         ResourceEntryBase& entry;
         Identifier resource_type_id;
         std::time_t new_time_stamp;
-        IFileLoader& new_loader;
     };
     std::vector<ReloadInfo> entries_to_reload;
 
@@ -106,15 +105,15 @@ void ResourceCache::refresh()
         for (const FileInfo& file : m_file_list) {
             if (should_reload(file)) {
                 std::unique_lock entry_lock(file.entry->mutex);
-                entries_to_reload.push_back(ReloadInfo{
-                    *file.entry, file.entry->resource_type_id(), file.time_stamp, *file.loader });
+                entries_to_reload.push_back(
+                    ReloadInfo{ *file.entry, file.entry->resource_type_id(), file.time_stamp });
                 file.entry->unload();
             }
         }
     }
 
     // Notify callbacks of file changes.
-    for (const auto& [entry, resource_type, new_time_stamp, new_loader] : entries_to_reload) {
+    for (const auto& [entry, resource_type, new_time_stamp] : entries_to_reload) {
         if (m_resource_reload_callback) {
             const BaseResourceHandle handle(entry.resource_type_id(), entry);
             m_resource_reload_callback(FileChangedEvent{ handle, resource_type, new_time_stamp });
@@ -128,14 +127,26 @@ static auto cmp_filename = [](const auto& file_info, Identifier r) {
     return file_info.filename.hash() < r.hash();
 };
 
-const ResourceCache::FileInfo* ResourceCache::file_info(Identifier file) const
+// Shared implementation for const/non-const
+template <typename FileListT>
+auto file_info_impl(FileListT& file_list, Identifier file) -> Opt<decltype(file_list[0])>
 {
-    // m_file_list is sorted by filename hash, so we can look up with binary search.
-    auto it = std::lower_bound(m_file_list.begin(), m_file_list.end(), file, cmp_filename);
-    if (it == m_file_list.end() || it->filename != file) {
-        return nullptr;
+    // file_list is sorted by filename hash, so we can look up with binary search.
+    auto it = std::lower_bound(file_list.begin(), file_list.end(), file, cmp_filename);
+    if (it == file_list.end() || it->filename != file) {
+        return nullopt;
     }
-    return std::addressof(*it);
+    return *it;
+}
+
+Opt<const ResourceCache::FileInfo&> ResourceCache::file_info(Identifier file) const
+{
+    return file_info_impl(m_file_list, file);
+}
+
+Opt<ResourceCache::FileInfo&> ResourceCache::file_info(Identifier file)
+{
+    return file_info_impl(m_file_list, file);
 }
 
 // Rebuilds available-file list data structure.
