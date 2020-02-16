@@ -188,3 +188,11 @@ endif()
 
 init_library_submodule(optional)
 add_header_only_library(optional "${CMAKE_CURRENT_LIST_DIR}/optional" tl)
+
+
+####################################################################################################
+# plflib/colony
+# Implementation of the colony data structure.
+
+add_header_only_library(plflib "${CMAKE_CURRENT_LIST_DIR}/plflib" "")
+

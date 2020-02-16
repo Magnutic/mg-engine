@@ -209,6 +209,7 @@ target_link_libraries(mg_engine
         glm
         fmt::fmt
         optional
+        plflib
     PRIVATE
         glad
         glfw
