@@ -12,7 +12,7 @@
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_stl_helpers.h"
 
-#include "../mg_mesh_info.h"
+#include "../mg_gpu_mesh.h"
 #include "mg_glad.h"
 
 #include <plf_colony.h>

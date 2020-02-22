@@ -4,7 +4,7 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-/** @file mg_mesh_info.h
+/** @file mg_gpu_mesh.h
  * Internal mesh structure. @see MeshRepository
  */
 
@@ -13,6 +13,7 @@
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/gfx/mg_mesh_data.h"
+#include "mg/gfx/mg_mesh_handle.h"
 #include "mg/utils/mg_opaque_handle.h"
 
 #include <glm/vec3.hpp>
