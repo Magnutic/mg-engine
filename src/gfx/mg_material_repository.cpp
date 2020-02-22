@@ -6,8 +6,9 @@
 
 #include "mg/gfx/mg_material_repository.h"
 
-#include "mg/containers/mg_pooling_vector.h"
 #include "mg/gfx/mg_material.h"
+
+#include <plf_colony.h>
 
 #include <cstring> // memcpy
 
@@ -27,12 +28,7 @@ struct MaterialNode {
 };
 
 struct MaterialRepositoryData {
-    // Size of the pools allocated for the data structure, in number of elements.
-    // This is a fairly arbitrary choice: larger pools may make allocations more rare and provide
-    // better data locality but could also waste space if the pool is never filled.
-    static constexpr size_t k_material_node_pool_size = 512;
-
-    PoolingVector<MaterialNode> nodes{ k_material_node_pool_size };
+    plf::colony<MaterialNode> nodes;
 };
 
 MaterialRepository::MaterialRepository() = default;
@@ -40,16 +36,16 @@ MaterialRepository::~MaterialRepository() = default;
 
 Material* MaterialRepository::create(Identifier id, ResourceHandle<ShaderResource> shader)
 {
-    const auto [index, ptr] = impl().nodes.construct(Material{ id, shader });
-    ptr->self_index = index;
-    return &ptr->material;
+    const auto it = impl().nodes.emplace(Material{ id, shader });
+    it->self_index = narrow<uint32_t>(impl().nodes.get_index_from_iterator(it));
+    return &it->material;
 }
 
 void MaterialRepository::destroy(const Material* handle)
 {
     const MaterialNode* p_node{};
     std::memcpy(&p_node, &handle, sizeof(handle));
-    impl().nodes.destroy(p_node->self_index);
+    impl().nodes.erase(impl().nodes.get_iterator_from_index(p_node->self_index));
 }
 
 } // namespace Mg::gfx
