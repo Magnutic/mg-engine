@@ -8,6 +8,7 @@
 
 // Only include smaller stdlib headers -- keeps preprocessed code size fairly small.
 #include <cstddef>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 
@@ -264,19 +265,32 @@ public:
     /** Bounds-checked element access. */
     reference at(size_type index)
     {
-        MG_SMALL_VECTOR_ASSERT(index < size());
+        if (index >= size()) {
+            throw std::out_of_range("small_vector::at(): out of range.");
+        }
         return data()[index];
     }
 
     /** Bounds-checked element access. */
     const_reference at(size_type index) const
     {
+        if (index >= size()) {
+            throw std::out_of_range("small_vector::at(): out of range.");
+        }
+        return data()[index];
+    }
+
+    reference operator[](size_type index) noexcept
+    {
         MG_SMALL_VECTOR_ASSERT(index < size());
         return data()[index];
     }
 
-    reference operator[](size_type index) noexcept { return at(index); }
-    const_reference operator[](size_type index) const noexcept { return at(index); };
+    const_reference operator[](size_type index) const noexcept
+    {
+        MG_SMALL_VECTOR_ASSERT(index < size());
+        return data()[index];
+    }
 
     reference front() { return at(0); }
     const_reference front() const { return at(0); }
