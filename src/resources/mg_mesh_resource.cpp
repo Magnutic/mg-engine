@@ -135,7 +135,8 @@ bool MeshResource::validate() const
 
     for (size_t i = 0; i < n_sub_meshes; ++i) {
         const gfx::SubMesh& sm = sub_meshes()[i];
-        if (sm.begin >= n_indices || size_t{ sm.begin } + sm.amount > n_indices) {
+        const auto [index_begin, index_amount] = sm.index_range;
+        if (index_begin >= n_indices || index_begin + index_amount > n_indices) {
             mesh_error(fmt::format("Invalid submesh at index {}", i));
             return false;
         }

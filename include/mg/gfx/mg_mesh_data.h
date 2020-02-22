@@ -92,12 +92,17 @@ constexpr std::array<gfx::VertexAttribute, 8> g_attrib_array{
       { 4, sizeof(Vertex::joint_weights), gfx::VertexAttribute::Type::SHORT, true } }
 };
 
+/** Range of indices belonging to a submesh. */
+struct SubMeshRange {
+    uint32_t begin;
+    uint32_t amount;
+};
+
 /** A submesh is a subset of the vertices of a mesh that is rendered separately (each submesh may be
  * rendered with a different material).
  */
 struct SubMesh {
-    uint32_t begin = 0;
-    uint32_t amount = 0;
+    SubMeshRange index_range;
     Identifier name{ "" };
 };
 

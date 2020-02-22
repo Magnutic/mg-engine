@@ -27,41 +27,6 @@ namespace Mg::gfx {
 
 namespace {
 
-//--------------------------------------------------------------------------------------------------
-// Internal types
-//--------------------------------------------------------------------------------------------------
-
-// Internal storage type
-class MeshNode {
-public:
-    internal::MeshInfo mesh_info;
-
-    // Index of associated buffer objects.
-    uint32_t vertex_buffer_index{};
-    uint32_t index_buffer_index{};
-
-    MeshNode() = default;
-
-    MG_MAKE_NON_MOVABLE(MeshNode);
-    MG_MAKE_NON_COPYABLE(MeshNode);
-
-    // Destruction of MeshNode should destroy assocated VAO.
-    ~MeshNode() { clear(); }
-
-    void clear()
-    {
-        const auto vao_id = static_cast<uint32_t>(mesh_info.gfx_api_mesh_object_id);
-        if (vao_id == 0) {
-            return;
-        }
-
-        const auto* meshname [[maybe_unused]] = mesh_info.mesh_id.c_str();
-
-        MG_LOG_DEBUG(fmt::format("Deleting VAO {} (Mesh '{}')", vao_id, meshname));
-        glDeleteVertexArrays(1, &vao_id);
-    }
-};
-
 /** Index of vertex buffer object. N.B.: not OpenGL object id, but rather index into local data
  * structure.
  */
@@ -117,6 +82,19 @@ MeshDataView::BoundingInfo calculate_mesh_bounding_info(span<const Vertex> verti
     return { centre, radius };
 }
 
+void deleteVertexArray(const internal::GpuMesh& gpu_mesh)
+{
+    const auto vao_id = static_cast<uint32_t>(gpu_mesh.vertex_array_id);
+    if (vao_id == 0) {
+        return;
+    }
+
+    const auto* meshname [[maybe_unused]] = gpu_mesh.mesh_id.c_str();
+
+    MG_LOG_DEBUG(fmt::format("Deleting VAO {} (Mesh '{}')", vao_id, meshname));
+    glDeleteVertexArrays(1, &vao_id);
+}
+
 } // namespace
 
 //--------------------------------------------------------------------------------------------------
@@ -131,11 +109,11 @@ public:
 
     void destroy(MeshHandle handle);
 
-    MeshNode* get(Identifier mesh_id) const
+    Opt<MeshHandle> get(Identifier mesh_id) const
     {
-        const auto it = node_map.find(mesh_id);
-        if (it == node_map.end()) {
-            return nullptr;
+        const auto it = m_mesh_map.find(mesh_id);
+        if (it == m_mesh_map.end()) {
+            return nullopt;
         }
         return it->second;
     }
@@ -176,28 +154,30 @@ private:
         return params;
     }
 
-    void _make_mesh_in_node(MeshNode& node, Identifier mesh_id, const MakeMeshParams& params);
+    void
+    _make_mesh_at(internal::GpuMesh& gpu_mesh, Identifier mesh_id, const MakeMeshParams& params);
 
     MeshHandle _make_mesh(Identifier mesh_id, const MakeMeshParams& params)
     {
         const auto it = m_mesh_data.emplace();
-        const auto index = narrow<uint32_t>(m_mesh_data.get_index_from_iterator(it));
 
-        internal::MeshInfo& mesh_info = it->mesh_info;
-        mesh_info.self_index = index;
-        _make_mesh_in_node(*it, mesh_id, params);
-        node_map.insert({ mesh_id, &(*it) });
-        return internal::make_mesh_handle(&mesh_info);
+        internal::GpuMesh& gpu_mesh = *it;
+        _make_mesh_at(gpu_mesh, mesh_id, params);
+
+        const auto handle_value = reinterpret_cast<uintptr_t>(&gpu_mesh);
+        const auto handle = MeshHandle{ handle_value };
+        m_mesh_map.insert({ mesh_id, handle });
+        return handle;
     }
 
-    void _clear_mesh_node(MeshNode& node);
+    void _clear_mesh(internal::GpuMesh& gpu_mesh);
 
     // Internal mesh meta-data storage
     plf::colony<BufferObject> m_buffer_objects;
-    plf::colony<MeshNode> m_mesh_data;
+    plf::colony<internal::GpuMesh> m_mesh_data;
 
-    // Used for looking up a mesh node by identifier.
-    FlatMap<Identifier, MeshNode*> node_map;
+    // Used for looking up a mesh by identifier.
+    FlatMap<Identifier, MeshHandle> m_mesh_map;
 };
 
 MeshHandle MeshRepositoryImpl::create(Identifier mesh_id, const MeshDataView& mesh_data)
@@ -220,32 +200,30 @@ MeshHandle MeshRepositoryImpl::create(Identifier mesh_id, const MeshDataView& me
 
 bool MeshRepositoryImpl::update(Identifier mesh_id, const MeshDataView& data)
 {
-    MeshNode* node = get(mesh_id);
+    Opt<MeshHandle> opt_handle = get(mesh_id);
 
     // If not found, then we do not have a mesh using the updated resource, so ignore.
-    if (!node) {
+    if (!opt_handle) {
         return false;
     }
 
-    // Use the existing node to ensure MeshHandles remain valid.
-    _make_mesh_in_node(*node, mesh_id, _mesh_params_from_mesh_data(data));
+    // Use the existing GpuMesh to ensure MeshHandles remain valid.
+    internal::get_gpu_mesh(*opt_handle), mesh_id, _mesh_params_from_mesh_data(data);
     g_log.write_verbose(fmt::format("MeshRepository::update(): Updated {}", mesh_id.str_view()));
     return true;
 }
 
 void MeshRepositoryImpl::destroy(MeshHandle handle)
 {
-    auto& mesh_info = internal::mesh_info(handle);
-    const auto index = mesh_info.self_index;
-    const Identifier mesh_id = mesh_info.mesh_id;
+    internal::GpuMesh* p_gpu_mesh = &internal::get_gpu_mesh(handle);
+    const Identifier mesh_id = p_gpu_mesh->mesh_id;
 
-    const auto it = m_mesh_data.get_iterator_from_index(index);
-    MeshNode& node = *it;
-    _clear_mesh_node(node);
+    const auto it = m_mesh_data.get_iterator_from_pointer(p_gpu_mesh);
+    _clear_mesh(*p_gpu_mesh);
     m_mesh_data.erase(it);
 
-    // Erase from resource_id -> node map.
-    node_map.erase(mesh_id);
+    // Erase from resource_id -> GpuMesh map.
+    m_mesh_map.erase(mesh_id);
 }
 
 VboIndex MeshRepositoryImpl::_make_vertex_buffer(size_t size)
@@ -277,30 +255,30 @@ IboIndex MeshRepositoryImpl::_make_index_buffer(size_t size)
 }
 
 // Create mesh from MeshResouce, storing data in the given vertex and index buffers
-void MeshRepositoryImpl::_make_mesh_in_node(MeshNode& node,
-                                            Identifier mesh_id,
-                                            const MakeMeshParams& params)
+void MeshRepositoryImpl::_make_mesh_at(internal::GpuMesh& gpu_mesh,
+                                       Identifier mesh_id,
+                                       const MakeMeshParams& params)
 {
-    node.clear();
+    deleteVertexArray(gpu_mesh);
 
-    node.mesh_info.mesh_id = mesh_id;
-    node.mesh_info.centre = params.centre;
-    node.mesh_info.radius = params.radius;
+    gpu_mesh.mesh_id = mesh_id;
+    gpu_mesh.centre = params.centre;
+    gpu_mesh.radius = params.radius;
 
-    for (auto&& sm : params.mesh_data.sub_meshes) {
-        node.mesh_info.submeshes.push_back({ sm.begin, sm.amount });
+    for (const SubMesh& sm : params.mesh_data.sub_meshes) {
+        gpu_mesh.submeshes.push_back({ sm.index_range.begin, sm.index_range.amount });
     }
 
     uint32_t vao_id = 0;
     glGenVertexArrays(1, &vao_id);
-    node.mesh_info.gfx_api_mesh_object_id = static_cast<OpaqueHandle::Value>(vao_id);
+    gpu_mesh.vertex_array_id = static_cast<OpaqueHandle::Value>(vao_id);
 
     glBindVertexArray(vao_id);
 
     {
         const auto vbo_index = static_cast<uint32_t>(params.vbo_index);
         BufferObject& vbo = *m_buffer_objects.get_iterator_from_index(vbo_index);
-        node.vertex_buffer_index = vbo_index;
+        gpu_mesh.vertex_buffer_id = static_cast<OpaqueHandle::Value>(vbo_index);
         ++vbo.num_users;
 
         const auto vbo_data = params.mesh_data.vertices.as_bytes();
@@ -314,7 +292,7 @@ void MeshRepositoryImpl::_make_mesh_in_node(MeshNode& node,
     {
         const auto ibo_index = static_cast<uint32_t>(params.ibo_index);
         BufferObject& ibo = *m_buffer_objects.get_iterator_from_index(ibo_index);
-        node.index_buffer_index = ibo_index;
+        gpu_mesh.index_buffer_id = static_cast<OpaqueHandle::Value>(ibo_index);
         ++ibo.num_users;
 
         const auto ibo_data = params.mesh_data.indices.as_bytes();
@@ -352,12 +330,12 @@ void MeshRepositoryImpl::_make_mesh_in_node(MeshNode& node,
     glBindVertexArray(0);
 }
 
-void MeshRepositoryImpl::_clear_mesh_node(MeshNode& node)
+void MeshRepositoryImpl::_clear_mesh(internal::GpuMesh& gpu_mesh)
 {
-    node.clear();
+    deleteVertexArray(gpu_mesh);
 
-    const auto vbo_it = m_buffer_objects.get_iterator_from_index(node.vertex_buffer_index);
-    const auto ibo_it = m_buffer_objects.get_iterator_from_index(node.index_buffer_index);
+    const auto vbo_it = m_buffer_objects.get_iterator_from_index(gpu_mesh.vertex_buffer_id);
+    const auto ibo_it = m_buffer_objects.get_iterator_from_index(gpu_mesh.index_buffer_id);
 
     BufferObject& vbo = *vbo_it;
     if (--vbo.num_users == 0) {
@@ -441,11 +419,7 @@ MeshHandle MeshRepository::create(const MeshDataView& mesh_data, Identifier mesh
 
 Opt<MeshHandle> MeshRepository::get(Identifier mesh_id) const
 {
-    const MeshNode* node = impl().get(mesh_id);
-    if (!node) {
-        return nullopt;
-    }
-    return internal::make_mesh_handle(&node->mesh_info);
+    return impl().get(mesh_id);
 }
 
 void MeshRepository::destroy(MeshHandle handle)

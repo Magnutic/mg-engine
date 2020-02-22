@@ -46,14 +46,14 @@ void RenderCommandProducer::add_mesh(MeshHandle mesh,
                                      const Transform& transform,
                                      span<const MaterialBinding> material_bindings)
 {
-    const internal::MeshInfo& md = internal::mesh_info(mesh);
+    const internal::GpuMesh& gpu_mesh = internal::get_gpu_mesh(mesh);
 
-    for (size_t i = 0; i < md.submeshes.size(); ++i) {
+    for (size_t i = 0; i < gpu_mesh.submeshes.size(); ++i) {
         const auto* material = material_for_submesh(material_bindings, i);
 
         if (material == nullptr) {
             auto msg = fmt::format("No material specified for mesh '{}', submesh {}. Skipping.",
-                                   md.mesh_id.c_str(),
+                                   gpu_mesh.mesh_id.c_str(),
                                    i);
             g_log.write_warning(msg);
             continue;
@@ -64,12 +64,12 @@ void RenderCommandProducer::add_mesh(MeshHandle mesh,
             m_m_transform_matrices_unsorted.emplace_back(transform.matrix());
             RenderCommand& command = m_render_commands_unsorted.emplace_back();
 
-            command.gfx_api_mesh_object_id = md.gfx_api_mesh_object_id;
-            command.centre = md.centre;
-            command.begin = md.submeshes[i].begin;
-            command.amount = md.submeshes[i].amount;
+            command.vertex_array_id = gpu_mesh.vertex_array_id;
+            command.centre = gpu_mesh.centre;
+            command.begin = gpu_mesh.submeshes[i].begin;
+            command.amount = gpu_mesh.submeshes[i].amount;
             command.material = material;
-            command.radius = md.radius;
+            command.radius = gpu_mesh.radius;
         }
     }
 }
@@ -116,7 +116,7 @@ uint32_t view_depth_in_cm(const ICamera& camera, glm::vec3 pos) noexcept
 uint32_t render_command_fingerpint(const RenderCommand& command) noexcept
 {
     // TODO: This fingerprint is not much good
-    const uint32_t mesh_fingerprint = static_cast<uint8_t>(command.gfx_api_mesh_object_id);
+    const uint32_t mesh_fingerprint = static_cast<uint8_t>(command.vertex_array_id);
     uintptr_t mat_ptr_as_int{};
     std::memcpy(&mat_ptr_as_int, &command.material, sizeof(command.material));
     const auto material_fingerprint = narrow_cast<uint32_t>(mat_ptr_as_int);

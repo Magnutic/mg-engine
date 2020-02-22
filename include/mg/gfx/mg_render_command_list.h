@@ -39,7 +39,7 @@ struct RenderCommand {
     glm::vec3 centre{};
     float radius{};
 
-    OpaqueHandle::Value gfx_api_mesh_object_id{};
+    OpaqueHandle::Value vertex_array_id{};
 
     uint32_t begin{};
     uint32_t amount{};

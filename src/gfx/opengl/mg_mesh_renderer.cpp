@@ -222,7 +222,7 @@ void MeshRenderer::render(const ICamera& cam,
         MG_ASSERT_DEBUG(command.material != nullptr);
 
         // Set up mesh state
-        const auto vao_id = static_cast<uint32_t>(command.gfx_api_mesh_object_id);
+        const auto vao_id = static_cast<uint32_t>(command.vertex_array_id);
 
         if (current_vao != vao_id) {
             current_vao = vao_id;

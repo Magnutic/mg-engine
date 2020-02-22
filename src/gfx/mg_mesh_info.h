@@ -12,8 +12,7 @@
 
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_identifier.h"
-#include "mg/gfx/mg_mesh_handle.h"
-#include "mg/utils/mg_assert.h"
+#include "mg/gfx/mg_mesh_data.h"
 #include "mg/utils/mg_opaque_handle.h"
 
 #include <glm/vec3.hpp>
@@ -23,43 +22,37 @@
 
 namespace Mg::gfx::internal {
 
-/** Range of indices belonging to a submesh. */
-struct SubMeshRange {
-    uint32_t begin;
-    uint32_t amount;
-};
-
-using SubMeshInfo = small_vector<SubMeshRange, 4>;
+using SubMeshRanges = small_vector<SubMeshRange, 4>;
 
 /** Internal mesh structure. @see MeshRepository */
-struct MeshInfo {
-    SubMeshInfo submeshes;
+struct GpuMesh {
+    SubMeshRanges submeshes;
     glm::vec3 centre{};
     float radius{};
     Identifier mesh_id{ "" };
 
-    // Identifier for the mesh object (vertex array object) in the graphics API.
-    OpaqueHandle::Value gfx_api_mesh_object_id{};
-
-    // Index of this object in data structure -- used for deletion.
-    uint32_t self_index{};
+    // Identifier for the mesh buffers in the graphics API.
+    OpaqueHandle::Value vertex_array_id{};
+    OpaqueHandle::Value vertex_buffer_id{};
+    OpaqueHandle::Value index_buffer_id{};
 };
 
-inline MeshHandle make_mesh_handle(const MeshInfo* mesh_info) noexcept
+inline MeshHandle make_mesh_handle(const GpuMesh* gpu_mesh) noexcept
 {
     MeshHandle handle{};
-    static_assert(sizeof(handle) >= sizeof(mesh_info));
-    std::memcpy(&handle, &mesh_info, sizeof(mesh_info));
+    static_assert(sizeof(handle) >= sizeof(gpu_mesh));
+    std::memcpy(&handle, &gpu_mesh, sizeof(gpu_mesh));
     return handle;
 }
 
 /** Dereference mesh handle. */
-inline const MeshInfo& mesh_info(MeshHandle handle) noexcept
+inline GpuMesh& get_gpu_mesh(MeshHandle handle) noexcept
 {
-    const MeshInfo* p{};
+    GpuMesh* p = nullptr;
     std::memcpy(&p, &handle, sizeof(handle));
     MG_ASSERT(p != nullptr);
     return *p;
 }
+
 
 } // namespace Mg::gfx::internal
