@@ -6,7 +6,7 @@
 
 #pragma once
 
-// Only include smaller stdlib headers -- keeps preprocessed code size fairly small.
+#include <algorithm>
 #include <cstddef>
 #include <stdexcept>
 #include <type_traits>
@@ -66,34 +66,6 @@ public:
 private:
     T* m_p_data = nullptr;
 };
-
-// Equivalent to std::rotate, implemented here to avoid dependency on the <algorithm> header.
-// Implementation adapted from cppreference.com, license:
-// https://creativecommons.org/licenses/by-sa/3.0/
-template<class ForwardIt> ForwardIt rotate(ForwardIt first, ForwardIt n_first, ForwardIt last)
-{
-    if (first == n_first) {
-        return last;
-    }
-    if (n_first == last) {
-        return first;
-    }
-
-    ForwardIt read = n_first;
-    ForwardIt write = first;
-    ForwardIt next_read = first; // Read position for when "read" hits "last".
-
-    while (read != last) {
-        if (write == next_read) {
-            next_read = read; // Track where "first" went.
-        }
-        std::swap(*(write++), *(read++));
-    }
-
-    // Rotate the remaining sequence into place.
-    rotate(write, next_read, last);
-    return write;
-}
 
 // Compare two ranges lexicographically; returns -1 if range1 is smaller, returns 1 if range1 is
 // larger, returns 0 if they are equal.
@@ -797,7 +769,7 @@ private:
     void _move_last_n_to_pos(size_type index, size_type num)
     {
         MG_SMALL_VECTOR_ASSERT(size() - num >= index);
-        detail::rotate(begin() + index, end() - num, end());
+        std::rotate(begin() + index, end() - num, end());
     }
 
     // Moves num elements at pos to end. Returns new position iterator.
@@ -805,7 +777,7 @@ private:
     {
         const auto mut_pos = begin() + _distance(cbegin(), pos);
         MG_SMALL_VECTOR_ASSERT(mut_pos + num <= end());
-        return detail::rotate(mut_pos, mut_pos + num, end());
+        return std::rotate(mut_pos, mut_pos + num, end());
     }
 
     // Implementation for range-insert overloads.
