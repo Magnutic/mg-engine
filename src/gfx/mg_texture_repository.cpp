@@ -6,7 +6,7 @@
 
 #include "mg/gfx/mg_texture_repository.h"
 
-#include "mg/containers/mg_pooling_vector.h"
+#include "mg/containers/mg_flat_map.h"
 #include "mg/core/mg_log.h"
 #include "mg/gfx/mg_texture2d.h"
 #include "mg/gfx/mg_texture_related_types.h"
@@ -15,6 +15,8 @@
 
 #include "mg_texture_node.h"
 
+#include <plf_colony.h>
+
 #include <fmt/core.h>
 
 #include <vector>
@@ -22,18 +24,13 @@
 namespace Mg::gfx {
 
 struct TextureRepositoryData {
-    // Size of the pools allocated for the data structure, in number of elements.
-    // This is a fairly arbitrary choice: larger pools may make allocations more rare and provide
-    // better data locality but could also waste space if the pool is never filled.
-    static constexpr size_t k_texture_node_pool_size = 512;
-
     // Texture node storage -- stores elements largely contiguously, but does not invalidate
     // pointers.
-    PoolingVector<internal::TextureNode> nodes{ k_texture_node_pool_size };
+    plf::colony<internal::TextureNode> nodes;
 
     // Used for looking up a texture node by identifier.
-    // TODO: lookup can be optimised by storing in sorted order. Use std::lower_bound.
-    std::vector<std::pair<Identifier, internal::TextureNode*>> node_map;
+
+    FlatMap<Identifier, internal::TextureNode*> node_map;
 };
 
 TextureRepository::TextureRepository() = default;
@@ -41,25 +38,26 @@ TextureRepository::~TextureRepository() = default;
 
 TextureHandle TextureRepository::create(const TextureResource& resource)
 {
-    const auto [index, ptr] = impl().nodes.construct(Texture2D::from_texture_resource(resource));
-    ptr->self_index = index;
+    const auto it = impl().nodes.emplace(Texture2D::from_texture_resource(resource));
+    it->self_index = impl().nodes.get_index_from_iterator(it);
 
-    impl().node_map.emplace_back(resource.resource_id(), ptr);
+    internal::TextureNode* ptr = std::addressof(*it);
+    impl().node_map.insert({ resource.resource_id(), ptr });
 
     return make_texture_handle(ptr);
 }
 
 TextureHandle TextureRepository::create_render_target(const RenderTargetParams& params)
 {
-    const auto [index, ptr] = impl().nodes.construct(Texture2D::render_target(params));
-    ptr->self_index = index;
-    return make_texture_handle(ptr);
+    const auto it = impl().nodes.emplace(Texture2D::render_target(params));
+    it->self_index = impl().nodes.get_index_from_iterator(it);
+    return make_texture_handle(std::addressof(*it));
 }
 
 void TextureRepository::update(const TextureResource& resource)
 {
     const Identifier resource_id = resource.resource_id();
-    const auto it = find_if(impl().node_map, [&](auto& pair) { return pair.first == resource_id; });
+    const auto it = impl().node_map.find(resource_id);
 
     // If not found, then we do not have a texture using the updated resource, so ignore.
     if (it == impl().node_map.end()) {
@@ -78,13 +76,10 @@ void TextureRepository::update(const TextureResource& resource)
 void TextureRepository::destroy(TextureHandle handle)
 {
     const auto& texture_node = internal::texture_node(handle);
-    impl().nodes.destroy(texture_node.self_index);
-
-    const auto it = find_if(impl().node_map,
-                            [&](auto& pair) { return pair.second == &texture_node; });
-    if (it != impl().node_map.end()) {
-        impl().node_map.erase(it);
-    }
+    const auto it = impl().nodes.get_iterator_from_index(texture_node.self_index);
+    const Identifier texture_id = it->texture.id();
+    impl().nodes.erase(it);
+    impl().node_map.erase(texture_id);
 }
 
 } // namespace Mg::gfx
