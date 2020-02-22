@@ -56,13 +56,13 @@ private:
 //--------------------------------------------------------------------------------------------------
 
 /** Strongly typed size type for vertex buffers, specified in number of bytes.
- * Can be casted to and from size_t using static_cast.
+ * Can be cast to and from size_t using static_cast.
  * Can also be constructed directly, for example: `VertexBufferSize{ 512 }`
  */
 enum class VertexBufferSize : size_t;
 
 /** Strongly typed size type for vertex index buffers, specified in number of bytes.
- * Can be casted to and from size_t using static_cast.
+ * Can be cast to and from size_t using static_cast.
  * Can also be constructed directly, for example: `IndexBufferSize{ 512 }`
  */
 enum class IndexBufferSize : size_t;
