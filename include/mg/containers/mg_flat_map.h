@@ -86,7 +86,7 @@ public:
     size_t erase(const key_type& key) noexcept
     {
         const auto it = _pos_for_key(key);
-        if (it != end()) {
+        if (it != end() && it->first == key) {
             m_data.erase(it);
             return 1;
         }
