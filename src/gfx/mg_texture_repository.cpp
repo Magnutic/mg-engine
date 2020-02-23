@@ -11,9 +11,6 @@
 #include "mg/gfx/mg_texture2d.h"
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/resources/mg_texture_resource.h"
-#include "mg/utils/mg_stl_helpers.h"
-
-#include "mg_texture_node.h"
 
 #include <plf_colony.h>
 

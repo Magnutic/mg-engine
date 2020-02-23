@@ -6,7 +6,6 @@
 
 #include "mg/gfx/mg_pipeline.h"
 
-#include "../mg_texture_node.h"
 #include "mg_gl_debug.h"
 #include "mg_opengl_shader.h"
 #include "mg_glad.h"

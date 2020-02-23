@@ -13,7 +13,6 @@
 #include "mg/utils/mg_stl_helpers.h"
 
 #include "mg_gpu_mesh.h"
-#include "mg_texture_node.h"
 
 #include <fmt/core.h>
 
