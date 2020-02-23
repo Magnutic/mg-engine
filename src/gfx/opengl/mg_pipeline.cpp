@@ -161,7 +161,7 @@ PipelineInputBinding::PipelineInputBinding(uint32_t location, const BufferTextur
 
 PipelineInputBinding::PipelineInputBinding(uint32_t location, TextureHandle texture)
     : PipelineInputBinding(location,
-                           internal::texture_node(texture).texture.gfx_api_handle(),
+                           internal::dereference_texture_handle(texture).gfx_api_handle(),
                            PipelineInputType::Sampler2D)
 {}
 

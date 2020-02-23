@@ -10,37 +10,35 @@
 
 #pragma once
 
-#include "mg/gfx/mg_texture2d.h"
 #include "mg/gfx/mg_texture_handle.h"
 #include "mg/utils/mg_assert.h"
 
 #include <cstring>
-#include <utility>
+
+namespace Mg::gfx {
+class Texture2D;
+}
 
 namespace Mg::gfx::internal {
 
-struct TextureNode {
-    explicit TextureNode(Texture2D&& tex) noexcept : texture(std::move(tex)) {}
-
-    Texture2D texture;
-
-    // Index of this object in data structure -- used for deletion.
-    uint32_t self_index{};
-};
-
-inline TextureHandle make_texture_handle(const TextureNode* texture_node) noexcept
+inline TextureHandle make_texture_handle(const Texture2D* texture_2d) noexcept
 {
     TextureHandle handle{};
-    static_assert(sizeof(handle) >= sizeof(texture_node));
-    std::memcpy(&handle, &texture_node, sizeof(texture_node));
+    static_assert(sizeof(handle) == sizeof(texture_2d));
+    std::memcpy(&handle, &texture_2d, sizeof(texture_2d));
     return handle;
 }
 
 /** Dereference texture handle. */
-inline const TextureNode& texture_node(TextureHandle handle) noexcept
+inline Texture2D& dereference_texture_handle(TextureHandle handle) noexcept
 {
     MG_ASSERT(handle != TextureHandle{ 0 });
-    return *reinterpret_cast<const TextureNode*>(handle); // NOLINT
+
+    Texture2D* texture_2d;
+    static_assert(sizeof(handle) == sizeof(texture_2d));
+
+    std::memcpy(&texture_2d, &handle, sizeof(texture_2d));
+    return *texture_2d;
 }
 
 } // namespace Mg::gfx::internal

@@ -14,21 +14,8 @@
 
 namespace Mg::gfx {
 
-// The client-side handle type is Material*, but internally we use MaterialNode. Since Material is
-// the first element of MaterialNode, we can reinterpret_cast Material* to MaterialNode*.
-
-struct MaterialNode {
-    explicit MaterialNode(Material&& mat) noexcept : material(std::move(mat)) {}
-
-    // Publicly visible material data (Material* allows accessing only this).
-    Material material;
-
-    // Index of this object in data structure -- used for deletion.
-    uint32_t self_index{};
-};
-
 struct MaterialRepositoryData {
-    plf::colony<MaterialNode> nodes;
+    plf::colony<Material> materials;
 };
 
 MaterialRepository::MaterialRepository() = default;
@@ -36,16 +23,16 @@ MaterialRepository::~MaterialRepository() = default;
 
 Material* MaterialRepository::create(Identifier id, ResourceHandle<ShaderResource> shader)
 {
-    const auto it = impl().nodes.emplace(Material{ id, shader });
-    it->self_index = narrow<uint32_t>(impl().nodes.get_index_from_iterator(it));
-    return &it->material;
+    const auto it = impl().materials.emplace(Material{ id, shader });
+    return &(*it);
 }
 
 void MaterialRepository::destroy(const Material* handle)
 {
-    const MaterialNode* p_node{};
-    std::memcpy(&p_node, &handle, sizeof(handle));
-    impl().nodes.erase(impl().nodes.get_iterator_from_index(p_node->self_index));
+    // TODO: see if plf::colony will add an overload for const pointers, and if so, remove the
+    // const_cast.
+    Material* non_const_ptr = const_cast<Material*>(handle); // NOLINT
+    impl().materials.erase(impl().materials.get_iterator_from_pointer(non_const_ptr));
 }
 
 } // namespace Mg::gfx

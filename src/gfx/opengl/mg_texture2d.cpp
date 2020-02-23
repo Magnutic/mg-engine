@@ -416,7 +416,6 @@ void Texture2D::unload() noexcept
 
     if (tex_id != 0) {
         glDeleteTextures(1, &tex_id);
-        tex_id = 0;
     }
 }
 

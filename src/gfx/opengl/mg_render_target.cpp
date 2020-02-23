@@ -90,7 +90,7 @@ TextureRenderTarget TextureRenderTarget::with_colour_target(TextureHandle colour
     trt.m_colour_target = colour_target;
     trt.m_mip_level = mip_level;
 
-    const auto& texture_node = internal::texture_node(colour_target);
+    const Texture2D& texture = internal::dereference_texture_handle(colour_target);
 
     // Create frame buffer object (FBO)
     GLuint fbo_id = 0;
@@ -100,7 +100,7 @@ TextureRenderTarget TextureRenderTarget::with_colour_target(TextureHandle colour
     glBindFramebuffer(GL_FRAMEBUFFER, fbo_id);
 
     // Attach texture to FBO
-    const auto gl_tex_id = static_cast<GLuint>(texture_node.texture.gfx_api_handle());
+    const auto gl_tex_id = static_cast<GLuint>(texture.gfx_api_handle());
     glFramebufferTexture2D(GL_FRAMEBUFFER,
                            GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D,
@@ -110,7 +110,7 @@ TextureRenderTarget TextureRenderTarget::with_colour_target(TextureHandle colour
     // Attach depth/stencil renderbuffer to FBO
     switch (depth_type) {
     case DepthType::RenderBuffer:
-        trt.m_depth_buffer_id = create_depth_stencil_buffer(texture_node.texture.image_size());
+        trt.m_depth_buffer_id = create_depth_stencil_buffer(texture.image_size());
         glFramebufferRenderbuffer(GL_FRAMEBUFFER,
                                   GL_DEPTH_STENCIL_ATTACHMENT,
                                   GL_RENDERBUFFER,
@@ -131,8 +131,8 @@ TextureRenderTarget TextureRenderTarget::with_colour_and_depth_targets(TextureHa
                                                                        int32_t mip_level)
 {
     MG_ASSERT(colour_target != depth_target);
-    const auto& colour_tex = internal::texture_node(colour_target).texture;
-    const auto& depth_tex = internal::texture_node(depth_target).texture;
+    const auto& colour_tex = internal::dereference_texture_handle(colour_target);
+    const auto& depth_tex = internal::dereference_texture_handle(depth_target);
 
     if (colour_tex.image_size() != depth_tex.image_size()) {
         g_log.write_warning(
@@ -210,7 +210,7 @@ void TextureRenderTarget::bind()
 
 ImageSize TextureRenderTarget::image_size() const
 {
-    ImageSize size = internal::texture_node(m_colour_target).texture.image_size();
+    ImageSize size = internal::dereference_texture_handle(m_colour_target).image_size();
     size.width >>= m_mip_level;
     size.height >>= m_mip_level;
     return size;
