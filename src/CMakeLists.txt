@@ -4,6 +4,7 @@ set(MG_HEADER_DIR "${MG_ENGINE_SOURCE_DIR}/include/")
 
 # Public headers
 set(MG_HEADERS
+    ${MG_HEADER_DIR}/mg/containers/mg_array.h
     ${MG_HEADER_DIR}/mg/containers/mg_flat_map.h
     ${MG_HEADER_DIR}/mg/containers/mg_pooling_vector.h
     ${MG_HEADER_DIR}/mg/containers/mg_slot_map.h
@@ -35,16 +36,20 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/gfx/mg_material_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_matrix_uniform_handler.h
     ${MG_HEADER_DIR}/mg/gfx/mg_mesh_data.h
+    ${MG_HEADER_DIR}/mg/gfx/mg_mesh_handle.h
     ${MG_HEADER_DIR}/mg/gfx/mg_mesh_renderer.h
     ${MG_HEADER_DIR}/mg/gfx/mg_mesh_repository.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_post_process.h
     ${MG_HEADER_DIR}/mg/gfx/mg_pipeline.h
     ${MG_HEADER_DIR}/mg/gfx/mg_pipeline_identifier.h
     ${MG_HEADER_DIR}/mg/gfx/mg_pipeline_repository.h
+    ${MG_HEADER_DIR}/mg/gfx/mg_post_process.h
+    ${MG_HEADER_DIR}/mg/gfx/mg_render_command_data_handle.h
     ${MG_HEADER_DIR}/mg/gfx/mg_render_command_list.h
     ${MG_HEADER_DIR}/mg/gfx/mg_render_target.h
     ${MG_HEADER_DIR}/mg/gfx/mg_shader.h
     ${MG_HEADER_DIR}/mg/gfx/mg_texture2d.h
+    ${MG_HEADER_DIR}/mg/gfx/mg_texture_handle.h
+    ${MG_HEADER_DIR}/mg/gfx/mg_texture_related_types.h
     ${MG_HEADER_DIR}/mg/gfx/mg_texture_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_uniform_buffer.h
     ${MG_HEADER_DIR}/mg/input/mg_input.h
@@ -52,30 +57,38 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/input/mg_keyboard.h
     ${MG_HEADER_DIR}/mg/input/mg_mouse.h
     ${MG_HEADER_DIR}/mg/mg_defs.h
+    ${MG_HEADER_DIR}/mg/resources/mg_file_changed_event.h
+    ${MG_HEADER_DIR}/mg/resources/mg_mesh_resource.h
+    ${MG_HEADER_DIR}/mg/resources/mg_raw_resource.h
+    ${MG_HEADER_DIR}/mg/resources/mg_shader_resource.h
+    ${MG_HEADER_DIR}/mg/resources/mg_shader_types.h
+    ${MG_HEADER_DIR}/mg/resources/mg_texture_resource.h
+    ${MG_HEADER_DIR}/mg/resources/mg_text_resource.h
+    ${MG_HEADER_DIR}/mg/resources/shader_parser/mg_shader_parser.h
     ${MG_HEADER_DIR}/mg/resource_cache/internal/mg_resource_entry.h
     ${MG_HEADER_DIR}/mg/resource_cache/internal/mg_resource_entry_base.h
+    ${MG_HEADER_DIR}/mg/resource_cache/mg_base_resource.h
     ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_access_guard.h
     ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_cache.h
     ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_exceptions.h
     ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_handle.h
     ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_loading_input.h
-    ${MG_HEADER_DIR}/mg/resources/mg_mesh_resource.h
-    ${MG_HEADER_DIR}/mg/resources/mg_shader_resource.h
-    ${MG_HEADER_DIR}/mg/resources/mg_shader_types.h
-    ${MG_HEADER_DIR}/mg/resources/mg_texture_resource.h
-    ${MG_HEADER_DIR}/mg/resources/shader_parser/mg_shader_parser.h
     ${MG_HEADER_DIR}/mg/utils/mg_angle.h
     ${MG_HEADER_DIR}/mg/utils/mg_assert.h
     ${MG_HEADER_DIR}/mg/utils/mg_binary_io.h
+    ${MG_HEADER_DIR}/mg/utils/mg_file_time_helper.h
     ${MG_HEADER_DIR}/mg/utils/mg_fopen_utf8.h
     ${MG_HEADER_DIR}/mg/utils/mg_gsl.h
     ${MG_HEADER_DIR}/mg/utils/mg_hash_combine.h
     ${MG_HEADER_DIR}/mg/utils/mg_instance_counter.h
     ${MG_HEADER_DIR}/mg/utils/mg_macros.h
     ${MG_HEADER_DIR}/mg/utils/mg_math_utils.h
+    ${MG_HEADER_DIR}/mg/utils/mg_max.h
+    ${MG_HEADER_DIR}/mg/utils/mg_observer.h
     ${MG_HEADER_DIR}/mg/utils/mg_opaque_handle.h
     ${MG_HEADER_DIR}/mg/utils/mg_optional.h
     ${MG_HEADER_DIR}/mg/utils/mg_ptr_math.h
+    ${MG_HEADER_DIR}/mg/utils/mg_simple_pimpl.h
     ${MG_HEADER_DIR}/mg/utils/mg_stl_helpers.h
     ${MG_HEADER_DIR}/mg/utils/mg_string_utils.h
     ${MG_HEADER_DIR}/mg/utils/mg_text_file_io.h
