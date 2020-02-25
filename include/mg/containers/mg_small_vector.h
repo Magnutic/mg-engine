@@ -163,12 +163,13 @@ public:
     small_vector(small_vector&& rhs) noexcept : small_vector()
     {
         if (rhs.uses_local_storage()) {
-            for (T& elem : rhs) {
-                push_back(std::move_if_noexcept(elem));
+            while (m_size < rhs.size()) {
+                new (&m_local.buffer[m_size]) T(std::move_if_noexcept(rhs[m_size]));
+                ++m_size;
             }
         }
         else {
-            _switch_to_external_storage(std::move(rhs.m_external_buffer), rhs.capacity());
+            _switch_to_external_storage(std::move(rhs.m_external.buffer), rhs.capacity());
             m_size = rhs.size();
             rhs._switch_to_local_storage(0);
         }
@@ -177,6 +178,7 @@ public:
     /** Construct small_vector with `count` number of copies of `value`. */
     explicit small_vector(size_type count, const T& value) : small_vector()
     {
+        reserve(count);
         while (count--) {
             push_back(value);
         }
@@ -328,15 +330,18 @@ public:
         }
 
         auto buf = ExternalBuffer::allocate(size());
-        _move_elems_between_buffers(m_external_buffer.get(), buf.get(), size());
-        m_external_buffer = std::move(buf);
-        m_capacity = size();
+        _move_elems_between_buffers(m_external.buffer.get(), buf.get(), size());
+        m_external.buffer = std::move(buf);
+        m_external.capacity = size();
     }
 
     /** Returns the number of elements that this container is able to store without further memory
      * allocations.
      */
-    size_type capacity() const noexcept { return uses_local_storage() ? local_size() : m_capacity; }
+    size_type capacity() const noexcept
+    {
+        return uses_local_storage() ? local_size() : m_external.capacity;
+    }
 
     // Modifiers
     // ---------------------------------------------------------------------------------------------
@@ -520,12 +525,12 @@ private:
 
     elem_data_t* _storage_ptr() noexcept
     {
-        return uses_local_storage() ? &m_buffer[0] : m_external_buffer.get();
+        return uses_local_storage() ? &m_local.buffer[0] : m_external.buffer.get();
     }
 
     const elem_data_t* _storage_ptr() const noexcept
     {
-        return uses_local_storage() ? &m_buffer[0] : m_external_buffer.get();
+        return uses_local_storage() ? &m_local.buffer[0] : m_external.buffer.get();
     }
 
     template<typename... Args>
@@ -568,7 +573,7 @@ private:
     void _swap_local_trivial(small_vector& rhs) noexcept
     {
         using std::swap;
-        swap(m_buffer, rhs.m_buffer);
+        swap(m_local.buffer, rhs.m_local.buffer);
 
         // Cannot swap bit fields
         const auto tmp = m_size;
@@ -617,8 +622,8 @@ private:
         MG_SMALL_VECTOR_ASSERT(!rhs.uses_local_storage());
 
         using std::swap;
-        swap(m_external_buffer, rhs.m_external_buffer);
-        swap(m_capacity, rhs.m_capacity);
+        swap(m_external.buffer, rhs.m_external.buffer);
+        swap(m_external.capacity, rhs.m_external.capacity);
 
         // Cannot swap bit fields
         const auto tmp = m_size;
@@ -654,21 +659,32 @@ private:
         _swap_external(tmp_vec);
     }
 
-    template<typename... Args> void _resize_impl(size_type count, Args&&... args)
+    template<typename... Args> void _resize_impl(size_type count, const T& value = T{})
     {
-        if (count > size()) {
-            // This temporary stack copy is strictly speaking unnecessary; see emplace_back().
-            // This is, however, simpler, and resize() is probably not the most performance
-            // sensitive function.
-            T tmp(std::forward<Args>(args)...);
-            reserve(count);
-
-            while (size() < count) {
-                _construct_at(m_size++, tmp);
+        if (count <= capacity()) {
+            while (m_size < count) {
+                _construct_at(m_size++, value);
             }
         }
+        else {
+            // Make sure to allocate new buffer and construct new element there _before_ moving old
+            // elements. This prevents dangling reference errors when value refers to an element in
+            // this vector (e.g. v.resize(10, v[0]); )
+            auto new_buffer = ExternalBuffer::allocate(count);
 
-        _shrink_to(count);
+            // Construct new elems at end-position in newly allocated buffer.
+            while (m_size < count) {
+                new (&new_buffer[m_size++]) T(value);
+            }
+
+            // Move all old elements to new buffer.
+            _switch_to_external_storage(std::move(new_buffer), count);
+        }
+
+        while (m_size > count) {
+            _destroy_at(m_size - 1);
+            --m_size;
+        }
     }
 
     void _shrink_to(size_type count)
@@ -680,8 +696,8 @@ private:
             return;
         }
 
-        while (size() > count) {
-            _destroy_at(size() - 1);
+        while (m_size > count) {
+            _destroy_at(m_size - 1);
             --m_size;
         }
     }
@@ -692,6 +708,10 @@ private:
                                      elem_data_t* dst,
                                      size_type num) /* noexcept(nothrow_move) */
     {
+        if (num == 0) {
+            return;
+        }
+
         MG_SMALL_VECTOR_ASSERT(src != nullptr);
         MG_SMALL_VECTOR_ASSERT(dst != nullptr);
 
@@ -728,18 +748,18 @@ private:
 
         // Since m_capacity is in union with local buffer, we need to copy it before writing to
         // local buffer.
-        const size_type tmp_capacity = m_capacity;
-        ExternalBuffer tmp_buffer = std::move(m_external_buffer);
+        const size_type tmp_capacity = m_external.capacity;
+        ExternalBuffer tmp_buffer = std::move(m_external.buffer);
 
         // Try to move -- with strong exception guarantee.
         try {
-            m_external_buffer.~ExternalBuffer();
-            _move_elems_between_buffers(tmp_buffer.get(), &m_buffer[0], elems_to_move);
+            m_external.buffer.~ExternalBuffer();
+            _move_elems_between_buffers(tmp_buffer.get(), &m_local.buffer[0], elems_to_move);
         }
         catch (...) {
             // Restore external storage on failure
-            m_capacity = tmp_capacity;
-            new (&m_external_buffer) ExternalBuffer(std::move(tmp_buffer));
+            m_external.capacity = tmp_capacity;
+            new (&m_external.buffer) ExternalBuffer(std::move(tmp_buffer));
             throw;
         }
 
@@ -757,11 +777,11 @@ private:
 
         if (uses_local_storage()) {
             // Initialise external-buffer-owning pointer
-            new (&m_external_buffer) ExternalBuffer();
+            new (&m_external.buffer) ExternalBuffer();
         }
 
-        m_external_buffer = std::move(new_buffer);
-        m_capacity = new_capacity;
+        m_external.buffer = std::move(new_buffer);
+        m_external.capacity = new_capacity;
         m_uses_external_storage = 1;
     }
 
@@ -796,11 +816,13 @@ private:
 private:
     // We do not need access to capacity and local buffer at the same time.
     union {
-        elem_data_t m_buffer[num_local_elems];
         struct {
-            size_type m_capacity;
-            ExternalBuffer m_external_buffer;
-        };
+            elem_data_t buffer[num_local_elems];
+        } m_local;
+        struct {
+            size_type capacity;
+            ExternalBuffer buffer;
+        } m_external;
     };
 
     // We use only one bit of the size variable to store whether we are using external storage.
