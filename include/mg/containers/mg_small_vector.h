@@ -673,12 +673,14 @@ private:
             auto new_buffer = ExternalBuffer::allocate(count);
 
             // Construct new elems at end-position in newly allocated buffer.
-            while (m_size < count) {
-                new (&new_buffer[m_size++]) T(value);
+            size_type new_size = m_size;
+            while (new_size < count) {
+                new (&new_buffer[new_size++]) T(value);
             }
 
             // Move all old elements to new buffer.
             _switch_to_external_storage(std::move(new_buffer), count);
+            m_size = new_size;
         }
 
         while (m_size > count) {
