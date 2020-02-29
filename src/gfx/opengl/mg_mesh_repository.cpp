@@ -177,7 +177,7 @@ private:
     plf::colony<internal::GpuMesh> m_mesh_data;
 
     // Used for looking up a mesh by identifier.
-    FlatMap<Identifier, MeshHandle> m_mesh_map;
+    FlatMap<Identifier, MeshHandle, Identifier::HashCompare> m_mesh_map;
 };
 
 MeshHandle MeshRepositoryImpl::create(Identifier mesh_id, const MeshDataView& mesh_data)

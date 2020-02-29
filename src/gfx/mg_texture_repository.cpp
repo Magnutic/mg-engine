@@ -26,8 +26,7 @@ struct TextureRepositoryData {
     plf::colony<Texture2D> gpu_textures;
 
     // Used for looking up a texture node by identifier.
-
-    FlatMap<Identifier, TextureHandle> texture_map;
+    FlatMap<Identifier, TextureHandle, Identifier::HashCompare> texture_map;
 };
 
 TextureRepository::TextureRepository() = default;

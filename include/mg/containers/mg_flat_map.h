@@ -22,11 +22,12 @@ namespace Mg {
 simplifications. Does NOT provide std::map's iterator / pointer invalidation guarantees, since it
 is backed by std::vector.
 */
-template<typename KeyT, typename ValueT> class FlatMap {
+template<typename KeyT, typename ValueT, typename Compare = std::less<KeyT>> class FlatMap {
 public:
     using key_type = KeyT;
     using mapped_type = ValueT;
     using value_type = std::pair<KeyT, ValueT>;
+    using key_compare = Compare;
     using iterator = typename std::vector<value_type>::iterator;
     using const_iterator = typename std::vector<value_type>::const_iterator;
 
@@ -108,23 +109,20 @@ public:
     void swap(FlatMap& other) noexcept { std::swap(m_data, other.m_data); }
 
 private:
+    struct ValueKeyCompare {
+        bool operator()(const value_type& value, const key_type& key) const
+        {
+            return key_compare{}(value.first, key);
+        }
+    };
+
     iterator _pos_for_key(const key_type& key) noexcept
     {
-        return std::lower_bound(m_data.begin(),
-                                m_data.end(),
-                                key,
-                                [](const value_type& value, const key_type& key) {
-                                    return key == value.first;
-                                });
+        return std::lower_bound(m_data.begin(), m_data.end(), key, ValueKeyCompare{});
     }
     const_iterator _pos_for_key(const key_type& key) const noexcept
     {
-        return std::lower_bound(m_data.begin(),
-                                m_data.end(),
-                                key,
-                                [](const value_type& value, const key_type& key) {
-                                    return key == value.first;
-                                });
+        return std::lower_bound(m_data.begin(), m_data.end(), key, ValueKeyCompare{});
     }
 
     std::vector<value_type> m_data;
