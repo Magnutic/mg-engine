@@ -94,13 +94,13 @@ public:
         {
             std::shared_lock lock{ m_file_list_mutex };
 
-            Opt<FileInfo&> opt_file_info = file_info(file);
+            auto opt_file_info = file_info(file);
             if (!opt_file_info) {
                 throw_resource_not_found(file);
             }
 
-            ResourceEntryBase& entry = get_or_create_resource_entry<ResT>(opt_file_info.value());
-            handle = ResourceHandle<ResT>(file, static_cast<ResourceEntry<ResT>&>(entry));
+            ResourceEntry<ResT>& entry = get_or_create_resource_entry<ResT>(*opt_file_info);
+            handle = ResourceHandle<ResT>(file, entry);
         }
 
         if (load_resource_immediately) {
@@ -124,7 +124,7 @@ public:
     bool file_exists(Identifier file) const
     {
         std::shared_lock lock{ m_file_list_mutex };
-        return file_info(file) != nullopt;
+        return file_info(file).has_value();
     }
 
     /** Returns the time stamp of the given file. Throws if file does not exist in file list. */
@@ -132,17 +132,17 @@ public:
     {
         std::shared_lock lock{ m_file_list_mutex };
         return file_info(file)
-            .map([](const FileInfo& fi) { return fi.time_stamp; })
+            .transform([](const FileInfo& fi) { return fi.time_stamp; })
             .or_else([&] { throw_resource_not_found(file); })
             .value();
     }
 
-    /** Returns whether the resource with given id is currently cached in this ResourceCache. */
-    bool is_cached(Identifier resource_id) const
+    /** Returns whether the given file is currently cached in this ResourceCache. */
+    bool is_cached(Identifier file) const
     {
         std::shared_lock lock{ m_file_list_mutex };
-        return file_info(resource_id)
-            .map([](const FileInfo& fi) { return fi.entry && fi.entry->is_loaded(); })
+        return file_info(file)
+            .transform([](const FileInfo& fi) { return fi.entry && fi.entry->is_loaded(); })
             .value_or(false);
     }
 
@@ -187,7 +187,7 @@ private:
 
     // Get ResourceEntry corresponding to the given FileInfo. If this is the first time the
     // ResourceEntry is requested, then create it.
-    template<typename ResT> ResourceEntryBase& get_or_create_resource_entry(FileInfo& file_info)
+    template<typename ResT> ResourceEntry<ResT>& get_or_create_resource_entry(FileInfo& file_info)
     {
         // Create ResourcEntry if not present (i.e. this is the first time it is requested).
         if (file_info.entry == nullptr) {
@@ -204,7 +204,10 @@ private:
             }
         }
 
-        return *file_info.entry;
+        // Type errors will be caught by ResourceAccessGuard.
+        auto& entry = static_cast<ResourceEntry<ResT>&>(*file_info.entry);
+
+        return entry;
     }
 
     // Throw ResourceNotFound exception and write details to log.

@@ -43,7 +43,7 @@ protected:
 template<typename ResT> class ResourceHandle : public BaseResourceHandle {
 public:
     ResourceHandle() = default;
-    ResourceHandle(Identifier id, ResourceEntry<ResT>& entry) noexcept
+    explicit ResourceHandle(Identifier id, ResourceEntry<ResT>& entry) noexcept
         : BaseResourceHandle(id, entry)
     {}
 };
