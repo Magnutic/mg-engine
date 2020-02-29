@@ -185,6 +185,8 @@ void init()
     }
 
     g_scene->resource_cache.set_resource_reload_callback([](const Mg::FileChangedEvent& event) {
+        const auto resource_name = event.resource.resource_id().str_view();
+        Mg::g_log.write_message(fmt::format("File '{}' changed and was reloaded.", resource_name));
         switch (event.resource_type.hash()) {
         case "TextureResource"_hash: {
             Mg::ResourceAccessGuard<Mg::TextureResource> access(event.resource);
@@ -201,10 +203,6 @@ void init()
             g_scene->billboard_renderer.drop_shaders();
             g_scene->post_renderer.drop_shaders();
             break;
-
-        default:
-            Mg::g_log.write_verbose(fmt::format("Resource '{}' was updated, but ignored.",
-                                                event.resource.resource_id().str_view()));
         }
     });
 
