@@ -80,6 +80,7 @@ public:
     /** Create a new mesh using the given mesh resource. */
     MeshHandle create(const MeshResource& mesh_res);
 
+    /** Create a new mesh using the given mesh data. */
     MeshHandle create(const MeshDataView& mesh_data, Identifier mesh_id);
 
     Opt<MeshHandle> get(Identifier mesh_id) const;
