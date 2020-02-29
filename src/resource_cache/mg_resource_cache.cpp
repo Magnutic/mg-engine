@@ -115,7 +115,7 @@ void ResourceCache::refresh()
     // Notify callbacks of file changes.
     for (const auto& [entry, resource_type, new_time_stamp] : entries_to_reload) {
         if (m_resource_reload_callback) {
-            const BaseResourceHandle handle(entry.resource_type_id(), entry);
+            const BaseResourceHandle handle(entry.resource_id(), entry);
             m_resource_reload_callback(FileChangedEvent{ handle, resource_type, new_time_stamp });
         }
     }
