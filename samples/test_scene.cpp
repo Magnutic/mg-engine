@@ -2,9 +2,6 @@
 
 #include <mg/core/mg_config.h>
 #include <mg/core/mg_log.h>
-#include <mg/gfx/mg_material_repository.h>
-#include <mg/gfx/mg_mesh_repository.h>
-#include <mg/gfx/mg_texture_repository.h>
 #include <mg/resources/mg_mesh_resource.h>
 #include <mg/resources/mg_shader_resource.h>
 #include <mg/resources/mg_texture_resource.h>
@@ -29,21 +26,21 @@ void setup_config()
 Mg::gfx::MeshHandle load_mesh(Mg::Identifier file)
 {
     auto access = g_scene->resource_cache.access_resource<Mg::MeshResource>(file);
-    return g_scene->root.gfx_device().mesh_repository().create(*access);
+    return g_scene->mesh_repository.create(*access);
 }
 
 Mg::gfx::TextureHandle load_texture(std::string_view file)
 {
     auto file_name = Mg::Identifier::from_runtime_string(fmt::format("textures/{}.dds", file));
     auto access = g_scene->resource_cache.access_resource<Mg::TextureResource>(file_name);
-    return g_scene->root.gfx_device().texture_repository().create(*access);
+    return g_scene->texture_repository.create(*access);
 }
 
 Mg::gfx::Material* load_material(Mg::Identifier file, std::initializer_list<Mg::Identifier> options)
 {
     auto handle = g_scene->resource_cache.resource_handle<Mg::ShaderResource>(
         "shaders/default.mgshader");
-    Mg::gfx::Material* m = g_scene->root.gfx_device().material_repository().create(file, handle);
+    Mg::gfx::Material* m = g_scene->material_repository.create(file, handle);
 
     for (auto o : options) {
         m->set_option(o, true);
@@ -115,7 +112,7 @@ BlurTargets make_blur_targets(Mg::VideoMode video_mode)
         params.num_mip_levels = k_num_mip_levels;
         params.texture_format = RenderTargetParams::Format::RGBA16F;
 
-        TextureRepository& tex_repo = g_scene->root.gfx_device().texture_repository();
+        TextureRepository& tex_repo = g_scene->texture_repository;
 
         params.render_target_id = "Blur_horizontal";
         blur_targets.hor_pass_target_texture = tex_repo.create_render_target(params);
@@ -150,7 +147,7 @@ Mg::gfx::TextureRenderTarget make_hdr_target(Mg::VideoMode mode)
     params.render_target_id = "HDR.colour";
     params.texture_format = RenderTargetParams::Format::RGBA16F;
 
-    TextureRepository& tex_repo = g_scene->root.gfx_device().texture_repository();
+    TextureRepository& tex_repo = g_scene->texture_repository;
 
     TextureHandle colour_target = tex_repo.create_render_target(params);
 
@@ -190,12 +187,12 @@ void init()
         switch (event.resource_type.hash()) {
         case "TextureResource"_hash: {
             Mg::ResourceAccessGuard<Mg::TextureResource> access(event.resource);
-            g_scene->root.gfx_device().texture_repository().update(*access);
+            g_scene->texture_repository.update(*access);
             break;
         }
         case "MeshResource"_hash: {
             Mg::ResourceAccessGuard<Mg::MeshResource> access(event.resource);
-            g_scene->root.gfx_device().mesh_repository().update(*access);
+            g_scene->mesh_repository.update(*access);
             break;
         }
         case "ShaderResource"_hash:
@@ -243,7 +240,7 @@ void init()
     }
 
     {
-        auto& material_repo = g_scene->root.gfx_device().material_repository();
+        auto& material_repo = g_scene->material_repository;
         auto& res_cache = g_scene->resource_cache;
 
         // Create post-process materials
@@ -377,7 +374,7 @@ void time_step()
 
         // Dispose of old render target textures. TODO: RAII
         {
-            auto& texture_repository = g_scene->root.gfx_device().texture_repository();
+            auto& texture_repository = g_scene->texture_repository;
             texture_repository.destroy(g_scene->hdr_target->colour_target());
             texture_repository.destroy(g_scene->hdr_target->depth_target());
             texture_repository.destroy(g_scene->blur_targets.hor_pass_target_texture);

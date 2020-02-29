@@ -12,7 +12,6 @@
 
 #include "mg/gfx/mg_blend_modes.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_simple_pimpl.h"
 
 #include <memory>
 
@@ -42,12 +41,10 @@ enum class DepthFunc {
 /** Types of functions to use in culling. */
 enum class CullFunc { NONE = 0, FRONT = 0x404, BACK = 0x405 };
 
-struct GfxDeviceData;
-
 /** Provides access to the graphics context.
  * N.B. only one GfxDevice object exist at a time.
  */
-class GfxDevice : PImplMixin<GfxDeviceData> {
+class GfxDevice {
 public:
     explicit GfxDevice(Window& window);
     ~GfxDevice();
@@ -84,10 +81,6 @@ public:
 
     /** Synchronise application with graphics device. */
     void synchronise() noexcept;
-
-    MeshRepository& mesh_repository() noexcept;
-    TextureRepository& texture_repository() noexcept;
-    MaterialRepository& material_repository() noexcept;
 };
 
 } // namespace Mg::gfx

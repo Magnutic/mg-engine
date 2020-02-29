@@ -10,10 +10,13 @@
 #include <mg/gfx/mg_gfx_device.h>
 #include <mg/gfx/mg_light.h>
 #include <mg/gfx/mg_material.h>
+#include <mg/gfx/mg_material_repository.h>
 #include <mg/gfx/mg_mesh_renderer.h>
+#include <mg/gfx/mg_mesh_repository.h>
 #include <mg/gfx/mg_post_process.h>
 #include <mg/gfx/mg_render_command_list.h>
 #include <mg/gfx/mg_render_target.h>
+#include <mg/gfx/mg_texture_repository.h>
 #include <mg/input/mg_input.h>
 #include <mg/input/mg_keyboard.h>
 #include <mg/resource_cache/mg_resource_cache.h>
@@ -55,6 +58,10 @@ struct BlurTargets {
 struct Scene {
     Mg::Root root;
     Mg::ResourceCache resource_cache = setup_resource_cache();
+
+    Mg::gfx::MeshRepository mesh_repository;
+    Mg::gfx::TextureRepository texture_repository;
+    Mg::gfx::MaterialRepository material_repository;
 
     Mg::gfx::MeshRenderer mesh_renderer;
     Mg::gfx::DebugRenderer debug_renderer;

@@ -12,10 +12,6 @@
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/core/mg_window.h"
-#include "mg/gfx/mg_buffer_texture.h"
-#include "mg/gfx/mg_material_repository.h"
-#include "mg/gfx/mg_mesh_repository.h"
-#include "mg/gfx/mg_texture_repository.h"
 
 #include <GLFW/glfw3.h>
 #include <fmt/core.h>
@@ -43,12 +39,6 @@ static void APIENTRY ogl_error_callback_wrapper(uint32_t source,
 #endif
 
 static GfxDevice* p_gfx_device = nullptr;
-
-struct GfxDeviceData {
-    MeshRepository mesh_repository;
-    TextureRepository texture_repository;
-    MaterialRepository material_repository;
-};
 
 //--------------------------------------------------------------------------------------------------
 
@@ -178,21 +168,6 @@ void GfxDevice::synchronise() noexcept
     // N.B. I tried using fences with glClientWaitSync as I hear that is a better approach (for
     // unclear reasons) but it had nowhere near the same impact on reducing input lag as glFinish.
     glFinish();
-}
-
-MeshRepository& GfxDevice::mesh_repository() noexcept
-{
-    return impl().mesh_repository;
-}
-
-TextureRepository& GfxDevice::texture_repository() noexcept
-{
-    return impl().texture_repository;
-}
-
-MaterialRepository& GfxDevice::material_repository() noexcept
-{
-    return impl().material_repository;
 }
 
 } // namespace Mg::gfx
