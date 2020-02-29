@@ -8,6 +8,7 @@
 
 #include "mg/containers/mg_flat_map.h"
 #include "mg/core/mg_log.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg/resources/mg_mesh_resource.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_stl_helpers.h"
@@ -162,12 +163,21 @@ private:
         const auto it = m_mesh_data.emplace();
 
         internal::GpuMesh& gpu_mesh = *it;
-        _make_mesh_at(gpu_mesh, mesh_id, params);
 
         const auto handle_value = reinterpret_cast<uintptr_t>(&gpu_mesh);
         const auto handle = MeshHandle{ handle_value };
-        m_mesh_map.insert({ mesh_id, handle });
-        return handle;
+        const auto [map_it, inserted] = m_mesh_map.insert({ mesh_id, handle });
+
+        if (inserted) {
+            _make_mesh_at(gpu_mesh, mesh_id, params);
+            return handle;
+        }
+
+        const auto error_msg = fmt::format("Creating mesh {}: mesh already exists.",
+                                           mesh_id.str_view());
+        g_log.write_error(error_msg);
+        throw RuntimeError{};
+
     }
 
     void _clear_mesh(internal::GpuMesh& gpu_mesh);
@@ -208,7 +218,7 @@ bool MeshRepositoryImpl::update(Identifier mesh_id, const MeshDataView& data)
     }
 
     // Use the existing GpuMesh to ensure MeshHandles remain valid.
-    internal::get_gpu_mesh(*opt_handle), mesh_id, _mesh_params_from_mesh_data(data);
+    _make_mesh_at(internal::get_gpu_mesh(*opt_handle), mesh_id, _mesh_params_from_mesh_data(data));
     g_log.write_verbose(fmt::format("MeshRepository::update(): Updated {}", mesh_id.str_view()));
     return true;
 }
