@@ -87,6 +87,24 @@ public:
     /** Returns the full string from which this Identifier was created. */
     constexpr std::string_view str_view() const noexcept { return m_str; };
 
+    /** Comparison functor for ordering by hash value. */
+    class HashCompare {
+    public:
+        bool operator()(Identifier lhs, Identifier rhs) const noexcept
+        {
+            return lhs.hash() < rhs.hash();
+        }
+    };
+
+    /** Comparison functor for ordering by hash value. */
+    class LexicalCompare {
+    public:
+        bool operator()(Identifier lhs, Identifier rhs) const noexcept
+        {
+            return lhs.str_view() < rhs.str_view();
+        }
+    };
+
 private:
     // Allow operator""_id to access private constructor.
     friend constexpr Identifier literals::operator""_id(const char* str, size_t len);
