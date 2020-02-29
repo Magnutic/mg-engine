@@ -19,23 +19,23 @@
 #include <mg/resource_cache/mg_resource_cache.h>
 #include <mg/utils/mg_optional.h>
 
-constexpr double k_time_step             = 1.0 / 60.0;
+constexpr double k_time_step = 1.0 / 60.0;
 constexpr double k_accumulator_max_steps = 10;
-constexpr size_t k_num_lights            = 128;
-constexpr float  k_light_radius          = 3.0f;
+constexpr size_t k_num_lights = 128;
+constexpr float k_light_radius = 3.0f;
 
-constexpr auto camera_max_vel  = 0.2f;
-constexpr auto camera_acc      = 0.01f;
+constexpr auto camera_max_vel = 0.2f;
+constexpr auto camera_acc = 0.01f;
 constexpr auto camera_friction = 0.005f;
 
 struct Model {
-    Mg::Transform                                  transform;
-    Mg::gfx::MeshHandle                            mesh;
+    Mg::Transform transform;
+    Mg::gfx::MeshHandle mesh;
     Mg::small_vector<Mg::gfx::MaterialBinding, 10> material_bindings;
 };
 
 struct MaterialAssignment {
-    size_t         submesh_index = 0;
+    size_t submesh_index = 0;
     Mg::Identifier material_fname;
 };
 
@@ -53,41 +53,41 @@ struct BlurTargets {
 };
 
 struct Scene {
-    Mg::Root          root;
+    Mg::Root root;
     Mg::ResourceCache resource_cache = setup_resource_cache();
 
-    Mg::gfx::MeshRenderer        mesh_renderer;
-    Mg::gfx::DebugRenderer       debug_renderer;
-    Mg::gfx::BillboardRenderer   billboard_renderer;
+    Mg::gfx::MeshRenderer mesh_renderer;
+    Mg::gfx::DebugRenderer debug_renderer;
+    Mg::gfx::BillboardRenderer billboard_renderer;
     Mg::gfx::PostProcessRenderer post_renderer;
 
     Mg::gfx::RenderCommandProducer render_command_producer;
-    Mg::gfx::BillboardRenderList   billboard_render_list;
+    Mg::gfx::BillboardRenderList billboard_render_list;
 
     Mg::Opt<Mg::gfx::TextureRenderTarget> hdr_target; // Optional to defer initialisation
-    BlurTargets                           blur_targets;
+    BlurTargets blur_targets;
 
     Mg::gfx::Camera camera;
 
     Mg::input::InputMap input_map;
 
     struct State {
-        glm::vec3    cam_position{};
+        glm::vec3 cam_position{};
         Mg::Rotation cam_rotation{};
-        glm::vec3    cam_velocity{};
+        glm::vec3 cam_velocity{};
     };
 
     State prev_state{};
     State current_state{};
 
-    std::vector<Model>          scene_models;
+    std::vector<Model> scene_models;
     std::vector<Mg::gfx::Light> scene_lights;
 
     Mg::gfx::Material* blur_material;
     Mg::gfx::Material* bloom_material;
     Mg::gfx::Material* billboard_material;
 
-    double time       = 0.0;
-    bool   exit       = false;
-    bool   draw_debug = false;
+    double time = 0.0;
+    bool exit = false;
+    bool draw_debug = false;
 };
