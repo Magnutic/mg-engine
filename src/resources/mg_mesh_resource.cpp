@@ -115,16 +115,16 @@ bool MeshResource::validate() const
 {
     const auto mesh_error = [&](std::string_view what) {
         g_log.write_warning(
-            fmt::format("Mesh::validate() for {}: {}", static_cast<const void*>(this), what));
+            fmt::format("Mesh::validate() for {}: {}", resource_id().str_view(), what));
     };
 
     // Check data
     const auto n_sub_meshes = sub_meshes().size();
     const auto n_vertices = vertices().size();
-    const auto n_indices = narrow<size_t>(indices().size());
+    const auto n_indices = indices().size();
 
     // Check triangle-list validity
-    if (n_sub_meshes % 3 != 0) {
+    if (n_indices % 3 != 0) {
         mesh_error("Mesh is not a triangle-list (number of indices not divisible by three).");
     }
 
