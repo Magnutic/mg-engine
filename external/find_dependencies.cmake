@@ -187,7 +187,7 @@ endif()
 # Implementation of std::optional with additional features.
 
 init_library_submodule(optional)
-add_header_only_library(optional "${CMAKE_CURRENT_LIST_DIR}/optional" tl)
+add_header_only_library(optional "${CMAKE_CURRENT_LIST_DIR}/optional/include" tl)
 
 
 ####################################################################################################
