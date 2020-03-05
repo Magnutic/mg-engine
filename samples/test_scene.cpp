@@ -25,14 +25,28 @@ void setup_config()
 
 Mg::gfx::MeshHandle load_mesh(Mg::Identifier file)
 {
-    auto access = g_scene->resource_cache.access_resource<Mg::MeshResource>(file);
+    const Mg::Opt<Mg::gfx::MeshHandle> mesh_handle = g_scene->mesh_repository.get(file);
+    if (mesh_handle.has_value()) {
+        return mesh_handle.value();
+    }
+
+    const Mg::ResourceAccessGuard access = g_scene->resource_cache
+                                               .access_resource<Mg::MeshResource>(file);
     return g_scene->mesh_repository.create(*access);
 }
 
 Mg::gfx::TextureHandle load_texture(std::string_view file)
 {
-    auto file_name = Mg::Identifier::from_runtime_string(fmt::format("textures/{}.dds", file));
-    auto access = g_scene->resource_cache.access_resource<Mg::TextureResource>(file_name);
+    const auto file_name = fmt::format("textures/{}.dds", file);
+    const auto id = Mg::Identifier::from_runtime_string(file_name);
+
+    const Mg::Opt<Mg::gfx::TextureHandle> texture_handle = g_scene->texture_repository.get(id);
+    if (texture_handle.has_value()) {
+        return texture_handle.value();
+    }
+
+    const Mg::ResourceAccessGuard access = g_scene->resource_cache
+                                               .access_resource<Mg::TextureResource>(id);
     return g_scene->texture_repository.create(*access);
 }
 
