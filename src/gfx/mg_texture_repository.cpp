@@ -7,7 +7,9 @@
 #include "mg/gfx/mg_texture_repository.h"
 
 #include "mg/containers/mg_flat_map.h"
+#include "mg/core/mg_identifier.h"
 #include "mg/core/mg_log.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg/gfx/mg_texture2d.h"
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/resources/mg_texture_resource.h"
@@ -26,28 +28,53 @@ struct TextureRepositoryData {
     plf::colony<Texture2D> gpu_textures;
 
     // Used for looking up a texture node by identifier.
-    FlatMap<Identifier, TextureHandle, Identifier::HashCompare> texture_map;
+    using HandleMap = FlatMap<Identifier, TextureHandle, Identifier::HashCompare>;
+    HandleMap texture_map;
 };
+
+namespace {
+
+TextureRepositoryData::HandleMap::iterator
+try_insert_into_handle_map(TextureRepositoryData& data, Identifier key)
+{
+    const auto [map_it, inserted] = data.texture_map.insert({ key, TextureHandle{} });
+    if (inserted) {
+        return map_it;
+    }
+
+    const auto error_msg = fmt::format("Creating texture {}: texture already exists.",
+                                       key.str_view());
+    g_log.write_error(error_msg);
+    throw RuntimeError{};
+}
+
+TextureHandle create_texture_impl(TextureRepositoryData& data,
+                                  const Identifier id,
+                                  std::function<Texture2D()> texture_create_func)
+{
+    const auto handle_map_it = try_insert_into_handle_map(data, id);
+    const auto texture_it = data.gpu_textures.emplace(texture_create_func());
+    Texture2D* ptr = std::addressof(*texture_it);
+    const TextureHandle handle = internal::make_texture_handle(ptr);
+    handle_map_it->second = handle;
+    return handle;
+}
+
+} // namespace
 
 TextureRepository::TextureRepository() = default;
 TextureRepository::~TextureRepository() = default;
 
 TextureHandle TextureRepository::create(const TextureResource& resource)
 {
-    const auto it = impl().gpu_textures.emplace(Texture2D::from_texture_resource(resource));
-    Texture2D* ptr = std::addressof(*it);
-    const TextureHandle handle = internal::make_texture_handle(ptr);
-    impl().texture_map.insert({ resource.resource_id(), handle });
-    return handle;
+    auto generate_texture = [&resource] { return Texture2D::from_texture_resource(resource); };
+    return create_texture_impl(impl(), resource.resource_id(), generate_texture);
 }
 
 TextureHandle TextureRepository::create_render_target(const RenderTargetParams& params)
 {
-    const auto it = impl().gpu_textures.emplace(Texture2D::render_target(params));
-    Texture2D* ptr = std::addressof(*it);
-    const TextureHandle handle = internal::make_texture_handle(ptr);
-    impl().texture_map.insert({ params.render_target_id, handle });
-    return handle;
+    auto generate_texture = [&params] { return Texture2D::render_target(params); };
+    return create_texture_impl(impl(), params.render_target_id, generate_texture);
 }
 
 Opt<TextureHandle> TextureRepository::get(const Identifier& texture_id) const
