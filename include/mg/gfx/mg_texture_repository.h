@@ -12,9 +12,11 @@
 
 #include "mg/gfx/mg_texture_handle.h"
 #include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_simple_pimpl.h"
 
 namespace Mg {
+class Identifier;
 class TextureResource;
 }
 
@@ -34,6 +36,8 @@ public:
     TextureHandle create(const TextureResource& resource);
 
     TextureHandle create_render_target(const RenderTargetParams& params);
+
+    Opt<TextureHandle> get(const Identifier& texture_id) const;
 
     /** Update the texture that was created from resource.
      * N.B. used for hot-reloading of texture files.

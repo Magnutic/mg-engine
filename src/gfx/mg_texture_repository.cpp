@@ -50,6 +50,15 @@ TextureHandle TextureRepository::create_render_target(const RenderTargetParams& 
     return handle;
 }
 
+Opt<TextureHandle> TextureRepository::get(const Identifier& texture_id) const
+{
+    const auto it = impl().texture_map.find(texture_id);
+    if (it == impl().texture_map.end()) {
+        return nullopt;
+    }
+    return it->second;
+}
+
 void TextureRepository::update(const TextureResource& resource)
 {
     const Identifier resource_id = resource.resource_id();
