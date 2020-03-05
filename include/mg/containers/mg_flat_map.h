@@ -75,14 +75,14 @@ public:
     iterator erase(const_iterator pos) noexcept
     {
         MG_ASSERT_DEBUG(pos >= cbegin() && pos < end());
-        m_data.erase(pos);
+        return m_data.erase(pos);
     }
     iterator erase(const_iterator begin, const_iterator end) noexcept
     {
         MG_ASSERT_DEBUG(begin >= cbegin() && begin < cend());
         MG_ASSERT_DEBUG(end >= cbegin() && end < cend());
         MG_ASSERT_DEBUG(begin <= end);
-        m_data.erase(begin, end);
+        return m_data.erase(begin, end);
     }
     size_t erase(const key_type& key) noexcept
     {
