@@ -42,11 +42,11 @@ public:
     std::pair<iterator, bool> insert(const value_type& value) { insert(value_type{ value }); }
     std::pair<iterator, bool> insert(value_type&& value)
     {
-        const auto it = _pos_for_key(value.first);
+        auto it = _pos_for_key(value.first);
         if (it != end() && it->first == value.first) {
             return { it, false };
         }
-        m_data.insert(it, std::move(value));
+        it = m_data.insert(it, std::move(value));
         return {it, true};
     }
 
