@@ -173,8 +173,8 @@ private:
             return handle;
         }
 
-        const auto error_msg = fmt::format("Creating mesh {}: mesh already exists.",
-                                           mesh_id.str_view());
+        const auto fmt_string = "Creating mesh {}: a mesh by that identifier already exists.";
+        const auto error_msg = fmt::format(fmt_string, mesh_id.str_view());
         g_log.write_error(error_msg);
         throw RuntimeError{};
 

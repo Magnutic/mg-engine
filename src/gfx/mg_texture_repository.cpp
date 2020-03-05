@@ -41,9 +41,8 @@ try_insert_into_handle_map(TextureRepositoryData& data, Identifier key)
     if (inserted) {
         return map_it;
     }
-
-    const auto error_msg = fmt::format("Creating texture {}: texture already exists.",
-                                       key.str_view());
+    const auto fmt_string = "Creating texture {}: a texture by that identifier already exists.";
+    const auto error_msg = fmt::format(fmt_string, key.str_view());
     g_log.write_error(error_msg);
     throw RuntimeError{};
 }
