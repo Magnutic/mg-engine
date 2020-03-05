@@ -172,4 +172,3 @@ void GfxDevice::synchronise() noexcept
 
 } // namespace Mg::gfx
 
-namespace Mg::gfx {} // namespace Mg::gfx
