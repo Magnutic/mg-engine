@@ -61,4 +61,3 @@ add_mg_test(gsl_test)
 
 add_mg_test(observer_test)
 
-add_mg_test(pooling_vector_test)

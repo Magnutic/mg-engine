@@ -6,7 +6,6 @@ set(MG_HEADER_DIR "${MG_ENGINE_SOURCE_DIR}/include/")
 set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/containers/mg_array.h
     ${MG_HEADER_DIR}/mg/containers/mg_flat_map.h
-    ${MG_HEADER_DIR}/mg/containers/mg_pooling_vector.h
     ${MG_HEADER_DIR}/mg/containers/mg_slot_map.h
     ${MG_HEADER_DIR}/mg/containers/mg_small_vector.h
     ${MG_HEADER_DIR}/mg/core/mg_config.h
