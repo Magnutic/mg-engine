@@ -61,15 +61,21 @@ public:
         return (it != end() && it->first == key) ? it : end();
     }
 
-    Opt<value_type&> operator[](const KeyT& key) noexcept
+    Opt<mapped_type&> operator[](const KeyT& key) noexcept
     {
         const auto it = _pos_for_key(key);
-        return (it != end() && it->first == key) ? *it : nullopt;
+        if (it != end() && it->first == key) {
+            return it->second;
+        }
+        return nullopt;
     }
-    Opt<const value_type&> operator[](const KeyT& key) const noexcept
+    Opt<const mapped_type&> operator[](const KeyT& key) const noexcept
     {
         const auto it = _pos_for_key(key);
-        return (it != end() && it->first == key) ? *it : nullopt;
+        if (it != end() && it->first == key) {
+            return it->second;
+        }
+        return nullopt;
     }
 
     iterator erase(const_iterator pos) noexcept
