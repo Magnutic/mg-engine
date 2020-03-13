@@ -2,10 +2,12 @@
 
 #include <chrono>
 #include <cstdio>
+#include <random>
+
+// Use Mg::FlatMap just to test it a bit, too.
+#include <mg/containers/mg_flat_map.h>
 
 #include <mg/core/mg_thread_pool.h>
-
-// TODO: more correctness tests; thousands of randomised jobs, verify results.
 
 TEST_CASE("ThreadPool: timing test")
 {
@@ -40,7 +42,7 @@ TEST_CASE("ThreadPool: return test")
     puts("Starting return_test");
     Mg::ThreadPool pool{ 4 };
 
-    auto future = pool.add_function([] {
+    auto future = pool.add_job([] {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         return true;
     });
@@ -50,4 +52,40 @@ TEST_CASE("ThreadPool: return test")
     REQUIRE(future.get() == true);
 
     puts("Finished return_test");
+}
+
+TEST_CASE("ThreadPool: many jobs")
+{
+    Mg::ThreadPool pool{ std::thread::hardware_concurrency() };
+    Mg::FlatMap<int, int> job_to_expected_result_map;
+    Mg::FlatMap<int, std::future<int>> job_to_future_map;
+
+    std::default_random_engine r(123);
+    std::uniform_int_distribution<int> dist;
+
+    for (int i = 0; i < 1000; ++i)
+    {
+        const auto result = dist(r);
+        const auto wait_time_us = dist(r) % 10;
+
+        job_to_expected_result_map.insert({i, result});
+
+        auto future = pool.add_job([result, wait_time_us] {
+            std::this_thread::sleep_for(std::chrono::microseconds(wait_time_us));
+            return result;
+        });
+
+        job_to_future_map.insert({ i, std::move(future) });
+    }
+
+    for (const auto [job_index, expected_result] : job_to_expected_result_map)
+    {
+        const int expected_result = job_to_expected_result_map[job_index].value();
+        std::future<int>& future = job_to_future_map[job_index].value();
+        REQUIRE(future.get() == expected_result);
+    }
+
+    // Since we have been get()ing the result from each job's future, all jobs should be done by
+    // now.
+    REQUIRE(pool.num_jobs() == 0);
 }

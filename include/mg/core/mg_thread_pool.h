@@ -12,8 +12,11 @@
 
 #pragma once
 
+#include "mg/utils/mg_assert.h"
+
+#include <function2/function2.hpp>
+
 #include <condition_variable>
-#include <functional>
 #include <future>
 #include <memory>
 #include <mutex>
@@ -21,18 +24,18 @@
 #include <thread>
 #include <vector>
 
-#include "mg/utils/mg_assert.h"
-
 namespace Mg {
 
 /** Simple thread pool. Creates the given number of worker threads on
  * construction, using them to run jobs added via ThreadPool::add_job.
  * Jobs are run as soon as a worker thread is available, if none are then the
- * jobs will be queued. */
+ * jobs will be queued.
+ */
 class ThreadPool {
 public:
     /** Construct a new ThreadPool
-     * @param thread_count How many threads the pool should have. */
+     * @param thread_count How many threads the pool should have.
+     */
     explicit ThreadPool(size_t thread_count);
 
     /** All jobs will be finished before destruction. */
@@ -41,25 +44,40 @@ public:
     /** Get the number of threads in this ThreadPool. */
     size_t size() const { return m_threads.size(); }
 
-    /** Add function call as job to the pool.
-     * @return std::future for the return value of the function */
-    template<typename Fn, typename... Args>
-    auto add_function(Fn&&, Args&&...) -> std::future<std::result_of_t<Fn(Args...)>>;
+    // Metafunction for getting appropriate return type for add_job.
+    template<typename Job>
+    using AddJobReturnT = std::conditional_t<std::is_void_v<std::invoke_result_t<Job>>,
+                                             void,
+                                             std::future<std::invoke_result_t<Job>>>;
 
-    /** Add job to the pool. */
-    template<typename Fn, typename... Args> void add_job(Fn&&, Args&&...);
+    /** Add function (object) as job to the pool.
+     * @remark: To pass arguments into the function, write a lambda as the job and capture the
+     * arguments. Make sure to by-value-capture arguments with short lifetimes!
+     * @return std::future for the return value of the function, unless the return type is void, in
+     * which case add_job also returns also void.
+     */
+    template<typename Job> auto add_job(Job) -> AddJobReturnT<Job>;
 
     /** Wait for all jobs in the pool to finish, locking the thread. */
     void await_all_jobs();
 
-private:
-    /** Run by worker threads. Loops forever, acquiring and executing available
-     * jobs until ThreadPool is destroyed */
-    void execute_job_loop();
+    /** Get number of jobs currently running or waiting to run. */
+    size_t num_jobs() const
+    {
+        std::lock_guard guard{ m_jobs_mutex };
+        return m_num_jobs;
+    }
 
 private:
-    std::vector<std::thread> m_threads;        // Worker threads
-    std::queue<std::function<void()>> m_queue; // Job queue
+    // Run by worker threads. Loops forever, acquiring and executing available
+    // jobs until ThreadPool is destroyed.
+    void execute_job_loop();
+
+    void enqueue_job(fu2::unique_function<void()> job_wrapper);
+
+private:
+    std::vector<std::thread> m_threads;               // Worker threads
+    std::queue<fu2::unique_function<void()>> m_queue; // Job queue
 
     bool m_exiting = false; // Whether ThreadPool is being destroyed
     size_t m_num_jobs = 0;  // Number of unstarted + started and unfinished jobs
@@ -71,7 +89,7 @@ private:
     std::condition_variable m_wait_var;
 
     // Mutex locked before accessing jobs queue and related metadata
-    std::mutex m_jobs_mutex;
+    mutable std::mutex m_jobs_mutex;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -110,31 +128,28 @@ ThreadPool::~ThreadPool()
     }
 }
 
-template<typename Fn, typename... Args>
-auto ThreadPool::add_function(Fn&& fn, Args&&... args) -> std::future<std::result_of_t<Fn(Args...)>>
+void ThreadPool::enqueue_job(fu2::unique_function<void()> job_wrapper)
 {
-    using RetType = std::result_of_t<Fn(Args...)>;
-
-    auto task = std::make_shared<std::packaged_task<RetType()>>(
-        std::bind(std::forward<Fn>(fn), std::forward<Args>(args)...));
-
-    std::future<RetType> ret_val = task->get_future();
-
     std::lock_guard<std::mutex> lock{ m_jobs_mutex };
-
-    m_queue.emplace([task] { (*task)(); });
+    m_queue.emplace(std::move(job_wrapper));
     ++m_num_jobs;
     m_job_available_var.notify_one();
-
-    return ret_val;
 }
 
-template<typename Fn, typename... Args> void ThreadPool::add_job(Fn&& fn, Args&&... args)
+template<typename Job> auto ThreadPool::add_job(Job job) -> AddJobReturnT<Job>
 {
-    std::lock_guard<std::mutex> lock{ m_jobs_mutex };
-    m_queue.push(std::bind(std::forward<Fn>(fn), std::forward<Args>(args)...));
-    ++m_num_jobs;
-    m_job_available_var.notify_one();
+    using JobReturnT = std::invoke_result_t<Job>;
+    static constexpr bool returns_void = std::is_void_v<JobReturnT>;
+
+    if constexpr (returns_void) {
+        enqueue_job(std::move(job));
+    }
+    else {
+        auto packaged_task = std::packaged_task<JobReturnT()>(std::move(job));
+        std::future<JobReturnT> ret_val = packaged_task.get_future();
+        enqueue_job(std::move(packaged_task));
+        return ret_val;
+    }
 }
 
 void ThreadPool::await_all_jobs()
@@ -148,7 +163,7 @@ void ThreadPool::await_all_jobs()
 void ThreadPool::execute_job_loop()
 {
     for (;;) {
-        std::function<void()> current_job;
+        fu2::unique_function<void()> current_job;
 
         {
             std::unique_lock<std::mutex> lock{ m_jobs_mutex };
@@ -160,7 +175,7 @@ void ThreadPool::execute_job_loop()
                 return;
             }
 
-            current_job = m_queue.front();
+            current_job = std::move(m_queue.front());
             m_queue.pop();
         }
 
