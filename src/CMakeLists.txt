@@ -222,6 +222,7 @@ target_link_libraries(mg_engine
         fmt::fmt
         optional
         plflib
+        function2
     PRIVATE
         glad
         glfw

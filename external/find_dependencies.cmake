@@ -196,3 +196,11 @@ add_header_only_library(optional "${CMAKE_CURRENT_LIST_DIR}/optional/include" tl
 
 add_header_only_library(plflib "${CMAKE_CURRENT_LIST_DIR}/plflib" "")
 
+####################################################################################################
+# function2
+# Improved alternative to std::function
+# This dependency may be removed once equivalents of unique_function and function_view lands in the
+# standard library.
+
+init_library_submodule(function2)
+add_header_only_library(function2 "${CMAKE_CURRENT_LIST_DIR}/function2/include" "")
