@@ -529,10 +529,10 @@ template<typename T> auto Slot_map<T>::erase(iterator first, iterator last) -> i
 {
     MG_ASSERT((first - begin()) >= 0 && first < last);
 
-    const ptrdiff_t index_first = std::distance(begin(), first);
+    const ptrdiff_t index_first = static_cast<size_type>(std::distance(begin(), first));
     const auto erase_count = last - first;
     const auto index_last = index_first + erase_count;
-    const auto num_subsequent_elems = std::distance(end(), last);
+    const auto num_subsequent_elems = static_cast<size_type>(std::distance(end(), last));
 
     // Erase elements in range
     for (auto i = index_first; i < index_last; ++i) {
