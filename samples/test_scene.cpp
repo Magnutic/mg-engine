@@ -18,7 +18,7 @@ Scene* g_scene;
 
 void setup_config()
 {
-    auto& cfg = g_scene->root.config();
+    auto& cfg = g_scene->app.config();
     cfg.set_default_value("mouse_sensitivity_x", 0.002f);
     cfg.set_default_value("mouse_sensitivity_y", 0.002f);
 }
@@ -179,7 +179,7 @@ void init()
 
     setup_config();
 
-    auto& window = g_scene->root.window();
+    auto& window = g_scene->app.window();
 
     // Configure window
     {
@@ -189,7 +189,7 @@ void init()
             }
         });
 
-        Mg::WindowSettings window_settings = read_display_settings(g_scene->root.config());
+        Mg::WindowSettings window_settings = read_display_settings(g_scene->app.config());
         window.set_title("Mg Engine Example Application");
         window.apply_settings(window_settings);
         window.set_cursor_lock_mode(Mg::CursorLockMode::LOCKED);
@@ -220,7 +220,7 @@ void init()
     g_scene->hdr_target = make_hdr_target(window.settings().video_mode);
     g_scene->blur_targets = make_blur_targets(window.settings().video_mode);
 
-    g_scene->root.gfx_device().set_clear_colour(0.0125f, 0.01275f, 0.025f);
+    g_scene->app.gfx_device().set_clear_colour(0.0125f, 0.01275f, 0.025f);
 
     g_scene->camera.set_aspect_ratio(window.aspect_ratio());
     g_scene->camera.field_of_view = 80_degrees;
@@ -318,11 +318,11 @@ std::array<float, 3> camera_acceleration(Mg::input::InputMap& input_map)
 void time_step()
 {
     auto& input = g_scene->input_map;
-    auto& window = g_scene->root.window();
+    auto& window = g_scene->app.window();
     auto& camera = g_scene->camera;
     auto& prev_state = g_scene->prev_state;
     auto& state = g_scene->current_state;
-    auto& config = g_scene->root.config();
+    auto& config = g_scene->app.config();
 
     window.poll_input_events();
     input.refresh();
@@ -460,7 +460,7 @@ void render_bloom()
 
 void render_light_debug_geometry()
 {
-    auto& gfx = g_scene->root.gfx_device();
+    auto& gfx = g_scene->app.gfx_device();
 
     gfx.set_depth_test(Mg::gfx::DepthFunc::NONE);
     gfx.set_use_blending(true);
@@ -484,7 +484,7 @@ void render_light_debug_geometry()
 
 void render_scene(double lerp_factor)
 {
-    auto& gfx = g_scene->root.gfx_device();
+    auto& gfx = g_scene->app.gfx_device();
 
     Scene::State render_state = lerp(g_scene->prev_state, g_scene->current_state, lerp_factor);
     g_scene->camera.position = render_state.cam_position;
@@ -504,7 +504,7 @@ void render_scene(double lerp_factor)
 
         const auto& commands = render_command_producer.finalise(g_scene->camera,
                                                                 Mg::gfx::SortFunc::NEAR_TO_FAR);
-        auto time = static_cast<float>(g_scene->root.time_since_init());
+        auto time = static_cast<float>(g_scene->app.time_since_init());
         g_scene->mesh_renderer.render(g_scene->camera,
                                       commands,
                                       g_scene->scene_lights,
@@ -519,7 +519,7 @@ void render_scene(double lerp_factor)
 
     // Apply tonemap and render to window render target.
     {
-        g_scene->root.window().render_target.bind();
+        g_scene->app.window().render_target.bind();
         gfx.clear();
 
         g_scene->bloom_material->set_sampler("sampler_bloom",
@@ -533,7 +533,7 @@ void render_scene(double lerp_factor)
         render_light_debug_geometry();
     }
 
-    g_scene->root.window().refresh();
+    g_scene->app.window().refresh();
 }
 
 void main_loop()
@@ -544,7 +544,7 @@ void main_loop()
 
     while (!g_scene->exit) {
         double last_time = g_scene->time;
-        g_scene->time = g_scene->root.time_since_init();
+        g_scene->time = g_scene->app.time_since_init();
 
         ++n_frames;
 
