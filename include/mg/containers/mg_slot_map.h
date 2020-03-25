@@ -13,15 +13,15 @@
 
 #pragma once
 
+#include "mg/containers/mg_array.h"
+#include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_max.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <limits>
 #include <utility>
-
-#include "mg/containers/mg_array.h"
-#include "mg/utils/mg_assert.h"
-#include "mg/utils/mg_max.h"
 
 #if __cplusplus >= 201703L
 #    define HAVE_OVERALIGNED_NEW 1

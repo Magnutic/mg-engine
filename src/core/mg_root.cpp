@@ -103,4 +103,4 @@ gfx::GfxDevice& Root::gfx_device()
     return *impl().gfx_device;
 }
 
-}; // namespace Mg
+} // namespace Mg

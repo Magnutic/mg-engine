@@ -6,16 +6,16 @@
 
 #include "mg/core/mg_config.h"
 
-#include <sstream>
-
-#include <fmt/core.h>
-
 #include "mg/core/mg_log.h"
 #include "mg/utils/mg_math_utils.h"
 #include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_stl_helpers.h"
 #include "mg/utils/mg_string_utils.h"
 #include "mg/utils/mg_file_io.h"
+
+#include <fmt/core.h>
+
+#include <sstream>
 
 namespace Mg {
 

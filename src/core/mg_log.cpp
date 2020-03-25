@@ -11,12 +11,12 @@
 #include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_file_io.h"
 
+#include <fmt/format.h>
+#include <fmt/time.h>
+
 #include <ctime>
 #include <filesystem>
 #include <iostream>
-
-#include <fmt/format.h>
-#include <fmt/time.h>
 
 namespace Mg {
 

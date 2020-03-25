@@ -10,17 +10,17 @@
 
 #pragma once
 
+#include "mg/containers/mg_array.h"
+#include "mg/core/mg_identifier.h"
+#include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_macros.h"
+
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <string>
 #include <string_view>
-
-#include "mg/containers/mg_array.h"
-#include "mg/core/mg_identifier.h"
-#include "mg/utils/mg_gsl.h"
-#include "mg/utils/mg_macros.h"
 
 // Forward declaration of libzip struct
 struct zip;
