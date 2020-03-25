@@ -55,14 +55,6 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/input/mg_keyboard.h
     ${MG_HEADER_DIR}/mg/input/mg_mouse.h
     ${MG_HEADER_DIR}/mg/mg_defs.h
-    ${MG_HEADER_DIR}/mg/resources/mg_file_changed_event.h
-    ${MG_HEADER_DIR}/mg/resources/mg_mesh_resource.h
-    ${MG_HEADER_DIR}/mg/resources/mg_raw_resource.h
-    ${MG_HEADER_DIR}/mg/resources/mg_shader_resource.h
-    ${MG_HEADER_DIR}/mg/resources/mg_shader_types.h
-    ${MG_HEADER_DIR}/mg/resources/mg_texture_resource.h
-    ${MG_HEADER_DIR}/mg/resources/mg_text_resource.h
-    ${MG_HEADER_DIR}/mg/resources/shader_parser/mg_shader_parser.h
     ${MG_HEADER_DIR}/mg/resource_cache/internal/mg_resource_entry.h
     ${MG_HEADER_DIR}/mg/resource_cache/internal/mg_resource_entry_base.h
     ${MG_HEADER_DIR}/mg/resource_cache/mg_base_resource.h
@@ -71,11 +63,18 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_exceptions.h
     ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_handle.h
     ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_loading_input.h
+    ${MG_HEADER_DIR}/mg/resources/mg_file_changed_event.h
+    ${MG_HEADER_DIR}/mg/resources/mg_mesh_resource.h
+    ${MG_HEADER_DIR}/mg/resources/mg_raw_resource.h
+    ${MG_HEADER_DIR}/mg/resources/mg_shader_resource.h
+    ${MG_HEADER_DIR}/mg/resources/mg_shader_types.h
+    ${MG_HEADER_DIR}/mg/resources/mg_text_resource.h
+    ${MG_HEADER_DIR}/mg/resources/mg_texture_resource.h
+    ${MG_HEADER_DIR}/mg/resources/shader_parser/mg_shader_parser.h
     ${MG_HEADER_DIR}/mg/utils/mg_angle.h
     ${MG_HEADER_DIR}/mg/utils/mg_assert.h
-    ${MG_HEADER_DIR}/mg/utils/mg_binary_io.h
+    ${MG_HEADER_DIR}/mg/utils/mg_file_io.h
     ${MG_HEADER_DIR}/mg/utils/mg_file_time_helper.h
-    ${MG_HEADER_DIR}/mg/utils/mg_fopen_utf8.h
     ${MG_HEADER_DIR}/mg/utils/mg_gsl.h
     ${MG_HEADER_DIR}/mg/utils/mg_hash_combine.h
     ${MG_HEADER_DIR}/mg/utils/mg_instance_counter.h
@@ -89,7 +88,6 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/utils/mg_simple_pimpl.h
     ${MG_HEADER_DIR}/mg/utils/mg_stl_helpers.h
     ${MG_HEADER_DIR}/mg/utils/mg_string_utils.h
-    ${MG_HEADER_DIR}/mg/utils/mg_text_file_io.h
     ${MG_HEADER_DIR}/mg/utils/mg_vector_normalised.h
 )
 
@@ -140,10 +138,9 @@ add_library(mg_engine
     resources/mg_texture_resource.cpp
     resources/shader_parser/mg_shader_lexer.cpp
     resources/shader_parser/mg_shader_parser.cpp
-    utils/mg_fopen_utf8.cpp
+    utils/mg_file_io.cpp
+    utils/mg_file_time_helper.cpp
     utils/mg_string_utils.cpp
-    utils/mg_text_file_io.cpp
-	utils/mg_file_time_helper.cpp
 )
 
 # Compile using standard C++17

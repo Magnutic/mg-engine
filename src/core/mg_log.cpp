@@ -9,7 +9,7 @@
 #include "mg/mg_defs.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_optional.h"
-#include "mg/utils/mg_text_file_io.h"
+#include "mg/utils/mg_file_io.h"
 
 #include <ctime>
 #include <filesystem>
@@ -41,7 +41,7 @@ struct LogData {
 Log::Log(std::string_view file_path, Prio console_verbosity, Prio log_file_verbosity)
     : PImplMixin(file_path, console_verbosity, log_file_verbosity)
 {
-    impl().writer = io::make_output_filestream(file_path, true);
+    impl().writer = io::make_output_filestream(file_path, true, io::Mode::text);
 
     if (!impl().writer) {
         std::cerr << "[ERROR]: "

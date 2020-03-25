@@ -4,49 +4,64 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-#include "mg/utils/mg_text_file_io.h"
+#include "mg/utils/mg_file_io.h"
 
-#include "mg/utils/mg_fopen_utf8.h"
-#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_stl_helpers.h"
-#include "mg/utils/mg_string_utils.h"
+
+#include <filesystem>
 
 namespace Mg::io {
 
-// The fstream open functions below use  widen_if_msvc() to enable MSVC's non-standard
-// std::wstring-taking constructor. Attempting to open a UTF-8 filepath via the standard
-// std::string-taking constructor fails on Windows; using UTF-16 wstring is the only solution (until
-// all standard library implementations provide fstream constructors taking filesystem::path).
-
-Opt<std::ofstream> make_output_filestream(std::string_view filepath, bool overwrite)
+Opt<std::ofstream> make_output_filestream(std::string_view filepath, bool overwrite, Mode mode)
 {
-    std::ios::openmode mode = std::ios::out;
-    mode |= overwrite ? std::ios::trunc : std::ios::app;
+    std::ios::openmode open_mode = std::ios::out;
+    open_mode |= overwrite ? std::ios::trunc : std::ios::app;
+    if (mode == Mode::binary) {
+        open_mode |= std::ios::binary;
+    }
 
-    auto writer = make_opt<std::ofstream>(widen_if_msvc(filepath), mode);
+    auto writer = make_opt<std::ofstream>(std::filesystem::u8path(filepath), open_mode);
 
     if (!writer->good()) {
         return {};
     }
 
+    writer->exceptions(std::ios::badbit | std::ios::failbit);
     return writer;
 }
 
-Opt<std::ifstream> make_input_filestream(std::string_view filepath)
+Opt<std::ifstream> make_input_filestream(std::string_view filepath, Mode mode)
 {
-    auto writer = make_opt<std::ifstream>(widen_if_msvc(filepath));
+    std::ios::openmode open_mode = std::ios::in;
+    if (mode == Mode::binary) {
+        open_mode |= std::ios::binary;
+    }
+
+    auto writer = make_opt<std::ifstream>(std::filesystem::u8path(filepath), open_mode);
 
     if (!writer->good()) {
         return {};
     }
 
+    writer->exceptions(std::ios::badbit | std::ios::failbit);
     return writer;
 }
 
-std::string all_text(std::istream& stream)
+std::string get_all_text(std::istream& stream)
 {
     std::string file_text;
-    file_text.reserve(512);
+
+    while (peek_char(stream) != 0) {
+        const auto c = get_char(stream);
+        file_text += c;
+    }
+
+    return file_text;
+}
+
+std::string get_all_lines(std::istream& stream)
+{
+    std::string file_text;
 
     while (!stream.eof()) {
         file_text += get_line(stream) + "\n";
@@ -102,7 +117,7 @@ char peek_char(std::istream& stream)
         return '\0';
     }
 
-    return narrow<char>(value);
+    return narrow_cast<char>(value);
 }
 
 char get_char(std::istream& stream)
@@ -119,6 +134,15 @@ void write_line(std::ostream& stream, std::string_view string)
     if (string.empty() || string[string.size() - 1] != '\n') {
         stream << "\n";
     }
+}
+
+size_t file_size(std::istream& stream)
+{
+    const auto current_pos = stream.tellg();
+    stream.seekg(0, std::ios::end);
+    const auto result = stream.tellg();
+    stream.seekg(current_pos);
+    return static_cast<size_t>(result);
 }
 
 } // namespace Mg::io

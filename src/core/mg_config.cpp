@@ -15,7 +15,7 @@
 #include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_stl_helpers.h"
 #include "mg/utils/mg_string_utils.h"
-#include "mg/utils/mg_text_file_io.h"
+#include "mg/utils/mg_file_io.h"
 
 namespace Mg {
 
@@ -161,7 +161,7 @@ void Config::read_from_file(std::string_view filepath)
 {
     g_log.write_verbose(fmt::format("Reading config file '{}'", filepath));
 
-    Opt<std::ifstream> reader = io::make_input_filestream(filepath);
+    Opt<std::ifstream> reader = io::make_input_filestream(filepath, io::Mode::text);
 
     if (!reader) {
         g_log.write_warning(fmt::format("Could not read config file '{}'.", filepath));
@@ -214,7 +214,7 @@ void Config::write_to_file(std::string_view filepath) const
 
     {
         // Read in old lines from config file if it exists
-        Opt<std::ifstream> reader = io::make_input_filestream(filepath);
+        Opt<std::ifstream> reader = io::make_input_filestream(filepath, io::Mode::text);
 
         while (reader && reader->good()) {
             lines.emplace_back(io::get_line(*reader));
@@ -256,7 +256,7 @@ void Config::write_to_file(std::string_view filepath) const
     }
 
     // Write result to file
-    Opt<std::ofstream> writer = io::make_output_filestream(filepath, true);
+    Opt<std::ofstream> writer = io::make_output_filestream(filepath, true, io::Mode::text);
 
     if (!writer) {
         g_log.write_error(fmt::format("Error writing config file {}", filepath));

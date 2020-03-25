@@ -32,7 +32,7 @@
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
-#include "mg/utils/mg_binary_io.h"
+#include "mg/utils/mg_file_io.h"
 #include "mg/utils/mg_file_time_helper.h"
 #include "mg/utils/mg_string_utils.h"
 
@@ -118,17 +118,17 @@ void BasicFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
         throw RuntimeError();
     }
 
-    BinaryFileReader reader{ path.generic_u8string() };
-
-    if (!reader.good()) {
+    Opt<std::ifstream> istream = io::make_input_filestream(path.generic_u8string(),
+                                                           io::Mode::binary);
+    if (!istream) {
         g_log.write_error(fmt::format("Could not read file '{}'", path.generic_u8string()));
         throw RuntimeError();
     }
 
-    const auto size = reader.size();
+    const auto size = io::file_size(*istream);
 
     // Point index_data to buffer
-    const auto bytes_read = reader.read_array(target_buffer);
+    const auto bytes_read = io::read_binary_array(*istream, target_buffer);
 
     MG_ASSERT(bytes_read == size);
     MG_ASSERT(bytes_read <= target_buffer.size());
