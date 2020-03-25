@@ -12,7 +12,6 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/core/mg_file_loader.h
     ${MG_HEADER_DIR}/mg/core/mg_identifier.h
     ${MG_HEADER_DIR}/mg/core/mg_log.h
-    ${MG_HEADER_DIR}/mg/core/mg_root.h
     ${MG_HEADER_DIR}/mg/core/mg_rotation.h
     ${MG_HEADER_DIR}/mg/core/mg_runtime_error.h
     ${MG_HEADER_DIR}/mg/core/mg_thread_pool.h
@@ -98,7 +97,6 @@ add_library(mg_engine
     core/mg_file_loader.cpp
     core/mg_identifier.cpp
     core/mg_log.cpp
-    core/mg_root.cpp
     core/mg_rotation.cpp
     core/mg_window.cpp
     core/mg_window_settings.cpp

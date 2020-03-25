@@ -8,7 +8,6 @@
 
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_log.h"
-#include "mg/core/mg_root.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/gfx/mg_render_target.h"
 #include "mg/mg_defs.h"
