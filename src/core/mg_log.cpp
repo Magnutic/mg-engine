@@ -11,8 +11,8 @@
 #include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_file_io.h"
 
+#include <fmt/chrono.h>
 #include <fmt/format.h>
-#include <fmt/time.h>
 
 #include <ctime>
 #include <filesystem>
