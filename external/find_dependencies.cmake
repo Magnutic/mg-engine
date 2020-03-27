@@ -132,7 +132,7 @@ endif()
 # fmt
 # Text formatting
 
-find_package(fmt 5.3 QUIET)
+find_package(fmt 6.0 QUIET)
 
 if (NOT FMT_FOUND)
     init_library_submodule(fmt)
@@ -160,7 +160,7 @@ install(TARGETS glad EXPORT mg_engine_targets DESTINATION "${MG_LIB_INSTALL_PATH
 # GLFW
 # Window and input library.
 
-find_package(glfw3 3.2 QUIET)
+find_package(glfw3 3.3 QUIET)
 
 if (NOT glfw3_FOUND)
     init_library_submodule(glfw)
