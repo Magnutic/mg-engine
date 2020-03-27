@@ -3,7 +3,6 @@
 #include <fmt/core.h>
 
 #include <mg/core/mg_log.h>
-#include <mg/core/mg_root.h>
 #include <mg/core/mg_window.h>
 #include <mg/input/mg_input.h>
 
@@ -15,11 +14,12 @@ void inputTest()
 {
     using namespace Mg;
 
-    Root             mg;
+    std::unique_ptr window = Window::make({}, "Input test");
+
     input::InputMap  kb_map;
     input::InputMap  mouse_map;
-    input::Keyboard& kb    = mg.window().keyboard;
-    input::Mouse&    mouse = mg.window().mouse;
+    input::Keyboard& kb = window->keyboard;
+    input::Mouse& mouse = window->mouse;
 
     // Funny jump-loop to bind all keys
     auto bindId = [&](size_t i) {
@@ -67,8 +67,8 @@ void inputTest()
     */
 
     while (true) {
-        mg.window().refresh();
-        mg.window().poll_input_events();
+        window->refresh();
+        window->poll_input_events();
         kb_map.refresh();
         mouse_map.refresh();
 

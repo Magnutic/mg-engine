@@ -80,7 +80,6 @@ TEST_CASE("ThreadPool: many jobs")
 
     for (const auto [job_index, expected_result] : job_to_expected_result_map)
     {
-        const int expected_result = job_to_expected_result_map[job_index].value();
         std::future<int>& future = job_to_future_map[job_index].value();
         REQUIRE(future.get() == expected_result);
     }
