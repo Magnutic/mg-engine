@@ -7,7 +7,8 @@
 // Use Mg::FlatMap just to test it a bit, too.
 #include <mg/containers/mg_flat_map.h>
 
-#include <mg/core/mg_thread_pool.h>
+// mg_thread_pool.h is a private header, so we have to include it by explicit path.
+#include "../src/core/mg_thread_pool.h"
 
 TEST_CASE("ThreadPool: timing test")
 {

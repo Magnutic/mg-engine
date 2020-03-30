@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.8.2)
+cmake_minimum_required(VERSION 3.11)
 
-set(MG_HEADER_DIR "${MG_ENGINE_SOURCE_DIR}/include/")
+set(MG_HEADER_DIR "${MG_SOURCE_DIR}/include/")
 
 # Public headers
 set(MG_HEADERS
@@ -14,7 +14,6 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/core/mg_log.h
     ${MG_HEADER_DIR}/mg/core/mg_rotation.h
     ${MG_HEADER_DIR}/mg/core/mg_runtime_error.h
-    ${MG_HEADER_DIR}/mg/core/mg_thread_pool.h
     ${MG_HEADER_DIR}/mg/core/mg_transform.h
     ${MG_HEADER_DIR}/mg/core/mg_window.h
     ${MG_HEADER_DIR}/mg/core/mg_window_settings.h
@@ -145,9 +144,8 @@ add_library(mg_engine
 target_compile_features(mg_engine PUBLIC cxx_std_17)
 set_target_properties(mg_engine PROPERTIES CXX_EXTENSIONS OFF)
 
-if (MG_ENABLE_DEBUG_LOGGING)
-    target_compile_definitions(mg_engine PUBLIC "MG_ENABLE_DEBUG_LOGGING=1")
-endif()
+# Enable debug-logging for debug builds.
+target_compile_definitions(mg_engine PUBLIC MG_ENABLE_DEBUG_LOGGING=$<CONFIG:Debug>)
 
 # Set up compiler options for MSVC
 if(MSVC)
@@ -214,11 +212,11 @@ target_link_libraries(mg_engine
     PUBLIC
         Threads::Threads
         glm::glm
-        fmt::fmt
-        optional
-        plflib
-        function2
+        tl::optional
     PRIVATE
+        fmt::fmt
+        function2
+        plf_colony
         glad
         glfw
         zip

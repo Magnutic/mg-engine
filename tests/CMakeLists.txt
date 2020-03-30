@@ -33,7 +33,7 @@ function(add_mg_test name)
     endif()
 
     # Hack to make ctest build the tests before running them
-    add_test(ctest_build_${name} "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target ${name})
+    add_test(ctest_build_${name} "${CMAKE_COMMAND}" --build "${CMAKE_BINARY_DIR}" --target ${name} -j 8)
 
     add_test(NAME ${name}
         COMMAND "${OUTPUT_DIRECTORY}${name}"
@@ -56,6 +56,7 @@ add_mg_test(entity_test)
 add_mg_test(resource_cache_test)
 
 add_mg_test(thread_pool_test)
+target_link_libraries(thread_pool_test function2)
 
 add_mg_test(gsl_test)
 

@@ -2,6 +2,7 @@
 /build*
 /.idea
 /tool_config
+/external/mg_dependencies/*
 
 *.pl
 *.dot

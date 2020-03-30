@@ -8,6 +8,7 @@ function (add_mg_sample name)
     set_target_properties (${name} PROPERTIES
         BUILD_WITH_INSTALL_RPATH TRUE
         INSTALL_RPATH "$ORIGIN/../libs"
+        DEBUG_POSTFIX _d
     )
 
     target_link_libraries (${name} mg_engine)

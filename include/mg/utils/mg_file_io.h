@@ -24,12 +24,12 @@ namespace Mg::io {
 enum class Mode { text, binary };
 
 /** Portably creates ofstream from UTF-8 filepath, with stream exceptions enabled. Returns nullopt
- * creating failed.
+ * if creating the filestream fails.
  */
 Opt<std::ofstream> make_output_filestream(std::string_view filepath, bool overwrite, Mode mode);
 
 /** Portably creates ifstream from UTF-8 filepath, with stream exceptions enabled. Returns nullopt
- * creating failed.
+ * if creating the filestream fails.
  */
 Opt<std::ifstream> make_input_filestream(std::string_view filepath, Mode mode);
 
@@ -41,7 +41,7 @@ std::string get_all_lines(std::istream& stream);
 /** Get the next line (characters from current read position until next '\n'). */
 std::string get_line(std::istream& stream);
 
-/** Get the next token (charactes from current read position first occurrence of any of the
+/** Get the next token (from current read position until first occurrence of any of the
  * characters in delims).
  */
 std::string get_token(std::istream& stream, std::string_view delims);
@@ -50,8 +50,7 @@ char peek_char(std::istream& stream);
 
 char get_char(std::istream& stream);
 
-/** Write the supplied string to file, appending a newline if string does
- * not already end with one.
+/** Write the supplied string to file, appending a newline if string does not already end with one.
  */
 void write_line(std::ostream& stream, std::string_view string);
 

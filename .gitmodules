@@ -1,18 +1,24 @@
-[submodule "external/glm"]
-	path = external/glm
+[submodule "external/submodules/glm"]
+	path = external/submodules/glm
 	url = https://github.com/g-truc/glm
-[submodule "external/glfw"]
-	path = external/glfw
+[submodule "external/submodules/glfw"]
+	path = external/submodules/glfw
 	url = https://github.com/glfw/glfw
-[submodule "external/libzip"]
-	path = external/libzip
+[submodule "external/submodules/libzip"]
+	path = external/submodules/libzip
 	url = https://github.com/nih-at/libzip
-[submodule "external/fmt"]
-	path = external/fmt
+[submodule "external/submodules/fmt"]
+	path = external/submodules/fmt
 	url = https://github.com/fmtlib/fmt
-[submodule "external/optional"]
-	path = external/optional
+[submodule "external/submodules/optional"]
+	path = external/submodules/optional
 	url = https://github.com/tartanllama/optional
-[submodule "external/function2"]
-	path = external/function2
-	url = https://github.com/Naios/function2.git
+[submodule "external/submodules/function2"]
+	path = external/submodules/function2
+	url = https://github.com/Naios/function2
+[submodule "external/submodules/zlib"]
+	path = external/submodules/zlib
+	url = https://github.com/madler/zlib
+[submodule "external/submodules/plf_colony"]
+	path = external/submodules/plf_colony
+	url = https://github.com/mattreecebentley/plf_colony
