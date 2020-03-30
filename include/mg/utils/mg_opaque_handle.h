@@ -21,7 +21,7 @@ namespace Mg {
  */
 class OpaqueHandle {
 public:
-    enum class Value : uint64_t;
+    using Value = uint64_t;
     Value value{ 0 };
 
     OpaqueHandle() = default;
