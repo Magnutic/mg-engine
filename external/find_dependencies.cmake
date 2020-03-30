@@ -7,6 +7,8 @@ list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_LIST_DIR})
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
+set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
+
 ####################################################################################################
 # Helper functions
 ####################################################################################################
