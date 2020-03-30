@@ -213,7 +213,7 @@ target_include_directories(mg_engine
 target_link_libraries(mg_engine
     PUBLIC
         Threads::Threads
-        glm
+        glm::glm
         fmt::fmt
         optional
         plflib
