@@ -11,7 +11,6 @@
 *.swo
 *.swn
 *.session
-.clang-format
 *.vim
 
 mg_log.txt
