@@ -1,3 +1,6 @@
+# The 'cmake --install' command was introduced in 3.15 and is used by this script.
+cmake_minimum_required(VERSION 3.15)
+
 # Build and install dependencies by invoking CMake externally on them. This ad-hoc approach may be
 # an unusual method, but importantly, I can understand how it works and reason about what happens
 # unlike with more advanced dependency-management frameworks.
@@ -33,6 +36,7 @@ function(build_dependency DEPENDENCY BUILD_CONFIG)
         WORKING_DIRECTORY ${DEPENDENCY_BUILD_DIR}
     )
     # Install
+    message("  -- NOTE: installing ${DEPENDENCY} in configuration ${BUILD_CONFIG} from ${DEPENDENCY_BUILD_DIR} to ${DEPENDENCY_INSTALL_ROOT}")
     execute_process(
         COMMAND "${CMAKE_COMMAND}" --install . --config ${BUILD_CONFIG}
         WORKING_DIRECTORY ${DEPENDENCY_BUILD_DIR}
