@@ -150,7 +150,7 @@ BlurTargets make_blur_targets(Mg::VideoMode video_mode)
     return blur_targets;
 }
 
-Mg::gfx::TextureRenderTarget make_hdr_target(Mg::VideoMode mode)
+std::unique_ptr<Mg::gfx::TextureRenderTarget> make_hdr_target(Mg::VideoMode mode)
 {
     using namespace Mg::gfx;
 
@@ -428,8 +428,8 @@ void render_bloom()
     const size_t num_blur_targets = g_scene->blur_targets.hor_pass_targets.size();
 
     for (size_t mip_i = 0; mip_i < num_blur_targets; ++mip_i) {
-        TextureRenderTarget& hor_target = g_scene->blur_targets.hor_pass_targets[mip_i];
-        TextureRenderTarget& vert_target = g_scene->blur_targets.vert_pass_targets[mip_i];
+        TextureRenderTarget& hor_target = *g_scene->blur_targets.hor_pass_targets[mip_i];
+        TextureRenderTarget& vert_target = *g_scene->blur_targets.vert_pass_targets[mip_i];
 
         // Source mip-level will be [0, 0, 1, 2, 3, ...]
         auto source_mipmap = Mg::max(0, static_cast<int>(mip_i) - 1);

@@ -84,9 +84,11 @@ inline Mg::ResourceCache setup_resource_cache()
     return Mg::ResourceCache{ std::make_unique<Mg::BasicFileLoader>("../data") };
 }
 
+using RenderPassTargets = std::vector<std::unique_ptr<Mg::gfx::TextureRenderTarget>>;
+
 struct BlurTargets {
-    std::vector<Mg::gfx::TextureRenderTarget> hor_pass_targets;
-    std::vector<Mg::gfx::TextureRenderTarget> vert_pass_targets;
+    RenderPassTargets hor_pass_targets;
+    RenderPassTargets vert_pass_targets;
 
     Mg::gfx::TextureHandle hor_pass_target_texture;
     Mg::gfx::TextureHandle vert_pass_target_texture;
@@ -109,7 +111,7 @@ struct Scene {
     Mg::gfx::RenderCommandProducer render_command_producer;
     Mg::gfx::BillboardRenderList billboard_render_list;
 
-    Mg::Opt<Mg::gfx::TextureRenderTarget> hdr_target; // Optional to defer initialisation
+    std::unique_ptr<Mg::gfx::TextureRenderTarget> hdr_target;
     BlurTargets blur_targets;
 
     Mg::gfx::Camera camera;

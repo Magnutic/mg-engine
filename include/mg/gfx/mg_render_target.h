@@ -16,6 +16,7 @@
 #include "mg/utils/mg_opaque_handle.h"
 
 #include <cstdint>
+#include <memory>
 
 namespace Mg {
 class Window;
@@ -44,9 +45,6 @@ public:
 
     void update_viewport() noexcept;
 
-    MG_MAKE_NON_COPYABLE(WindowRenderTarget);
-    MG_MAKE_NON_MOVABLE(WindowRenderTarget);
-
 private:
     WindowRenderTarget() = default;
 
@@ -68,6 +66,8 @@ enum class ColourFormat {
  * outputs to the default render target.
  */
 class TextureRenderTarget : public IRenderTarget {
+    struct PrivateCtorKey {};
+
     // TODO: support multisampling, see
     // https://www.opengl.org/wiki/Framebuffer#Multisampling_Considerations
 
@@ -82,15 +82,14 @@ public:
                        a sampler later on. */
     };
 
-    static TextureRenderTarget
+    static std::unique_ptr<TextureRenderTarget>
     with_colour_target(TextureHandle colour_target, DepthType depth_type, int32_t mip_level = 0);
 
-    static TextureRenderTarget with_colour_and_depth_targets(TextureHandle colour_target,
-                                                             TextureHandle depth_target,
-                                                             int32_t mip_level = 0);
+    static std::unique_ptr<TextureRenderTarget>
+    with_colour_and_depth_targets(TextureHandle colour_target,
+                                  TextureHandle depth_target,
+                                  int32_t mip_level = 0);
 
-    MG_MAKE_DEFAULT_MOVABLE(TextureRenderTarget);
-    MG_MAKE_NON_COPYABLE(TextureRenderTarget);
     ~TextureRenderTarget();
 
     void bind() final;
@@ -100,9 +99,10 @@ public:
     TextureHandle colour_target() const noexcept { return m_colour_target; }
     TextureHandle depth_target() const noexcept { return m_depth_target; }
 
-private:
-    TextureRenderTarget() = default;
+    // Private default constructor using pass-key idiom to allow usage via make_unique.
+    TextureRenderTarget(PrivateCtorKey) {}
 
+private:
     TextureHandle m_colour_target{};
     TextureHandle m_depth_target{};
 

@@ -85,10 +85,6 @@ private:
 class ZipFileLoader final : public IFileLoader {
 public:
     explicit ZipFileLoader(std::string_view archive) : m_archive_name(archive) {}
-
-    MG_MAKE_DEFAULT_COPYABLE(ZipFileLoader);
-    MG_MAKE_DEFAULT_MOVABLE(ZipFileLoader);
-
     ~ZipFileLoader() { close_zip_archive(); }
 
     Array<FileRecord> available_files() override;

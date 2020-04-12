@@ -80,13 +80,14 @@ public:
 
 } // namespace
 
-TextureRenderTarget TextureRenderTarget::with_colour_target(TextureHandle colour_target,
-                                                            DepthType depth_type,
-                                                            int32_t mip_level)
+std::unique_ptr<TextureRenderTarget>
+TextureRenderTarget::with_colour_target(TextureHandle colour_target,
+                                        DepthType depth_type,
+                                        int32_t mip_level)
 {
-    TextureRenderTarget trt;
-    trt.m_colour_target = colour_target;
-    trt.m_mip_level = mip_level;
+    auto trt = std::make_unique<TextureRenderTarget>(PrivateCtorKey{});
+    trt->m_colour_target = colour_target;
+    trt->m_mip_level = mip_level;
 
     const Texture2D& texture = internal::dereference_texture_handle(colour_target);
 
@@ -108,25 +109,26 @@ TextureRenderTarget TextureRenderTarget::with_colour_target(TextureHandle colour
     // Attach depth/stencil renderbuffer to FBO
     switch (depth_type) {
     case DepthType::RenderBuffer:
-        trt.m_depth_buffer_id = create_depth_stencil_buffer(texture.image_size());
+        trt->m_depth_buffer_id = create_depth_stencil_buffer(texture.image_size());
         glFramebufferRenderbuffer(GL_FRAMEBUFFER,
                                   GL_DEPTH_STENCIL_ATTACHMENT,
                                   GL_RENDERBUFFER,
-                                  static_cast<uint32_t>(trt.m_depth_buffer_id.value));
+                                  static_cast<uint32_t>(trt->m_depth_buffer_id.value));
         break;
     case DepthType::None:
         break; // Do nothing
     }
 
-    trt.m_fbo_id = fbo_id;
+    trt->m_fbo_id = fbo_id;
     check_framebuffer();
 
     return trt;
 }
 
-TextureRenderTarget TextureRenderTarget::with_colour_and_depth_targets(TextureHandle colour_target,
-                                                                       TextureHandle depth_target,
-                                                                       int32_t mip_level)
+std::unique_ptr<TextureRenderTarget>
+TextureRenderTarget::with_colour_and_depth_targets(TextureHandle colour_target,
+                                                   TextureHandle depth_target,
+                                                   int32_t mip_level)
 {
     MG_ASSERT(colour_target != depth_target);
     const auto& colour_tex = internal::dereference_texture_handle(colour_target);
@@ -146,10 +148,10 @@ TextureRenderTarget TextureRenderTarget::with_colour_and_depth_targets(TextureHa
                         depth_tex.image_size().height));
     }
 
-    TextureRenderTarget trt;
-    trt.m_colour_target = colour_target;
-    trt.m_depth_target = depth_target;
-    trt.m_mip_level = mip_level;
+    auto trt = std::make_unique<TextureRenderTarget>(PrivateCtorKey{});
+    trt->m_colour_target = colour_target;
+    trt->m_depth_target = depth_target;
+    trt->m_mip_level = mip_level;
 
     // Create frame buffer object (FBO)
     GLuint fbo_id = 0;
@@ -174,7 +176,7 @@ TextureRenderTarget TextureRenderTarget::with_colour_and_depth_targets(TextureHa
                            depth_id,
                            mip_level);
 
-    trt.m_fbo_id = fbo_id;
+    trt->m_fbo_id = fbo_id;
     check_framebuffer();
 
     return trt;
