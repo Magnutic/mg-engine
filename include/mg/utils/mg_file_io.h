@@ -59,13 +59,16 @@ size_t file_size(std::istream& stream);
 
 inline size_t position(std::istream& stream)
 {
-    return static_cast<size_t>(stream.tellg());
+    return narrow<size_t>(stream.tellg());
 }
 
 inline void set_position(std::istream& stream, size_t new_position)
 {
-    stream.seekg(new_position);
+    stream.seekg(narrow<std::streamoff>(new_position));
 }
+
+// TODO C++20: see if the binary reading functions below can be made well-defined according to
+// the standard by using bit_cast.
 
 /** Read a value from the stream. It is the user's responsibility to avoid problems with alignment,
  * endianness, and padding bytes.
@@ -77,7 +80,7 @@ template<typename T> void read_binary(std::istream& stream, T& value_out)
     static_assert(std::is_trivially_copyable<T>::value, "Target type is not trivially copyable.");
     // Note: reading directly into value_out is undefined behaviour according to the standard.
     // "Correct" method would be to first read to buffer of char, then memcpy to value_out.
-    stream.read(reinterpret_cast<char*>(&value_out), sizeof(T));
+    stream.read(reinterpret_cast<char*>(&value_out), narrow<std::streamsize>(sizeof(T)));
 }
 
 /** Read an array of values from the file stream. It is the user's responsibility to avoid problems
@@ -95,7 +98,7 @@ template<typename T> size_t read_binary_array(std::istream& stream, span<T> out)
     const auto before_position = position(stream);
     // Note: reading directly into out is undefined behaviour according to the standard.
     // "Correct" method would be to first read to buffer of char, then memcpy to value_out.
-    stream.read(reinterpret_cast<char*>(out.data()), out.size_bytes());
+    stream.read(reinterpret_cast<char*>(out.data()), narrow<std::streamsize>(out.size_bytes()));
     const auto after_position = position(stream);
     return (after_position - before_position);
 }
@@ -107,7 +110,7 @@ template<typename T> size_t read_binary_array(std::istream& stream, span<T> out)
 template<typename T> void write_binary(std::ostream& stream, const T& value)
 {
     static_assert(std::is_trivially_copyable<T>::value, "Source type is not trivially copyable.");
-    stream.write(reinterpret_cast<const char*>(value), sizeof(value));
+    stream.write(reinterpret_cast<const char*>(value), narrow<std::streamsize>(sizeof(value)));
 }
 
 /** Writes an array of values to the file stream. It is the user's responsibility to avoid
@@ -120,7 +123,8 @@ template<typename T> size_t write_binary_array(std::ostream& stream, const span<
     static_assert(std::is_trivially_copyable<T>::value, "Source type is not trivially copyable.");
 
     const auto before_position = stream.tellp();
-    stream.write(reinterpret_cast<const char*>(values.data()), values.size_bytes());
+    stream.write(reinterpret_cast<const char*>(values.data()),
+                 narrow<std::streamsize>(values.size_bytes()));
     const auto after_position = stream.tellp();
     return static_cast<size_t>(after_position - before_position);
 }

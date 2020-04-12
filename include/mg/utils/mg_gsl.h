@@ -50,6 +50,12 @@ namespace Mg::gsl {
 
 // Narrowing casts
 
+// Disable sign-conversion warnings due to GCC bug that triggers warnings despite explicit casts.
+#if __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+
 /** Cast to narrower type. Equivalent to static_cast but conveys intention. */
 template<typename To, typename From> constexpr To narrow_cast(From value) noexcept
 {
@@ -64,6 +70,10 @@ template<typename To, typename From> constexpr To narrow(From value)
               "Narrowing conversion resulted in changed value.");
     return ret_val;
 }
+
+#if __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 // gsl::at(): Bounds checking subscript
 

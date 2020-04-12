@@ -45,7 +45,10 @@ LoadResourceResult MeshResource::load_resource_impl(const ResourceLoadingInput& 
     MeshHeader header;
     {
         MG_ASSERT(bytestream.size() >= sizeof(header));
-        std::memcpy(&header, bytestream.data(), sizeof(header));
+        // Redundant cast, silences GCC-9 warning "-Wclass-memaccess", which does not understand
+        // that the same aliasing rules apply to std::byte* as to uint8_t*.
+        const auto data = reinterpret_cast<const uint8_t*>(bytestream.data());
+        std::memcpy(&header, data, sizeof(header));
         bytestream = bytestream.subspan(sizeof(header));
     }
 
@@ -87,7 +90,11 @@ LoadResourceResult MeshResource::load_resource_impl(const ResourceLoadingInput& 
                 if (size > bytestream.size()) {
                     return false;
                 }
-                std::memcpy(&array_out[i], bytestream.data(), size);
+
+                // Redundant cast, silences GCC-9 warning "-Wclass-memaccess", which does not
+                // understand that the same aliasing rules apply to std::byte* as to uint8_t*.
+                const auto data = reinterpret_cast<const uint8_t*>(bytestream.data());
+                std::memcpy(&array_out[i], data, size);
                 bytestream = bytestream.subspan(stride_value);
             }
 
