@@ -17,10 +17,19 @@
 
 #ifdef _WIN32
 #    define WIN32_LEAN_AND_MEAN
-#    include "Windows.h"
+#    include <Windows.h>
+#else
+#   include <sys/types.h>
+#   include <sys/stat.h>
+#   include <unistd.h>
 #endif // _WIN32
 
 namespace Mg {
+
+namespace {
+constexpr auto msg_failed_to_read = "Could not read time stamp of file '{}'";
+constexpr auto msg_failed_to_convert = "Could not read time stamp of file '{}'";
+}
 
 // TODO C++20: Replace with using std::filesystem::last_write_time and std::chrono::clock_cast.
 
@@ -41,7 +50,7 @@ std::time_t last_write_time_t(const std::filesystem::path& file)
     const bool gotTime = GetFileTime(handle, nullptr, nullptr, &ft);
 
     if (!gotTime) {
-        const auto msg = fmt::format("Could not read time stamp of file '{}'",
+        const auto msg = fmt::format(msg_failed_to_read,
                                      file.generic_u8string());
         g_log.write_error(msg);
         throw RuntimeError{};
@@ -49,7 +58,7 @@ std::time_t last_write_time_t(const std::filesystem::path& file)
 
     SYSTEMTIME st;
     if (FileTimeToSystemTime(&ft, &st) == 0) {
-        g_log.write_error("Failed to convert file time stamp to 'time_t'.");
+        g_log.write_error(msg_failed_to_convert);
         throw RuntimeError{};
     }
 
@@ -63,10 +72,19 @@ std::time_t last_write_time_t(const std::filesystem::path& file)
     tm.tm_isdst = -1;
 
     return std::mktime(&tm);
+
 #else
-    // Not guaranteed to be portable, but works with libstdc++ (GCC).
-    const auto filetime = std::filesystem::last_write_time(file);
-    return std::chrono::system_clock::to_time_t(filetime);
+    // Try unix approach.
+    struct stat result;
+    if (stat(file.c_str(), &result) == 0) {
+        return result.st_mtime;
+    }
+    else {
+        const auto msg = fmt::format(msg_failed_to_read,
+                                     file.generic_u8string());
+        g_log.write_error(msg);
+        throw RuntimeError{};
+    }
 #endif // _WIN32
 }
 
