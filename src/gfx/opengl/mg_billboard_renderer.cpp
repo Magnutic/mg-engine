@@ -16,8 +16,8 @@
 #include "mg/utils/mg_opaque_handle.h"
 #include "mg/utils/mg_stl_helpers.h"
 
+#include "mg_gl_debug.h"
 #include "mg_opengl_shader.h"
-
 #include "mg_glad.h"
 
 #ifndef GLM_ENABLE_EXPERIMENTAL
@@ -26,8 +26,6 @@
 
 #include <glm/gtx/norm.hpp>
 #include <glm/mat4x4.hpp>
-
-#include <fmt/core.h>
 
 #include <cstddef>
 #include <string>
@@ -206,6 +204,8 @@ inline void update_buffer(BillboardRendererData& data, span<const Billboard> bil
 
 BillboardRenderer::BillboardRenderer()
 {
+    MG_GFX_DEBUG_GROUP("init BillboardRenderer")
+
     // Create and configure vertex buffer.
     GLuint vao_id = 0;
     GLuint vbo_id = 0;
@@ -241,6 +241,8 @@ BillboardRenderer::BillboardRenderer()
 
 BillboardRenderer::~BillboardRenderer()
 {
+    MG_GFX_DEBUG_GROUP("destroy BillboardRenderer")
+
     const auto vao_id = static_cast<GLuint>(impl().vao.value);
     const auto vbo_id = static_cast<GLuint>(impl().vbo.value);
     glDeleteVertexArrays(1, &vao_id);
@@ -251,6 +253,8 @@ void BillboardRenderer::render(const ICamera& camera,
                                const BillboardRenderList& render_list,
                                const Material& material)
 {
+    MG_GFX_DEBUG_GROUP("BillboardRenderer::render")
+
     if (render_list.view().empty()) {
         return;
     }
@@ -281,6 +285,7 @@ void BillboardRenderer::render(const ICamera& camera,
 
 void BillboardRenderer::drop_shaders() noexcept
 {
+    MG_GFX_DEBUG_GROUP("BillboardRenderer::drop_shaders")
     impl().pipeline_repository.drop_pipelines();
 }
 

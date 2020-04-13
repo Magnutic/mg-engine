@@ -44,6 +44,7 @@ namespace {
 // Create a depth/stencil renderbuffer appropriate for use with the given rendertarget settings
 uint32_t create_depth_stencil_buffer(ImageSize size) noexcept
 {
+    MG_GFX_DEBUG_GROUP("create_depth_stencil_buffer")
     uint32_t id = 0;
     glGenRenderbuffers(1, &id);
     glBindRenderbuffer(GL_RENDERBUFFER, id);
@@ -85,6 +86,8 @@ TextureRenderTarget::with_colour_target(TextureHandle colour_target,
                                         DepthType depth_type,
                                         int32_t mip_level)
 {
+    MG_GFX_DEBUG_GROUP("TextureRenderTarget::with_colour_target")
+
     auto trt = std::make_unique<TextureRenderTarget>(PrivateCtorKey{});
     trt->m_colour_target = colour_target;
     trt->m_mip_level = mip_level;
@@ -130,6 +133,8 @@ TextureRenderTarget::with_colour_and_depth_targets(TextureHandle colour_target,
                                                    TextureHandle depth_target,
                                                    int32_t mip_level)
 {
+    MG_GFX_DEBUG_GROUP("TextureRenderTarget::with_colour_and_depth_targets")
+
     MG_ASSERT(colour_target != depth_target);
     const auto& colour_tex = internal::dereference_texture_handle(colour_target);
     const auto& depth_tex = internal::dereference_texture_handle(depth_target);
@@ -184,6 +189,8 @@ TextureRenderTarget::with_colour_and_depth_targets(TextureHandle colour_target,
 
 TextureRenderTarget::~TextureRenderTarget()
 {
+    MG_GFX_DEBUG_GROUP("TextureRenderTarget::~TextureRenderTarget")
+
     // If this buffer is bound, revert to default render target
     GLint current_binding;
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &current_binding);
@@ -199,6 +206,8 @@ TextureRenderTarget::~TextureRenderTarget()
 
 void TextureRenderTarget::bind()
 {
+    MG_GFX_DEBUG_GROUP("TextureRenderTarget::bind")
+
     MG_ASSERT(m_fbo_id != 0);
     glBindFramebuffer(GL_FRAMEBUFFER, static_cast<GLuint>(m_fbo_id.value));
     const uint32_t buffer = GL_COLOR_ATTACHMENT0;

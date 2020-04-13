@@ -85,12 +85,11 @@ PipelineRepository make_post_process_pipeline_repository()
 
     config.on_error_shader_code = { {}, {}, FragmentShaderCode{ post_process_fs_fallback } };
 
-    config.pipeline_prototype.common_input_layout = {
-        { "MaterialParams", PipelineInputType::UniformBuffer, k_material_params_ubo_slot },
-        { "FrameBlock", PipelineInputType::UniformBuffer, k_frame_block_ubo_slot },
-        { "sampler_colour", PipelineInputType::Sampler2D, k_input_colour_texture_unit },
-        { "sampler_depth", PipelineInputType::Sampler2D, k_input_depth_texture_unit }
-    };
+    config.pipeline_prototype.common_input_layout =
+        { { "MaterialParams", PipelineInputType::UniformBuffer, k_material_params_ubo_slot },
+          { "FrameBlock", PipelineInputType::UniformBuffer, k_frame_block_ubo_slot },
+          { "sampler_colour", PipelineInputType::Sampler2D, k_input_colour_texture_unit },
+          { "sampler_depth", PipelineInputType::Sampler2D, k_input_depth_texture_unit } };
 
     config.material_params_ubo_slot = k_material_params_ubo_slot;
 
@@ -112,6 +111,8 @@ namespace {
 
 void init(PostProcessRendererData& data)
 {
+    MG_GFX_DEBUG_GROUP("init PostProcessRenderer")
+
     GLuint vao_id = 0;
     GLuint vbo_id = 0;
 
@@ -133,7 +134,7 @@ void init(PostProcessRendererData& data)
     // N.B. cannot directly use these as arguments to OpenGL functions, as they expect pointer to
     // GLuint (uint32_t) whereas these are OpaqueHandle::Value (an opaque typedef of uint64_t).
     data.vao = vao_id;
-    data.vbo = vao_id;
+    data.vbo = vbo_id;
 }
 
 void setup_render_pipeline(PostProcessRendererData& data,
@@ -146,10 +147,10 @@ void setup_render_pipeline(PostProcessRendererData& data,
     FrameBlock frame_block{ z_near, z_far };
     data.frame_block_ubo.set_data(byte_representation(frame_block));
 
-    small_vector<PipelineInputBinding, 3> input_bindings = {
-        { k_frame_block_ubo_slot, data.frame_block_ubo },
-        { k_input_colour_texture_unit, input_colour }
-    };
+    small_vector<PipelineInputBinding, 3> input_bindings = { { k_frame_block_ubo_slot,
+                                                               data.frame_block_ubo },
+                                                             { k_input_colour_texture_unit,
+                                                               input_colour } };
 
     if (input_depth.has_value()) {
         input_bindings.push_back({ k_input_depth_texture_unit, input_depth.value() });
@@ -170,16 +171,18 @@ PostProcessRenderer::PostProcessRenderer() : PImplMixin()
 
 PostProcessRenderer::~PostProcessRenderer()
 {
-    const auto vao_id = static_cast<uint32_t>(impl().vao.value);
+    MG_GFX_DEBUG_GROUP("~PostProcessRenderer")
     const auto vbo_id = static_cast<uint32_t>(impl().vbo.value);
+    const auto vao_id = static_cast<uint32_t>(impl().vao.value);
 
-    glDeleteVertexArrays(1, &vao_id);
     glDeleteBuffers(1, &vbo_id);
+    glDeleteVertexArrays(1, &vao_id);
 }
 
 void PostProcessRenderer::post_process(const Material& material,
                                        TextureHandle input_colour) noexcept
 {
+    MG_GFX_DEBUG_GROUP("PostProcessRenderer::post_process")
     setup_render_pipeline(impl(), material, input_colour, nullopt, 0.0f, 0.0f);
 
     const auto vao_id = static_cast<GLuint>(impl().vao.value);
@@ -195,6 +198,7 @@ void PostProcessRenderer::post_process(const Material& material,
                                        float z_near,
                                        float z_far) noexcept
 {
+    MG_GFX_DEBUG_GROUP("PostProcessRenderer::post_process")
     setup_render_pipeline(impl(), material, input_colour, input_depth, z_near, z_far);
 
     const auto vao_id = static_cast<GLuint>(impl().vao.value);
@@ -206,6 +210,7 @@ void PostProcessRenderer::post_process(const Material& material,
 
 void PostProcessRenderer::drop_shaders() noexcept
 {
+    MG_GFX_DEBUG_GROUP("PostProcessRenderer::drop_shaders")
     impl().pipeline_repository.drop_pipelines();
 }
 

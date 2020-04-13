@@ -6,6 +6,8 @@
 
 #include "mg/gfx/mg_pipeline_repository.h"
 
+#include "mg_gl_debug.h"
+
 #include "mg/core/mg_log.h"
 #include "mg/gfx/mg_material.h"
 #include "mg/resource_cache/mg_resource_access_guard.h"
@@ -118,6 +120,7 @@ struct ShaderCompileResult {
 
 ShaderCompileResult compile_shader(const ShaderCode& code)
 {
+    MG_GFX_DEBUG_GROUP("compile_shader")
     ShaderCompileResult result;
 
     result.opt_vs = compile_vertex_shader(code.vertex.code);
@@ -150,6 +153,8 @@ ShaderCompileResult compile_shader(const ShaderCode& code)
 
 void PipelineRepository::bind_pipeline(const Material& material, BindingContext& binding_context)
 {
+    MG_GFX_DEBUG_GROUP("PipelineRepository::bind_pipeline")
+
     const Pipeline& pipeline = get_or_make_pipeline(material);
 
     if (&pipeline != binding_context.currently_bound_pipeline) {
@@ -185,6 +190,8 @@ Pipeline& PipelineRepository::get_or_make_pipeline(const Material& material)
 
 PipelineRepository::PipelineNode& PipelineRepository::make_pipeline(const Material& material)
 {
+    MG_GFX_DEBUG_GROUP("PipelineRepository::make_pipeline")
+
     const std::string_view shader_name = material.shader().resource_id().str_view();
 
     g_log.write_message(

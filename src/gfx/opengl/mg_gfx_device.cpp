@@ -44,6 +44,8 @@ static GfxDevice* p_gfx_device = nullptr;
 
 GfxDevice::GfxDevice(Window& window)
 {
+    MG_GFX_DEBUG_GROUP("Creating GfxDevice")
+
     if (p_gfx_device != nullptr) {
         g_log.write_error("Only one Mg::gfx::GfxDevice may be constructed at a time.");
         throw RuntimeError();
@@ -94,6 +96,8 @@ GfxDevice::~GfxDevice()
 
 void GfxDevice::set_blend_mode(BlendMode blend_mode) noexcept
 {
+    MG_GFX_DEBUG_GROUP("GfxDevice::set_blend_mode")
+
     const auto col_mode = static_cast<uint32_t>(blend_mode.colour);
     const auto a_mode = static_cast<uint32_t>(blend_mode.alpha);
     const auto src_col = static_cast<uint32_t>(blend_mode.src_colour);
@@ -108,6 +112,7 @@ void GfxDevice::set_blend_mode(BlendMode blend_mode) noexcept
 /** Enable/disable depth testing and set depth testing function. */
 void GfxDevice::set_depth_test(DepthFunc func) noexcept
 {
+    MG_GFX_DEBUG_GROUP("GfxDevice::set_depth_test")
     if (func != DepthFunc::NONE) {
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(static_cast<uint32_t>(func));
@@ -119,22 +124,26 @@ void GfxDevice::set_depth_test(DepthFunc func) noexcept
 
 void GfxDevice::set_depth_write(bool on) noexcept
 {
+    MG_GFX_DEBUG_GROUP("GfxDevice::set_depth_write")
     glDepthMask(GLboolean{ on });
 }
 
 void GfxDevice::set_colour_write(bool on) noexcept
 {
+    MG_GFX_DEBUG_GROUP("GfxDevice::set_colour_write")
     glColorMask(on, on, on, on);
 }
 
 /** Set colour & alpha to use when clearing render target. */
 void GfxDevice::set_clear_colour(float red, float green, float blue, float alpha) noexcept
 {
+    MG_GFX_DEBUG_GROUP("GfxDevice::set_clear_colour")
     glClearColor(red, green, blue, alpha);
 }
 
 void GfxDevice::clear(bool colour, bool depth, bool stencil) noexcept
 {
+    MG_GFX_DEBUG_GROUP("GfxDevice::clear")
     glClear((colour ? GL_COLOR_BUFFER_BIT : 0u) | (depth ? GL_DEPTH_BUFFER_BIT : 0u) |
             (stencil ? GL_STENCIL_BUFFER_BIT : 0u));
 }
@@ -142,6 +151,7 @@ void GfxDevice::clear(bool colour, bool depth, bool stencil) noexcept
 /** Set which culling function to use. */
 void GfxDevice::set_culling(CullFunc culling) noexcept
 {
+    MG_GFX_DEBUG_GROUP("GfxDevice::set_culling")
     if (culling == CullFunc::NONE) {
         glDisable(GL_CULL_FACE);
     }
@@ -154,6 +164,7 @@ void GfxDevice::set_culling(CullFunc culling) noexcept
 /** Set whether to use blending when rendering to target. */
 void GfxDevice::set_use_blending(bool enable) noexcept
 {
+    MG_GFX_DEBUG_GROUP("GfxDevice::set_use_blending")
     if (enable) {
         glEnable(GL_BLEND);
     }
@@ -165,6 +176,7 @@ void GfxDevice::set_use_blending(bool enable) noexcept
 /** Synchronise application with graphics device. */
 void GfxDevice::synchronise() noexcept
 {
+    MG_GFX_DEBUG_GROUP("GfxDevice::synchronise")
     // N.B. I tried using fences with glClientWaitSync as I hear that is a better approach (for
     // unclear reasons) but it had nowhere near the same impact on reducing input lag as glFinish.
     glFinish();

@@ -6,6 +6,8 @@
 
 #include "mg/gfx/mg_texture_repository.h"
 
+#include "opengl/mg_gl_debug.h"
+
 #include "mg/containers/mg_flat_map.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/core/mg_log.h"
@@ -34,8 +36,8 @@ struct TextureRepositoryData {
 
 namespace {
 
-TextureRepositoryData::HandleMap::iterator
-try_insert_into_handle_map(TextureRepositoryData& data, Identifier key)
+TextureRepositoryData::HandleMap::iterator try_insert_into_handle_map(TextureRepositoryData& data,
+                                                                      Identifier key)
 {
     const auto [map_it, inserted] = data.texture_map.insert({ key, TextureHandle{} });
     if (inserted) {
@@ -66,12 +68,14 @@ TextureRepository::~TextureRepository() = default;
 
 TextureHandle TextureRepository::create(const TextureResource& resource)
 {
+    MG_GFX_DEBUG_GROUP("TextureRepository::create")
     auto generate_texture = [&resource] { return Texture2D::from_texture_resource(resource); };
     return create_texture_impl(impl(), resource.resource_id(), generate_texture);
 }
 
 TextureHandle TextureRepository::create_render_target(const RenderTargetParams& params)
 {
+    MG_GFX_DEBUG_GROUP("TextureRepository::create_render_target")
     auto generate_texture = [&params] { return Texture2D::render_target(params); };
     return create_texture_impl(impl(), params.render_target_id, generate_texture);
 }
@@ -87,6 +91,7 @@ Opt<TextureHandle> TextureRepository::get(const Identifier& texture_id) const
 
 void TextureRepository::update(const TextureResource& resource)
 {
+    MG_GFX_DEBUG_GROUP("TextureRepository::update")
     const Identifier resource_id = resource.resource_id();
     const auto it = impl().texture_map.find(resource_id);
 
@@ -106,6 +111,7 @@ void TextureRepository::update(const TextureResource& resource)
 
 void TextureRepository::destroy(TextureHandle handle)
 {
+    MG_GFX_DEBUG_GROUP("TextureRepository::destroy")
     Texture2D* ptr = &internal::dereference_texture_handle(handle);
     const auto it = impl().gpu_textures.get_iterator_from_pointer(ptr);
     const Identifier texture_id = it->id();

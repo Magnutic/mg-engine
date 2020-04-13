@@ -147,6 +147,10 @@ set_target_properties(mg_engine PROPERTIES CXX_EXTENSIONS OFF)
 # Enable debug-logging for debug builds.
 target_compile_definitions(mg_engine PUBLIC MG_ENABLE_DEBUG_LOGGING=$<CONFIG:Debug>)
 
+if(MG_ENABLE_OPENGL_DEBUG_GROUPS)
+    target_compile_definitions(mg_engine PUBLIC MG_ENABLE_OPENGL_DEBUG_GROUPS=1)
+endif()
+
 # Set up compiler options for MSVC
 if(MSVC)
     if (${MSVC_VERSION} LESS 1914)

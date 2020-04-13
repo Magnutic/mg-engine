@@ -14,6 +14,7 @@
 #include "mg/utils/mg_stl_helpers.h"
 
 #include "../mg_gpu_mesh.h"
+#include "mg_gl_debug.h"
 #include "mg_glad.h"
 
 #include <plf_colony.h>
@@ -90,7 +91,7 @@ void deleteVertexArray(const internal::GpuMesh& gpu_mesh)
         return;
     }
 
-    const auto* meshname [[maybe_unused]] = gpu_mesh.mesh_id.c_str();
+    const auto* meshname[[maybe_unused]] = gpu_mesh.mesh_id.c_str();
 
     MG_LOG_DEBUG(fmt::format("Deleting VAO {} (Mesh '{}')", vao_id, meshname));
     glDeleteVertexArrays(1, &vao_id);
@@ -177,7 +178,6 @@ private:
         const auto error_msg = fmt::format(fmt_string, mesh_id.str_view());
         g_log.write_error(error_msg);
         throw RuntimeError{};
-
     }
 
     void _clear_mesh(internal::GpuMesh& gpu_mesh);
@@ -419,11 +419,13 @@ MeshRepository::~MeshRepository() = default;
 
 MeshHandle MeshRepository::create(const MeshResource& mesh_res)
 {
+    MG_GFX_DEBUG_GROUP("MeshRepository::create")
     return impl().create(mesh_res.resource_id(), mesh_res.data_view());
 }
 
 MeshHandle MeshRepository::create(const MeshDataView& mesh_data, Identifier mesh_id)
 {
+    MG_GFX_DEBUG_GROUP("MeshRepository::create")
     return impl().create(mesh_id, mesh_data);
 }
 
@@ -434,17 +436,20 @@ Opt<MeshHandle> MeshRepository::get(Identifier mesh_id) const
 
 void MeshRepository::destroy(MeshHandle handle)
 {
+    MG_GFX_DEBUG_GROUP("MeshRepository::destroy")
     impl().destroy(handle);
 }
 
 bool MeshRepository::update(const MeshResource& mesh_res)
 {
+    MG_GFX_DEBUG_GROUP("MeshRepository::update")
     return impl().update(mesh_res.resource_id(), mesh_res.data_view());
 }
 
 MeshBuffer MeshRepository::new_mesh_buffer(VertexBufferSize vertex_buffer_size,
                                            IndexBufferSize index_buffer_size)
 {
+    MG_GFX_DEBUG_GROUP("MeshRepository::new_mesh_buffer")
     return MeshBuffer{ impl(), vertex_buffer_size, index_buffer_size };
 }
 

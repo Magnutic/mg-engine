@@ -78,6 +78,8 @@ void surface(const SurfaceInput s_in, out SurfaceParams s_out) {
 
 FrameBlock make_frame_block(const ICamera& camera, float current_time, float camera_exposure)
 {
+    MG_GFX_DEBUG_GROUP("make_frame_block")
+
     std::array<int, 4> viewport_data{};
     glGetIntegerv(GL_VIEWPORT, &viewport_data[0]);
     const glm::uvec2 viewport_size{ narrow<uint32_t>(viewport_data[2]),
@@ -192,6 +194,7 @@ MeshRenderer::~MeshRenderer() = default;
 
 void MeshRenderer::drop_shaders()
 {
+    MG_GFX_DEBUG_GROUP("Mesh_renderer::drop_shaders")
     impl().pipeline_repository.drop_pipelines();
 }
 
@@ -200,6 +203,8 @@ void MeshRenderer::render(const ICamera& cam,
                           span<const Light> lights,
                           RenderParameters params)
 {
+    MG_GFX_DEBUG_GROUP("Mesh_renderer::renderer")
+
     auto current_vao = uint32_t(-1);
     const Material* current_material = nullptr;
 
