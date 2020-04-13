@@ -157,7 +157,7 @@ set_target_properties(mg_engine PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_definitions(mg_engine PUBLIC MG_ENABLE_DEBUG_LOGGING=$<CONFIG:Debug>)
 
 if(MG_ENABLE_GFX_DEBUG_GROUPS)
-    target_compile_definitions(mg_engine PUBLIC MG_ENABLE_GFX_DEBUG_GROUPS=1)
+    target_compile_definitions(mg_engine PRIVATE MG_ENABLE_GFX_DEBUG_GROUPS=1)
 endif()
 
 # Set up compiler options for MSVC
