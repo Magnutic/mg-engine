@@ -25,10 +25,10 @@
 
 namespace Mg {
 
-struct LogData;
+class LogImpl;
 
 /** Outputs messages with different priorities to console and file. */
-class Log : PImplMixin<LogData> {
+class Log : PImplMixin<LogImpl> {
 public:
     /** Message priorities, decides which messages should be included in file
      * and console output.
@@ -38,9 +38,10 @@ public:
     explicit Log(std::string_view file_path,
                  Prio console_verbosity = Prio::Debug,
                  Prio log_file_verbosity = Prio::Debug);
+    ~Log();
 
-    Log(const Log& other) = delete;
-    Log& operator=(const Log& other) = delete;
+    MG_MAKE_NON_COPYABLE(Log);
+    MG_MAKE_NON_MOVABLE(Log);
 
     /** Set verbosity for console output */
     void set_console_verbosity(Prio prio) noexcept;
@@ -56,29 +57,26 @@ public:
     GetVerbosityReturn get_verbosity() const noexcept;
 
     /** Writes message with priority prio. */
-    void write(Prio prio, std::string_view msg) noexcept { output(prio, msg); }
+    void write(Prio prio, std::string msg);
 
     // Convenience functions:
 
     /** Writes a message with priority Error */
-    void write_error(std::string_view msg) noexcept { write(Prio::Error, msg); }
+    void write_error(std::string msg) { write(Prio::Error, std::move(msg)); }
 
     /** Writes a message with priority Warning */
-    void write_warning(std::string_view msg) noexcept { write(Prio::Warning, msg); }
+    void write_warning(std::string msg) { write(Prio::Warning, std::move(msg)); }
 
     /** Writes a message with priority Message */
-    void write_message(std::string_view msg) noexcept { write(Prio::Message, msg); }
+    void write_message(std::string msg) { write(Prio::Message, std::move(msg)); }
 
     /** Writes a message with priority Verbose */
-    void write_verbose(std::string_view msg) noexcept { write(Prio::Verbose, msg); }
+    void write_verbose(std::string msg) { write(Prio::Verbose, std::move(msg)); }
 
-    void flush() noexcept;
+    void flush();
 
     /** Get path to log output file. */
     std::string_view file_path() const noexcept;
-
-private:
-    void output(Prio prio, std::string_view str) noexcept;
 };
 
 //--------------------------------------------------------------------------------------------------

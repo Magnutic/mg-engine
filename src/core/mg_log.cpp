@@ -8,52 +8,182 @@
 
 #include "mg/mg_defs.h"
 #include "mg/utils/mg_assert.h"
-#include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_file_io.h"
+#include "mg/utils/mg_optional.h"
 
 #include <fmt/chrono.h>
 #include <fmt/format.h>
 
+#include <condition_variable>
 #include <ctime>
+#include <deque>
 #include <filesystem>
 #include <iostream>
+#include <mutex>
+#include <thread>
 
 namespace Mg {
 
 namespace fs = std::filesystem;
 
-struct LogData {
-    LogData(std::string_view file_path_,
+namespace {
+
+struct LogItem {
+    Log::Prio prio;
+    std::string message;
+};
+
+constexpr const char* get_prefix(Log::Prio prio)
+{
+    switch (prio) {
+    case Log::Prio::Error:
+        return "[ERROR]";
+        break;
+    case Log::Prio::Warning:
+        return "[WARNING]";
+        break;
+    case Log::Prio::Message:
+        return "[MESSAGE]";
+        break;
+    case Log::Prio::Verbose:
+        return "[INFO]";
+        break;
+    case Log::Prio::Debug:
+        return "[DEBUG]";
+    default:
+        MG_ASSERT(false);
+    }
+}
+
+std::string format_message(const LogItem& item, bool include_time_stamp)
+{
+    // Prepend message type
+    std::string message = fmt::format("{} {}", get_prefix(item.prio), item.message);
+
+    if (include_time_stamp) {
+        const time_t msg_time = time(nullptr);
+        const tm& t = *localtime(&msg_time);
+        message = fmt::format("{:%T}: {}", t, message);
+    }
+
+    return message;
+}
+
+} // namespace
+
+class LogImpl {
+public:
+    LogImpl(std::string_view file_path_,
             Log::Prio console_verbosity_,
             Log::Prio log_file_verbosity_)
         : console_verbosity(console_verbosity_)
         , log_file_verbosity(log_file_verbosity_)
         , file_path(file_path_)
-    {}
+        , m_writer(io::make_output_filestream(file_path, true, io::Mode::text))
+    {
+        if (!m_writer) {
+            std::cerr << "[ERROR]: "
+                      << "Failed to open log file '" << file_path << "'.";
+            return;
+        }
+
+        const time_t log_open_time = time(nullptr);
+        const tm& t = *localtime(&log_open_time);
+
+        m_writer.value() << fmt::format("Log started at {0:%F}, {0:%T}\n", t);
+
+        m_log_thread = std::thread([this] { run_loop(); });
+    }
+
+    ~LogImpl()
+    {
+        m_is_exiting = true;
+        m_queue_condvar.notify_one();
+        m_log_thread.join();
+    }
+
+    MG_MAKE_NON_COPYABLE(LogImpl);
+    MG_MAKE_NON_MOVABLE(LogImpl);
+
+    void enqueue(LogItem&& log_item)
+    {
+        if (m_is_exiting) {
+            return;
+        }
+        {
+            std::scoped_lock lock{ m_queue_mutex };
+            m_queued_messages.push_front(std::move(log_item));
+        }
+        m_queue_condvar.notify_one();
+    }
+
+    void flush()
+    {
+        std::scoped_lock lock{ m_write_mutex };
+        if (m_writer.has_value()) {
+            m_writer->flush();
+        }
+    }
 
     Log::Prio console_verbosity = Log::Prio::Verbose;
     Log::Prio log_file_verbosity = Log::Prio::Verbose;
 
     std::string file_path;
-    Opt<std::ofstream> writer;
+
+private:
+    void run_loop()
+    {
+        std::vector<LogItem> to_write;
+
+        while (!m_is_exiting) {
+            {
+                std::scoped_lock queue_lock{ m_queue_mutex };
+                std::move(m_queued_messages.begin(),
+                          m_queued_messages.end(),
+                          std::back_inserter(to_write));
+                m_queued_messages.clear();
+            }
+
+            {
+                std::scoped_lock write_lock{ m_write_mutex };
+                while (!to_write.empty()) {
+                    write_out(std::move(to_write.back()));
+                    to_write.pop_back();
+                }
+            }
+
+            std::unique_lock queue_lock{ m_queue_mutex };
+            if (m_queued_messages.empty()) {
+                m_queue_condvar.wait(queue_lock);
+            }
+        }
+    }
+
+    void write_out(LogItem&& item)
+    {
+        std::string formatted_message = format_message(item, true);
+
+        std::cout << formatted_message << '\n';
+
+        if (item.prio <= log_file_verbosity && m_writer) {
+            m_writer.value() << formatted_message << '\n';
+        }
+    }
+
+    Opt<std::ofstream> m_writer;
+    std::thread m_log_thread;
+    std::mutex m_queue_mutex;
+    std::mutex m_write_mutex;
+    std::condition_variable m_queue_condvar;
+    std::deque<LogItem> m_queued_messages;
+    bool m_is_exiting = false;
 };
 
 Log::Log(std::string_view file_path, Prio console_verbosity, Prio log_file_verbosity)
     : PImplMixin(file_path, console_verbosity, log_file_verbosity)
-{
-    impl().writer = io::make_output_filestream(file_path, true, io::Mode::text);
+{}
 
-    if (!impl().writer) {
-        std::cerr << "[ERROR]: "
-                  << "Failed to open log file '" << file_path << "'.";
-        return;
-    }
-
-    const time_t log_open_time = time(nullptr);
-    const tm& t = *localtime(&log_open_time);
-
-    *impl().writer << fmt::format("Log started at {0:%F}, {0:%T}\n", t);
-}
+Log::~Log() = default;
 
 /** Set verbosity for console output */
 void Log::set_console_verbosity(Prio prio) noexcept
@@ -72,65 +202,19 @@ Log::GetVerbosityReturn Log::get_verbosity() const noexcept
     return { impl().console_verbosity, impl().log_file_verbosity };
 }
 
-void Log::flush() noexcept
+void Log::write(Prio prio, std::string msg)
 {
-    if (impl().writer) {
-        impl().writer->flush();
-    }
+    impl().enqueue({ prio, msg });
+}
+
+void Log::flush()
+{
+    impl().flush();
 }
 
 std::string_view Log::file_path() const noexcept
 {
     return impl().file_path;
-}
-
-void Log::output(Prio prio, std::string_view str) noexcept
-{
-    // Prepend message type
-    const char* prefix = "";
-
-    switch (prio) {
-    case Prio::Error:
-        prefix = "[ERROR]";
-        break;
-    case Prio::Warning:
-        prefix = "[WARNING]";
-        break;
-    case Prio::Message:
-        prefix = "[MESSAGE]";
-        break;
-    case Prio::Verbose:
-        prefix = "[INFO]";
-        break;
-    case Prio::Debug:
-        prefix = "[DEBUG]";
-        break;
-    default:
-        MG_ASSERT_DEBUG(false);
-    }
-
-    std::string message = fmt::format("{} {}", prefix, str);
-
-    if (prio <= impl().console_verbosity) {
-        // MSVC has terrible iostream performance on cout, so use puts()
-        // (Apparently cout is unbuffered on MSVC but C functions like
-        // puts() and printf() have their own internal buffering.)
-        puts(message.c_str());
-    }
-
-    if (impl().writer && prio <= impl().log_file_verbosity) {
-        // Write timestamp to log file
-        const time_t msg_time = time(nullptr);
-        const tm& t = *localtime(&msg_time);
-
-        impl().writer.value() << fmt::format("{:%T}: {}\n", t, message);
-
-        // If message was a warning or error, make sure it's written to file
-        // immediately (perhaps a crash is imminent!)
-        if (prio <= Prio::Warning) {
-            impl().writer->flush();
-        }
-    }
 }
 
 //--------------------------------------------------------------------------------------------------
