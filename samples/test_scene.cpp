@@ -572,5 +572,12 @@ int main(int /*argc*/, char* /*argv*/[])
 {
     Scene scene;
     g_scene = &scene;
-    init();
+
+    try {
+        init();
+    }
+    catch (const std::exception& e) {
+        Mg::g_log.write_error(e.what());
+        return 1;
+    }
 }
