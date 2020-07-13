@@ -224,6 +224,7 @@ target_link_libraries(mg_engine
         glad
         glfw
         zip
+        OpenAL::OpenAL
 )
 
 # Add '_d' suffix to debug builds (i.e. (lib)mg_engine_d.{so,dll,lib})

@@ -43,8 +43,9 @@ set(MG_BUILD_DEPENDENCIES_INSTALL_DIR "${MG_BUILD_DIR}/external" CACHE STRING "W
 
 # The list of dependencies. This corresponds to submodules in external/submodules.
 # (They have to be explicitly listed since order matters due to dependencies between them.)
-list(APPEND MG_DEPENDENCIES zlib libzip fmt glfw glm function2 plf_colony optional)
-list(APPEND MG_DEPENDENCIES_TO_BUILD zlib libzip fmt glfw glm)
+list(APPEND MG_DEPENDENCIES zlib libzip fmt glfw glm function2 plf_colony optional openal-soft)
+# Dependencies that will be built and installed using CMake.
+list(APPEND MG_DEPENDENCIES_TO_BUILD zlib libzip fmt glfw glm openal-soft)
 
 set(MG_DEPENDENCIES_SOURCE_DIR "${MG_SOURCE_DIR}/external/mg_dependencies")
 set(MG_DEPENDENCIES_BUILD_DIR "${MG_BUILD_DIR}/mg_dependencies/build")

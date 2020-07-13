@@ -22,3 +22,6 @@
 [submodule "external/submodules/plf_colony"]
 	path = external/submodules/plf_colony
 	url = https://github.com/mattreecebentley/plf_colony
+[submodule "external/submodules/openal-soft"]
+	path = external/submodules/openal-soft
+	url = https://github.com/kcat/openal-soft

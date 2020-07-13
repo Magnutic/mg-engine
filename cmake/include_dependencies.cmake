@@ -101,3 +101,7 @@ add_private_header_only_library(plf_colony "${MG_DEPENDENCIES_SOURCE_DIR}/plf_co
 # This dependency may be removed if equivalents of unique_function and function_view land in the
 # standard library.
 add_private_header_only_library(function2 "${MG_DEPENDENCIES_SOURCE_DIR}/function2/include" "")
+
+# OpenAL-soft
+# Sound library
+find_package(OpenAL REQUIRED)
