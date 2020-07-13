@@ -12,12 +12,9 @@ foreach(SUBMODULE ${MG_DEPENDENCIES})
 endforeach()
 
 message("-- NOTE: Generating ${MG_DEPENDENCIES_ZIP_PATH}: zipping dependencies...")
-"${MG_DEPENDENCIES}"
-function(create_zip OUTPUT_FILE INPUT_FILES)
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar "cf" "${OUTPUT_FILE}" --format=zip -- ${INPUT_FILES}
-        WORKING_DIRECTORY "${MG_SOURCE_DIR}/external/submodules"
-    )
-endfunction()
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E tar "cf" "${MG_DEPENDENCIES_ZIP_PATH}" --format=zip -- ${MG_DEPENDENCIES}
+    WORKING_DIRECTORY "${MG_SOURCE_DIR}/external/submodules"
+)
 
 message("-- NOTE: Generating ${MG_DEPENDENCIES_ZIP_PATH}: done.")
