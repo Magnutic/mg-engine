@@ -132,7 +132,7 @@ inline Opt<TokenType> get_keyword_type(std::string_view lexeme) noexcept
         { "DEFINES_VERTEX_PREPROCESS", TokenType::DEFINES_VERTEX_PREPROCESS },
     } };
 
-    for (const auto [str, token_type] : keywords) {
+    for (const auto& [str, token_type] : keywords) {
         if (str == lexeme) {
             return token_type;
         }
