@@ -14,6 +14,7 @@
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_simple_pimpl.h"
 
+#include <string>
 #include <string_view>
 #include <utility>
 

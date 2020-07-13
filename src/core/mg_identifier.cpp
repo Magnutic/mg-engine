@@ -13,6 +13,7 @@
 
 #include <forward_list>
 #include <mutex>
+#include <string>
 #include <type_traits>
 #include <unordered_map>
 
