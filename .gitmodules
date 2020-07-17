@@ -25,3 +25,12 @@
 [submodule "external/submodules/openal-soft"]
 	path = external/submodules/openal-soft
 	url = https://github.com/kcat/openal-soft
+[submodule "external/submodules/ogg"]
+	path = external/submodules/ogg
+	url = https://github.com/xiph/ogg
+[submodule "external/submodules/vorbis"]
+	path = external/submodules/vorbis
+	url = https://github.com/xiph/vorbis
+[submodule "external/submodules/libsndfile"]
+	path = external/submodules/libsndfile
+	url = https://github.com/erikd/libsndfile

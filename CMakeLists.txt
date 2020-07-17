@@ -37,15 +37,24 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIRECTORY}../libs/")
 # Add bundled CMake modules.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-option(MG_GENERATE_DEPENDENCY_ARCHIVE "Generate mg_dependencies.zip from submodules." OFF)
-option(MG_BUILD_DEPENDENCIES "Build Mg Engine's dependencies." OFF)
+option(MG_GENERATE_DEPENDENCY_ARCHIVE "Generate mg_dependencies.zip from submodules (not usually needed, mg_dependencies.zip is bundled)." OFF)
+option(MG_BUILD_DEPENDENCIES "Build and (locally) install Mg Engine's dependencies." OFF)
 set(MG_BUILD_DEPENDENCIES_INSTALL_DIR "${MG_BUILD_DIR}/external" CACHE STRING "Where to install dependencies built when MG_BUILD_DEPENDENCIES is enabled.")
 
 # The list of dependencies. This corresponds to submodules in external/submodules.
 # (They have to be explicitly listed since order matters due to dependencies between them.)
 list(APPEND MG_DEPENDENCIES zlib libzip fmt glfw glm function2 plf_colony optional openal-soft)
+
 # Dependencies that will be built and installed using CMake.
 list(APPEND MG_DEPENDENCIES_TO_BUILD zlib libzip fmt glfw glm openal-soft)
+
+# Only build bundled libsndfile if system libsndfile is not available -- prefer system version since
+# it otherwise causes conflicts with system provided library.
+find_package(SndFile QUIET)
+if (NOT SndFile_FOUND)
+    list(APPEND MG_DEPENDENCIES ogg vorbis libsndfile)
+    list(APPEND MG_DEPENDENCIES_TO_BUILD ogg vorbis libsndfile)
+endif()
 
 set(MG_DEPENDENCIES_SOURCE_DIR "${MG_SOURCE_DIR}/external/mg_dependencies")
 set(MG_DEPENDENCIES_BUILD_DIR "${MG_BUILD_DIR}/mg_dependencies/build")
@@ -77,22 +86,12 @@ endif()
 
 # Build and install dependencies if requested (off by default).
 if(MG_BUILD_DEPENDENCIES)
-    # Some extra params passed into each build-configuration. Disable things we do not need to speed
-    # up build. This is a bit bad, since it blindly passes all parameters to all builds (and hence
-    # causes some cmake warnings), but it works.
-    set(MG_DEPENDENCY_BUILD_EXTRA_PARAMS
-        # fmt
-        "-DFMT_TEST=0"
-        # GLFW
-        "-DGLFW_BUILD_EXAMPLES=0"
-        "-DGLFW_BUILD_TESTS=0"
-        # GLM
-        "-DGLM_TEST_ENABLE=0"
-        # Libzip
-        "-DBUILD_TOOLS=0"
-        "-DBUILD_REGRESS=0"
-        "-DBUILD_EXAMPLES=0"
-    )
+    # Some extra params passed into each build-configuration.
+    set(fmt_EXTRA_BUILD_PARAMS "-DFMT_TEST=0")
+    set(glfw_EXTRA_BUILD_PARAMS "-DGLFW_BUILD_EXAMPLES=0" "-DGLFW_BUILD_TESTS=0")
+    set(glm_EXTRA_BUILD_PARAMS "-DGLM_TEST_ENABLE=0")
+    set(libzip_EXTRA_BUILD_PARAMS "-DBUILD_TOOLS=0" "-DBUILD_REGRESS=0" "-DBUILD_EXAMPLES=0")
+    set(libsndfile_EXTRA_BUILD_PARAMS "-DCMAKE_FIND_PACKAGE_PREFER_CONFIG=1" "-DBUILD_SHARED_LIBS=1" "-DBUILD_PROGRAMS=0" "-DBUILD_EXAMPLES=0" "-DBUILD_TESTING=0")
     include(cmake/build_dependencies.cmake)
 endif()
 

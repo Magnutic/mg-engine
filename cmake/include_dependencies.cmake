@@ -105,3 +105,9 @@ add_private_header_only_library(function2 "${MG_DEPENDENCIES_SOURCE_DIR}/functio
 # OpenAL-soft
 # Sound library
 find_package(OpenAL REQUIRED)
+
+# libsndfile
+# Sound file loading library
+if (NOT TARGET SndFile::sndfile)
+    find_package(SndFile REQUIRED)
+endif()

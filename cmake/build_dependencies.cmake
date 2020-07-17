@@ -18,7 +18,7 @@ function(build_dependency DEPENDENCY BUILD_CONFIG)
     set(DEPENDENCY_SOURCE_DIR "${MG_DEPENDENCIES_SOURCE_DIR}/${DEPENDENCY}")
     set(DEPENDENCY_BUILD_DIR "${MG_DEPENDENCIES_BUILD_DIR}/${BUILD_CONFIG}/${DEPENDENCY}")
 
-    message("  -- NOTE: building ${DEPENDENCY} in configuration ${BUILD_CONFIG}")
+    message("  -- NOTE: building ${DEPENDENCY} in configuration ${BUILD_CONFIG} with CMake parameters [${${DEPENDENCY}_EXTRA_BUILD_PARAMS}]")
 
     # Configure
     execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${DEPENDENCY_BUILD_DIR}")
@@ -27,7 +27,7 @@ function(build_dependency DEPENDENCY BUILD_CONFIG)
             "-DCMAKE_BUILD_TYPE=${BUILD_CONFIG}"
             "-DCMAKE_PREFIX_PATH=${DEPENDENCY_INSTALL_ROOT}"
             "-DCMAKE_INSTALL_PREFIX=${DEPENDENCY_INSTALL_ROOT}"
-            ${MG_DEPENDENCY_BUILD_EXTRA_PARAMS}
+            ${${DEPENDENCY}_EXTRA_BUILD_PARAMS}
         WORKING_DIRECTORY ${DEPENDENCY_BUILD_DIR}
     )
     # Build
