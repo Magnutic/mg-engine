@@ -38,7 +38,9 @@ static void APIENTRY ogl_error_callback_wrapper(uint32_t source,
 } // namespace
 #endif
 
+namespace {
 static GfxDevice* p_gfx_device = nullptr;
+}
 
 //--------------------------------------------------------------------------------------------------
 
@@ -183,4 +185,3 @@ void GfxDevice::synchronise() noexcept
 }
 
 } // namespace Mg::gfx
-
