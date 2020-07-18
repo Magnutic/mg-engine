@@ -4,6 +4,9 @@ set(MG_HEADER_DIR "${MG_SOURCE_DIR}/include/")
 
 # Public headers
 set(MG_HEADERS
+    ${MG_HEADER_DIR}/mg/audio/mg_audio_context.h
+    ${MG_HEADER_DIR}/mg/audio/mg_sound_buffer_handle.h
+    ${MG_HEADER_DIR}/mg/audio/mg_sound_source.h
     ${MG_HEADER_DIR}/mg/containers/mg_array.h
     ${MG_HEADER_DIR}/mg/containers/mg_flat_map.h
     ${MG_HEADER_DIR}/mg/containers/mg_slot_map.h
@@ -66,6 +69,7 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/resources/mg_raw_resource.h
     ${MG_HEADER_DIR}/mg/resources/mg_shader_resource.h
     ${MG_HEADER_DIR}/mg/resources/mg_shader_types.h
+    ${MG_HEADER_DIR}/mg/resources/mg_sound_resource.h
     ${MG_HEADER_DIR}/mg/resources/mg_text_resource.h
     ${MG_HEADER_DIR}/mg/resources/mg_texture_resource.h
     ${MG_HEADER_DIR}/mg/resources/shader_parser/mg_shader_parser.h
@@ -92,6 +96,9 @@ set(MG_HEADERS
 # Create mg_engine library
 add_library(mg_engine
     ${MG_HEADERS} # Including headers in library target allows them to show up in IDE project trees.
+    audio/mg_audio_context.cpp
+    audio/mg_sound_buffer_handle.cpp
+    audio/mg_sound_source.cpp
     core/mg_config.cpp
     core/mg_file_loader.cpp
     core/mg_identifier.cpp
@@ -132,6 +139,7 @@ add_library(mg_engine
     resources/mg_mesh_resource.cpp
     resources/mg_raw_resource.cpp
     resources/mg_shader_resource.cpp
+    resources/mg_sound_resource.cpp
     resources/mg_texture_resource.cpp
     resources/shader_parser/mg_shader_lexer.cpp
     resources/shader_parser/mg_shader_parser.cpp

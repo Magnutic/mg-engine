@@ -87,6 +87,7 @@ public:
 
     ArrayUnknownSize() = default;
 
+    /** Takes ownership of the array at ptr. */
     explicit ArrayUnknownSize(T* ptr) noexcept : Base(ptr) {}
 
     ArrayUnknownSize(ArrayUnknownSize&& p) noexcept : Base(p.m_ptr) { p.release(); }
@@ -157,6 +158,7 @@ public:
 
     Array() = default;
 
+    /** Takes ownership of the array at ptr. */
     explicit Array(T* ptr, size_t size) noexcept : Base(ptr), m_size(size) {}
 
     Array(Array&& p) noexcept : Base(p.m_ptr), m_size(p.m_size)

@@ -63,6 +63,7 @@ public:
     Identifier resource_id() const noexcept { return m_id; }
 
 protected:
+    /** Subclasses should override this to implement their resource loading logic. */
     virtual LoadResourceResult load_resource_impl(const ResourceLoadingInput& params) = 0;
 
 private:
