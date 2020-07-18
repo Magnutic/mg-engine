@@ -17,21 +17,21 @@ namespace Mg::gfx {
 const char* gl_error_string(uint32_t error_code) noexcept
 {
     switch (error_code) {
-    case 0:
+    case GL_NO_ERROR:
         return "GL_NO_ERROR";
-    case 0x0500:
+    case GL_INVALID_ENUM:
         return "GL_INVALID_ENUM";
-    case 0x0501:
+    case GL_INVALID_VALUE:
         return "GL_INVALID_VALUE";
-    case 0x0502:
+    case GL_INVALID_OPERATION:
         return "GL_INVALID_OPERATION";
-    case 0x0506:
+    case GL_INVALID_FRAMEBUFFER_OPERATION:
         return "GL_INVALID_FRAMEBUFFER_OPERATION";
-    case 0x0505:
+    case GL_OUT_OF_MEMORY:
         return "GL_OUT_OF_MEMORY";
-    case 0x0504:
+    case GL_STACK_UNDERFLOW:
         return "GL_STACK_UNDERFLOW";
-    case 0x0503:
+    case GL_STACK_OVERFLOW:
         return "GL_STACK_OVERFLOW";
     default:
         return "Unknown error code";
@@ -92,6 +92,10 @@ const char* type_string(uint32_t type) noexcept
         return "OTHER";
     case GL_DEBUG_TYPE_MARKER:
         return "MARKER";
+    case GL_DEBUG_TYPE_PUSH_GROUP:
+        return "GL_DEBUG_TYPE_PUSH_GROUP";
+    case GL_DEBUG_TYPE_POP_GROUP:
+        return "GL_DEBUG_TYPE_POP_GROUP";
     default:
         return "UNKNOWN";
     }
@@ -121,6 +125,12 @@ void ogl_error_callback(uint32_t source,
                         const char* msg,
                         const void* /* user_param */) noexcept
 {
+    // Do not every time we push or pop a debug group as it happens hundreds of times per frame,
+    // when debug groups are enabled.
+    if (type == GL_DEBUG_TYPE_PUSH_GROUP || type == GL_DEBUG_TYPE_POP_GROUP) {
+        return;
+    }
+
     auto src_str = source_string(source);
     auto type_str = type_string(type);
     auto severity_str = severity_string(severity);
