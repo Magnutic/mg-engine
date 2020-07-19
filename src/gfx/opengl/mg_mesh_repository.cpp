@@ -279,16 +279,16 @@ void MeshRepositoryImpl::_make_mesh_at(internal::GpuMesh& gpu_mesh,
         gpu_mesh.submeshes.push_back({ sm.index_range.begin, sm.index_range.amount });
     }
 
-    uint32_t vao_id = 0;
+    GLuint vao_id = 0;
     glGenVertexArrays(1, &vao_id);
-    gpu_mesh.vertex_array_id = static_cast<OpaqueHandle::Value>(vao_id);
+    gpu_mesh.vertex_array_id = vao_id;
 
     glBindVertexArray(vao_id);
 
     {
         const auto vbo_index = static_cast<uint32_t>(params.vbo_index);
         BufferObject& vbo = *m_buffer_objects.get_iterator_from_index(vbo_index);
-        gpu_mesh.vertex_buffer_id = static_cast<OpaqueHandle::Value>(vbo_index);
+        gpu_mesh.vertex_buffer_id = vbo_index;
         ++vbo.num_users;
 
         const auto vbo_data = params.mesh_data.vertices.as_bytes();
@@ -302,7 +302,7 @@ void MeshRepositoryImpl::_make_mesh_at(internal::GpuMesh& gpu_mesh,
     {
         const auto ibo_index = static_cast<uint32_t>(params.ibo_index);
         BufferObject& ibo = *m_buffer_objects.get_iterator_from_index(ibo_index);
-        gpu_mesh.index_buffer_id = static_cast<OpaqueHandle::Value>(ibo_index);
+        gpu_mesh.index_buffer_id = ibo_index;
         ++ibo.num_users;
 
         const auto ibo_data = params.mesh_data.indices.as_bytes();
