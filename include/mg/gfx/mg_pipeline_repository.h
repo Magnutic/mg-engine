@@ -10,9 +10,9 @@
 
 #pragma once
 
+#include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_pipeline.h"
 #include "mg/gfx/mg_pipeline_identifier.h"
-#include "mg/gfx/mg_shader.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/mg_defs.h"
 
@@ -24,15 +24,17 @@ class Material;
 
 namespace Mg::gfx {
 
-template<ShaderStage stage> struct ShaderStageCode {
-    ShaderStageCode() = default;
-    explicit ShaderStageCode(std::string code_) : code(std::move(code_)) {}
+struct VertexShaderCode {
     std::string code;
 };
 
-using VertexShaderCode = ShaderStageCode<ShaderStage::Vertex>;
-using GeometryShaderCode = ShaderStageCode<ShaderStage::Geometry>;
-using FragmentShaderCode = ShaderStageCode<ShaderStage::Fragment>;
+struct GeometryShaderCode {
+    std::string code;
+};
+
+struct FragmentShaderCode {
+    std::string code;
+};
 
 struct ShaderCode {
     VertexShaderCode vertex;

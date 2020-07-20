@@ -4,7 +4,7 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-/** @file mg_gpu_mesh.h
+/** @file mg_mesh.h
  * Internal mesh structure. @see MeshRepository
  */
 
@@ -12,48 +12,56 @@
 
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_identifier.h"
+#include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_mesh_data.h"
 #include "mg/gfx/mg_mesh_handle.h"
-#include "mg/utils/mg_opaque_handle.h"
 
 #include <glm/vec3.hpp>
 
 #include <cstdint>
 #include <cstring>
 
-namespace Mg::gfx::internal {
+namespace Mg::gfx {
+
+// Vertex and index buffers may be shared between multiple meshes.
+// This structure lets us keep track of how many meshes are using a given buffer, so that we can
+// know when it is safe to destroy.
+struct SharedBuffer {
+    BufferHandle handle;
+    int32_t num_users = 0;
+};
 
 using SubMeshRanges = small_vector<SubMeshRange, 4>;
 
 /** Internal mesh structure. @see MeshRepository */
-struct GpuMesh {
+struct Mesh {
     SubMeshRanges submeshes;
     glm::vec3 centre{};
     float radius{};
-    Identifier mesh_id{ "" };
+    Identifier name{ "" };
 
     // Identifier for the mesh buffers in the graphics API.
-    OpaqueHandle::Value vertex_array_id{};
-    OpaqueHandle::Value vertex_buffer_id{};
-    OpaqueHandle::Value index_buffer_id{};
+    VertexArrayHandle vertex_array;
+    SharedBuffer* vertex_buffer = nullptr;
+    SharedBuffer* index_buffer = nullptr;
 };
 
-inline MeshHandle make_mesh_handle(const GpuMesh* gpu_mesh) noexcept
+inline MeshHandle make_mesh_handle(const Mesh* mesh) noexcept
 {
     MeshHandle handle{};
-    static_assert(sizeof(handle) >= sizeof(gpu_mesh));
-    std::memcpy(&handle, &gpu_mesh, sizeof(gpu_mesh));
+    static_assert(sizeof(handle) >= sizeof(mesh));
+    std::memcpy(&handle, &mesh, sizeof(mesh));
     return handle;
 }
 
 /** Dereference mesh handle. */
-inline GpuMesh& get_gpu_mesh(MeshHandle handle) noexcept
+inline Mesh& get_mesh(MeshHandle handle) noexcept
 {
-    GpuMesh* p = nullptr;
+    Mesh* p = nullptr;
     std::memcpy(&p, &handle, sizeof(handle));
     MG_ASSERT(p != nullptr);
     return *p;
 }
 
 
-} // namespace Mg::gfx::internal
+} // namespace Mg::gfx

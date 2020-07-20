@@ -4,7 +4,7 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-#include "mg/gfx/mg_light_grid.h"
+#include "mg_light_grid.h"
 
 #include <glm/geometric.hpp>
 #include <glm/gtc/constants.hpp>
@@ -30,7 +30,7 @@ void LightGrid::calculate_delim_planes(glm::mat4 P) noexcept
     // Create delimiter plane for each horizontal/vertical step by creating the frustum projection
     // matrix for that tile column/row, and then extracting frustum planes.
     for (size_t i = 0; i < MG_LIGHT_GRID_WIDTH + 1; ++i) {
-        const float tile_bias = -scale.x + i - 1;
+        const float tile_bias = -scale.x + float(i) - 1.0f;
 
         // Frustum projection matrix columns
         const glm::vec4 col1{ P[0][0] * scale.x, 0.0f, tile_bias, 0.0f };
@@ -42,7 +42,7 @@ void LightGrid::calculate_delim_planes(glm::mat4 P) noexcept
     }
 
     for (size_t u = 0; u < MG_LIGHT_GRID_HEIGHT + 1; ++u) {
-        const float tile_bias = -scale.y + u - 1;
+        const float tile_bias = -scale.y + float(u) - 1.0f;
 
         // Frustum projection matrix columns
         const glm::vec4 col2{ 0.0f, P[1][1] * scale.y, tile_bias, 0.0f };
@@ -59,7 +59,7 @@ size_t LightGrid::extents(const glm::vec3& pos_view,
                           bool horizontal,
                           bool get_max) noexcept
 {
-    const int cmp_sign = get_max ? -1 : 1;
+    const float cmp_sign = get_max ? -1.0f : 1.0f;
 
     const auto planes = horizontal ? span{ m_delim_plane_hor } : span{ m_delim_plane_vert };
 

@@ -12,8 +12,8 @@
 #pragma once
 
 // contains config macros used in generating shader code
-#include "mg/gfx/mg_light_buffers.h"
-#include "mg/gfx/mg_light_grid.h"
+#include "../../mg_light_buffers.h"
+#include "../../mg_light_grid.h"
 #include "mg/gfx/mg_matrix_uniform_handler.h"
 
 #define MG_STRINGISE_HELPER(x) #x

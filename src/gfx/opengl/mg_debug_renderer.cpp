@@ -7,9 +7,9 @@
 #include "mg/gfx/mg_debug_renderer.h"
 
 #include "mg/core/mg_rotation.h"
-#include "mg/gfx/mg_shader.h"
 #include "mg/utils/mg_assert.h"
 
+#include "../mg_shader.h"
 #include "mg_gl_debug.h"
 #include "mg_opengl_shader.h"
 #include "mg_glad.h"
@@ -226,6 +226,29 @@ struct Sphere {
     DebugMesh mesh;
 };
 
+/** RAII-owning wrapper for shader handles. */
+template<typename ShaderHandleT> class ShaderOwner {
+public:
+    explicit ShaderOwner(ShaderHandleT handle_) noexcept : handle(std::move(handle_)) {}
+    ~ShaderOwner() { destroy_shader(handle); }
+
+    MG_MAKE_NON_COPYABLE(ShaderOwner);
+    MG_MAKE_DEFAULT_MOVABLE(ShaderOwner);
+
+    ShaderHandleT handle;
+};
+
+class ShaderProgramOwner {
+public:
+    explicit ShaderProgramOwner(opengl::ShaderProgramHandle handle_) noexcept : handle(handle_) {}
+    ~ShaderProgramOwner() { opengl::destroy_shader_program(handle); }
+
+    MG_MAKE_DEFAULT_MOVABLE(ShaderProgramOwner);
+    MG_MAKE_NON_COPYABLE(ShaderProgramOwner);
+
+    opengl::ShaderProgramHandle handle;
+};
+
 } // namespace
 
 //--------------------------------------------------------------------------------------------------
@@ -237,7 +260,7 @@ struct DebugRendererData {
         ShaderOwner vs{ compile_vertex_shader(vs_code).value() };
         ShaderOwner fs{ compile_fragment_shader(fs_code).value() };
         return ShaderProgramOwner(
-            link_shader_program(vs.shader_handle(), nullopt, fs.shader_handle()).value());
+            opengl::link_shader_program(vs.handle, nullopt, fs.handle).value());
     }();
 
     DebugMesh box = generate_mesh(box_vertices, box_indices);
@@ -247,7 +270,7 @@ struct DebugRendererData {
 DebugRenderer::DebugRenderer() = default;
 DebugRenderer::~DebugRenderer() = default;
 
-static void draw_primitive(ShaderHandle program,
+static void draw_primitive(opengl::ShaderProgramHandle program,
                            const ICamera& camera,
                            const DebugMesh& mesh,
                            const DebugRenderer::PrimitiveDrawParams& params)
@@ -287,7 +310,7 @@ static void draw_primitive(ShaderHandle program,
 
 void DebugRenderer::draw_box(const ICamera& camera, BoxDrawParams params)
 {
-    draw_primitive(impl().program.program_handle(), camera, impl().box, params);
+    draw_primitive(impl().program.handle, camera, impl().box, params);
 }
 
 void DebugRenderer::draw_ellipsoid(const ICamera& camera, EllipsoidDrawParams params)
@@ -301,7 +324,7 @@ void DebugRenderer::draw_ellipsoid(const ICamera& camera, EllipsoidDrawParams pa
     }
 
     const Sphere& sphere = it->second;
-    draw_primitive(impl().program.program_handle(), camera, sphere.mesh, params);
+    draw_primitive(impl().program.handle, camera, sphere.mesh, params);
 }
 
 } // namespace Mg::gfx

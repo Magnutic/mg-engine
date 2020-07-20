@@ -12,7 +12,7 @@
 
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_opaque_handle.h"
+#include "mg/gfx/mg_gfx_object_handles.h"
 
 // TODO: automagic double-buffering?
 
@@ -46,11 +46,11 @@ public:
 
     size_t size() const noexcept { return m_buffer_size; }
 
-    OpaqueHandle::Value gfx_api_handle() const noexcept { return m_tex_id.value; }
+    TextureHandle handle() const noexcept { return m_tex_id; }
 
 private:
-    OpaqueHandle m_tex_id;
-    OpaqueHandle m_buf_id;
+    TextureHandle m_tex_id;
+    BufferHandle m_buf_id;
     size_t m_buffer_size = 0;
 };
 

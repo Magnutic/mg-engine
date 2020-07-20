@@ -12,7 +12,7 @@
 
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_opaque_handle.h"
+#include "mg/gfx/mg_gfx_object_handles.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -40,13 +40,13 @@ public:
     /** Get the buffer's size in bytes. */
     size_t size() const noexcept { return m_size; }
 
-    OpaqueHandle::Value gfx_api_handle() const noexcept { return m_internal_ubo_id.value; }
+    UniformBufferHandle handle() const noexcept { return m_handle; }
 
     /** Get the maximum size for a UBO on the present system. */
     static size_t max_size();
 
 private:
-    OpaqueHandle m_internal_ubo_id;
+    UniformBufferHandle m_handle;
     size_t m_size = 0;
 };
 

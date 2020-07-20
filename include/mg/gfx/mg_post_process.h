@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "mg/gfx/mg_texture_handle.h"
+#include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_simple_pimpl.h"
 

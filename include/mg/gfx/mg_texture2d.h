@@ -11,10 +11,10 @@
 #pragma once
 
 #include "mg/core/mg_identifier.h"
+#include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_opaque_handle.h"
 
 #include <cstdint>
 
@@ -43,15 +43,14 @@ public:
 
     Identifier id() const noexcept { return m_id; }
 
-    OpaqueHandle::Value gfx_api_handle() const noexcept { return m_gfx_api_handle.value; }
+    TextureHandle handle() const noexcept { return m_handle; }
 
 private:
-    Texture2D(OpaqueHandle&& gfx_api_handle) noexcept : m_gfx_api_handle(std::move(gfx_api_handle))
-    {}
+    Texture2D(TextureHandle&& handle) noexcept : m_handle(std::move(handle)) {}
 
     void unload() noexcept;
 
-    OpaqueHandle m_gfx_api_handle;
+    TextureHandle m_handle;
 
     ImageSize m_image_size{};
 

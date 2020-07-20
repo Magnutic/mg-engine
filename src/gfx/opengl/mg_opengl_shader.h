@@ -5,12 +5,12 @@
 //**************************************************************************************************
 
 /** @file mg_opengl_shader.h
- * ShaderProgram, a linked set of shaders for the OpenGL back-end.
+ * OpenGL-specific interface for shaders.
  */
 
 #pragma once
 
-#include "mg/gfx/mg_shader.h"
+#include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/utils/mg_optional.h"
@@ -21,14 +21,25 @@
 /** Functionality specific to the OpenGL backend. */
 namespace Mg::gfx::opengl {
 
-void use_program(ShaderHandle program) noexcept;
+/** In the OpenGL backend, PipelineHandle refers to shader programs. */
+using ShaderProgramHandle = PipelineHandle;
+
+/** Construct a shader program by linking the supplied Shaders */
+Opt<ShaderProgramHandle> link_shader_program(VertexShaderHandle vertex_shader,
+                                             Opt<GeometryShaderHandle> geometry_shader,
+                                             Opt<FragmentShaderHandle> fragment_shader);
+
+void destroy_shader_program(ShaderProgramHandle handle) noexcept;
+
+void use_program(ShaderProgramHandle program) noexcept;
 
 enum class UniformLocation : int32_t;
 
 /** Get the location for the given uniform.
  * @return Index number if uniform_name corresponds to an active uniform, nullopt otherwise.
  */
-Opt<UniformLocation> uniform_location(ShaderHandle program, std::string_view uniform_name) noexcept;
+Opt<UniformLocation> uniform_location(PipelineHandle program,
+                                      std::string_view uniform_name) noexcept;
 
 /** Type-safe wrapper for glUniform*.
  * Supports GLM vectors and matrices, int32_t, uint32_t, and float.
@@ -48,7 +59,7 @@ void set_sampler_binding(UniformLocation location, TextureUnit unit) noexcept;
 /** Bind Shader's block with name block_name to the given uniform buffer slot.
  * @return Whether successful (i.e. block_name corresponds to an active uniform block).
  */
-[[nodiscard]] bool set_uniform_block_binding(ShaderHandle program,
+[[nodiscard]] bool set_uniform_block_binding(PipelineHandle program,
                                              std::string_view block_name,
                                              UniformBufferSlot slot) noexcept;
 

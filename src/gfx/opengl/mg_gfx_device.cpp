@@ -46,8 +46,6 @@ static GfxDevice* p_gfx_device = nullptr;
 
 GfxDevice::GfxDevice(Window& window)
 {
-    MG_GFX_DEBUG_GROUP("Creating GfxDevice")
-
     if (p_gfx_device != nullptr) {
         g_log.write_error("Only one Mg::gfx::GfxDevice may be constructed at a time.");
         throw RuntimeError();

@@ -13,7 +13,6 @@
 #include "mg/gfx/mg_pipeline_repository.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/utils/mg_gsl.h"
-#include "mg/utils/mg_opaque_handle.h"
 #include "mg/utils/mg_stl_helpers.h"
 
 #include "mg_gl_debug.h"
@@ -28,6 +27,7 @@
 #include <glm/mat4x4.hpp>
 
 #include <cstddef>
+#include <cstring>
 #include <string>
 
 namespace Mg::gfx {
@@ -178,14 +178,14 @@ struct BillboardRendererData {
     size_t vertex_buffer_size = 0;
 
     // OpenGL object ids
-    OpaqueHandle vbo;
-    OpaqueHandle vao;
+    BufferHandle vbo;
+    VertexArrayHandle vao;
 };
 
 // Update vertex buffer to match the new set of billboards
 inline void update_buffer(BillboardRendererData& data, span<const Billboard> billboards)
 {
-    glBindBuffer(GL_ARRAY_BUFFER, static_cast<GLuint>(data.vbo.value));
+    glBindBuffer(GL_ARRAY_BUFFER, narrow<GLuint>(data.vbo.get()));
 
     // According to the following source, this should help reduce synchronisation overhead.
     // TODO: investigate further.
@@ -235,16 +235,16 @@ BillboardRenderer::BillboardRenderer()
 
     glBindVertexArray(0);
 
-    impl().vao = vao_id;
-    impl().vbo = vbo_id;
+    impl().vao.set(vao_id);
+    impl().vbo.set(vbo_id);
 }
 
 BillboardRenderer::~BillboardRenderer()
 {
     MG_GFX_DEBUG_GROUP("destroy BillboardRenderer")
 
-    const auto vao_id = static_cast<GLuint>(impl().vao.value);
-    const auto vbo_id = static_cast<GLuint>(impl().vbo.value);
+    const auto vao_id = narrow<GLuint>(impl().vao.get());
+    const auto vbo_id = narrow<GLuint>(impl().vbo.get());
     glDeleteVertexArrays(1, &vao_id);
     glDeleteBuffers(1, &vbo_id);
 }
@@ -279,7 +279,7 @@ void BillboardRenderer::render(const ICamera& camera,
 
     impl().pipeline_repository.bind_pipeline(material, binding_context);
 
-    glBindVertexArray(static_cast<GLuint>(impl().vao.value));
+    glBindVertexArray(narrow<GLuint>(impl().vao.get()));
     glDrawArrays(GL_POINTS, 0, narrow<GLint>(billboards.size()));
 }
 

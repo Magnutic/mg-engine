@@ -13,10 +13,8 @@
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/gfx/mg_blend_modes.h"
-#include "mg/gfx/mg_shader.h"
-#include "mg/gfx/mg_texture_handle.h"
+#include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/utils/mg_gsl.h"
-#include "mg/utils/mg_opaque_handle.h"
 #include "mg/utils/mg_optional.h"
 
 #include <cstdint>
@@ -102,13 +100,13 @@ public:
     const PipelinePrototype& prototype() const noexcept { return *m_p_prototype; };
 
 private:
-    Pipeline(OpaqueHandle internal_handle,
+    Pipeline(PipelineHandle internal_handle,
              const PipelinePrototype& prototype,
              const PipelineInputLayout& additional_input_layout);
 
     friend class PipelinePrototypeContext;
 
-    OpaqueHandle m_internal_handle;
+    PipelineHandle m_handle;
     const PipelinePrototype* m_p_prototype;
 };
 
@@ -138,16 +136,16 @@ public:
     PipelineInputBinding(uint32_t location, TextureHandle texture);
     PipelineInputBinding(uint32_t location, const UniformBuffer& ubo);
 
-    OpaqueHandle::Value gfx_resource_handle() const { return m_gfx_resource_handle; }
+    GfxObjectHandleValue gfx_resource_handle() const { return m_gfx_resource_handle; }
     PipelineInputType type() const { return m_type; }
     uint32_t location() const { return m_location; }
 
 private:
-    PipelineInputBinding(uint32_t location, OpaqueHandle::Value handle, PipelineInputType type)
+    PipelineInputBinding(uint32_t location, GfxObjectHandleValue handle, PipelineInputType type)
         : m_gfx_resource_handle(handle), m_type(type), m_location(location)
     {}
 
-    OpaqueHandle::Value m_gfx_resource_handle;
+    GfxObjectHandleValue m_gfx_resource_handle;
     PipelineInputType m_type;
     uint32_t m_location;
 };

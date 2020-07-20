@@ -27,10 +27,10 @@ namespace Mg::gfx {
 struct TextureRepositoryData {
     // Texture node storage -- stores elements largely contiguously, but does not invalidate
     // pointers.
-    plf::colony<Texture2D> gpu_textures;
+    plf::colony<Texture2D> textures;
 
     // Used for looking up a texture node by identifier.
-    using HandleMap = FlatMap<Identifier, TextureHandle, Identifier::HashCompare>;
+    using HandleMap = FlatMap<Identifier, Texture2D*, Identifier::HashCompare>;
     HandleMap texture_map;
 };
 
@@ -39,7 +39,7 @@ namespace {
 TextureRepositoryData::HandleMap::iterator try_insert_into_handle_map(TextureRepositoryData& data,
                                                                       Identifier key)
 {
-    const auto [map_it, inserted] = data.texture_map.insert({ key, TextureHandle{} });
+    const auto [map_it, inserted] = data.texture_map.insert({ key, nullptr });
     if (inserted) {
         return map_it;
     }
@@ -49,16 +49,15 @@ TextureRepositoryData::HandleMap::iterator try_insert_into_handle_map(TextureRep
     throw RuntimeError{};
 }
 
-TextureHandle create_texture_impl(TextureRepositoryData& data,
-                                  const Identifier id,
-                                  std::function<Texture2D()> texture_create_func)
+Texture2D* create_texture_impl(TextureRepositoryData& data,
+                               const Identifier id,
+                               std::function<Texture2D()> texture_create_func)
 {
     const auto handle_map_it = try_insert_into_handle_map(data, id);
-    const auto texture_it = data.gpu_textures.emplace(texture_create_func());
-    Texture2D* ptr = std::addressof(*texture_it);
-    const TextureHandle handle = internal::make_texture_handle(ptr);
-    handle_map_it->second = handle;
-    return handle;
+    const auto texture_it = data.textures.emplace(texture_create_func());
+    Texture2D* ptr = &*texture_it;
+    handle_map_it->second = ptr;
+    return ptr;
 }
 
 } // namespace
@@ -66,25 +65,25 @@ TextureHandle create_texture_impl(TextureRepositoryData& data,
 TextureRepository::TextureRepository() = default;
 TextureRepository::~TextureRepository() = default;
 
-TextureHandle TextureRepository::create(const TextureResource& resource)
+Texture2D* TextureRepository::create(const TextureResource& resource)
 {
     MG_GFX_DEBUG_GROUP("TextureRepository::create")
     auto generate_texture = [&resource] { return Texture2D::from_texture_resource(resource); };
     return create_texture_impl(impl(), resource.resource_id(), generate_texture);
 }
 
-TextureHandle TextureRepository::create_render_target(const RenderTargetParams& params)
+Texture2D* TextureRepository::create_render_target(const RenderTargetParams& params)
 {
     MG_GFX_DEBUG_GROUP("TextureRepository::create_render_target")
     auto generate_texture = [&params] { return Texture2D::render_target(params); };
     return create_texture_impl(impl(), params.render_target_id, generate_texture);
 }
 
-Opt<TextureHandle> TextureRepository::get(const Identifier& texture_id) const
+Texture2D* TextureRepository::get(const Identifier& texture_id) const
 {
     const auto it = impl().texture_map.find(texture_id);
     if (it == impl().texture_map.end()) {
-        return nullopt;
+        return nullptr;
     }
     return it->second;
 }
@@ -100,7 +99,7 @@ void TextureRepository::update(const TextureResource& resource)
         return;
     }
 
-    Texture2D& old_texture = internal::dereference_texture_handle(it->second);
+    Texture2D& old_texture = *it->second;
     Texture2D new_texture = Texture2D::from_texture_resource(resource);
 
     std::swap(old_texture, new_texture);
@@ -109,13 +108,12 @@ void TextureRepository::update(const TextureResource& resource)
         fmt::format("TextureRepository::update(): Updated {}", resource_id.str_view()));
 }
 
-void TextureRepository::destroy(TextureHandle handle)
+void TextureRepository::destroy(Texture2D* texture)
 {
     MG_GFX_DEBUG_GROUP("TextureRepository::destroy")
-    Texture2D* ptr = &internal::dereference_texture_handle(handle);
-    const auto it = impl().gpu_textures.get_iterator_from_pointer(ptr);
+    const auto it = impl().textures.get_iterator_from_pointer(texture);
     const Identifier texture_id = it->id();
-    impl().gpu_textures.erase(it);
+    impl().textures.erase(it);
     impl().texture_map.erase(texture_id);
 }
 

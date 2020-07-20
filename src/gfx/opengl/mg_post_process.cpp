@@ -11,7 +11,6 @@
 #include "mg/gfx/mg_pipeline_repository.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/mg_defs.h"
-#include "mg/utils/mg_opaque_handle.h"
 
 #include "mg_gl_debug.h"
 #include "mg_glad.h"
@@ -85,11 +84,12 @@ PipelineRepository make_post_process_pipeline_repository()
 
     config.on_error_shader_code = { {}, {}, FragmentShaderCode{ post_process_fs_fallback } };
 
-    config.pipeline_prototype.common_input_layout =
-        { { "MaterialParams", PipelineInputType::UniformBuffer, k_material_params_ubo_slot },
-          { "FrameBlock", PipelineInputType::UniformBuffer, k_frame_block_ubo_slot },
-          { "sampler_colour", PipelineInputType::Sampler2D, k_input_colour_texture_unit },
-          { "sampler_depth", PipelineInputType::Sampler2D, k_input_depth_texture_unit } };
+    config.pipeline_prototype.common_input_layout = {
+        { "MaterialParams", PipelineInputType::UniformBuffer, k_material_params_ubo_slot },
+        { "FrameBlock", PipelineInputType::UniformBuffer, k_frame_block_ubo_slot },
+        { "sampler_colour", PipelineInputType::Sampler2D, k_input_colour_texture_unit },
+        { "sampler_depth", PipelineInputType::Sampler2D, k_input_depth_texture_unit }
+    };
 
     config.material_params_ubo_slot = k_material_params_ubo_slot;
 
@@ -103,8 +103,8 @@ struct PostProcessRendererData {
 
     UniformBuffer frame_block_ubo{ sizeof(FrameBlock) };
 
-    OpaqueHandle vbo;
-    OpaqueHandle vao;
+    BufferHandle vbo;
+    VertexArrayHandle vao;
 };
 
 namespace {
@@ -131,10 +131,8 @@ void init(PostProcessRendererData& data)
     glBindVertexArray(0);
     MG_CHECK_GL_ERROR();
 
-    // N.B. cannot directly use these as arguments to OpenGL functions, as they expect pointer to
-    // GLuint (uint32_t) whereas these are OpaqueHandle::Value (an opaque typedef of uint64_t).
-    data.vao = vao_id;
-    data.vbo = vbo_id;
+    data.vao.set(vao_id);
+    data.vbo.set(vbo_id);
 }
 
 void setup_render_pipeline(PostProcessRendererData& data,
@@ -147,10 +145,10 @@ void setup_render_pipeline(PostProcessRendererData& data,
     FrameBlock frame_block{ z_near, z_far };
     data.frame_block_ubo.set_data(byte_representation(frame_block));
 
-    small_vector<PipelineInputBinding, 3> input_bindings = { { k_frame_block_ubo_slot,
-                                                               data.frame_block_ubo },
-                                                             { k_input_colour_texture_unit,
-                                                               input_colour } };
+    small_vector<PipelineInputBinding, 3> input_bindings = {
+        { k_frame_block_ubo_slot, data.frame_block_ubo },
+        { k_input_colour_texture_unit, input_colour }
+    };
 
     if (input_depth.has_value()) {
         input_bindings.push_back({ k_input_depth_texture_unit, input_depth.value() });
@@ -172,8 +170,8 @@ PostProcessRenderer::PostProcessRenderer() : PImplMixin()
 PostProcessRenderer::~PostProcessRenderer()
 {
     MG_GFX_DEBUG_GROUP("~PostProcessRenderer")
-    const auto vbo_id = static_cast<uint32_t>(impl().vbo.value);
-    const auto vao_id = static_cast<uint32_t>(impl().vao.value);
+    const auto vbo_id = narrow<GLuint>(impl().vbo.get());
+    const auto vao_id = narrow<GLuint>(impl().vao.get());
 
     glDeleteBuffers(1, &vbo_id);
     glDeleteVertexArrays(1, &vao_id);
@@ -185,7 +183,7 @@ void PostProcessRenderer::post_process(const Material& material,
     MG_GFX_DEBUG_GROUP("PostProcessRenderer::post_process")
     setup_render_pipeline(impl(), material, input_colour, nullopt, 0.0f, 0.0f);
 
-    const auto vao_id = static_cast<GLuint>(impl().vao.value);
+    const auto vao_id = narrow<GLuint>(impl().vao.get());
 
     glBindVertexArray(vao_id);
     glDrawArrays(GL_TRIANGLES, 0, 12);
@@ -201,7 +199,7 @@ void PostProcessRenderer::post_process(const Material& material,
     MG_GFX_DEBUG_GROUP("PostProcessRenderer::post_process")
     setup_render_pipeline(impl(), material, input_colour, input_depth, z_near, z_far);
 
-    const auto vao_id = static_cast<GLuint>(impl().vao.value);
+    const auto vao_id = narrow<GLuint>(impl().vao.get());
 
     glBindVertexArray(vao_id);
     glDrawArrays(GL_TRIANGLES, 0, 12);

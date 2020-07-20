@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "mg/resources/mg_shader_types.h"
+#include "mg/resources/mg_shader_resource.h"
 #include "mg/utils/mg_gsl.h"
 
 #include <string>

@@ -10,10 +10,10 @@
 
 #pragma once
 
-#include "mg/gfx/mg_texture_handle.h"
+#include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_opaque_handle.h"
+#include "mg/utils/mg_simple_pimpl.h"
 
 #include <cstdint>
 #include <memory>
@@ -60,12 +60,14 @@ enum class ColourFormat {
     RGBA32F = 0x8814, /** Red/Green/Blue/Alpha channels of 32-bit float */
 };
 
+struct TextureRenderTargetData;
+
 /** Texture render targets are useful for various steps in the rendering pipeline, as they may be
  * used as texture input into later steps. A typical example is rendering to a HDR
  * TextureRenderTarget and then using the output as a texture into a post-processing step which
  * outputs to the default render target.
  */
-class TextureRenderTarget : public IRenderTarget {
+class TextureRenderTarget : public IRenderTarget, private PImplMixin<TextureRenderTargetData> {
     struct PrivateCtorKey {};
 
     // TODO: support multisampling, see
@@ -83,34 +85,23 @@ public:
     };
 
     static std::unique_ptr<TextureRenderTarget>
-    with_colour_target(TextureHandle colour_target, DepthType depth_type, int32_t mip_level = 0);
+    with_colour_target(Texture2D* colour_target, DepthType depth_type, int32_t mip_level = 0);
 
     static std::unique_ptr<TextureRenderTarget>
-    with_colour_and_depth_targets(TextureHandle colour_target,
-                                  TextureHandle depth_target,
+    with_colour_and_depth_targets(Texture2D* colour_target,
+                                  Texture2D* depth_target,
                                   int32_t mip_level = 0);
 
+    // Private default constructor using pass-key idiom to allow usage via make_unique.
+    TextureRenderTarget(PrivateCtorKey);
     ~TextureRenderTarget();
 
     void bind() final;
 
     ImageSize image_size() const final;
 
-    TextureHandle colour_target() const noexcept { return m_colour_target; }
-    TextureHandle depth_target() const noexcept { return m_depth_target; }
-
-    // Private default constructor using pass-key idiom to allow usage via make_unique.
-    TextureRenderTarget(PrivateCtorKey) {}
-
-private:
-    TextureHandle m_colour_target{};
-    TextureHandle m_depth_target{};
-
-    OpaqueHandle m_depth_buffer_id; // Depth renderbuffer which may be used if
-                                    // depth target texture is not present.
-    OpaqueHandle m_fbo_id;
-
-    int32_t m_mip_level = 0;
+    Texture2D* colour_target() const noexcept;
+    Texture2D* depth_target() const noexcept;
 };
 
 } // namespace Mg::gfx

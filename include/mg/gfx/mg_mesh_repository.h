@@ -81,9 +81,9 @@ public:
     MeshHandle create(const MeshResource& mesh_res);
 
     /** Create a new mesh using the given mesh data. */
-    MeshHandle create(const MeshDataView& mesh_data, Identifier mesh_id);
+    MeshHandle create(const MeshDataView& mesh_data, Identifier name);
 
-    Opt<MeshHandle> get(Identifier mesh_id) const;
+    Opt<MeshHandle> get(Identifier name) const;
 
     /** Destroy the given mesh. Unless another mesh uses the same GPU data buffers (as would be the
      * case if meshes were created using the same `Mg::gfx::MeshBuffer`), then the GPU buffers will

@@ -11,9 +11,9 @@
 #pragma once
 
 #include "mg/containers/mg_array.h"
+#include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_mesh_handle.h"
 #include "mg/utils/mg_gsl.h"
-#include "mg/utils/mg_opaque_handle.h"
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
@@ -38,7 +38,7 @@ struct RenderCommand {
     glm::vec3 centre{};
     float radius{};
 
-    OpaqueHandle::Value vertex_array_id{};
+    VertexArrayHandle vertex_array{};
 
     uint32_t begin{};
     uint32_t amount{};

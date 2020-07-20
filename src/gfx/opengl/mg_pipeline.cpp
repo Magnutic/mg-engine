@@ -6,6 +6,7 @@
 
 #include "mg/gfx/mg_pipeline.h"
 
+#include "../mg_shader.h"
 #include "mg_gl_debug.h"
 #include "mg_opengl_shader.h"
 #include "mg_glad.h"
@@ -71,77 +72,73 @@ void PipelinePrototypeContext::bind_pipeline(const Pipeline& pipeline) const
     MG_ASSERT(&pipeline.prototype() == &bound_prototype &&
               "Pipeline bound to a PipelinePrototypeContext for a different PipelinePrototype.");
 
-    const ShaderHandle shader_handle{ pipeline.m_internal_handle.value };
-    opengl::use_program(shader_handle);
+    opengl::use_program(pipeline.m_handle);
 
     MG_CHECK_GL_ERROR();
 }
 
 Opt<Pipeline> Pipeline::make(const CreationParameters& params)
 {
-    Opt<ShaderHandle> opt_program_handle = link_shader_program(params.vertex_shader,
-                                                               params.geometry_shader,
-                                                               params.fragment_shader);
+    // Note: in OpenGL, PipelineHandle refers to shader programs.
+    Opt<PipelineHandle> opt_program_handle = opengl::link_shader_program(params.vertex_shader,
+                                                                         params.geometry_shader,
+                                                                         params.fragment_shader);
 
-    auto make_pipeline = [&params](ShaderHandle sh) {
-        return Pipeline(OpaqueHandle{ static_cast<uint64_t>(sh) },
-                        params.prototype,
-                        params.additional_input_layout);
+    auto make_pipeline = [&params](PipelineHandle ph) {
+        return Pipeline(ph, params.prototype, params.additional_input_layout);
     };
 
     return opt_program_handle.map(make_pipeline);
 }
 
-Pipeline::Pipeline(OpaqueHandle internal_handle,
-                   const PipelinePrototype& prototype,
-                   const PipelineInputLayout& additional_input_layout)
-    : m_internal_handle(std::move(internal_handle)), m_p_prototype(&prototype)
+namespace {
+void set_input_location(const opengl::ShaderProgramHandle& shader_handle,
+                        const PipelineInputLocation& input_location)
 {
     using namespace opengl;
-    const ShaderHandle shader_handle{ m_internal_handle.value };
-    use_program(shader_handle);
 
-    const auto set_input_location = [shader_handle](const PipelineInputLocation& input_location) {
-        auto&& [input_name, type, location] = input_location;
-        auto name = input_name.str_view();
+    const auto& [input_name, type, location] = input_location;
+    const auto name = input_name.str_view();
 
-        const auto log_error = [&] {
-            g_log.write_message(fmt::format(
-                "Mg::Pipeline::Pipeline: no such active uniform '{}' (shader-program id {}).",
-                name,
-                static_cast<uint32_t>(shader_handle)));
-        };
+    bool success = false;
 
-        bool success = false;
-
-        switch (type) {
-        case PipelineInputType::BufferTexture:
-            [[fallthrough]];
-
-        case PipelineInputType::Sampler2D: {
-            auto uniform_index = uniform_location(shader_handle, name);
-            if (uniform_index) {
-                set_sampler_binding(*uniform_index, TextureUnit{ location });
-            }
-            success = uniform_index.has_value();
-            break;
+    switch (type) {
+    case PipelineInputType::BufferTexture:
+        [[fallthrough]];
+    case PipelineInputType::Sampler2D: {
+        const Opt<UniformLocation> uniform_index = opengl::uniform_location(shader_handle, name);
+        if (uniform_index) {
+            set_sampler_binding(*uniform_index, TextureUnit{ location });
         }
+        success = uniform_index.has_value();
+        break;
+    }
+    case PipelineInputType::UniformBuffer:
+        success = set_uniform_block_binding(shader_handle, name, UniformBufferSlot{ location });
+        break;
+    }
 
-        case PipelineInputType::UniformBuffer:
-            success = set_uniform_block_binding(shader_handle, name, UniformBufferSlot{ location });
-            break;
-        }
+    if (!success) {
+        g_log.write_message(fmt::format(
+            "Mg::Pipeline::Pipeline: no such active uniform '{}' (shader-program id {}).",
+            name,
+            static_cast<uint32_t>(shader_handle.get())));
+    }
+}
+} // namespace
 
-        if (!success) {
-            log_error();
-        }
-    };
+Pipeline::Pipeline(PipelineHandle internal_handle,
+                   const PipelinePrototype& prototype,
+                   const PipelineInputLayout& additional_input_layout)
+    : m_handle(internal_handle), m_p_prototype(&prototype)
+{
+    opengl::use_program(internal_handle);
 
     for (auto&& location : prototype.common_input_layout) {
-        set_input_location(location);
+        set_input_location(internal_handle, location);
     }
     for (auto&& location : additional_input_layout) {
-        set_input_location(location);
+        set_input_location(internal_handle, location);
     }
 
     MG_CHECK_GL_ERROR();
@@ -149,23 +146,21 @@ Pipeline::Pipeline(OpaqueHandle internal_handle,
 
 Pipeline::~Pipeline()
 {
-    destroy_shader_program(ShaderHandle{ m_internal_handle.value });
+    opengl::destroy_shader_program(m_handle);
 }
 
 PipelineInputBinding::PipelineInputBinding(uint32_t location, const BufferTexture& buffer_texture)
     : PipelineInputBinding(location,
-                           buffer_texture.gfx_api_handle(),
+                           buffer_texture.handle().get(),
                            PipelineInputType::BufferTexture)
 {}
 
 PipelineInputBinding::PipelineInputBinding(uint32_t location, TextureHandle texture)
-    : PipelineInputBinding(location,
-                           internal::dereference_texture_handle(texture).gfx_api_handle(),
-                           PipelineInputType::Sampler2D)
+    : PipelineInputBinding(location, texture.get(), PipelineInputType::Sampler2D)
 {}
 
 PipelineInputBinding::PipelineInputBinding(uint32_t location, const UniformBuffer& ubo)
-    : PipelineInputBinding(location, ubo.gfx_api_handle(), PipelineInputType::UniformBuffer)
+    : PipelineInputBinding(location, ubo.handle().get(), PipelineInputType::UniformBuffer)
 {}
 
 void bind_pipeline_input_set(span<const PipelineInputBinding> bindings)

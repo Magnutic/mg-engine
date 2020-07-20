@@ -196,18 +196,16 @@ BufferTexture::BufferTexture(Type type, size_t buffer_size) : m_buffer_size(buff
     // Associate data buffer to texture object
     glTexBuffer(GL_TEXTURE_BUFFER, buffer_texture_type_to_gl_enums(type), buf_id);
 
-    // N.B. cannot directly use these as arguments to OpenGL functions, as they expect pointer to
-    // GLuint (uint32_t) whereas these are OpaqueHandle::Value (an opaque typedef of uint64_t).
-    m_tex_id = tex_id;
-    m_buf_id = buf_id;
+    m_tex_id.set(tex_id);
+    m_buf_id.set(buf_id);
 
     MG_CHECK_GL_ERROR();
 }
 
 BufferTexture::~BufferTexture()
 {
-    const auto buf_id = static_cast<GLuint>(m_buf_id.value);
-    const auto tex_id = static_cast<GLuint>(m_tex_id.value);
+    const auto buf_id = narrow<GLuint>(m_buf_id.get());
+    const auto tex_id = narrow<GLuint>(m_tex_id.get());
     glDeleteTextures(1, &tex_id);
     glDeleteBuffers(1, &buf_id);
 }
@@ -215,7 +213,7 @@ BufferTexture::~BufferTexture()
 void BufferTexture::set_data(span<const std::byte> data) noexcept
 {
     // Update data buffer contents
-    const auto buf_id = static_cast<GLuint>(m_buf_id.value);
+    const auto buf_id = narrow<GLuint>(m_buf_id.get());
     glBindBuffer(GL_TEXTURE_BUFFER, buf_id);
     glBufferSubData(GL_TEXTURE_BUFFER, 0, narrow<GLsizeiptr>(data.size_bytes()), data.data());
 }

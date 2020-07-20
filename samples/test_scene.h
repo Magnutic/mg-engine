@@ -65,7 +65,6 @@ private:
     std::unique_ptr<Mg::Window> m_window;
     Mg::gfx::GfxDevice m_gfx_device;
     std::chrono::time_point<Clock> m_start_time;
-
 };
 
 struct Model {
@@ -90,8 +89,8 @@ struct BlurTargets {
     RenderPassTargets hor_pass_targets;
     RenderPassTargets vert_pass_targets;
 
-    Mg::gfx::TextureHandle hor_pass_target_texture;
-    Mg::gfx::TextureHandle vert_pass_target_texture;
+    Mg::gfx::Texture2D* hor_pass_target_texture;
+    Mg::gfx::Texture2D* vert_pass_target_texture;
 };
 
 struct Scene {

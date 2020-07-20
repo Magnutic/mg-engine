@@ -10,41 +10,42 @@
 
 #pragma once
 
-#include "mg/gfx/mg_texture_handle.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_simple_pimpl.h"
 
 namespace Mg {
 class Identifier;
 class TextureResource;
-}
+} // namespace Mg
 
 namespace Mg::gfx {
+
+class Texture2D;
 
 struct RenderTargetParams; // Defined in mg_texture_related_types.h
 struct TextureRepositoryData;
 
 class TextureRepository : PImplMixin<TextureRepositoryData> {
 public:
-    MG_MAKE_NON_MOVABLE(TextureRepository);
-    MG_MAKE_NON_COPYABLE(TextureRepository);
-
     TextureRepository();
     ~TextureRepository();
 
-    TextureHandle create(const TextureResource& resource);
+    MG_MAKE_NON_MOVABLE(TextureRepository);
+    MG_MAKE_NON_COPYABLE(TextureRepository);
 
-    TextureHandle create_render_target(const RenderTargetParams& params);
+    Texture2D* create(const TextureResource& resource);
 
-    Opt<TextureHandle> get(const Identifier& texture_id) const;
+    Texture2D* create_render_target(const RenderTargetParams& params);
+
+    // Null if there is no texture with that id.
+    Texture2D* get(const Identifier& texture_id) const;
 
     /** Update the texture that was created from resource.
      * N.B. used for hot-reloading of texture files.
      */
     void update(const TextureResource& resource);
 
-    void destroy(TextureHandle handle);
+    void destroy(Texture2D* texture);
 };
 
 } // namespace Mg::gfx

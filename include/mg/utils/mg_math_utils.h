@@ -22,37 +22,33 @@
 
 namespace Mg {
 
-
-////////////////////////////////////////////////////////////////////////////////
-//                                Math utilities                              //
-////////////////////////////////////////////////////////////////////////////////
-
 namespace detail {
 
-template<typename UNumT> constexpr int sign(UNumT val, std::false_type /* is_signed */)
+template<typename UnsignedT>
+constexpr UnsignedT sign(UnsignedT val, std::false_type /* is_signed */)
 {
-    return UNumT{ 0u } < val;
+    return UnsignedT{} < val;
 }
 
-template<typename SNumT> constexpr int sign(SNumT val, std::true_type /* is_signed */)
+template<typename SignedT> constexpr SignedT sign(SignedT val, std::true_type /* is_signed */)
 {
-    return (SNumT{ 0 } < val) - (val < SNumT{ 0 });
+    return (SignedT{} < val) - (val < SignedT{});
 }
 
 } // namespace detail
 
 /** Returns the sign of val. */
-template<typename NumT> constexpr int sign(NumT val)
+template<typename NumT> constexpr NumT sign(NumT val)
 {
-    static_assert(std::is_arithmetic<NumT>::value, "sign() cannot be used on non-arithmetic type");
+    static_assert(std::is_arithmetic_v<NumT>, "sign() cannot be used on non-arithmetic type");
     return detail::sign(val, std::is_signed<NumT>{});
 }
 
 /** Round to nearest integer. */
 template<typename IntT, typename FloatT> constexpr IntT round(FloatT value)
 {
-    static_assert(std::is_integral<IntT>::value, "IntT must be integral type.");
-    static_assert(std::is_floating_point<FloatT>::value, "FloatT must be floating point type.");
+    static_assert(std::is_integral_v<IntT>, "IntT must be integral type.");
+    static_assert(std::is_floating_point_v<FloatT>, "FloatT must be floating point type.");
     return gsl::narrow<IntT>(std::lround(value));
 }
 

@@ -6,10 +6,11 @@
 
 #include "mg_opengl_shader.h"
 
+#include "../mg_shader.h"
 #include "mg_gl_debug.h"
 #include "mg_glad.h"
 
-#include "mg/gfx/mg_shader.h"
+#include "mg/core/mg_log.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_optional.h"
 
@@ -26,13 +27,75 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
+#include <fmt/core.h>
+
 namespace Mg::gfx::opengl {
+
+//--------------------------------------------------------------------------------------------------
+// Helpers for ShaderProgram implementation
+//--------------------------------------------------------------------------------------------------
 
 namespace {
 
-GLuint gl_program_id(ShaderHandle program) noexcept
+// Links the given shader program, returning whether linking was successful.
+bool link_program(GLuint program_id)
 {
-    return static_cast<GLuint>(program);
+    glLinkProgram(program_id);
+
+    // Check the program for linking errors.
+    int32_t result = GL_FALSE, log_length;
+    glGetProgramiv(program_id, GL_LINK_STATUS, &result);
+    glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &log_length);
+
+    std::string msg;
+
+    // If there was log message, write to log.
+    if (log_length > 1) {
+        msg.resize(narrow<size_t>(log_length));
+        glGetProgramInfoLog(program_id, log_length, nullptr, msg.data());
+
+        const auto msg_type = result != 0 ? Log::Prio::Message : Log::Prio::Error;
+        g_log.write(msg_type, fmt::format("Shader linking message: {}", msg));
+    }
+
+    // Check whether shaders linked successfully.
+    if (result == GL_FALSE) {
+        glDeleteProgram(program_id);
+        return false;
+    }
+
+    return true;
+}
+
+/** RAII guard for attaching shader object to shader program. */
+class ShaderAttachGuard {
+public:
+    ShaderAttachGuard(GLuint program, Opt<GLuint> shader) noexcept
+        : _program(program), _shader(shader)
+    {
+        if (_shader.has_value()) {
+            glAttachShader(_program, _shader.value());
+        }
+    }
+
+    MG_MAKE_NON_COPYABLE(ShaderAttachGuard);
+    MG_MAKE_NON_MOVABLE(ShaderAttachGuard);
+
+    ~ShaderAttachGuard()
+    {
+        if (_shader.has_value()) {
+            glDetachShader(_program, _shader.value());
+        }
+    }
+
+private:
+    GLuint _program{};
+    Opt<GLuint> _shader{};
+};
+
+GLuint gl_program_id(ShaderProgramHandle program) noexcept
+{
+    return static_cast<GLuint>(program.get());
 }
 
 Opt<GLuint> uniform_block_index(GLuint ubo_id, std::string_view block_name) noexcept
@@ -43,19 +106,47 @@ Opt<GLuint> uniform_block_index(GLuint ubo_id, std::string_view block_name) noex
 
 } // namespace
 
-void use_program(ShaderHandle program) noexcept
+//--------------------------------------------------------------------------------------------------
+// ShaderProgram implementation
+//--------------------------------------------------------------------------------------------------
+
+Opt<ShaderProgramHandle> link_shader_program(VertexShaderHandle vertex_shader,
+                                        Opt<GeometryShaderHandle> geometry_shader,
+                                        Opt<FragmentShaderHandle> fragment_shader)
+{
+    auto get_and_narrow = [](const auto handle) { return narrow<GLuint>(handle.get()); };
+
+    const GLuint program_id = glCreateProgram();
+    ShaderAttachGuard guard_vs(program_id, narrow<GLuint>(vertex_shader.get()));
+    ShaderAttachGuard guard_gs(program_id, geometry_shader.map(get_and_narrow));
+    ShaderAttachGuard guard_fs(program_id, fragment_shader.map(get_and_narrow));
+
+    if (link_program(program_id)) {
+        return ShaderProgramHandle(program_id);
+    }
+
+    return nullopt;
+}
+
+void destroy_shader_program(ShaderProgramHandle handle) noexcept
+{
+    glDeleteProgram(narrow<GLuint>(handle.get()));
+}
+
+void use_program(ShaderProgramHandle program) noexcept
 {
     MG_ASSERT(gl_program_id(program) != 0);
     glUseProgram(gl_program_id(program));
 }
 
-Opt<UniformLocation> uniform_location(ShaderHandle program, std::string_view uniform_name) noexcept
+Opt<UniformLocation> uniform_location(ShaderProgramHandle program,
+                                      std::string_view uniform_name) noexcept
 {
     auto location = glGetUniformLocation(gl_program_id(program), std::string(uniform_name).c_str());
     return location == -1 ? nullopt : make_opt(UniformLocation{ location });
 }
 
-bool set_uniform_block_binding(ShaderHandle program,
+bool set_uniform_block_binding(ShaderProgramHandle program,
                                std::string_view block_name,
                                UniformBufferSlot slot) noexcept
 {

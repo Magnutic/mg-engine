@@ -6,17 +6,19 @@
 
 #include "mg/gfx/mg_mesh_renderer.h"
 
+#include "mg_gl_debug.h"
+#include "mg_glad.h"
+
+#include "../mg_light_buffers.h"
+#include "../mg_light_grid.h"
+
 #include "mg/gfx/mg_camera.h"
-#include "mg/gfx/mg_light_buffers.h"
-#include "mg/gfx/mg_light_grid.h"
+#include "mg/gfx/mg_light.h"
 #include "mg/gfx/mg_material.h"
 #include "mg/gfx/mg_matrix_uniform_handler.h"
 #include "mg/gfx/mg_mesh_data.h"
 #include "mg/gfx/mg_pipeline_repository.h"
 #include "mg/gfx/mg_render_command_list.h"
-
-#include "mg_gl_debug.h"
-#include "mg_glad.h"
 
 #include "shader_code/mg_mesh_renderer_shader_framework.h"
 
@@ -227,7 +229,7 @@ void MeshRenderer::render(const ICamera& cam,
         MG_ASSERT_DEBUG(command.material != nullptr);
 
         // Set up mesh state
-        const auto vao_id = static_cast<uint32_t>(command.vertex_array_id);
+        const auto vao_id = static_cast<GLuint>(command.vertex_array.get());
 
         if (current_vao != vao_id) {
             current_vao = vao_id;

@@ -2,6 +2,7 @@
 
 #include <mg/core/mg_config.h>
 #include <mg/core/mg_log.h>
+#include <mg/gfx/mg_texture2d.h>
 #include <mg/resources/mg_mesh_resource.h>
 #include <mg/resources/mg_shader_resource.h>
 #include <mg/resources/mg_texture_resource.h>
@@ -35,14 +36,14 @@ Mg::gfx::MeshHandle load_mesh(Mg::Identifier file)
     return g_scene->mesh_repository.create(*access);
 }
 
-Mg::gfx::TextureHandle load_texture(std::string_view file)
+Mg::gfx::Texture2D* load_texture(std::string_view file)
 {
     const auto file_name = fmt::format("textures/{}.dds", file);
     const auto id = Mg::Identifier::from_runtime_string(file_name);
 
-    const Mg::Opt<Mg::gfx::TextureHandle> texture_handle = g_scene->texture_repository.get(id);
-    if (texture_handle.has_value()) {
-        return texture_handle.value();
+    Mg::gfx::Texture2D* texture = g_scene->texture_repository.get(id);
+    if (texture) {
+        return texture;
     }
 
     const Mg::ResourceAccessGuard access = g_scene->resource_cache
@@ -60,9 +61,9 @@ Mg::gfx::Material* load_material(Mg::Identifier file, std::initializer_list<Mg::
         m->set_option(o, true);
     }
 
-    m->set_sampler("sampler_diffuse", load_texture(fmt::format("{}_da", file.c_str())));
-    m->set_sampler("sampler_normal", load_texture(fmt::format("{}_n", file.c_str())));
-    m->set_sampler("sampler_specular", load_texture(fmt::format("{}_s", file.c_str())));
+    m->set_sampler("sampler_diffuse", load_texture(fmt::format("{}_da", file.c_str()))->handle());
+    m->set_sampler("sampler_normal", load_texture(fmt::format("{}_n", file.c_str()))->handle());
+    m->set_sampler("sampler_specular", load_texture(fmt::format("{}_s", file.c_str()))->handle());
 
     return m;
 }
@@ -163,12 +164,12 @@ std::unique_ptr<Mg::gfx::TextureRenderTarget> make_hdr_target(Mg::VideoMode mode
 
     TextureRepository& tex_repo = g_scene->texture_repository;
 
-    TextureHandle colour_target = tex_repo.create_render_target(params);
+    Texture2D* colour_target = tex_repo.create_render_target(params);
 
     params.render_target_id = "HDR.depth";
     params.texture_format = RenderTargetParams::Format::Depth24;
 
-    TextureHandle depth_target = tex_repo.create_render_target(params);
+    Texture2D* depth_target = tex_repo.create_render_target(params);
 
     return TextureRenderTarget::with_colour_and_depth_targets(colour_target, depth_target);
 }
@@ -270,7 +271,8 @@ void init()
         auto handle = g_scene->resource_cache.resource_handle<Mg::ShaderResource>(
             "shaders/simple_billboard.mgshader");
         g_scene->billboard_material = material_repo.create("billboard_material", handle);
-        g_scene->billboard_material->set_sampler("sampler_diffuse", load_texture("light_t"));
+        g_scene->billboard_material->set_sampler("sampler_diffuse",
+                                                 load_texture("light_t")->handle());
     }
 
     // Create a lot of random lights
@@ -437,19 +439,19 @@ void render_bloom()
 
         // For the first mip level, we read from the HDR target, then from previous blur-target mip
         // level.
-        TextureHandle blur_input = (mip_i == 0) ? g_scene->hdr_target->colour_target()
+        Texture2D* blur_input = (mip_i == 0) ? g_scene->hdr_target->colour_target()
                                                 : vert_target.colour_target();
 
         // Render gaussian blur in separate horizontal and vertical passes.
         for (size_t u = 0; u < k_num_blur_iterations; ++u) {
             hor_target.bind();
             g_scene->blur_material->set_option("HORIZONTAL", true);
-            g_scene->post_renderer.post_process(*g_scene->blur_material, blur_input);
+            g_scene->post_renderer.post_process(*g_scene->blur_material, blur_input->handle());
 
             vert_target.bind();
             g_scene->blur_material->set_option("HORIZONTAL", false);
             g_scene->post_renderer.post_process(*g_scene->blur_material,
-                                                hor_target.colour_target());
+                                                hor_target.colour_target()->handle());
             blur_input = vert_target.colour_target();
 
             source_mipmap = static_cast<int>(mip_i);
@@ -523,9 +525,9 @@ void render_scene(double lerp_factor)
         gfx.clear();
 
         g_scene->bloom_material->set_sampler("sampler_bloom",
-                                             g_scene->blur_targets.vert_pass_target_texture);
+                                             g_scene->blur_targets.vert_pass_target_texture->handle());
         g_scene->post_renderer.post_process(*g_scene->bloom_material,
-                                            g_scene->hdr_target->colour_target());
+                                            g_scene->hdr_target->colour_target()->handle());
     }
 
     // Debug geometry

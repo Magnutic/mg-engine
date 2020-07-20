@@ -9,7 +9,6 @@
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/resource_cache/mg_resource_access_guard.h"
-#include "mg/resources/mg_shader_resource.h"
 #include "mg/utils/mg_stl_helpers.h"
 
 #include <fmt/core.h>
@@ -40,7 +39,7 @@ size_t num_elems_for_param_type(shader::ParameterType type) noexcept
 } // namespace
 
 Material::Material(Identifier material_id, ResourceHandle<ShaderResource> shader)
-    : m_id(material_id), m_shader(shader)
+    : m_shader(shader), m_id(material_id)
 {
     ResourceAccessGuard shader_resource_access(shader);
 

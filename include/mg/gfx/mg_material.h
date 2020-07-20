@@ -12,10 +12,10 @@
 
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_identifier.h"
+#include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_pipeline_identifier.h"
-#include "mg/gfx/mg_texture_handle.h"
 #include "mg/resource_cache/mg_resource_handle.h"
-#include "mg/resources/mg_shader_types.h"
+#include "mg/resources/mg_shader_resource.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_optional.h"
 
@@ -26,10 +26,6 @@
 
 #include <cstdint>
 #include <string>
-
-namespace Mg {
-class ShaderResource;
-} // namespace Mg
 
 namespace Mg::gfx {
 
@@ -113,18 +109,6 @@ public:
     }
 
 private:
-    void _set_parameter_impl(Identifier name,
-                             span<const std::byte> param_value,
-                             shader::ParameterType param_type);
-
-private:
-    Samplers m_samplers{};
-    Parameters m_params{};
-    Options m_options{};
-
-    // State of Options represented as a bit-field
-    uint32_t m_option_flags{};
-
     struct ParamsBuffer {
         uint8_t buffer[defs::k_material_parameters_buffer_size];
 
@@ -132,10 +116,22 @@ private:
         size_t size() const noexcept { return defs::k_material_parameters_buffer_size; }
     };
 
+    void _set_parameter_impl(Identifier name,
+                             span<const std::byte> param_value,
+                             shader::ParameterType param_type);
+
+    Samplers m_samplers{};
+    Parameters m_params{};
+    Options m_options{};
+
     ParamsBuffer m_parameter_data{};
 
-    Identifier m_id{ "" };
     ResourceHandle<ShaderResource> m_shader;
+
+    // State of Options represented as a bit-field
+    uint32_t m_option_flags{};
+
+    Identifier m_id{ "" };
 };
 
 } // namespace Mg::gfx

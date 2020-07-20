@@ -102,7 +102,7 @@ GlTextureInfo gl_texture_info_for_render_target(const RenderTargetParams& params
 }
 
 // Create a texture appropriate for use with the given rendertarget settings
-OpaqueHandle generate_gl_render_target_texture(const RenderTargetParams& params)
+TextureHandle generate_gl_render_target_texture(const RenderTargetParams& params)
 {
     uint32_t id;
     glGenTextures(1, &id);
@@ -155,7 +155,7 @@ OpaqueHandle generate_gl_render_target_texture(const RenderTargetParams& params)
     MG_CHECK_GL_ERROR();
 
     glBindTexture(GL_TEXTURE_2D, 0);
-    return OpaqueHandle{ id };
+    return TextureHandle{ id };
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -341,7 +341,7 @@ void upload_uncompressed_mip(bool preallocated,
     MG_CHECK_GL_ERROR();
 }
 
-OpaqueHandle generate_gl_texture_from(const TextureResource& texture_resource) noexcept
+TextureHandle generate_gl_texture_from(const TextureResource& texture_resource) noexcept
 {
     const GlTextureInfo info = gl_texture_info(texture_resource);
 
@@ -378,7 +378,7 @@ OpaqueHandle generate_gl_texture_from(const TextureResource& texture_resource) n
     set_sampling_params(texture_resource.settings());
     MG_CHECK_GL_ERROR();
 
-    return OpaqueHandle{ texture_id };
+    return TextureHandle{ texture_id };
 }
 
 } // namespace
@@ -412,7 +412,7 @@ Texture2D Texture2D::render_target(const RenderTargetParams& params)
 // Unload texture from OpenGL context
 void Texture2D::unload() noexcept
 {
-    auto tex_id = static_cast<uint32_t>(gfx_api_handle());
+    const auto tex_id = narrow<GLuint>(m_handle.get());
 
     if (tex_id != 0) {
         glDeleteTextures(1, &tex_id);

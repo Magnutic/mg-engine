@@ -4,11 +4,14 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-#include "mg/gfx/mg_light_buffers.h"
+#include "mg_light_buffers.h"
+
+#include "mg_light_grid.h"
 
 #include "mg/core/mg_log.h"
 #include "mg/gfx/mg_camera.h"
-#include "mg/gfx/mg_light_grid.h"
+#include "mg/mg_defs.h"
+#include <mg/gfx/mg_light.h>
 
 #ifndef GLM_ENABLE_EXPERIMENTAL
 #    define GLM_ENABLE_EXPERIMENTAL
@@ -30,8 +33,10 @@ namespace {
 
 using LightBlock = std::array<Light, MG_MAX_NUM_LIGHTS>;
 
+constexpr size_t k_max_ubo_size = 16 * 1024;
+
 // Keep below lower bound on max UBO size. TODO: split into multiple UBOs if too large?
-static_assert(sizeof(LightBlock) <= 16 * 1024);
+static_assert(sizeof(LightBlock) <= k_max_ubo_size);
 
 constexpr BufferTexture::Type light_index_tex_type()
 {

@@ -6,6 +6,7 @@
 
 #include "mg/gfx/mg_pipeline_repository.h"
 
+#include "../mg_shader.h"
 #include "mg_gl_debug.h"
 
 #include "mg/core/mg_log.h"

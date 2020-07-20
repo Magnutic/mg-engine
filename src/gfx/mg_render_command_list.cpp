@@ -12,7 +12,7 @@
 #include "mg/gfx/mg_frustum.h"
 #include "mg/utils/mg_stl_helpers.h"
 
-#include "mg_gpu_mesh.h"
+#include "mg_mesh.h"
 
 #include <fmt/core.h>
 
@@ -41,18 +41,18 @@ Material* material_for_submesh(span<const MaterialBinding> material_bindings, si
 
 } // namespace
 
-void RenderCommandProducer::add_mesh(MeshHandle mesh,
+void RenderCommandProducer::add_mesh(MeshHandle mesh_handle,
                                      const Transform& transform,
                                      span<const MaterialBinding> material_bindings)
 {
-    const internal::GpuMesh& gpu_mesh = internal::get_gpu_mesh(mesh);
+    const Mesh& mesh = get_mesh(mesh_handle);
 
-    for (size_t i = 0; i < gpu_mesh.submeshes.size(); ++i) {
+    for (size_t i = 0; i < mesh.submeshes.size(); ++i) {
         const auto* material = material_for_submesh(material_bindings, i);
 
         if (material == nullptr) {
             auto msg = fmt::format("No material specified for mesh '{}', submesh {}. Skipping.",
-                                   gpu_mesh.mesh_id.c_str(),
+                                   mesh.name.c_str(),
                                    i);
             g_log.write_warning(msg);
             continue;
@@ -63,12 +63,12 @@ void RenderCommandProducer::add_mesh(MeshHandle mesh,
             m_m_transform_matrices_unsorted.emplace_back(transform.matrix());
             RenderCommand& command = m_render_commands_unsorted.emplace_back();
 
-            command.vertex_array_id = gpu_mesh.vertex_array_id;
-            command.centre = gpu_mesh.centre;
-            command.begin = gpu_mesh.submeshes[i].begin;
-            command.amount = gpu_mesh.submeshes[i].amount;
+            command.vertex_array = mesh.vertex_array;
+            command.centre = mesh.centre;
+            command.begin = mesh.submeshes[i].begin;
+            command.amount = mesh.submeshes[i].amount;
             command.material = material;
-            command.radius = gpu_mesh.radius;
+            command.radius = mesh.radius;
         }
     }
 }
@@ -115,7 +115,7 @@ uint32_t view_depth_in_cm(const ICamera& camera, glm::vec3 pos) noexcept
 uint32_t render_command_fingerpint(const RenderCommand& command) noexcept
 {
     // TODO: This fingerprint is not much good
-    const uint32_t mesh_fingerprint = static_cast<uint8_t>(command.vertex_array_id);
+    const uint32_t mesh_fingerprint = static_cast<uint8_t>(command.vertex_array.get());
     uintptr_t mat_ptr_as_int{};
     std::memcpy(&mat_ptr_as_int, &command.material, sizeof(command.material));
     const auto material_fingerprint = narrow_cast<uint32_t>(mat_ptr_as_int);

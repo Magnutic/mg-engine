@@ -30,8 +30,6 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/gfx/mg_frustum.h
     ${MG_HEADER_DIR}/mg/gfx/mg_gfx_device.h
     ${MG_HEADER_DIR}/mg/gfx/mg_light.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_light_buffers.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_light_grid.h
     ${MG_HEADER_DIR}/mg/gfx/mg_material.h
     ${MG_HEADER_DIR}/mg/gfx/mg_material_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_matrix_uniform_handler.h
@@ -45,9 +43,7 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/gfx/mg_post_process.h
     ${MG_HEADER_DIR}/mg/gfx/mg_render_command_list.h
     ${MG_HEADER_DIR}/mg/gfx/mg_render_target.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_shader.h
     ${MG_HEADER_DIR}/mg/gfx/mg_texture2d.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_texture_handle.h
     ${MG_HEADER_DIR}/mg/gfx/mg_texture_related_types.h
     ${MG_HEADER_DIR}/mg/gfx/mg_texture_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_uniform_buffer.h
@@ -68,7 +64,6 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/resources/mg_mesh_resource.h
     ${MG_HEADER_DIR}/mg/resources/mg_raw_resource.h
     ${MG_HEADER_DIR}/mg/resources/mg_shader_resource.h
-    ${MG_HEADER_DIR}/mg/resources/mg_shader_types.h
     ${MG_HEADER_DIR}/mg/resources/mg_sound_resource.h
     ${MG_HEADER_DIR}/mg/resources/mg_text_resource.h
     ${MG_HEADER_DIR}/mg/resources/mg_texture_resource.h
@@ -84,7 +79,6 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/utils/mg_math_utils.h
     ${MG_HEADER_DIR}/mg/utils/mg_max.h
     ${MG_HEADER_DIR}/mg/utils/mg_observer.h
-    ${MG_HEADER_DIR}/mg/utils/mg_opaque_handle.h
     ${MG_HEADER_DIR}/mg/utils/mg_optional.h
     ${MG_HEADER_DIR}/mg/utils/mg_ptr_math.h
     ${MG_HEADER_DIR}/mg/utils/mg_simple_pimpl.h
@@ -108,11 +102,15 @@ add_library(mg_engine
     core/mg_window_settings.cpp
     ecs/mg_entity.cpp
     gfx/mg_light_buffers.cpp
+    gfx/mg_light_buffers.h
     gfx/mg_light_grid.cpp
+    gfx/mg_light_grid.h
     gfx/mg_material.cpp
     gfx/mg_material_repository.cpp
     gfx/mg_matrix_uniform_handler.cpp
+    gfx/mg_mesh.h
     gfx/mg_render_command_list.cpp
+    gfx/mg_shader.h
     gfx/mg_texture_repository.cpp
     gfx/opengl/mg_billboard_renderer.cpp
     gfx/opengl/mg_buffer_texture.cpp

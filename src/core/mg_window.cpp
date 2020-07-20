@@ -228,7 +228,11 @@ Window::Window(ConstructKey /*unused*/, GLFWwindow* handle, WindowSettings setti
 Window::~Window()
 {
     g_log.write_message(fmt::format("Closing window at {}", static_cast<void*>(this)));
+
     glfwDestroyWindow(m_window);
+    glfwTerminate();
+
+    g_log.write_message("GLFW terminated.");
 }
 
 VideoMode Window::frame_buffer_size() const noexcept

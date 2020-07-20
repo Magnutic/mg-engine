@@ -11,12 +11,11 @@
 #pragma once
 
 #include "mg/gfx/mg_buffer_texture.h"
-#include "mg/gfx/mg_light.h"
 #include "mg/gfx/mg_uniform_buffer.h"
-#include "mg/mg_defs.h"
 
 namespace Mg::gfx {
 
+struct Light;
 class ICamera;
 class LightGrid;
 
