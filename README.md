@@ -13,10 +13,10 @@ Since this is a hobby project, there is no clear roadmap -- I just work on what 
 Mg Engine is developed and tested on
 
 * Linux
-	* GCC 8.1.0
-	* Clang 6.0
+	* GCC 10.1.0
+	* Clang 10.0
 * Windows
-	* Visual Studio 2017 (N.B. build only occasionally tested / fixed)
+	* Visual Studio 2019 (N.B. build only occasionally tested / fixed)
 
 Mg Engine might or might not work on other platforms or compilers.
 
