@@ -7,10 +7,10 @@
 #include "mg_opengl_shader.h"
 
 #include "../mg_shader.h"
-#include "mg_gl_debug.h"
 #include "mg_glad.h"
 
 #include "mg/core/mg_log.h"
+#include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_optional.h"
 
@@ -111,9 +111,11 @@ Opt<GLuint> uniform_block_index(GLuint ubo_id, std::string_view block_name) noex
 //--------------------------------------------------------------------------------------------------
 
 Opt<ShaderProgramHandle> link_shader_program(VertexShaderHandle vertex_shader,
-                                        Opt<GeometryShaderHandle> geometry_shader,
-                                        Opt<FragmentShaderHandle> fragment_shader)
+                                             Opt<GeometryShaderHandle> geometry_shader,
+                                             Opt<FragmentShaderHandle> fragment_shader)
 {
+    MG_GFX_DEBUG_GROUP("link_shader_program");
+
     auto get_and_narrow = [](const auto handle) { return narrow<GLuint>(handle.get()); };
 
     const GLuint program_id = glCreateProgram();

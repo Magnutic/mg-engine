@@ -9,13 +9,13 @@
 #include "mg/containers/mg_flat_map.h"
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
+#include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/resources/mg_mesh_resource.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_stl_helpers.h"
 
 #include "../mg_mesh.h"
-#include "mg_gl_debug.h"
 #include "mg_glad.h"
 
 #include <plf_colony.h>

@@ -6,12 +6,11 @@
 
 #include "mg/gfx/mg_texture_repository.h"
 
-#include "opengl/mg_gl_debug.h"
-
 #include "mg/containers/mg_flat_map.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
+#include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_texture2d.h"
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/resources/mg_texture_resource.h"

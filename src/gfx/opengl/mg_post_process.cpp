@@ -8,6 +8,7 @@
 
 #include "mg/containers/mg_small_vector.h"
 #include "mg/gfx/mg_material.h"
+#include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_pipeline_repository.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/mg_defs.h"

@@ -6,6 +6,7 @@
 
 #include "mg/gfx/mg_buffer_texture.h"
 
+#include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 
@@ -181,6 +182,8 @@ uint32_t buffer_texture_type_to_gl_enums(BufferTexture::Type type)
 
 BufferTexture::BufferTexture(Type type, size_t buffer_size) : m_buffer_size(buffer_size)
 {
+    MG_GFX_DEBUG_GROUP("BufferTexture::BufferTexture");
+
     GLuint buf_id = 0;
     GLuint tex_id = 0;
 
@@ -204,6 +207,8 @@ BufferTexture::BufferTexture(Type type, size_t buffer_size) : m_buffer_size(buff
 
 BufferTexture::~BufferTexture()
 {
+    MG_GFX_DEBUG_GROUP("BufferTexture::~BufferTexture");
+
     const auto buf_id = narrow<GLuint>(m_buf_id.get());
     const auto tex_id = narrow<GLuint>(m_tex_id.get());
     glDeleteTextures(1, &tex_id);
@@ -212,6 +217,8 @@ BufferTexture::~BufferTexture()
 
 void BufferTexture::set_data(span<const std::byte> data) noexcept
 {
+    MG_GFX_DEBUG_GROUP("BufferTexture::set_data");
+
     // Update data buffer contents
     const auto buf_id = narrow<GLuint>(m_buf_id.get());
     glBindBuffer(GL_TEXTURE_BUFFER, buf_id);

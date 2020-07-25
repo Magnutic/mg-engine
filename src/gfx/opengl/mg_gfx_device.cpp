@@ -9,6 +9,7 @@
 #include "mg_gl_debug.h"
 #include "mg_glad.h"
 
+#include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/core/mg_window.h"

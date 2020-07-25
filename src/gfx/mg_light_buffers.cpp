@@ -10,6 +10,7 @@
 
 #include "mg/core/mg_log.h"
 #include "mg/gfx/mg_camera.h"
+#include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/mg_defs.h"
 #include <mg/gfx/mg_light.h>
 
@@ -107,6 +108,8 @@ void update_light_data(LightBuffers& light_data_out,
                        const ICamera& cam,
                        LightGrid& grid)
 {
+    MG_GFX_DEBUG_GROUP("update_light_data(LightBuffers&, ...)");
+
     std::memset(clusters.get(), 0, sizeof(ClusterArray)); // Reset cluster data
 
     grid.calculate_delim_planes(cam.proj_matrix());

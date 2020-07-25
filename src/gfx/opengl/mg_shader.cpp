@@ -6,7 +6,6 @@
 
 #include "../mg_shader.h"
 
-#include "mg_gl_debug.h"
 #include "mg_glad.h"
 
 #include "mg/core/mg_log.h"

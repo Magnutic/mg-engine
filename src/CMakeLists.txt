@@ -28,6 +28,7 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/gfx/mg_camera.h
     ${MG_HEADER_DIR}/mg/gfx/mg_debug_renderer.h
     ${MG_HEADER_DIR}/mg/gfx/mg_frustum.h
+    ${MG_HEADER_DIR}/mg/gfx/mg_gfx_debug_group.h
     ${MG_HEADER_DIR}/mg/gfx/mg_gfx_device.h
     ${MG_HEADER_DIR}/mg/gfx/mg_light.h
     ${MG_HEADER_DIR}/mg/gfx/mg_material.h
@@ -115,6 +116,7 @@ add_library(mg_engine
     gfx/opengl/mg_billboard_renderer.cpp
     gfx/opengl/mg_buffer_texture.cpp
     gfx/opengl/mg_debug_renderer.cpp
+    gfx/opengl/mg_gfx_debug_group.cpp
     gfx/opengl/mg_gfx_device.cpp
     gfx/opengl/mg_gl_debug.cpp
     gfx/opengl/mg_mesh_renderer.cpp
@@ -153,8 +155,8 @@ set_target_properties(mg_engine PROPERTIES CXX_EXTENSIONS OFF)
 # Enable debug-logging for debug builds.
 target_compile_definitions(mg_engine PUBLIC MG_ENABLE_DEBUG_LOGGING=$<CONFIG:Debug>)
 
-if(MG_ENABLE_OPENGL_DEBUG_GROUPS)
-    target_compile_definitions(mg_engine PUBLIC MG_ENABLE_OPENGL_DEBUG_GROUPS=1)
+if(MG_ENABLE_GFX_DEBUG_GROUPS)
+    target_compile_definitions(mg_engine PUBLIC MG_ENABLE_GFX_DEBUG_GROUPS=1)
 endif()
 
 # Set up compiler options for MSVC

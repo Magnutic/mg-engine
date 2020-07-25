@@ -5,7 +5,8 @@
 //**************************************************************************************************
 
 /** @file mg_gl_debug.h
- * OpenGL debugging utilities */
+ * OpenGL debugging utilities.
+ */
 
 #pragma once
 
@@ -47,37 +48,5 @@ void ogl_error_callback(uint32_t source,
                         const char* msg,
                         const void* /* user_param */
                         ) noexcept;
-
-
-namespace detail {
-
-class OpenGlDebugGroupGuard {
-public:
-    OpenGlDebugGroupGuard(const char* message)
-    {
-        if (GLAD_GL_KHR_debug != 0) {
-            glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, message);
-        }
-    }
-
-    ~OpenGlDebugGroupGuard()
-    {
-        if (GLAD_GL_KHR_debug != 0) {
-            glPopDebugGroup();
-        }
-    }
-
-    MG_MAKE_NON_MOVABLE(OpenGlDebugGroupGuard);
-    MG_MAKE_NON_COPYABLE(OpenGlDebugGroupGuard);
-};
-
-#if MG_ENABLE_OPENGL_DEBUG_GROUPS
-#    define MG_GFX_DEBUG_GROUP(message) \
-        ::Mg::gfx::detail::OpenGlDebugGroupGuard gfxDebugGroup_(message);
-#else
-#    define MG_GFX_DEBUG_GROUP(message)
-#endif
-
-} // namespace detail
 
 } // namespace Mg::gfx
