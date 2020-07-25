@@ -174,10 +174,6 @@ if(MSVC)
 
     # Ignore warnings about not using non-standard extensions
     target_compile_definitions(mg_engine PRIVATE _SCL_SECURE_NO_WARNINGS _CRT_SECURE_NO_WARNINGS)
-
-    # Ignore warnings about <codecvt>, deprecated functionality for which the standard library has
-    # no substitute
-    target_compile_definitions(mg_engine PRIVATE _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
 endif()
 
 # Set up compiler options for GCC & Clang
