@@ -89,92 +89,97 @@ void close_OpenAL(void)
 // Functions for creating sound buffers using libsndfile and OpenAL
 //--------------------------------------------------------------------------------------------------
 
+// 'Virtual file' interface for reading from span of bytes.
+namespace {
+
+struct State {
+    span<const std::byte> data;
+    sf_count_t pos = 0;
+};
+
+sf_count_t read(void* ptr, sf_count_t count, void* user_data)
+{
+    State* state = static_cast<State*>(user_data);
+    const sf_count_t file_size = narrow<sf_count_t>(state->data.size_bytes());
+    const sf_count_t real_count = std::min(file_size - state->pos, count);
+    if (real_count <= 0) {
+        return 0;
+    }
+
+    std::memcpy(ptr, &state->data[narrow<size_t>(state->pos)], narrow<size_t>(real_count));
+    state->pos += real_count;
+    return real_count;
+}
+
+sf_count_t get_filelen(void* user_data)
+{
+    State* state = static_cast<State*>(user_data);
+    return narrow<sf_count_t>(state->data.size_bytes());
+}
+
+sf_count_t seek(sf_count_t offset, int whence, void* user_data)
+{
+    State* state = static_cast<State*>(user_data);
+    const sf_count_t file_size = narrow<sf_count_t>(state->data.size_bytes());
+
+    switch (whence) {
+    case SEEK_CUR:
+        state->pos += offset;
+        break;
+    case SEEK_SET:
+        state->pos = offset;
+        break;
+    case SEEK_END:
+        state->pos = file_size + offset;
+        break;
+    default:
+        MG_ASSERT(false && "Unexpected libsndfile seek mode");
+    }
+
+    state->pos = std::clamp<sf_count_t>(state->pos, 0, file_size);
+    return state->pos;
+}
+
+sf_count_t tell(void* user_data)
+{
+    State* state = static_cast<State*>(user_data);
+    return state->pos;
+}
+
+sf_count_t write(const void* /*ptr*/, sf_count_t /*count*/, void* /*user_data*/)
+{
+    MG_ASSERT(false);
+    return 0;
+}
+
 // Auto-destructing SNDFILE*
 using UniqueSndFile = std::unique_ptr<SNDFILE, decltype(&sf_close)>;
 
-struct OpenWithLibsndfileResult {
+class SndFileReader {
+public:
+    SF_INFO sf_info;
     UniqueSndFile sndfile = { nullptr, &sf_close };
     std::string error_reason;
+
+    SndFileReader(span<const std::byte> data)
+    {
+        state.data = data;
+
+        // Use virtual file interface to read input data.
+        sndfile.reset(sf_open_virtual(&sf_io, SFM_READ, &sf_info, &state));
+
+        if (!sndfile) {
+            error_reason = fmt::format("Failed to read sound file data: '{}'",
+                                       sf_strerror(sndfile.get()));
+        }
+    }
+
+private:
+    SF_VIRTUAL_IO sf_io = { &get_filelen, &seek, &read, &write, &tell };
+    State state = {};
 };
 
-OpenWithLibsndfileResult open_with_libsndfile(span<const std::byte> data, SF_INFO* sf_info)
-{
-    struct State {
-        span<const std::byte> data;
-        sf_count_t pos = 0;
-    };
-
-    // Create 'virtual file' interface for reading from span of bytes.
-    SF_VIRTUAL_IO sf_io = {};
-
-    sf_io.read = [](void* ptr, sf_count_t count, void* user_data) -> sf_count_t {
-        State* state = static_cast<State*>(user_data);
-        const sf_count_t file_size = narrow<sf_count_t>(state->data.size_bytes());
-        const sf_count_t real_count = std::min(file_size - state->pos, count);
-        if (real_count <= 0) {
-            return 0;
-        }
-
-        std::memcpy(ptr, &state->data[narrow<size_t>(state->pos)], narrow<size_t>(real_count));
-        state->pos += real_count;
-        return real_count;
-    };
-
-    sf_io.get_filelen = [](void* user_data) -> sf_count_t {
-        State* state = static_cast<State*>(user_data);
-        return narrow<sf_count_t>(state->data.size_bytes());
-    };
-
-    sf_io.seek = [](sf_count_t offset, int whence, void* user_data) -> sf_count_t {
-        State* state = static_cast<State*>(user_data);
-        const sf_count_t file_size = narrow<sf_count_t>(state->data.size_bytes());
-
-        switch (whence) {
-        case SEEK_CUR:
-            state->pos += offset;
-            break;
-        case SEEK_SET:
-            state->pos = offset;
-            break;
-        case SEEK_END:
-            state->pos = file_size + offset;
-            break;
-        default:
-            MG_ASSERT(false && "Unexpected libsndfile seek mode");
-        }
-
-        state->pos = std::clamp<sf_count_t>(state->pos, 0, file_size);
-        return state->pos;
-    };
-
-    sf_io.tell = [](void* user_data) -> sf_count_t {
-        State* state = static_cast<State*>(user_data);
-        return state->pos;
-    };
-
-    sf_io.write = [](const void* /*ptr*/, sf_count_t /*count*/, void *
-                     /*user_data*/) -> sf_count_t {
-        MG_ASSERT(false);
-        return 0;
-    };
-
-
-    OpenWithLibsndfileResult result;
-
-    // Use virtual file interface to read input data.
-    {
-        State state = {};
-        state.data = data;
-        result.sndfile.reset(sf_open_virtual(&sf_io, SFM_READ, sf_info, &state));
-    }
-
-    if (!result.sndfile) {
-        result.error_reason = fmt::format("Failed to read sound file data: '{}'",
-                                          sf_strerror(result.sndfile.get()));
-    }
-
-    return result;
-}
+} // namespace
 
 //--------------------------------------------------------------------------------------------------
 
@@ -205,8 +210,7 @@ GenerateOpenALBufferResult generate_OpenAL_buffer(SNDFILE* sndfile, SF_INFO& sf_
 
     ALuint al_buffer_id = 0;
 
-    // Decode the whole audio file to a buffer.
-    {
+    { // Use libsndfile to decode the audio file to an OpenAL buffer.
         auto buffer = Array<short>::make(narrow<size_t>(sf_info.frames * sf_info.channels));
         short* dst = buffer.data();
 
@@ -217,7 +221,6 @@ GenerateOpenALBufferResult generate_OpenAL_buffer(SNDFILE* sndfile, SF_INFO& sf_
 
         const ALsizei num_bytes = narrow<ALsizei>(buffer.size() * sizeof(short));
 
-        // Buffer the audio data into a new buffer object.
         alGenBuffers(1, &al_buffer_id);
         alBufferData(al_buffer_id, format, buffer.data(), num_bytes, sf_info.samplerate);
     }
@@ -290,15 +293,15 @@ AudioContext::generate_sound_buffer(span<const std::byte> sound_file_data)
     { // Read sound data with mutex locked, since libsndfile is not thread-safe.
         std::scoped_lock sndfile_lock{ impl().libsndfile_mutex };
 
-        SF_INFO sf_info = {};
-        const auto [sndfile, sndfile_error_reason] = open_with_libsndfile(sound_file_data,
-                                                                          &sf_info);
-        if (!sndfile) {
-            return { {}, sndfile_error_reason };
+        SndFileReader reader(sound_file_data);
+
+        if (!reader.sndfile) {
+            return { {}, reader.error_reason };
         }
 
-        const auto [opt_al_buffer_id, openal_error_reason] = generate_OpenAL_buffer(sndfile.get(),
-                                                                                    sf_info);
+        const auto [opt_al_buffer_id,
+                    openal_error_reason] = generate_OpenAL_buffer(reader.sndfile.get(),
+                                                                  reader.sf_info);
         if (!opt_al_buffer_id) {
             return { {}, openal_error_reason };
         }
