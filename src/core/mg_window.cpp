@@ -160,7 +160,7 @@ Array<VideoMode> find_available_video_modes()
 
 //--------------------------------------------------------------------------------------------------
 
-std::unique_ptr<Window> Window::make(WindowSettings settings, const std::string& title)
+std::unique_ptr<Window> Window::make(WindowSettings settings, std::string title)
 {
     // glfwInit() may be called multiple times
     if (glfwInit() == GLFW_FALSE) {
@@ -212,7 +212,7 @@ std::unique_ptr<Window> Window::make(WindowSettings settings, const std::string&
 
     auto window_handle = std::make_unique<Window>(ConstructKey{}, window, settings);
     window_handle->apply_settings(settings);
-    window_handle->set_title(title);
+    window_handle->set_title(std::move(title));
 
     return window_handle;
 }
@@ -227,7 +227,7 @@ Window::Window(ConstructKey /*unused*/, GLFWwindow* handle, WindowSettings setti
 
 Window::~Window()
 {
-    g_log.write_message(fmt::format("Closing window at {}", static_cast<void*>(this)));
+    g_log.write_message(fmt::format("Closing window '{}'.", m_title));
 
     glfwDestroyWindow(m_window);
     glfwTerminate();
@@ -240,6 +240,16 @@ VideoMode Window::frame_buffer_size() const noexcept
     int width, height;
     glfwGetFramebufferSize(m_window, &width, &height);
     return { width, height };
+}
+
+bool Window::should_close_flag() const noexcept
+{
+    return glfwWindowShouldClose(m_window) != 0;
+}
+
+void Window::clear_should_close_flag() noexcept
+{
+    glfwSetWindowShouldClose(m_window, 0);
 }
 
 void Window::refresh() noexcept
@@ -293,9 +303,10 @@ void Window::reset()
     set_vsync(m_window, m_settings.vsync);
 }
 
-void Window::set_title(const std::string& title) noexcept
+void Window::set_title(std::string title) noexcept
 {
-    glfwSetWindowTitle(m_window, title.c_str());
+    m_title = std::move(title);
+    glfwSetWindowTitle(m_window, m_title.c_str());
 }
 
 void Window::lock_cursor_to_window()

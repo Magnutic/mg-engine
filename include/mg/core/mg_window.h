@@ -53,7 +53,7 @@ public:
     using FocusCallbackT = void (*)(bool);
 
     /** Create new window. */
-    static std::unique_ptr<Window> make(WindowSettings settings, const std::string& title);
+    static std::unique_ptr<Window> make(WindowSettings settings, std::string title);
 
     /** Restricted constructor (see Window::make()). */
     explicit Window(ConstructKey, GLFWwindow* handle, WindowSettings settings);
@@ -68,7 +68,7 @@ public:
     void refresh() noexcept;
 
     /** Set window title. */
-    void set_title(const std::string& title) noexcept;
+    void set_title(std::string title) noexcept;
 
     /** Get whether window is currently fullscreen. */
     bool is_fullscreen() const noexcept { return m_settings.fullscreen; }
@@ -88,6 +88,14 @@ public:
      */
     FocusCallbackT get_focus_callback() const noexcept { return m_focus_callback; }
 
+    /** Get the value should-close flag, which is true when the user e.g. presses alt-f4 or the
+     * window close button.
+     */
+    bool should_close_flag() const noexcept;
+
+    /** Unset the should-close flag if it was set. */
+    void clear_should_close_flag() noexcept;
+
     //----------------------------------------------------------------------------------------------
     // Cursor state
 
@@ -106,7 +114,8 @@ public:
     /** Get current aspect ratio (width / height) of the window. */
     float aspect_ratio() const noexcept
     {
-        return narrow_cast<float>(m_settings.video_mode.width) / m_settings.video_mode.height;
+        return narrow_cast<float>(m_settings.video_mode.width) /
+               narrow_cast<float>(m_settings.video_mode.height);
     }
 
     /** Get (const reference to) settings struct for this Window. */
@@ -152,6 +161,7 @@ private:
 private:
     FocusCallbackT m_focus_callback{};
     WindowSettings m_settings;
+    std::string m_title;
 
     GLFWwindow* m_window = nullptr;
 

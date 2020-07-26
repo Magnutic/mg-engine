@@ -329,7 +329,7 @@ void time_step()
     window.poll_input_events();
     input.refresh();
 
-    if (input.was_pressed("exit")) {
+    if (input.was_pressed("exit") || window.should_close_flag()) {
         g_scene->exit = true;
     }
 
@@ -440,7 +440,7 @@ void render_bloom()
         // For the first mip level, we read from the HDR target, then from previous blur-target mip
         // level.
         Texture2D* blur_input = (mip_i == 0) ? g_scene->hdr_target->colour_target()
-                                                : vert_target.colour_target();
+                                             : vert_target.colour_target();
 
         // Render gaussian blur in separate horizontal and vertical passes.
         for (size_t u = 0; u < k_num_blur_iterations; ++u) {
@@ -524,8 +524,8 @@ void render_scene(double lerp_factor)
         g_scene->app.window().render_target.bind();
         gfx.clear();
 
-        g_scene->bloom_material->set_sampler("sampler_bloom",
-                                             g_scene->blur_targets.vert_pass_target_texture->handle());
+        g_scene->bloom_material->set_sampler(
+            "sampler_bloom", g_scene->blur_targets.vert_pass_target_texture->handle());
         g_scene->post_renderer.post_process(*g_scene->bloom_material,
                                             g_scene->hdr_target->colour_target()->handle());
     }
