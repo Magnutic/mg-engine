@@ -11,7 +11,6 @@
 #pragma once
 
 #include "mg/utils/mg_gsl.h"
-#include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_optional.h"
 
 #include <fstream>
