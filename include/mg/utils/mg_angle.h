@@ -18,34 +18,37 @@ class Angle {
 public:
     enum class Unit { degree, radian };
 
-    constexpr Angle() {}
+    static constexpr Angle from_radians(float angle) { return Angle(Angle::Unit::radian, angle); }
+    static constexpr Angle from_degrees(float angle) { return Angle(Angle::Unit::degree, angle); }
+
+    static constexpr Angle clamp(Angle v, Angle low, Angle high) noexcept
+    {
+        if (v.radians() < low.radians()) {
+            return low;
+        }
+        if (v.radians() > high.radians()) {
+            return high;
+        }
+        return v;
+    }
+
+    constexpr Angle() = default;
 
     constexpr Angle(Unit unit, float angle)
-        : m_angle_radians(angle * (unit == Unit::degree) * deg_to_rad)
+        : m_angle_radians((unit == Unit::degree) ? (angle * deg_to_rad) : angle)
     {}
+
+    constexpr Angle(const Angle&) = default;
+    constexpr Angle& operator=(const Angle&) = default;
 
     constexpr float degrees() const noexcept { return rad_to_deg * m_angle_radians; }
     constexpr float radians() const noexcept { return m_angle_radians; }
 
-    constexpr friend Angle operator+(Angle lhs, Angle rhs) noexcept
+    constexpr Angle wrap_0_to_360() const noexcept
     {
-        return { lhs.radians() + rhs.radians() };
+        return Angle{ std::remainder(radians(), two_pi) };
     }
-    constexpr friend Angle operator-(Angle lhs, Angle rhs) noexcept
-    {
-        return { lhs.radians() - rhs.radians() };
-    }
-    constexpr friend Angle operator*(Angle lhs, float f) noexcept { return { lhs.radians() * f }; }
-    constexpr friend Angle operator/(Angle lhs, float f) noexcept { return { lhs.radians() / f }; }
-
-    friend Angle angle_difference(Angle lhs, Angle rhs) noexcept
-    {
-        const Angle tmp = rhs - lhs;
-        return std::remainder(tmp.radians() + pi, two_pi) - pi;
-    }
-
-    constexpr Angle wrap_0_to_360() const noexcept { return { std::remainder(radians(), two_pi) }; }
-    constexpr Angle wrap_neg_180_to_180() const noexcept { return wrap_0_to_360() - pi; };
+    constexpr Angle wrap_neg_180_to_180() const noexcept { return wrap_0_to_360() - Angle{ pi }; };
 
     constexpr Angle& operator+=(Angle rhs) noexcept
     {
@@ -68,17 +71,45 @@ public:
         return *this;
     }
 
+    constexpr friend Angle operator-(Angle a) noexcept { return Angle{ -a.radians() }; }
+
+    constexpr friend Angle operator+(Angle a) noexcept { return a; }
+
+    constexpr friend Angle operator+(Angle lhs, Angle rhs) noexcept
+    {
+        return Angle{ lhs.radians() + rhs.radians() };
+    }
+    constexpr friend Angle operator-(Angle lhs, Angle rhs) noexcept
+    {
+        return Angle{ lhs.radians() - rhs.radians() };
+    }
+
+    constexpr friend Angle operator*(Angle lhs, float f) noexcept
+    {
+        return Angle{ lhs.radians() * f };
+    }
+    constexpr friend Angle operator/(Angle lhs, float f) noexcept
+    {
+        return Angle{ lhs.radians() / f };
+    }
+
+    friend Angle angle_difference(Angle lhs, Angle rhs) noexcept
+    {
+        const Angle tmp = rhs - lhs;
+        return Angle{ std::remainder(tmp.radians() + pi, two_pi) - pi };
+    }
+
 private:
     // Internal constructor allows operations that always work in radians to skip conditional in
     // public constructor.
-    constexpr Angle(float angle_radians) : m_angle_radians(angle_radians) {}
+    constexpr explicit Angle(float angle_radians) : m_angle_radians(angle_radians) {}
 
     static constexpr float pi = 3.14159265358979323846233f;
     static constexpr float two_pi = 2.0f * pi;
     static constexpr float deg_to_rad = pi / 180.0f;
     static constexpr float rad_to_deg = 180.0f / pi;
 
-    float m_angle_radians = 0.0;
+    float m_angle_radians = 0.0f;
 };
 
 namespace literals {

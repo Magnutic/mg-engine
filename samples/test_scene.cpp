@@ -251,7 +251,7 @@ void init()
             load_model("meshes/misc/narmask.mgm", narmask_mats, { "RIM_LIGHT" }));
 
         narmask_model.transform.position.x -= 2.0f;
-        narmask_model.transform.rotation.yaw(glm::half_pi<float>());
+        narmask_model.transform.rotation.yaw(90_degrees);
     }
 
     {
@@ -319,6 +319,8 @@ std::array<float, 3> camera_acceleration(Mg::input::InputMap& input_map)
 
 void time_step()
 {
+    using namespace Mg::literals;
+
     auto& input = g_scene->input_map;
     auto& window = g_scene->app.window();
     auto& camera = g_scene->camera;
@@ -346,15 +348,13 @@ void time_step()
         mouse_delta_y = 0.0f;
     }
 
-    float cam_pitch = state.cam_rotation.pitch() - mouse_delta_y;
-    float cam_yaw = state.cam_rotation.yaw() - mouse_delta_x;
+    Mg::Angle cam_pitch = state.cam_rotation.pitch() - Mg::Angle::from_radians(mouse_delta_y);
+    Mg::Angle cam_yaw = state.cam_rotation.yaw() - Mg::Angle::from_radians(mouse_delta_x);
+
+    cam_pitch = Mg::Angle::clamp(cam_pitch, -90_degrees, 90_degrees);
 
     // Set rotation from euler angles, clamping pitch between straight down & straight up.
-    state.cam_rotation = Mg::Rotation{
-        { glm::clamp(cam_pitch, -glm::half_pi<float>() + 0.0001f, glm::half_pi<float>() - 0.0001f),
-          0.0f,
-          cam_yaw }
-    };
+    state.cam_rotation = Mg::Rotation{ { cam_pitch.radians(), 0.0f, cam_yaw.radians() } };
 
     // Camera movement
     auto const [forward_acc, right_acc, up_acc] = camera_acceleration(input);

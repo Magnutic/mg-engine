@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "mg/utils/mg_angle.h"
+
 #ifndef GLM_ENABLE_EXPERIMENTAL
 #    define GLM_ENABLE_EXPERIMENTAL
 #endif
@@ -36,55 +38,60 @@ class Rotation {
 public:
     Rotation() noexcept;
 
-    /** Construct rotation from euler angles (pitch, roll, yaw) */
+    /** Construct rotation from euler angles in radians (pitch, roll, yaw) */
     explicit Rotation(glm::vec3 euler_angles) noexcept;
 
     /** Construct Rotation from quaternion */
     explicit Rotation(glm::quat quaternion) noexcept;
 
+    /** Convert to tranformation-matrix representation. */
     glm::mat4 to_matrix() const noexcept;
+
+    /** Get quaternion representation. */
     glm::quat to_quaternion() const noexcept;
 
-    /** Returns whether rotations are similar enough to be considered
-     * practically equivalent. */
+    /** Returns whether rotations are similar enough to be considered practically equivalent. */
     bool is_equivalent(const Rotation& rhs) const noexcept;
 
-    /** Constructs a vector pointing forward in the orientation described by
-     * this Rotation. */
+    /** Constructs a vector pointing forward in the orientation described by this Rotation. */
     glm::vec3 forward() const noexcept;
 
-    /** Constructs a vector pointing to the right in the orientation described
-     * by this Rotation. */
+    /** Constructs a vector pointing to the right in the orientation described by this Rotation. */
     glm::vec3 right() const noexcept;
 
-    /** Constructs a vector pointing up in the orientation described by this
-     * Rotation. */
+    /** Constructs a vector pointing up in the orientation described by this Rotation. */
     glm::vec3 up() const noexcept;
 
     /** Get orientation as euler angles (pitch, roll, yaw). */
     glm::vec3 euler_angles() const noexcept { return glm::eulerAngles(m_quaternion); }
 
-    float pitch() const noexcept { return glm::eulerAngles(m_quaternion).x; }
-    float yaw() const noexcept { return glm::eulerAngles(m_quaternion).z; }
-    float roll() const noexcept { return glm::eulerAngles(m_quaternion).y; }
+    /** Get yaw angle of this Rotation. */
+    Angle yaw() const noexcept;
 
-    /** Applies angle in radians of yaw to this rotation. */
-    Rotation& yaw(float angle) noexcept;
+    /** Get pitch angle of this Rotation. */
+    Angle pitch() const noexcept;
 
-    /** Applies angle in radians of pitch to this rotation. */
-    Rotation& pitch(float angle) noexcept;
+    /** Get roll angle of this Rotation. */
+    Angle roll() const noexcept;
 
-    /** Applies angle in radians of roll to this rotation. */
-    Rotation& roll(float angle) noexcept;
+    /** Applies yaw to this rotation. */
+    Rotation& yaw(Angle angle) noexcept;
 
-    /** Returns the difference in angle in radians between two rotations. */
-    float angle_difference(const Rotation& rhs) const noexcept;
+    /** Applies pitch to this rotation. */
+    Rotation& pitch(Angle angle) noexcept;
+
+    /** Applies roll to this rotation. */
+    Rotation& roll(Angle angle) noexcept;
+
+    /** Returns the difference in angle between two rotations. */
+    Angle angle_difference(const Rotation& rhs) const noexcept;
 
     /** Returns the rotation created by rotating by fst then snd. */
     static Rotation combine(const Rotation& fst, const Rotation& snd) noexcept;
 
     /** Returns the rotation needed to rotate direction vector fst to face the
-     * same direction as snd. */
+     * same direction as snd.
+     */
     static Rotation rotation_between_vectors(glm::vec3 fst, glm::vec3 snd) noexcept;
 
     /** Returns a rotation with forward vector parallel to dir. */
@@ -128,9 +135,9 @@ inline Rotation Rotation::combine(const Rotation& fst, const Rotation& snd) noex
     return Rotation{ snd.m_quaternion * fst.m_quaternion };
 }
 
-inline float Rotation::angle_difference(const Rotation& rhs) const noexcept
+inline Angle Rotation::angle_difference(const Rotation& rhs) const noexcept
 {
-    return glm::acos(dot(forward(), rhs.forward()));
+    return Angle::from_radians(glm::acos(dot(forward(), rhs.forward())));
 }
 
 inline Rotation Rotation::mix(const Rotation& from, const Rotation& to, float x) noexcept
@@ -153,21 +160,36 @@ inline glm::vec3 Rotation::up() const noexcept
     return m_quaternion * world_vector::up;
 }
 
-inline Rotation& Rotation::yaw(float angle) noexcept
+inline Angle Rotation::pitch() const noexcept
 {
-    m_quaternion *= glm::angleAxis(angle, world_vector::up);
+    return Angle::from_radians(glm::eulerAngles(m_quaternion).x);
+}
+
+inline Angle Rotation::yaw() const noexcept
+{
+    return Angle::from_radians(glm::eulerAngles(m_quaternion).z);
+}
+
+inline Angle Rotation::roll() const noexcept
+{
+    return Angle::from_radians(glm::eulerAngles(m_quaternion).y);
+}
+
+inline Rotation& Rotation::yaw(Angle angle) noexcept
+{
+    m_quaternion *= glm::angleAxis(angle.radians(), world_vector::up);
     return *this;
 }
 
-inline Rotation& Rotation::pitch(float angle) noexcept
+inline Rotation& Rotation::pitch(Angle angle) noexcept
 {
-    m_quaternion *= glm::angleAxis(angle, world_vector::right);
+    m_quaternion *= glm::angleAxis(angle.radians(), world_vector::right);
     return *this;
 }
 
-inline Rotation& Rotation::roll(float angle) noexcept
+inline Rotation& Rotation::roll(Angle angle) noexcept
 {
-    m_quaternion *= glm::angleAxis(angle, world_vector::forward);
+    m_quaternion *= glm::angleAxis(angle.radians(), world_vector::forward);
     return *this;
 }
 

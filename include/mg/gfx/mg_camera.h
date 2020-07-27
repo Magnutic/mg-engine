@@ -99,7 +99,7 @@ public:
     {
         // Camera should look toward rotation's forward vector
         Rotation r{ rotation };
-        return glm::inverse(glm::translate(position) * r.pitch(glm::half_pi<float>()).to_matrix());
+        return glm::inverse(glm::translate(position) * r.pitch(90_degrees).to_matrix());
     }
 
     glm::mat4 view_proj_matrix() const noexcept override { return proj_matrix() * view_matrix(); }
