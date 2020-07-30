@@ -10,9 +10,9 @@
 
 #pragma once
 
+#include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/gfx/mg_gfx_object_handles.h"
 
 #include <cstddef>
 #include <cstdint>

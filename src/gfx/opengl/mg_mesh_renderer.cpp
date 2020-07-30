@@ -12,8 +12,8 @@
 #include "../mg_light_buffers.h"
 #include "../mg_light_grid.h"
 
-#include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_camera.h"
+#include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_light.h"
 #include "mg/gfx/mg_material.h"
 #include "mg/gfx/mg_matrix_uniform_handler.h"

@@ -128,7 +128,7 @@ static auto cmp_filename = [](const auto& file_info, Identifier r) {
 };
 
 // Shared implementation for const/non-const
-template <typename FileListT>
+template<typename FileListT>
 auto file_info_impl(FileListT& file_list, Identifier file) -> Opt<decltype(file_list[0])>
 {
     // file_list is sorted by filename hash, so we can look up with binary search.

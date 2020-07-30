@@ -14,8 +14,8 @@
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_gsl.h"
 
-#include "mg_glad.h"
 #include "mg_gl_debug.h"
+#include "mg_glad.h"
 
 #include <fmt/core.h>
 

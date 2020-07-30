@@ -47,7 +47,7 @@ public:
             return { it, false };
         }
         it = m_data.insert(it, std::move(value));
-        return {it, true};
+        return { it, true };
     }
 
     iterator find(const key_type& key) noexcept
