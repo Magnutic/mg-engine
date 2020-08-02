@@ -18,6 +18,7 @@
 #include "mg/resources/mg_file_changed_event.h"
 #include "mg/utils/mg_macros.h"
 
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
@@ -159,7 +160,7 @@ public:
         return m_file_loaders;
     }
 
-    using FileChangeCallbackT = void (*)(const FileChangedEvent&);
+    using FileChangeCallbackT = std::function<void(const FileChangedEvent&)>;
 
     void set_resource_reload_callback(FileChangeCallbackT callback) noexcept
     {

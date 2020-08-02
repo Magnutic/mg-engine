@@ -18,6 +18,7 @@
 #include "mg/utils/mg_macros.h"
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -50,7 +51,7 @@ public:
     /** Callback to invoke when window gains or loses focus.
      * Parameters: bool is_focused, whether the window is focused.
      */
-    using FocusCallbackT = void (*)(bool);
+    using FocusCallbackT = std::function<void(bool)>;
 
     /** Create new window. */
     static std::unique_ptr<Window> make(WindowSettings settings, std::string title);
