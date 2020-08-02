@@ -259,8 +259,9 @@ static_assert(std::is_trivially_copyable_v<span<int>>);
 // Template type deduction guides. Mirrors constructors.
 // clang-format off
 #if MG_HAVE_CLASS_TEMPLATE_DEDUCTION
-template<typename U          > span(U*, U*)                  -> span<U>;
-template<typename U, size_t N> span(U (&)[N])                -> span<U>;
+template<typename U          > span(U*, U*)     -> span<U>;
+template<typename U          > span(U*, size_t) -> span<U>;
+template<typename U, size_t N> span(U (&)[N])   -> span<U>;
 
 // Deduce to the pointee type of the result of calling data() on a variable of the container type.
 template<typename ContainerT> // requires ContiguousContainer<ContainerT>
