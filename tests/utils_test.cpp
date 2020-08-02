@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include <mg/utils/mg_math_utils.h>
+#include <mg/utils/mg_point_normal_plane.h>
 #include <mg/utils/mg_string_utils.h>
 
 using namespace Mg;
@@ -11,7 +12,6 @@ TEST_CASE("tokenise_string")
 {
     auto tokens = tokenise_string(" \t this is \ta string   ", " \t");
     std::string string = "hello";
-    std::string_view string_span{ string };
 
     REQUIRE(tokens.size() == 4);
     REQUIRE(tokens[0] == "this");

@@ -19,7 +19,7 @@
 #include "mg/utils/mg_angle.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_math_utils.h"
+#include "mg/utils/mg_point_normal_plane.h"
 
 namespace Mg::gfx {
 

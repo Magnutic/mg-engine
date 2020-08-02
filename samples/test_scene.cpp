@@ -6,7 +6,7 @@
 #include <mg/resources/mg_mesh_resource.h>
 #include <mg/resources/mg_shader_resource.h>
 #include <mg/resources/mg_texture_resource.h>
-#include <mg/utils/mg_max.h>
+#include <mg/utils/mg_math_utils.h>
 
 #include <fmt/core.h>
 

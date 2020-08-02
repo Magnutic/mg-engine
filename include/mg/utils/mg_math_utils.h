@@ -11,12 +11,7 @@
 #pragma once
 
 #include <cmath>
-#include <cstdint>
 #include <type_traits>
-#include <utility>
-
-#include <glm/geometric.hpp>
-#include <glm/vec3.hpp>
 
 #include "mg/utils/mg_gsl.h"
 
@@ -64,48 +59,20 @@ template<typename T> constexpr T abs(T val)
     return (val < 0) ? -val : val;
 }
 
-/** Plane in 3D space in point-normal form. */
-class PointNormalPlane {
-public:
-    /** Create a plane given a point on the plane and the plane's normal vector. */
-    static PointNormalPlane from_point_and_normal(glm::vec3 point, glm::vec3 normal)
-    {
-        normal = glm::normalize(normal);
-        return { normal.x,
-                 normal.y,
-                 normal.z,
-                 -normal.x * point.x - normal.y * point.y - normal.z * point.z };
-    }
-
-    // Add more constructors as needed.
-    // Members are private to maintain a,b,c normal being normalised as an invariant.
-
-private:
-    PointNormalPlane() = default;
-
-    PointNormalPlane(float a_, float b_, float c_, float d_) noexcept : a(a_), b(b_), c(c_), d(d_)
-    {}
-
-    /** Signed shortest distance (i.e. negative if on the side of the plane facing away from the
-     * plane's normal) from plane to point in 3D space.
-     */
-    friend constexpr float signed_distance_to_plane(PointNormalPlane plane,
-                                                    glm::vec3 point) noexcept
-    {
-        return plane.a * point.x + plane.b * point.y + plane.c * point.z + plane.d;
-    }
-
-    float a;
-    float b;
-    float c;
-    float d;
-};
-
-
-/** Shortest distance from plane to point in 3D space. */
-inline constexpr float distance_to_plane(PointNormalPlane plane, glm::vec3 point)
+/** Equivalent to std::max. Re-implemented here because std::max resides in the very heavy
+ * <algorithm> header, which is too much to include for such a small function.
+ */
+template<typename T> constexpr const T& max(const T& l, const T& r) noexcept
 {
-    return abs(signed_distance_to_plane(plane, point));
+    return l > r ? l : r;
+}
+
+/** Equivalent to std::min. Re-implemented here because std::max resides in the very heavy
+ * <algorithm> header, which is too much to include for such a small function.
+ */
+template<typename T> constexpr const T& min(const T& l, const T& r) noexcept
+{
+    return l > r ? l : r;
 }
 
 } // namespace Mg

@@ -78,9 +78,9 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/utils/mg_instance_counter.h
     ${MG_HEADER_DIR}/mg/utils/mg_macros.h
     ${MG_HEADER_DIR}/mg/utils/mg_math_utils.h
-    ${MG_HEADER_DIR}/mg/utils/mg_max.h
     ${MG_HEADER_DIR}/mg/utils/mg_observer.h
     ${MG_HEADER_DIR}/mg/utils/mg_optional.h
+    ${MG_HEADER_DIR}/mg/utils/mg_point_normal_plane.h
     ${MG_HEADER_DIR}/mg/utils/mg_ptr_math.h
     ${MG_HEADER_DIR}/mg/utils/mg_simple_pimpl.h
     ${MG_HEADER_DIR}/mg/utils/mg_stl_helpers.h

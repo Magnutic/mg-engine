@@ -15,7 +15,7 @@
 
 #include "mg/containers/mg_array.h"
 #include "mg/utils/mg_assert.h"
-#include "mg/utils/mg_max.h"
+#include "mg/utils/mg_math_utils.h"
 
 #include <cstddef>
 #include <cstdint>
