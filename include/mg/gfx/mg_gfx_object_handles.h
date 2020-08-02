@@ -32,10 +32,13 @@ using GfxObjectHandleValue = uint64_t;
  */
 template<GfxObjectType type_> class GfxObjectHandle {
 public:
-    static constexpr GfxObjectType type = type_;
     using Value = GfxObjectHandleValue;
 
-    GfxObjectHandle() = default;
+    static constexpr GfxObjectType type = type_;
+
+    static constexpr GfxObjectHandle null_handle() { return GfxObjectHandle{}; }
+
+    constexpr GfxObjectHandle() = default;
 
     explicit GfxObjectHandle(GfxObjectHandleValue id) noexcept : m_value{ id } {}
 
