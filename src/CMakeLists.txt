@@ -39,7 +39,6 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/gfx/mg_mesh_renderer.h
     ${MG_HEADER_DIR}/mg/gfx/mg_mesh_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_pipeline.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_pipeline_identifier.h
     ${MG_HEADER_DIR}/mg/gfx/mg_pipeline_repository.h
     ${MG_HEADER_DIR}/mg/gfx/mg_post_process.h
     ${MG_HEADER_DIR}/mg/gfx/mg_render_command_list.h
@@ -47,6 +46,7 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/gfx/mg_texture2d.h
     ${MG_HEADER_DIR}/mg/gfx/mg_texture_related_types.h
     ${MG_HEADER_DIR}/mg/gfx/mg_texture_repository.h
+    ${MG_HEADER_DIR}/mg/gfx/mg_ui_renderer.h
     ${MG_HEADER_DIR}/mg/gfx/mg_uniform_buffer.h
     ${MG_HEADER_DIR}/mg/input/mg_input.h
     ${MG_HEADER_DIR}/mg/input/mg_joy.h
@@ -128,6 +128,7 @@ add_library(mg_engine
     gfx/opengl/mg_render_target.cpp
     gfx/opengl/mg_shader.cpp
     gfx/opengl/mg_texture2d.cpp
+    gfx/opengl/mg_ui_renderer.cpp
     gfx/opengl/mg_uniform_buffer.cpp
     input/mg_input.cpp
     input/mg_joy.cpp

@@ -29,8 +29,6 @@ Material* MaterialRepository::create(Identifier id, ResourceHandle<ShaderResourc
 
 void MaterialRepository::destroy(const Material* handle)
 {
-    // TODO: see if plf::colony will add an overload for const pointers, and if so, remove the
-    // const_cast.
     Material* non_const_ptr = const_cast<Material*>(handle); // NOLINT
     impl().materials.erase(impl().materials.get_iterator_from_pointer(non_const_ptr));
 }

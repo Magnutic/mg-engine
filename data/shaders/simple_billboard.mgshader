@@ -44,12 +44,12 @@ VERTEX_CODE {
 
 FRAGMENT_CODE {
     void main() {
-       frag_colour = fs_in_colour * texture2D(sampler_diffuse, tex_coord);
+       frag_out = fs_in_colour * texture2D(sampler_diffuse, tex_coord);
 
     #ifdef A_TEST
-       if (frag_colour.a < 0.5) { discard; }
+       if (frag_out.a < 0.5) { discard; }
     #else
-       if (frag_colour.a == 0.0) { discard; }
+       if (frag_out.a == 0.0) { discard; }
     #endif
     }
 }

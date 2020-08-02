@@ -13,7 +13,6 @@
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
-#include "mg/gfx/mg_pipeline_identifier.h"
 #include "mg/resource_cache/mg_resource_handle.h"
 #include "mg/resources/mg_shader_resource.h"
 #include "mg/utils/mg_gsl.h"
@@ -21,9 +20,9 @@
 
 #include "mg/mg_defs.h"
 
-#include <glm/vec2.hpp>
-#include <glm/vec4.hpp>
+#include <glm/fwd.hpp>
 
+#include <bitset>
 #include <cstdint>
 #include <string>
 
@@ -35,21 +34,29 @@ public:
     explicit Material(Identifier material_id, ResourceHandle<ShaderResource> shader);
 
     struct Sampler {
-        Identifier name{ "" };
+        Identifier name;
         shader::SamplerType type{};
         TextureHandle sampler{};
     };
 
     struct Parameter {
-        Identifier name{ "" };
+        Identifier name;
         shader::ParameterType type{};
     };
 
     using Option = Identifier;
 
-    using Samplers = small_vector<Sampler, defs::k_max_samplers_per_material>;
+    using Samplers = small_vector<Sampler, 4>;
     using Parameters = small_vector<Parameter, 4>;
-    using Options = small_vector<Option, 10>;
+    using Options = small_vector<Option, 4>;
+
+    using OptionFlags = std::bitset<defs::k_max_options_per_material>;
+
+    /** `Material`s with equal `Material::PipelineId`s will have compatible `Pipeline`s. */
+    struct PipelineId {
+        Identifier shader_resource_id;
+        Material::OptionFlags material_option_flags;
+    };
 
     /** Get the list of samplers (texture inputs) for this material. */
     const Samplers& samplers() const noexcept { return m_samplers; }
@@ -70,7 +77,7 @@ public:
      * The primary use-case for this bit-flag value is to succinctly identify the corresponding
      * shader permutation for the current set of enabled options.
      */
-    uint32_t option_flags() const noexcept { return m_option_flags; }
+    OptionFlags option_flags() const noexcept { return m_option_flags; }
 
     /** Enable or disable the given option. Throws if the option does not exist for this material */
     void set_option(Identifier option, bool enabled);
@@ -84,8 +91,8 @@ public:
 
     void set_parameter(Identifier name, int param);
     void set_parameter(Identifier name, float param);
-    void set_parameter(Identifier name, glm::vec2 param);
-    void set_parameter(Identifier name, glm::vec4 param);
+    void set_parameter(Identifier name, const glm::vec2& param);
+    void set_parameter(Identifier name, const glm::vec4& param);
 
     Identifier id() const noexcept { return m_id; }
 
@@ -94,7 +101,7 @@ public:
     /** Identifier based on the aspects of the material that affect the corresponding rendering
      * pipeline. Used to allow multiple materials to re-use the same pipeline when applicable.
      */
-    PipelineIdentifier pipeline_identifier() const noexcept;
+    Material::PipelineId pipeline_identifier() const noexcept;
 
     ResourceHandle<ShaderResource> shader() const noexcept { return m_shader; }
 
@@ -129,9 +136,35 @@ private:
     ResourceHandle<ShaderResource> m_shader;
 
     // State of Options represented as a bit-field
-    uint32_t m_option_flags{};
+    OptionFlags m_option_flags;
 
-    Identifier m_id{ "" };
+    Identifier m_id;
+};
+
+//--------------------------------------------------------------------------------------------------
+// Utilities for Material::PipelineId
+//--------------------------------------------------------------------------------------------------
+
+inline bool operator==(const Material::PipelineId& lhs, const Material::PipelineId& rhs)
+{
+    return lhs.shader_resource_id == rhs.shader_resource_id &&
+           lhs.material_option_flags == rhs.material_option_flags;
+}
+
+inline bool operator!=(const Material::PipelineId& lhs, const Material::PipelineId& rhs)
+{
+    return !(lhs == rhs);
+}
+
+/** Comparison operator allowing the use of Material::PipelineId in a map. */
+struct MaterialPipelineIdCmp {
+    bool operator()(const Material::PipelineId& lhs, const Material::PipelineId& rhs) const noexcept
+    {
+        static_assert(sizeof(Material::OptionFlags) <= sizeof(unsigned long long));
+        return Identifier::HashCompare{}(lhs.shader_resource_id, rhs.shader_resource_id) ||
+               (lhs.shader_resource_id == rhs.shader_resource_id &&
+                lhs.material_option_flags.to_ullong() < rhs.material_option_flags.to_ullong());
+    }
 };
 
 } // namespace Mg::gfx

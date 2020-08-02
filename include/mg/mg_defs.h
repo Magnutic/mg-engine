@@ -42,6 +42,9 @@ constexpr uint32_t k_default_res_y = 768;
  */
 constexpr std::size_t k_max_samplers_per_material = 8;
 
+/** Maximum number of boolean options per material. */
+constexpr std::size_t k_max_options_per_material = 30;
+
 /** Size of storage for material parameter values. */
 constexpr std::size_t k_material_parameters_buffer_size = 128;
 

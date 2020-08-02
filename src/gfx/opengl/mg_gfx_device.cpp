@@ -85,54 +85,11 @@ GfxDevice::GfxDevice(Window& window)
 
     // Automatically convert linear to sRGB when writing to sRGB frame buffers.
     glEnable(GL_FRAMEBUFFER_SRGB);
-
-    set_culling(CullFunc::BACK);
-    set_depth_test(DepthFunc::LESS);
 }
 
 GfxDevice::~GfxDevice()
 {
     p_gfx_device = nullptr;
-}
-
-void GfxDevice::set_blend_mode(BlendMode blend_mode) noexcept
-{
-    MG_GFX_DEBUG_GROUP("GfxDevice::set_blend_mode")
-
-    const auto col_mode = static_cast<uint32_t>(blend_mode.colour);
-    const auto a_mode = static_cast<uint32_t>(blend_mode.alpha);
-    const auto src_col = static_cast<uint32_t>(blend_mode.src_colour);
-    const auto dst_col = static_cast<uint32_t>(blend_mode.dst_colour);
-    const auto srcA = static_cast<uint32_t>(blend_mode.src_alpha);
-    const auto dstA = static_cast<uint32_t>(blend_mode.dst_alpha);
-
-    glBlendEquationSeparate(col_mode, a_mode);
-    glBlendFuncSeparate(src_col, dst_col, srcA, dstA);
-}
-
-/** Enable/disable depth testing and set depth testing function. */
-void GfxDevice::set_depth_test(DepthFunc func) noexcept
-{
-    MG_GFX_DEBUG_GROUP("GfxDevice::set_depth_test")
-    if (func != DepthFunc::NONE) {
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(static_cast<uint32_t>(func));
-    }
-    else {
-        glDisable(GL_DEPTH_TEST);
-    }
-}
-
-void GfxDevice::set_depth_write(bool on) noexcept
-{
-    MG_GFX_DEBUG_GROUP("GfxDevice::set_depth_write")
-    glDepthMask(GLboolean{ on });
-}
-
-void GfxDevice::set_colour_write(bool on) noexcept
-{
-    MG_GFX_DEBUG_GROUP("GfxDevice::set_colour_write")
-    glColorMask(on, on, on, on);
 }
 
 /** Set colour & alpha to use when clearing render target. */
@@ -142,35 +99,40 @@ void GfxDevice::set_clear_colour(float red, float green, float blue, float alpha
     glClearColor(red, green, blue, alpha);
 }
 
-void GfxDevice::clear(bool colour, bool depth, bool stencil) noexcept
+void GfxDevice::clear(bool colour, bool depth) noexcept
 {
     MG_GFX_DEBUG_GROUP("GfxDevice::clear")
-    glClear((colour ? GL_COLOR_BUFFER_BIT : 0u) | (depth ? GL_DEPTH_BUFFER_BIT : 0u) |
-            (stencil ? GL_STENCIL_BUFFER_BIT : 0u));
-}
 
-/** Set which culling function to use. */
-void GfxDevice::set_culling(CullFunc culling) noexcept
-{
-    MG_GFX_DEBUG_GROUP("GfxDevice::set_culling")
-    if (culling == CullFunc::NONE) {
-        glDisable(GL_CULL_FACE);
-    }
-    else {
-        glEnable(GL_CULL_FACE);
-        glCullFace(static_cast<uint32_t>(culling));
-    }
-}
+    // Change depth/colour write state if needed.
+    std::array<GLboolean, 4> prev_colour_write = {};
+    glGetBooleanv(GL_COLOR_WRITEMASK, prev_colour_write.data());
+    const bool should_set_colour_write = colour &&
+                                         std::any_of(prev_colour_write.begin(),
+                                                     prev_colour_write.end(),
+                                                     [](GLboolean b) { return b == false; });
 
-/** Set whether to use blending when rendering to target. */
-void GfxDevice::set_use_blending(bool enable) noexcept
-{
-    MG_GFX_DEBUG_GROUP("GfxDevice::set_use_blending")
-    if (enable) {
-        glEnable(GL_BLEND);
+    GLboolean prev_depth_write = GL_FALSE;
+    glGetBooleanv(GL_DEPTH_WRITEMASK, &prev_depth_write);
+    const bool should_set_depth_write = depth && prev_depth_write == GL_FALSE;
+
+    if (should_set_colour_write) {
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     }
-    else {
-        glDisable(GL_BLEND);
+    if (should_set_depth_write) {
+        glDepthMask(GL_TRUE);
+    }
+
+    glClear((colour ? GL_COLOR_BUFFER_BIT : 0u) | (depth ? GL_DEPTH_BUFFER_BIT : 0u));
+
+    // Revert depth/colour write state if it was changed.
+    if (should_set_colour_write) {
+        glColorMask(prev_colour_write[0],
+                    prev_colour_write[1],
+                    prev_colour_write[2],
+                    prev_colour_write[3]);
+    }
+    if (should_set_depth_write) {
+        glDepthMask(prev_depth_write);
     }
 }
 

@@ -81,8 +81,6 @@ void surface(const SurfaceInput s_in, out SurfaceParams s_out) {
 
 FrameBlock make_frame_block(const ICamera& camera, float current_time, float camera_exposure)
 {
-    MG_GFX_DEBUG_GROUP("make_frame_block")
-
     std::array<int, 4> viewport_data{};
     glGetIntegerv(GL_VIEWPORT, &viewport_data[0]);
     const glm::uvec2 viewport_size{ narrow<uint32_t>(viewport_data[2]),
@@ -119,18 +117,26 @@ PipelineRepository make_mesh_pipeline_repository()
 
     config.on_error_shader_code = { {}, {}, FragmentShaderCode{ mesh_fs_fallback } };
 
-    config.pipeline_prototype.common_input_layout = {
-        { "MatrixBlock", PipelineInputType::UniformBuffer, k_matrix_ubo_slot },
-        { "FrameBlock", PipelineInputType::UniformBuffer, k_frame_ubo_slot },
-        { "LightBlock", PipelineInputType::UniformBuffer, k_light_ubo_slot },
-        { "MaterialParams", PipelineInputType::UniformBuffer, k_material_params_ubo_slot },
-        { "_sampler_tile_data", PipelineInputType::BufferTexture, k_sampler_tile_data_index },
-        { "_sampler_light_index", PipelineInputType::BufferTexture, k_sampler_light_index_index }
-    };
+    config.shared_input_layout = Array<PipelineInputDescriptor>::make(5);
+    config.shared_input_layout[0] = { "MatrixBlock",
+                                      PipelineInputType::UniformBuffer,
+                                      k_matrix_ubo_slot },
+    config.shared_input_layout[1] = { "FrameBlock",
+                                      PipelineInputType::UniformBuffer,
+                                      k_frame_ubo_slot },
+    config.shared_input_layout[2] = { "LightBlock",
+                                      PipelineInputType::UniformBuffer,
+                                      k_light_ubo_slot },
+    config.shared_input_layout[3] = { "_sampler_tile_data",
+                                      PipelineInputType::BufferTexture,
+                                      k_sampler_tile_data_index },
+    config.shared_input_layout[4] = { "_sampler_light_index",
+                                      PipelineInputType::BufferTexture,
+                                      k_sampler_light_index_index };
 
     config.material_params_ubo_slot = k_material_params_ubo_slot;
 
-    return PipelineRepository(config);
+    return PipelineRepository(std::move(config));
 }
 
 } // namespace
@@ -153,8 +159,7 @@ struct MeshRendererData {
 namespace {
 
 /** Upload frame-constant buffers to GPU. */
-PipelineRepository::BindingContext
-make_binding_context(MeshRendererData& data, const ICamera& cam, RenderParameters params)
+void bind_shared_inputs(MeshRendererData& data, const ICamera& cam, RenderParameters params)
 {
     // Upload frame-global uniforms
     const auto frame_block = make_frame_block(cam, params.current_time, params.camera_exposure);
@@ -168,8 +173,13 @@ make_binding_context(MeshRendererData& data, const ICamera& cam, RenderParameter
         PipelineInputBinding{ k_sampler_light_index_index,
                               data.m_light_buffers.light_index_texture }
     };
+    Pipeline::bind_shared_inputs(shared_bindings);
+}
 
-    return data.pipeline_repository.binding_context(shared_bindings);
+Pipeline::Settings pipeline_settings()
+{
+    Pipeline::Settings settings;
+    return settings; // default settings
 }
 
 void draw_elements(size_t num_elements, size_t starting_element) noexcept
@@ -213,7 +223,8 @@ void MeshRenderer::render(const ICamera& cam,
 
     update_light_data(impl().m_light_buffers, lights, cam, impl().m_light_grid);
 
-    PipelineRepository::BindingContext binding_context = make_binding_context(impl(), cam, params);
+    PipelineBindingContext binding_context;
+    bind_shared_inputs(impl(), cam, params);
 
     const auto render_commands = command_list.render_commands();
     size_t matrix_update_countdown = 1;
@@ -239,7 +250,9 @@ void MeshRenderer::render(const ICamera& cam,
 
         // Set up material state
         if (current_material != command.material) {
-            impl().pipeline_repository.bind_pipeline(*command.material, binding_context);
+            impl().pipeline_repository.bind_material_pipeline(*command.material,
+                                                              pipeline_settings(),
+                                                              binding_context);
             current_material = command.material;
         }
 

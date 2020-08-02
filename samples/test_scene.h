@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "mg/audio/mg_sound_buffer_handle.h"
+#include "mg/audio/mg_sound_source.h"
 #include <mg/core/mg_config.h>
 #include <mg/core/mg_window.h>
 #include <mg/gfx/mg_billboard_renderer.h>
@@ -75,7 +77,7 @@ struct Model {
 
 struct MaterialAssignment {
     size_t submesh_index = 0;
-    Mg::Identifier material_fname;
+    Mg::Identifier material_fname = "";
 };
 
 inline Mg::ResourceCache setup_resource_cache()
@@ -93,7 +95,8 @@ struct BlurTargets {
     Mg::gfx::Texture2D* vert_pass_target_texture;
 };
 
-struct Scene {
+class Scene {
+public:
     ApplicationContext app;
 
     Mg::ResourceCache resource_cache = setup_resource_cache();
@@ -133,7 +136,43 @@ struct Scene {
     Mg::gfx::Material* bloom_material;
     Mg::gfx::Material* billboard_material;
 
+    Mg::audio::SoundSource sound_source;
+
     double time = 0.0;
     bool exit = false;
     bool draw_debug = false;
+
+    void init();
+    void main_loop();
+
+private:
+    void time_step();
+    void render_scene(double lerp_factor);
+
+    void setup_config();
+
+    Mg::gfx::MeshHandle load_mesh(Mg::Identifier file);
+
+    Mg::gfx::Texture2D* load_texture(Mg::Identifier file);
+
+    Mg::gfx::Material* load_material(Mg::Identifier file, Mg::span<const Mg::Identifier> options);
+
+    Model load_model(Mg::Identifier mesh_file,
+                     Mg::span<const MaterialAssignment> material_files,
+                     Mg::span<const Mg::Identifier> options);
+
+    void make_input_map();
+
+    void make_blur_targets(Mg::VideoMode video_mode);
+    void make_hdr_target(Mg::VideoMode mode);
+
+    void load_models();
+    void load_materials();
+    void generate_lights();
+
+    void on_window_focus_change(bool is_focused);
+    void on_resource_reload(const Mg::FileChangedEvent& event);
+
+    void render_light_debug_geometry();
+    void render_bloom();
 };

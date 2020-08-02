@@ -10,7 +10,6 @@
 
 #pragma once
 
-#include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/gfx/mg_blend_modes.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
@@ -18,6 +17,7 @@
 #include "mg/utils/mg_optional.h"
 
 #include <cstdint>
+#include <utility>
 
 namespace Mg::gfx {
 
@@ -25,110 +25,35 @@ class BufferTexture;
 class IRenderTarget;
 class UniformBuffer;
 
-enum class PolygonMode { Points = 0x1b00, Lines = 0x1b01, Fill = 0x1b02 };
+/** How polygons should be rasterised. */
+enum class PolygonMode : unsigned { point = 0, line = 1, fill = 2 };
 
-/** Types of comparison functions to use in depth testing. */
-enum class DepthTestMode {
-    Less = 0x201,
-    Equal = 0x202,
-    LessEqual = 0x203,
-    Greater = 0x204,
-    NotEqual = 0x205,
-    GreaterEqual = 0x206,
+/** Condition for letting a fragment pass through depth-testing against the depth buffer. */
+enum class DepthTestCondition : unsigned {
+    less = 0,
+    equal = 1,
+    less_equal = 2,
+    greater = 3,
+    not_equal = 4,
+    greater_equal = 5,
+    always = 6
 };
 
-/** Types of functions to use in culling. */
-enum class CullingMode { None, Front = 0x404, Back = 0x405 };
+/** Which side of polygons to cull. */
+enum class CullingMode : unsigned { none = 0, front = 1, back = 2 };
 
-/** Type of input to a rendering pipeline. */
-enum class PipelineInputType { BufferTexture, Sampler2D, UniformBuffer };
+/** The type of an input to a rendering pipeline. */
+enum class PipelineInputType : unsigned { BufferTexture, Sampler2D, UniformBuffer };
 
-struct PipelineInputLocation {
+/** Describes an input to a pipeline: the input's type, name, and its binding location. */
+struct PipelineInputDescriptor {
     Identifier input_name;
     PipelineInputType type;
     uint32_t location;
 };
 
-using PipelineInputLayout = small_vector<PipelineInputLocation, 10>;
-
-struct PipelineSettings {
-    PipelineSettings()
-    {
-        colour_write = true;
-        depth_write = true;
-        depth_test = true;
-        enable_blending = false;
-    }
-
-    PolygonMode polygon_mode = PolygonMode::Fill;
-    DepthTestMode depth_test_mode = DepthTestMode::LessEqual;
-    CullingMode culling_mode = CullingMode::Back;
-    BlendMode blend_mode = c_blend_mode_alpha;
-
-    bool colour_write : 1;
-    bool depth_write : 1;
-    bool depth_test : 1;
-    bool enable_blending : 1;
-};
-
-/** PipelinePrototype represents shared configuration for a set of similar pipelines. */
-struct PipelinePrototype {
-    PipelineSettings settings;
-    PipelineInputLayout common_input_layout;
-};
-
-/** A rendering pipeline: a configuration specifying which rendering parameters and shaders to use
- * when rendering a set of objects.
- */
-class Pipeline {
-public:
-    struct CreationParameters {
-        VertexShaderHandle vertex_shader;
-        Opt<GeometryShaderHandle> geometry_shader;
-        Opt<FragmentShaderHandle> fragment_shader;
-        const PipelineInputLayout& additional_input_layout;
-        const PipelinePrototype& prototype;
-    };
-
-    static Opt<Pipeline> make(const CreationParameters& params);
-
-    ~Pipeline();
-
-    MG_MAKE_DEFAULT_MOVABLE(Pipeline);
-    MG_MAKE_NON_COPYABLE(Pipeline);
-
-    const PipelinePrototype& prototype() const noexcept { return *m_p_prototype; };
-
-private:
-    Pipeline(PipelineHandle internal_handle,
-             const PipelinePrototype& prototype,
-             const PipelineInputLayout& additional_input_layout);
-
-    friend class PipelinePrototypeContext;
-
-    PipelineHandle m_handle;
-    const PipelinePrototype* m_p_prototype;
-};
-
-/** A `PipelinePrototypeContext` is an object which sets up the state required to bind `Pipelines`
- * of a shared `PipelinePrototype`. Hence, to bind a `Pipeline`, you must first create a
- * `PipelinePrototypeContext` using the `PipelinePrototype` corresponding to the `Pipeline` first.
- * The individual `Pipeline`s can then be bound using `PipelinePrototypeContext::bind_pipeline()`.
- */
-class PipelinePrototypeContext {
-public:
-    PipelinePrototypeContext(const PipelinePrototype& prototype);
-
-    MG_MAKE_NON_COPYABLE(PipelinePrototypeContext);
-    MG_MAKE_NON_MOVABLE(PipelinePrototypeContext);
-
-    void bind_pipeline(const Pipeline& pipeline) const;
-
-    const PipelinePrototype& bound_prototype;
-};
-
-/** A set of pipeline inputs -- associations from input location index value to graphics resources,
- * specifying which resource to use for the pipeline input at the given location.
+/** A pipeline input binding is an association from input-location index value to a graphics
+ * resource, specifying which resource to use for the pipeline input at the given location.
  */
 class PipelineInputBinding {
 public:
@@ -150,9 +75,125 @@ private:
     uint32_t m_location;
 };
 
-/** Bind the set of input resources as input to pipelines. A binding remains valid even if the
- * pipeline changes, as long as the pipelines share input layout.
+/** A rendering pipeline: a configuration specifying which rendering parameters and shaders to use
+ * when rendering a set of objects.
  */
-void bind_pipeline_input_set(span<const PipelineInputBinding> bindings);
+class Pipeline {
+public:
+    /** Construction parameters for `Pipeline`s. */
+    struct Params;
+
+    /** Pipeline settings controlling blending, rasterisation, etc. */
+    struct Settings;
+
+    /** Create a new Pipeline. May fail in case the shaders fail to link. */
+    static Opt<Pipeline> make(const Params& params);
+
+    /** Bind the given pipeline input set.
+     * The binding remains valid for different Pipelines that share the same
+     * Pipeline::Params::shared_input_layout.
+     * @param bindings Bindings which must be compatible with the
+     * PipelinePrototype::shared_input_layout of the PipelinePrototype used when creating this
+     * Pipeline.
+     */
+    static void bind_shared_inputs(span<const PipelineInputBinding> bindings);
+
+    /** Bind the given pipeline input set.
+     * The binding is invalidated when another Pipeline is bound.
+     * @param bindings Bindings which must be compatible with the
+     * Pipeline::Params::material_input_layout used when creating this Pipeline
+     */
+    static void bind_material_inputs(span<const PipelineInputBinding> bindings);
+
+    MG_MAKE_DEFAULT_MOVABLE(Pipeline);
+    MG_MAKE_NON_COPYABLE(Pipeline);
+
+    ~Pipeline();
+
+    PipelineHandle handle() const { return m_handle; }
+
+private:
+    Pipeline(PipelineHandle internal_handle,
+             span<const PipelineInputDescriptor> shared_input_layout,
+             span<const PipelineInputDescriptor> material_input_layout);
+
+    PipelineHandle m_handle;
+};
+
+/** Construction parameters for `Pipeline`s. */
+struct Pipeline::Params {
+    /** Compiled vertex shader. Mandatory. */
+    VertexShaderHandle vertex_shader;
+
+    /** Compiled fragment shader. Mandatory. */
+    FragmentShaderHandle fragment_shader;
+
+    /** Compiled geometry shader. Optional. */
+    Opt<GeometryShaderHandle> geometry_shader;
+
+    /** Input layout for shared input bindings. */
+    span<const PipelineInputDescriptor> shared_input_layout;
+
+    /** Input layout for material parameters and samplers. */
+    span<const PipelineInputDescriptor> material_input_layout;
+};
+
+/** Pipeline settings controlling blending, rasterisation, etc. */
+struct Pipeline::Settings {
+    Settings()
+        : blend_mode(blend_mode_constants::bm_default)
+        , blending_enabled(false)
+        , depth_test_condition(DepthTestCondition::less)
+        , polygon_mode(PolygonMode::fill)
+        , culling_mode(CullingMode::back)
+        , colour_write_enabled(true)
+        , alpha_write_enabled(true)
+        , depth_write_enabled(true)
+    {}
+
+    /** Whether, and if so how, the colour resulting from this pipeline should be blended with
+     *  previous result in render target.
+     */
+    BlendMode blend_mode;
+    bool blending_enabled : 1;
+
+    /** Whether -- and if so, by which condition -- to discard fragments based on depth-test
+     * against existing fragments in render target's depth buffer.
+     */
+    DepthTestCondition depth_test_condition : 3;
+
+    /** How polygons should be rasterised by this pipeline. */
+    PolygonMode polygon_mode : 2;
+
+    /** Which if any faces of polygons should be culled away. */
+    CullingMode culling_mode : 2;
+
+    /** Whether to enable writing colour result of pipeline to render target. */
+    bool colour_write_enabled : 1;
+
+    /** Whether to enable writing alpha-channel result of pipeline to render target. */
+    bool alpha_write_enabled : 1;
+
+    /** Whether to enable writing depth result of pipeline to render target's depth buffer. */
+    bool depth_write_enabled : 1;
+};
+
+/** A `PipelineBindingContext` is an object which sets up the state required to bind `Pipelines`.
+ *  Hence, to bind a `Pipeline`, you must first create a `PipelineBindingContext`. The individual
+ * `Pipeline`s can then be bound using `PipelineBindingContext::bind_pipeline()`.
+ */
+class PipelineBindingContext {
+public:
+    explicit PipelineBindingContext();
+
+    MG_MAKE_NON_COPYABLE(PipelineBindingContext);
+    MG_MAKE_DEFAULT_MOVABLE(PipelineBindingContext);
+
+    void bind_pipeline(const Pipeline& pipeline, const Pipeline::Settings& settings);
+
+private:
+    PipelineHandle m_bound_handle = PipelineHandle::null_handle();
+    Opt<Pipeline::Settings> m_bound_settings;
+};
 
 } // namespace Mg::gfx

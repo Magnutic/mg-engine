@@ -10,68 +10,69 @@
 
 #pragma once
 
+/** Pre-defined blend modes. */
 namespace Mg::gfx {
 
-/** Types of functions to use in blending */
-enum class BlendFunc {
-    ADD = 0x8006,
-    SUBTRACT = 0x800A,
-    REVERSE_SUBTRACT = 0x800B,
-    MIN = 0x8007,
-    MAX = 0x8008
+enum class BlendFactor {
+    zero = 0,
+    one = 1,
+    src_colour = 2,
+    one_minus_src_colour = 3,
+    src_alpha = 4,
+    one_minus_src_alpha = 5,
+    dst_alpha = 6,
+    one_minus_dst_alpha = 7,
+    dst_colour = 8,
+    one_minus_dst_colour = 9
 };
 
-/** Parameters for blend functions */
-enum class BlendParam {
-    ZERO = 0x0000,
-    ONE = 0x0001,
-    SRC_COLOUR = 0x0300,
-    ONE_MINUS_SRC_COLOUR = 0x0301,
-    SRC_ALPHA = 0x0302,
-    ONE_MINUS_SRC_ALPHA = 0x0303,
-    DST_ALPHA = 0x0304,
-    ONE_MINUS_DST_ALPHA = 0x0305,
-    DST_COLOUR = 0x0306,
-    ONE_MINUS_DST_COLOUR = 0x0307
-};
+enum class BlendOp { add = 0, subtract = 1, reverse_subtract = 2, min = 3, max = 4 };
 
-/** Describes a blend mode
- * For information on how to use blend mode, refer to e.g.:
- * https://www.opengl.org/wiki/Blending
- */
 struct BlendMode {
-    BlendFunc colour;
-    BlendFunc alpha;
-    BlendParam src_colour;
-    BlendParam dst_colour;
-    BlendParam src_alpha;
-    BlendParam dst_alpha;
+    BlendOp colour_blend_op : 3;
+    BlendOp alpha_blend_op : 3;
+    BlendFactor src_colour_factor : 6;
+    BlendFactor dst_colour_factor : 6;
+    BlendFactor src_alpha_factor : 6;
+    BlendFactor dst_alpha_factor : 6;
 };
 
-// TODO: make sure these blend modes are actually correct
+inline bool operator==(BlendMode l, BlendMode r)
+{
+    return l.colour_blend_op == r.colour_blend_op && l.alpha_blend_op == r.alpha_blend_op &&
+           l.src_alpha_factor == r.src_alpha_factor && l.dst_colour_factor == r.dst_colour_factor &&
+           l.src_alpha_factor == r.src_alpha_factor && l.dst_alpha_factor == r.dst_alpha_factor;
+}
 
-/** Default BlendMode */
-constexpr BlendMode c_blend_mode_default{ BlendFunc::ADD,   BlendFunc::ADD,  BlendParam::ONE,
-                                          BlendParam::ZERO, BlendParam::ONE, BlendParam::ZERO };
-
-/** Alpha BlendMode */
-constexpr BlendMode c_blend_mode_alpha{ BlendFunc::ADD,        BlendFunc::ADD,
-                                        BlendParam::SRC_ALPHA, BlendParam::ONE_MINUS_SRC_ALPHA,
-                                        BlendParam::ONE,       BlendParam::ONE };
-
-/** Premultiplied alpha BlendMode */
-constexpr BlendMode c_blend_mode_alpha_premultiplied{
-    BlendFunc::ADD,  BlendFunc::ADD, BlendParam::ONE, BlendParam::ONE_MINUS_SRC_ALPHA,
-    BlendParam::ONE, BlendParam::ONE
-};
-
-/** Additive BlendMode */
-constexpr BlendMode c_blend_mode_add{ BlendFunc::ADD,  BlendFunc::ADD,  BlendParam::SRC_ALPHA,
-                                      BlendParam::ONE, BlendParam::ONE, BlendParam::ONE };
-
-/** Premultiplied additive BlendMode */
-constexpr BlendMode c_blend_mode_add_premultiplied{ BlendFunc::ADD,  BlendFunc::ADD,
-                                                    BlendParam::ONE, BlendParam::ONE,
-                                                    BlendParam::ONE, BlendParam::ONE };
+inline bool operator!=(BlendMode l, BlendMode r)
+{
+    return !(l == r);
+}
 
 } // namespace Mg::gfx
+
+namespace Mg::gfx::blend_mode_constants {
+
+/** Default BlendMode */
+constexpr BlendMode bm_default{ BlendOp::add,      BlendOp::add,     BlendFactor::one,
+                                BlendFactor::zero, BlendFactor::one, BlendFactor::zero };
+
+/** Alpha BlendMode */
+constexpr BlendMode bm_alpha{ BlendOp::add,           BlendOp::add,
+                              BlendFactor::src_alpha, BlendFactor::one_minus_src_alpha,
+                              BlendFactor::one,       BlendFactor::one };
+
+/** Premultiplied alpha BlendMode */
+constexpr BlendMode bm_alpha_premultiplied{ BlendOp::add,     BlendOp::add,
+                                            BlendFactor::one, BlendFactor::one_minus_src_alpha,
+                                            BlendFactor::one, BlendFactor::one };
+
+/** Additive BlendMode */
+constexpr BlendMode bm_add{ BlendOp::add,     BlendOp::add,     BlendFactor::src_alpha,
+                            BlendFactor::one, BlendFactor::one, BlendFactor::one };
+
+/** Premultiplied additive BlendMode */
+constexpr BlendMode bm_add_premultiplied{ BlendOp::add,     BlendOp::add,     BlendFactor::one,
+                                          BlendFactor::one, BlendFactor::one, BlendFactor::one };
+
+} // namespace Mg::gfx::blend_mode_constants

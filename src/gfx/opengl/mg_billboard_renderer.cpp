@@ -38,6 +38,13 @@ namespace {
 constexpr uint32_t k_camera_ubo_slot = 0;
 constexpr uint32_t k_material_params_ubo_slot = 1;
 
+/** Uniform block for passing camera parameters to shader. */
+struct CameraBlock {
+    glm::mat4 VP;
+    glm::mat4 P;
+    glm::vec4 cam_pos_xyz_aspect_ratio_w;
+};
+
 //--------------------------------------------------------------------------------------------------
 // Shader code for billboard rendering
 //--------------------------------------------------------------------------------------------------
@@ -102,7 +109,7 @@ void main() {
 constexpr auto billboard_fragment_shader_preamble = R"(
 #version 330 core
 
-layout (location = 0) out vec4 frag_colour;
+layout (location = 0) out vec4 frag_out;
 
 in vec4 fs_in_colour;
 in vec2 tex_coord;
@@ -118,16 +125,17 @@ void main() {
 )";
 
 constexpr auto billboard_fragment_shader_fallback = R"(
-    void main() { frag_colour = vec4(1.0, 0.0, 1.0, 1.0); }
+    void main() { frag_out = vec4(1.0, 0.0, 1.0, 1.0); }
 )";
 
 PipelineRepository make_billboard_pipeline_factory()
 {
     PipelineRepository::Config config{};
 
-    config.pipeline_prototype.common_input_layout = {
-        { "CameraBlock", PipelineInputType::UniformBuffer, k_camera_ubo_slot }
-    };
+    config.shared_input_layout = Array<PipelineInputDescriptor>::make(1);
+    config.shared_input_layout[0] = { "CameraBlock",
+                                      PipelineInputType::UniformBuffer,
+                                      k_camera_ubo_slot };
 
     config.preamble_shader_code = { VertexShaderCode{ billboard_vertex_shader_preamble },
                                     GeometryShaderCode{ billboard_geometry_shader },
@@ -139,7 +147,13 @@ PipelineRepository make_billboard_pipeline_factory()
 
     config.material_params_ubo_slot = k_material_params_ubo_slot;
 
-    return PipelineRepository(config);
+    return PipelineRepository(std::move(config));
+}
+
+Pipeline::Settings pipeline_settings()
+{
+    Pipeline::Settings settings;
+    return settings; // default settings
 }
 
 } // namespace
@@ -161,13 +175,6 @@ void BillboardRenderList::sort_farthest_first(const ICamera& camera) noexcept
 // BillboardRenderer implementation
 //--------------------------------------------------------------------------------------------------
 
-/** Uniform block for passing camera parameters to shader. */
-struct CameraBlock {
-    glm::mat4 VP;
-    glm::mat4 P;
-    glm::vec4 cam_pos_xyz_aspect_ratio_w;
-};
-
 /** Internal data for BillboardRenderer. */
 struct BillboardRendererData {
     UniformBuffer camera_ubo{ sizeof(CameraBlock) };
@@ -182,8 +189,9 @@ struct BillboardRendererData {
     VertexArrayHandle vao;
 };
 
+namespace {
 // Update vertex buffer to match the new set of billboards
-inline void update_buffer(BillboardRendererData& data, span<const Billboard> billboards)
+void update_buffer(BillboardRendererData& data, span<const Billboard> billboards)
 {
     glBindBuffer(GL_ARRAY_BUFFER, narrow<GLuint>(data.vbo.get()));
 
@@ -201,6 +209,7 @@ inline void update_buffer(BillboardRendererData& data, span<const Billboard> bil
                  billboards.data(),
                  GL_STREAM_DRAW);
 }
+} // namespace
 
 BillboardRenderer::BillboardRenderer()
 {
@@ -273,11 +282,12 @@ void BillboardRenderer::render(const ICamera& camera,
     }
 
     const std::array shared_inputs = { PipelineInputBinding(k_camera_ubo_slot, impl().camera_ubo) };
+    Pipeline::bind_shared_inputs(shared_inputs);
 
-    PipelineRepository::BindingContext binding_context = impl().pipeline_repository.binding_context(
-        shared_inputs);
-
-    impl().pipeline_repository.bind_pipeline(material, binding_context);
+    PipelineBindingContext binding_context;
+    impl().pipeline_repository.bind_material_pipeline(material,
+                                                          pipeline_settings(),
+                                                          binding_context);
 
     glBindVertexArray(narrow<GLuint>(impl().vao.get()));
     glDrawArrays(GL_POINTS, 0, narrow<GLint>(billboards.size()));

@@ -7,12 +7,12 @@
 #include "mg/gfx/mg_pipeline.h"
 
 #include "../mg_shader.h"
-#include "mg_gl_debug.h"
 #include "mg_opengl_shader.h"
 #include "mg_glad.h"
 
 #include "mg/core/mg_log.h"
 #include "mg/gfx/mg_buffer_texture.h"
+#include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_texture2d.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 
@@ -20,84 +20,78 @@
 
 namespace Mg::gfx {
 
-PipelinePrototypeContext::PipelinePrototypeContext(const PipelinePrototype& prototype)
-    : bound_prototype(prototype)
-{
-    const auto& settings = prototype.settings;
+//--------------------------------------------------------------------------------------------------
+// PipelineInputBinding
+//--------------------------------------------------------------------------------------------------
 
-    glPolygonMode(GL_FRONT_AND_BACK, static_cast<GLenum>(settings.polygon_mode));
+PipelineInputBinding::PipelineInputBinding(uint32_t location, const BufferTexture& buffer_texture)
+    : PipelineInputBinding(location,
+                           buffer_texture.handle().get(),
+                           PipelineInputType::BufferTexture)
+{}
 
-    if (settings.depth_test) {
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(static_cast<GLenum>(settings.depth_test_mode));
-    }
-    else {
-        glDisable(GL_DEPTH_TEST);
-    }
+PipelineInputBinding::PipelineInputBinding(uint32_t location, TextureHandle texture)
+    : PipelineInputBinding(location, texture.get(), PipelineInputType::Sampler2D)
+{}
 
-    if (settings.culling_mode == CullingMode::None) {
-        glDisable(GL_CULL_FACE);
-    }
-    else {
-        glEnable(GL_CULL_FACE);
-        glCullFace(static_cast<GLenum>(settings.culling_mode));
-    }
+PipelineInputBinding::PipelineInputBinding(uint32_t location, const UniformBuffer& ubo)
+    : PipelineInputBinding(location, ubo.handle().get(), PipelineInputType::UniformBuffer)
+{}
 
-    if (settings.enable_blending) {
-        glEnable(GL_BLEND);
-        const auto colour = static_cast<GLenum>(settings.blend_mode.colour);
-        const auto alpha = static_cast<GLenum>(settings.blend_mode.alpha);
-        const auto src_colour = static_cast<GLenum>(settings.blend_mode.src_colour);
-        const auto dst_colour = static_cast<GLenum>(settings.blend_mode.dst_colour);
-        const auto src_alpha = static_cast<GLenum>(settings.blend_mode.src_alpha);
-        const auto dst_alpha = static_cast<GLenum>(settings.blend_mode.dst_alpha);
+//--------------------------------------------------------------------------------------------------
+// Pipeline
+//--------------------------------------------------------------------------------------------------
 
-        glBlendEquationSeparate(colour, alpha);
-        glBlendFuncSeparate(src_colour, dst_colour, src_alpha, dst_alpha);
-    }
-    else {
-        glDisable(GL_BLEND);
-    }
-
-    glDepthMask(GLboolean{ settings.depth_write });
-
-    const auto colour_write = GLboolean{ settings.colour_write };
-    glColorMask(colour_write, colour_write, colour_write, colour_write);
-
-    MG_CHECK_GL_ERROR();
-}
-
-void PipelinePrototypeContext::bind_pipeline(const Pipeline& pipeline) const
-{
-    MG_ASSERT(&pipeline.prototype() == &bound_prototype &&
-              "Pipeline bound to a PipelinePrototypeContext for a different PipelinePrototype.");
-
-    opengl::use_program(pipeline.m_handle);
-
-    MG_CHECK_GL_ERROR();
-}
-
-Opt<Pipeline> Pipeline::make(const CreationParameters& params)
+Opt<Pipeline> Pipeline::make(const Params& params)
 {
     // Note: in OpenGL, PipelineHandle refers to shader programs.
     Opt<PipelineHandle> opt_program_handle = opengl::link_shader_program(params.vertex_shader,
                                                                          params.geometry_shader,
                                                                          params.fragment_shader);
+    if (opt_program_handle) {
+        return Pipeline(opt_program_handle.value(),
+                        params.shared_input_layout,
+                        params.material_input_layout);
+    }
 
-    auto make_pipeline = [&params](PipelineHandle ph) {
-        return Pipeline(ph, params.prototype, params.additional_input_layout);
-    };
-
-    return opt_program_handle.map(make_pipeline);
+    return nullopt;
 }
 
 namespace {
-void set_input_location(const opengl::ShaderProgramHandle& shader_handle,
-                        const PipelineInputLocation& input_location)
+
+// Shared implementation used for both pipeline-input binding functions in OpenGL.
+void bind_pipeline_input_set(span<const PipelineInputBinding> bindings)
+{
+    for (const PipelineInputBinding& binding : bindings) {
+        const auto gl_object_id = static_cast<GLuint>(binding.gfx_resource_handle());
+        const uint32_t location = binding.location();
+
+        switch (binding.type()) {
+        case PipelineInputType::BufferTexture: {
+            glActiveTexture(GL_TEXTURE0 + location);
+            glBindTexture(GL_TEXTURE_BUFFER, gl_object_id);
+            break;
+        }
+        case PipelineInputType::Sampler2D: {
+            glActiveTexture(GL_TEXTURE0 + location);
+            glBindTexture(GL_TEXTURE_2D, gl_object_id);
+            break;
+        }
+        case PipelineInputType::UniformBuffer: {
+            glBindBufferBase(GL_UNIFORM_BUFFER, location, gl_object_id);
+            break;
+        }
+        }
+    }
+}
+
+// Configure the given shader using the input descriptors.
+void apply_input_descriptor(const opengl::ShaderProgramHandle& shader_handle,
+                            const PipelineInputDescriptor& input_descriptor)
 {
     using namespace opengl;
 
-    const auto& [input_name, type, location] = input_location;
+    const auto& [input_name, type, location] = input_descriptor;
     const auto name = input_name.str_view();
 
     bool success = false;
@@ -125,69 +119,188 @@ void set_input_location(const opengl::ShaderProgramHandle& shader_handle,
             static_cast<uint32_t>(shader_handle.get())));
     }
 }
+
 } // namespace
 
-Pipeline::Pipeline(PipelineHandle internal_handle,
-                   const PipelinePrototype& prototype,
-                   const PipelineInputLayout& additional_input_layout)
-    : m_handle(internal_handle), m_p_prototype(&prototype)
+void Pipeline::bind_shared_inputs(span<const PipelineInputBinding> bindings)
 {
+    MG_GFX_DEBUG_GROUP("Pipeline::bind_shared_inputs")
+    bind_pipeline_input_set(bindings);
+}
+
+void Pipeline::bind_material_inputs(span<const PipelineInputBinding> bindings)
+{
+    MG_GFX_DEBUG_GROUP("Pipeline::bind_material_inputs")
+    bind_pipeline_input_set(bindings);
+}
+
+Pipeline::Pipeline(PipelineHandle internal_handle,
+                   span<const PipelineInputDescriptor> shared_input_layout,
+                   span<const PipelineInputDescriptor> material_input_layout)
+    : m_handle(internal_handle)
+{
+    MG_GFX_DEBUG_GROUP("Create Pipeline")
+
     opengl::use_program(internal_handle);
 
-    for (auto&& location : prototype.common_input_layout) {
-        set_input_location(internal_handle, location);
+    for (auto&& location : shared_input_layout) {
+        apply_input_descriptor(internal_handle, location);
     }
-    for (auto&& location : additional_input_layout) {
-        set_input_location(internal_handle, location);
+    for (auto&& location : material_input_layout) {
+        apply_input_descriptor(internal_handle, location);
     }
-
-    MG_CHECK_GL_ERROR();
 }
 
 Pipeline::~Pipeline()
 {
+    MG_GFX_DEBUG_GROUP("Pipeline::~Pipeline")
     opengl::destroy_shader_program(m_handle);
 }
 
-PipelineInputBinding::PipelineInputBinding(uint32_t location, const BufferTexture& buffer_texture)
-    : PipelineInputBinding(location,
-                           buffer_texture.handle().get(),
-                           PipelineInputType::BufferTexture)
-{}
+//--------------------------------------------------------------------------------------------------
+// PipelineBindingContext
+//--------------------------------------------------------------------------------------------------
 
-PipelineInputBinding::PipelineInputBinding(uint32_t location, TextureHandle texture)
-    : PipelineInputBinding(location, texture.get(), PipelineInputType::Sampler2D)
-{}
+namespace /* OpenGL helpers. */ {
 
-PipelineInputBinding::PipelineInputBinding(uint32_t location, const UniformBuffer& ubo)
-    : PipelineInputBinding(location, ubo.handle().get(), PipelineInputType::UniformBuffer)
-{}
-
-void bind_pipeline_input_set(span<const PipelineInputBinding> bindings)
+GLenum gl_polygon_mode(PolygonMode mode)
 {
-    for (const PipelineInputBinding& binding : bindings) {
-        const auto gl_object_id = static_cast<GLuint>(binding.gfx_resource_handle());
-        const uint32_t location = binding.location();
+    static constexpr std::array<GLenum, 3> values{ GL_POINT, GL_LINE, GL_FILL };
+    return values.at(static_cast<size_t>(mode));
+}
 
-        switch (binding.type()) {
-        case PipelineInputType::BufferTexture: {
-            glActiveTexture(GL_TEXTURE0 + location);
-            glBindTexture(GL_TEXTURE_BUFFER, gl_object_id);
-            break;
+GLenum gl_depth_mode(DepthTestCondition mode)
+{
+    static constexpr std::array<GLenum, 6> values{ GL_LESS,    GL_EQUAL,    GL_LEQUAL,
+                                                   GL_GREATER, GL_NOTEQUAL, GL_GEQUAL };
+    return values.at(static_cast<size_t>(mode));
+}
+
+Opt<GLenum> gl_culling_mode(CullingMode mode)
+{
+    if (mode == CullingMode::front) {
+        return GLenum{ GL_FRONT };
+    }
+    else if (mode == CullingMode::back) {
+        return GLenum{ GL_BACK };
+    }
+    return nullopt;
+}
+
+GLenum gl_blend_op(BlendOp op)
+{
+    static constexpr std::array<GLenum, 6> values{
+        GL_FUNC_ADD, GL_FUNC_SUBTRACT, GL_FUNC_REVERSE_SUBTRACT, GL_MIN, GL_MAX
+    };
+    return values.at(static_cast<size_t>(op));
+}
+
+GLenum gl_blend_factor(BlendFactor factor)
+{
+    static constexpr std::array<GLenum, 10> values{ GL_ZERO,      GL_ONE,
+                                                    GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR,
+                                                    GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA,
+                                                    GL_DST_ALPHA, GL_ONE_MINUS_DST_ALPHA,
+                                                    GL_DST_COLOR, GL_ONE_MINUS_DST_COLOR };
+    return values.at(static_cast<size_t>(factor));
+}
+
+void apply_pipeline_settings(const Pipeline::Settings settings,
+                             const Opt<Pipeline::Settings> prev_settings)
+{
+    const bool change_polygon_mode = !prev_settings ||
+                                     (prev_settings->polygon_mode != settings.polygon_mode);
+
+    const bool change_depth_test_condition =
+        !prev_settings || (prev_settings->depth_test_condition != settings.depth_test_condition);
+
+    const bool change_blend_enabled = !prev_settings || (prev_settings->blending_enabled !=
+                                                         settings.blending_enabled);
+
+    const bool change_blend_mode = !prev_settings ||
+                                   (prev_settings->blend_mode != settings.blend_mode);
+
+    const bool change_culling_mode = !prev_settings ||
+                                     (prev_settings->culling_mode != settings.culling_mode);
+
+    const bool change_colour_mask = !prev_settings || (prev_settings->colour_write_enabled !=
+                                                       settings.colour_write_enabled);
+
+    const bool change_depth_mask = !prev_settings || (prev_settings->depth_write_enabled !=
+                                                      settings.depth_write_enabled);
+
+    if (change_polygon_mode) {
+        glPolygonMode(GL_FRONT_AND_BACK, gl_polygon_mode(settings.polygon_mode));
+    }
+
+    if (change_depth_test_condition) {
+        if (settings.depth_test_condition != DepthTestCondition::always) {
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(gl_depth_mode(settings.depth_test_condition));
         }
-        case PipelineInputType::Sampler2D: {
-            glActiveTexture(GL_TEXTURE0 + location);
-            glBindTexture(GL_TEXTURE_2D, gl_object_id);
-            break;
-        }
-        case PipelineInputType::UniformBuffer: {
-            glBindBufferBase(GL_UNIFORM_BUFFER, location, gl_object_id);
-            break;
-        }
+        else {
+            glDisable(GL_DEPTH_TEST);
         }
     }
 
-    MG_CHECK_GL_ERROR();
+    if (change_culling_mode) {
+        Opt<GLenum> gl_mode = gl_culling_mode(settings.culling_mode);
+        if (!gl_mode) {
+            glDisable(GL_CULL_FACE);
+        }
+        else {
+            glEnable(GL_CULL_FACE);
+            glCullFace(gl_mode.value());
+        }
+    }
+
+    if (change_blend_enabled) {
+        if (settings.blending_enabled) {
+            glEnable(GL_BLEND);
+        }
+        else {
+            glDisable(GL_BLEND);
+        }
+    }
+
+    if (change_blend_mode) {
+        glBlendEquationSeparate(gl_blend_op(settings.blend_mode.colour_blend_op),
+                                gl_blend_op(settings.blend_mode.alpha_blend_op));
+        glBlendFuncSeparate(gl_blend_factor(settings.blend_mode.src_colour_factor),
+                            gl_blend_factor(settings.blend_mode.dst_colour_factor),
+                            gl_blend_factor(settings.blend_mode.src_alpha_factor),
+                            gl_blend_factor(settings.blend_mode.dst_alpha_factor));
+    }
+
+    if (change_depth_mask) {
+        glDepthMask(GLboolean{ settings.depth_write_enabled });
+    }
+
+    if (change_colour_mask) {
+        const GLboolean colour_write{ settings.colour_write_enabled };
+        const GLboolean alpha_write{ settings.alpha_write_enabled };
+        glColorMask(colour_write, colour_write, colour_write, alpha_write);
+    }
+}
+
+} // namespace
+
+PipelineBindingContext::PipelineBindingContext() = default;
+
+void PipelineBindingContext::bind_pipeline(const Pipeline& pipeline,
+                                           const Pipeline::Settings& settings)
+{
+    if (pipeline.handle() == m_bound_handle) {
+        return;
+    }
+
+    MG_GFX_DEBUG_GROUP("PipelineBindingContext::bind_pipeline")
+
+    apply_pipeline_settings(settings, m_bound_settings);
+    opengl::use_program(pipeline.handle());
+
+    m_bound_handle = pipeline.handle();
+    m_bound_settings = settings;
 }
 
 } // namespace Mg::gfx

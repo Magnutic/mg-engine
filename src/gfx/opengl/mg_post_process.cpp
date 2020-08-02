@@ -24,8 +24,8 @@ const float quad_vertices[] = { -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,
                                 1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f };
 
 // Texture units 8 & 9 are reserved for input colour and depth texture, respectively.
-constexpr uint32_t k_input_colour_texture_unit = 8;
-constexpr uint32_t k_input_depth_texture_unit = 9;
+constexpr uint32_t k_sampler_colour_texture_unit = 8;
+constexpr uint32_t k_sampler_depth_texture_unit = 9;
 
 constexpr uint32_t k_material_params_ubo_slot = 0;
 constexpr uint32_t k_frame_block_ubo_slot = 1;
@@ -77,6 +77,8 @@ constexpr const char* post_process_fs_fallback =
 
 PipelineRepository make_post_process_pipeline_repository()
 {
+    MG_GFX_DEBUG_GROUP("make_post_process_pipeline_repository")
+
     PipelineRepository::Config config{};
 
     config.preamble_shader_code = { VertexShaderCode{ post_process_vs },
@@ -85,16 +87,28 @@ PipelineRepository make_post_process_pipeline_repository()
 
     config.on_error_shader_code = { {}, {}, FragmentShaderCode{ post_process_fs_fallback } };
 
-    config.pipeline_prototype.common_input_layout = {
-        { "MaterialParams", PipelineInputType::UniformBuffer, k_material_params_ubo_slot },
-        { "FrameBlock", PipelineInputType::UniformBuffer, k_frame_block_ubo_slot },
-        { "sampler_colour", PipelineInputType::Sampler2D, k_input_colour_texture_unit },
-        { "sampler_depth", PipelineInputType::Sampler2D, k_input_depth_texture_unit }
-    };
+    config.shared_input_layout = Array<PipelineInputDescriptor>::make(3);
+    config.shared_input_layout[0] = { "FrameBlock",
+                                      PipelineInputType::UniformBuffer,
+                                      k_frame_block_ubo_slot };
+    config.shared_input_layout[1] = { "sampler_colour",
+                                      PipelineInputType::Sampler2D,
+                                      k_sampler_colour_texture_unit };
+    config.shared_input_layout[2] = { "sampler_depth",
+                                      PipelineInputType::Sampler2D,
+                                      k_sampler_depth_texture_unit };
 
     config.material_params_ubo_slot = k_material_params_ubo_slot;
 
-    return PipelineRepository(config);
+    return PipelineRepository(std::move(config));
+}
+
+Pipeline::Settings pipeline_settings()
+{
+    Pipeline::Settings settings;
+    settings.depth_test_condition = DepthTestCondition::always;
+    settings.depth_write_enabled = false;
+    return settings;
 }
 
 } // namespace
@@ -106,11 +120,11 @@ struct PostProcessRendererData {
 
     BufferHandle vbo;
     VertexArrayHandle vao;
+
+    Opt<PipelineBindingContext> binding_context;
 };
 
-namespace {
-
-void init(PostProcessRendererData& data)
+PostProcessRenderer::PostProcessRenderer() : PImplMixin()
 {
     MG_GFX_DEBUG_GROUP("init PostProcessRenderer")
 
@@ -132,40 +146,8 @@ void init(PostProcessRendererData& data)
     glBindVertexArray(0);
     MG_CHECK_GL_ERROR();
 
-    data.vao.set(vao_id);
-    data.vbo.set(vbo_id);
-}
-
-void setup_render_pipeline(PostProcessRendererData& data,
-                           const Material& material,
-                           TextureHandle input_colour,
-                           Opt<TextureHandle> input_depth,
-                           float z_near,
-                           float z_far)
-{
-    FrameBlock frame_block{ z_near, z_far };
-    data.frame_block_ubo.set_data(byte_representation(frame_block));
-
-    small_vector<PipelineInputBinding, 3> input_bindings = {
-        { k_frame_block_ubo_slot, data.frame_block_ubo },
-        { k_input_colour_texture_unit, input_colour }
-    };
-
-    if (input_depth.has_value()) {
-        input_bindings.push_back({ k_input_depth_texture_unit, input_depth.value() });
-    }
-
-    PipelineRepository::BindingContext binding_context = data.pipeline_repository.binding_context(
-        input_bindings);
-
-    data.pipeline_repository.bind_pipeline(material, binding_context);
-}
-
-} // namespace
-
-PostProcessRenderer::PostProcessRenderer() : PImplMixin()
-{
-    init(impl());
+    impl().vao.set(vao_id);
+    impl().vbo.set(vbo_id);
 }
 
 PostProcessRenderer::~PostProcessRenderer()
@@ -178,32 +160,64 @@ PostProcessRenderer::~PostProcessRenderer()
     glDeleteVertexArrays(1, &vao_id);
 }
 
-void PostProcessRenderer::post_process(const Material& material,
-                                       TextureHandle input_colour) noexcept
+PostProcessRenderer::RenderGuard PostProcessRenderer::get_guard() noexcept
+{
+    return { impl() };
+}
+
+void PostProcessRenderer::post_process(const RenderGuard&,
+                                       const Material& material,
+                                       TextureHandle sampler_colour) noexcept
 {
     MG_GFX_DEBUG_GROUP("PostProcessRenderer::post_process")
-    setup_render_pipeline(impl(), material, input_colour, nullopt, 0.0f, 0.0f);
+
+    impl().pipeline_repository.bind_material_pipeline(material,
+                                                      pipeline_settings(),
+                                                      impl().binding_context.value());
+
+    std::array shared_input_bindings = {
+        PipelineInputBinding{ k_frame_block_ubo_slot, impl().frame_block_ubo },
+        PipelineInputBinding{ k_sampler_colour_texture_unit, sampler_colour },
+        PipelineInputBinding{ k_sampler_depth_texture_unit, TextureHandle::null_handle() }
+    };
+
+    Pipeline::bind_shared_inputs(shared_input_bindings);
 
     const auto vao_id = narrow<GLuint>(impl().vao.get());
 
     glBindVertexArray(vao_id);
-    glDrawArrays(GL_TRIANGLES, 0, 12);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
     MG_CHECK_GL_ERROR();
 }
 
-void PostProcessRenderer::post_process(const Material& material,
-                                       TextureHandle input_colour,
-                                       TextureHandle input_depth,
+void PostProcessRenderer::post_process(const RenderGuard&,
+                                       const Material& material,
+                                       TextureHandle sampler_colour,
+                                       TextureHandle sampler_depth,
                                        float z_near,
                                        float z_far) noexcept
 {
     MG_GFX_DEBUG_GROUP("PostProcessRenderer::post_process")
-    setup_render_pipeline(impl(), material, input_colour, input_depth, z_near, z_far);
+
+    impl().pipeline_repository.bind_material_pipeline(material,
+                                                      pipeline_settings(),
+                                                      impl().binding_context.value());
+
+    FrameBlock frame_block{ z_near, z_far };
+    impl().frame_block_ubo.set_data(byte_representation(frame_block));
+
+    std::array shared_input_bindings = {
+        PipelineInputBinding{ k_frame_block_ubo_slot, impl().frame_block_ubo },
+        PipelineInputBinding{ k_sampler_colour_texture_unit, sampler_colour },
+        PipelineInputBinding{ k_sampler_depth_texture_unit, sampler_depth }
+    };
+
+    Pipeline::bind_shared_inputs(shared_input_bindings);
 
     const auto vao_id = narrow<GLuint>(impl().vao.get());
 
     glBindVertexArray(vao_id);
-    glDrawArrays(GL_TRIANGLES, 0, 12);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
     MG_CHECK_GL_ERROR();
 }
 
@@ -211,6 +225,16 @@ void PostProcessRenderer::drop_shaders() noexcept
 {
     MG_GFX_DEBUG_GROUP("PostProcessRenderer::drop_shaders")
     impl().pipeline_repository.drop_pipelines();
+}
+
+PostProcessRenderer::RenderGuard::RenderGuard(PostProcessRendererData& data) : m_data(&data)
+{
+    m_data->binding_context = PipelineBindingContext{};
+}
+
+PostProcessRenderer::RenderGuard::~RenderGuard()
+{
+    m_data->binding_context = nullopt;
 }
 
 } // namespace Mg::gfx

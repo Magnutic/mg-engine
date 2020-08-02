@@ -11,6 +11,7 @@
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/utils/mg_assert.h"
+#include "mg/gfx/mg_gfx_debug_group.h"
 
 #include <fmt/core.h>
 
@@ -21,6 +22,8 @@ namespace Mg::gfx {
 
 UniformBuffer::UniformBuffer(size_t size, void* data) : m_size(size)
 {
+    MG_GFX_DEBUG_GROUP("Create UniformBuffer")
+
     GLuint ubo_id = 0;
     glGenBuffers(1, &ubo_id);
     glBindBuffer(GL_UNIFORM_BUFFER, ubo_id);
@@ -32,12 +35,16 @@ UniformBuffer::UniformBuffer(size_t size, void* data) : m_size(size)
 
 UniformBuffer::~UniformBuffer()
 {
+    MG_GFX_DEBUG_GROUP("UniformBuffer::~UniformBuffer")
+
     const auto ubo_id = narrow<GLuint>(m_handle.get());
     glDeleteBuffers(1, &ubo_id);
 }
 
 void UniformBuffer::set_data(span<const std::byte> data, size_t dest_offset)
 {
+    MG_GFX_DEBUG_GROUP("UniformBuffer::set_data")
+
     const auto ubo_id = narrow<GLuint>(m_handle.get());
 
     if (ubo_id == 0) {

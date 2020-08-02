@@ -8,10 +8,14 @@
 
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
+#include "mg/mg_defs.h"
 #include "mg/resource_cache/mg_resource_access_guard.h"
 #include "mg/utils/mg_stl_helpers.h"
 
 #include <fmt/core.h>
+
+#include <glm/vec2.hpp>
+#include <glm/vec4.hpp>
 
 #include <cstring> // memcpy
 #include <sstream>
@@ -44,6 +48,7 @@ Material::Material(Identifier material_id, ResourceHandle<ShaderResource> shader
     ResourceAccessGuard shader_resource_access(shader);
 
     MG_ASSERT(shader_resource_access->samplers().size() <= defs::k_max_samplers_per_material);
+    MG_ASSERT(shader_resource_access->options().size() <= defs::k_max_options_per_material);
 
     uint32_t opt_index = 0;
     for (const shader::Option& o : shader_resource_access->options()) {
@@ -88,12 +93,7 @@ void Material::set_option(Identifier option, bool enabled)
         throw RuntimeError();
     }
 
-    if (enabled) {
-        m_option_flags |= (1u << index);
-    }
-    else {
-        m_option_flags &= ~(1u << index);
-    }
+    m_option_flags.set(index, enabled);
 }
 
 bool Material::get_option(Identifier option) const
@@ -107,7 +107,7 @@ bool Material::get_option(Identifier option) const
         throw RuntimeError();
     }
 
-    return (m_option_flags & (1u << index)) != 0;
+    return m_option_flags.test(index);
 }
 
 Opt<size_t> Material::sampler_index(Identifier name)
@@ -129,11 +129,11 @@ void Material::set_parameter(Identifier name, float param)
 {
     _set_parameter_impl(name, byte_representation(param), shader::ParameterType::Float);
 }
-void Material::set_parameter(Identifier name, glm::vec2 param)
+void Material::set_parameter(Identifier name, const glm::vec2& param)
 {
     _set_parameter_impl(name, byte_representation(param), shader::ParameterType::Vec2);
 }
-void Material::set_parameter(Identifier name, glm::vec4 param)
+void Material::set_parameter(Identifier name, const glm::vec4& param)
 {
     _set_parameter_impl(name, byte_representation(param), shader::ParameterType::Vec4);
 }
@@ -162,12 +162,12 @@ void wrong_type_error(Identifier material_id,
                       shader::ParameterType expected,
                       shader::ParameterType actual)
 {
-    auto error_msg = fmt::format(
-        "Material '{}': set_parameter(\"{}\", ...): wrong type, expected {}, got {}.",
-        material_id.c_str(),
-        param_id.c_str(),
-        shader::parameter_type_to_string(expected),
-        shader::parameter_type_to_string(actual));
+    auto error_msg =
+        fmt::format("Material '{}': set_parameter(\"{}\", ...): wrong type, expected {}, got {}.",
+                    material_id.c_str(),
+                    param_id.c_str(),
+                    shader::parameter_type_to_string(expected),
+                    shader::parameter_type_to_string(actual));
 
     g_log.write_error(error_msg);
 }
@@ -213,7 +213,7 @@ void Material::_set_parameter_impl(Identifier name,
     std::memcpy(&m_parameter_data.buffer[offset], param_value.data(), size);
 }
 
-PipelineIdentifier Material::pipeline_identifier() const noexcept
+Material::PipelineId Material::pipeline_identifier() const noexcept
 {
     return { m_shader.resource_id(), m_option_flags };
 }
