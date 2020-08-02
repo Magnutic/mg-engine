@@ -74,6 +74,9 @@ public:
      */
     static Identifier from_runtime_string(std::string_view str) { return Identifier(str); }
 
+    /** Default constructor, empty string. */
+    Identifier() : Identifier("") {}
+
     Identifier(const Identifier& rhs) noexcept = default;
 
     Identifier& operator=(const Identifier& rhs) noexcept = default;
@@ -157,9 +160,8 @@ inline bool operator==(const Identifier& lhs, const Identifier& rhs)
     // Thus, the second half of the comparison (actual string comparison) only has to be run in the
     // relatively uncommon case of two identical compile-time strings which were not merged by the
     // compiler or linker.
-    const bool string_equal = (hash_equal ? (lhs.c_str() == rhs.c_str() ||
-                                             lhs.str_view() == rhs.str_view())
-                                          : false);
+    const bool string_equal =
+        (hash_equal ? (lhs.c_str() == rhs.c_str() || lhs.str_view() == rhs.str_view()) : false);
 
 #if MG_IDENTIFIER_REPORT_HASH_COLLISION
     if (hash_equal != string_equal) {
