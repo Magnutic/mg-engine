@@ -14,6 +14,8 @@ namespace Mg::audio {
 
 SoundSource::SoundSource()
 {
+    AudioContext::get(); // Ensures OpenAL is initialised.
+
     ALuint source_id = 0;
     alGenSources(1, &source_id);
     alSource3f(source_id, AL_POSITION, 0.0f, 0.0f, 0.0f);
@@ -24,6 +26,7 @@ SoundSource::~SoundSource()
 {
     if (m_source_id != 0) {
         ALuint source_id = narrow_cast<ALuint>(m_source_id);
+        alSourceStop(source_id);
         alDeleteSources(1, &source_id);
     }
 }
