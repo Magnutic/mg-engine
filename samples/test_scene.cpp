@@ -263,6 +263,20 @@ void Scene::render_scene(const double lerp_factor)
                                    hdr_target->colour_target()->handle());
     }
 
+    // Draw UI
+    {
+        Mg::gfx::UIRenderer::TransformParams transform_params = {};
+        transform_params.position = { 0.5f, 0.5f };
+        transform_params.anchor = { 0.5f, 0.5f };
+        transform_params.size = { 0.125f, 0.125f };
+        transform_params.rotation = Mg::Angle::from_radians(Mg::narrow_cast<float>(time));
+        ui_material->set_parameter("opacity", 0.5f);
+        ui_renderer.aspect_ratio(app.window().aspect_ratio());
+        ui_renderer.draw_rectangle(transform_params,
+                                   ui_material,
+                                   Mg::gfx::blend_mode_constants::bm_add);
+    }
+
     // Debug geometry
     if (draw_debug) {
         render_light_debug_geometry();
@@ -553,6 +567,13 @@ void Scene::load_materials()
     billboard_material = material_repository.create("billboard_material", billboard_handle);
     billboard_material->set_sampler("sampler_diffuse",
                                     load_texture("textures/light_t.dds")->handle());
+
+    // Create UI material
+    const auto ui_handle =
+        resource_cache.resource_handle<Mg::ShaderResource>("shaders/ui_render_test.mgshader");
+    ui_material = material_repository.create("ui_material", ui_handle);
+    ui_material->set_sampler("sampler_colour",
+                             load_texture("textures/ui/book_open_da.dds")->handle());
 }
 
 // Create a lot of random lights
@@ -618,6 +639,7 @@ void Scene::on_resource_reload(const Mg::FileChangedEvent& event)
         mesh_renderer.drop_shaders();
         billboard_renderer.drop_shaders();
         post_renderer.drop_shaders();
+        ui_renderer.drop_shaders();
         break;
     }
 }

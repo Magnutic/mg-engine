@@ -19,6 +19,7 @@
 #include <mg/gfx/mg_render_command_list.h>
 #include <mg/gfx/mg_render_target.h>
 #include <mg/gfx/mg_texture_repository.h>
+#include <mg/gfx/mg_ui_renderer.h>
 #include <mg/input/mg_input.h>
 #include <mg/input/mg_keyboard.h>
 #include <mg/resource_cache/mg_resource_cache.h>
@@ -109,6 +110,7 @@ public:
     Mg::gfx::DebugRenderer debug_renderer;
     Mg::gfx::BillboardRenderer billboard_renderer;
     Mg::gfx::PostProcessRenderer post_renderer;
+    Mg::gfx::UIRenderer ui_renderer;
 
     Mg::gfx::RenderCommandProducer render_command_producer;
     Mg::gfx::BillboardRenderList billboard_render_list;
@@ -135,6 +137,7 @@ public:
     Mg::gfx::Material* blur_material;
     Mg::gfx::Material* bloom_material;
     Mg::gfx::Material* billboard_material;
+    Mg::gfx::Material* ui_material;
 
     Mg::audio::SoundSource sound_source;
 

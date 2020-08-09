@@ -1,0 +1,19 @@
+TAGS {
+}
+
+OPTIONS {
+}
+
+PARAMETERS {
+    sampler2D sampler_colour;
+    vec4 colour = vec4(1.0, 1.0, 1.0, 1.0);
+    float opacity = 1.0;
+}
+
+FRAGMENT_CODE {
+    void main() {
+        vec4 result = texture(sampler_colour, tex_coord).rgba * material_params.colour;
+        result.a *= material_params.opacity;
+        frag_out = result;
+    }
+}
