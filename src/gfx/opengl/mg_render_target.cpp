@@ -74,10 +74,19 @@ public:
     MG_MAKE_NON_COPYABLE(FramebufferBindGuard);
     MG_MAKE_NON_MOVABLE(FramebufferBindGuard);
 
-    FramebufferBindGuard() noexcept { glGetIntegerv(GL_FRAMEBUFFER_BINDING, &old_binding); }
-    ~FramebufferBindGuard() { glBindFramebuffer(GL_FRAMEBUFFER, narrow<uint32_t>(old_binding)); }
+    FramebufferBindGuard() noexcept
+    {
+        glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &old_read_binding);
+        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &old_write_binding);
+    }
+    ~FramebufferBindGuard()
+    {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, narrow<uint32_t>(old_read_binding));
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, narrow<uint32_t>(old_write_binding));
+    }
 
-    GLint old_binding{};
+    GLint old_read_binding{};
+    GLint old_write_binding{};
 };
 
 } // namespace
@@ -92,6 +101,28 @@ struct TextureRenderTargetData {
 
     int32_t mip_level = 0;
 };
+
+void TextureRenderTarget::blit(const TextureRenderTarget& from,
+                               const TextureRenderTarget& to,
+                               const BlitSettings& settings)
+{
+    MG_GFX_DEBUG_GROUP("TextureRenderTarget::with_colour_target")
+    FramebufferBindGuard guard;
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, from.impl().fbo_id);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, to.impl().fbo_id);
+
+    const GLuint flags = (settings.colour ? GL_COLOR_BUFFER_BIT : 0u) |
+                         (settings.depth ? GL_DEPTH_BUFFER_BIT : 0u) |
+                         (settings.stencil ? GL_STENCIL_BUFFER_BIT : 0u);
+
+    const GLenum filter = (settings.filter == BlitFilter::linear) ? GL_LINEAR : GL_NEAREST;
+
+    const auto [from_width, from_height] = from.image_size();
+    const auto [to_width, to_height] = to.image_size();
+
+    glBlitFramebuffer(0, 0, from_width, from_height, 0, 0, to_width, to_height, flags, filter);
+}
 
 std::unique_ptr<TextureRenderTarget>
 TextureRenderTarget::with_colour_target(Texture2D* colour_target,

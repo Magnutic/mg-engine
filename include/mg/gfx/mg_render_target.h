@@ -84,6 +84,19 @@ public:
                        a sampler later on. */
     };
 
+    enum class BlitFilter { nearest, linear };
+
+    struct BlitSettings {
+        BlitFilter filter = BlitFilter::linear;
+        bool colour = true;
+        bool depth = true;
+        bool stencil = true;
+    };
+
+    static void blit(const TextureRenderTarget& from,
+                     const TextureRenderTarget& to,
+                     const BlitSettings& settings);
+
     static std::unique_ptr<TextureRenderTarget>
     with_colour_target(Texture2D* colour_target, DepthType depth_type, int32_t mip_level = 0);
 
