@@ -204,6 +204,30 @@ public:
         return this->m_ptr[i];
     }
 
+    T& back() noexcept
+    {
+        MG_ASSERT(m_size != 0);
+        return this->m_ptr[m_size - 1];
+    }
+
+    const T& back() const noexcept
+    {
+        MG_ASSERT(m_size != 0);
+        return this->m_ptr[m_size - 1];
+    }
+
+    T& front() noexcept
+    {
+        MG_ASSERT(m_size != 0);
+        return this->m_ptr[0];
+    }
+
+    const T& front() const noexcept
+    {
+        MG_ASSERT(m_size != 0);
+        return this->m_ptr[0];
+    }
+
     typename Base::size_type size() const noexcept { return m_size; }
 
 private:
