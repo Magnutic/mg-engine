@@ -9,6 +9,7 @@
 #include "mg/core/mg_file_loader.h"
 #include "mg/core/mg_log.h"
 #include "mg/resource_cache/mg_resource_loading_input.h"
+#include "mg/utils/mg_math_utils.h"
 
 #include <fmt/core.h>
 
@@ -151,7 +152,7 @@ size_t block_size_by_format(TextureResource::PixelFormat pixel_format)
 /** Get the number of blocks in a mipmap of given dimensions. */
 size_t num_blocks_by_img_size(TextureResource::DimT width, TextureResource::DimT height)
 {
-    return ((width + 3llu) / 4) * ((height + 3llu) / 4);
+    return ((width + 3u) / 4) * ((height + 3u) / 4);
 }
 
 } // namespace
@@ -203,8 +204,8 @@ LoadResourceResult TextureResource::load_resource_impl(const ResourceLoadingInpu
         auto mip_width = width, mip_height = height;
 
         for (MipIndexT i = 1u; i < num_mip_maps; ++i) {
-            mip_width /= 2;
-            mip_height /= 2;
+            mip_width = max(1u, mip_width / 2);
+            mip_height = max(1u, mip_height / 2);
             num_blocks += num_blocks_by_img_size(mip_width, mip_height);
         }
     }
@@ -253,8 +254,8 @@ TextureResource::MipLevelData TextureResource::pixel_data(MipIndexT mip_index) c
 
     for (MipIndexT i = 0; i < mip_index; ++i) {
         offset += size;
-        width /= 2;
-        height /= 2;
+        width = max(1u, width / 2);
+        height = max(1u, height / 2);
         size = num_blocks_by_img_size(width, height) * block_size;
     }
 

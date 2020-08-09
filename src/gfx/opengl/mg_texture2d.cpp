@@ -9,6 +9,7 @@
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/resources/mg_texture_resource.h"
+#include "mg/utils/mg_math_utils.h"
 
 #include "mg_gl_debug.h"
 #include "mg_glad.h"
@@ -189,11 +190,10 @@ GlTextureInfo gl_texture_info(const TextureResource& texture) noexcept
     switch (tex_format.pixel_format) {
     case TextureResource::PixelFormat::DXT1:
         info.compressed = true;
-        info.internal_format = tex_settings.dxt1_has_alpha
-                                   ? sRGB ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT
-                                          : GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
-                                   : sRGB ? GL_COMPRESSED_SRGB_S3TC_DXT1_EXT
-                                          : GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+        info.internal_format =
+            tex_settings.dxt1_has_alpha
+                ? (sRGB ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT : GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+                : (sRGB ? GL_COMPRESSED_SRGB_S3TC_DXT1_EXT : GL_COMPRESSED_RGB_S3TC_DXT1_EXT);
         break;
 
     case TextureResource::PixelFormat::DXT3:
@@ -292,8 +292,8 @@ void upload_compressed_mip(bool preallocated,
                            int32_t size,
                            const GLvoid* data) noexcept
 {
-    const auto width = info.width >> mip_index;
-    const auto height = info.height >> mip_index;
+    const auto width = max(1, info.width >> mip_index);
+    const auto height = max(1, info.height >> mip_index);
 
     if (preallocated) {
         // N.B. OpenGL docs are misleading about the 'format' param, it should have been called
