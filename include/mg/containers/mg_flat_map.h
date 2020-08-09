@@ -61,21 +61,21 @@ public:
         return (it != end() && it->first == key) ? it : end();
     }
 
-    Opt<mapped_type&> operator[](const KeyT& key) noexcept
+    mapped_type& operator[](const key_type& key)
     {
-        const auto it = _pos_for_key(key);
-        if (it != end() && it->first == key) {
-            return it->second;
+        auto it = _pos_for_key(key);
+        if (it == end() || it->first != key) {
+            it = m_data.insert(it, { key, mapped_type{} });
         }
-        return nullopt;
+        return it->second;
     }
-    Opt<const mapped_type&> operator[](const KeyT& key) const noexcept
+    mapped_type& operator[](key_type&& key)
     {
-        const auto it = _pos_for_key(key);
-        if (it != end() && it->first == key) {
-            return it->second;
+        auto it = _pos_for_key(key);
+        if (it == end() || it->first != key) {
+            it = m_data.insert(it, { std::move(key), mapped_type{} });
         }
-        return nullopt;
+        return it->second;
     }
 
     iterator erase(const_iterator pos) noexcept

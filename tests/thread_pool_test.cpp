@@ -79,9 +79,9 @@ TEST_CASE("ThreadPool: many jobs")
         job_to_future_map.insert({ i, std::move(future) });
     }
 
-    for (const auto [job_index, expected_result] : job_to_expected_result_map)
+    for (const auto& [job_index, expected_result] : job_to_expected_result_map)
     {
-        std::future<int>& future = job_to_future_map[job_index].value();
+        std::future<int>& future = job_to_future_map[job_index];
         REQUIRE(future.get() == expected_result);
     }
 
