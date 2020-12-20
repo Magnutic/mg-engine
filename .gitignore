@@ -20,7 +20,6 @@ CMakeCache.txt
 CMakeFiles/
 
 .clang-tidy
-.ycm_extra_conf.py
 
 tests/catch.hpp
 
