@@ -1,0 +1,5 @@
+#!/bin/bash
+cd out/gcc/rel
+make -j12
+cd ../../..
+out/gcc/rel/bin/test_scene

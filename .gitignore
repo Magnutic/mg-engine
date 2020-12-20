@@ -1,5 +1,5 @@
 /docs
-/build*
+/build/out/*
 /.idea
 /tool_config
 /external/mg_dependencies/*
@@ -17,7 +17,7 @@ mg_log.txt
 mg_engine.cfg
 
 CMakeCache.txt
-CMakeFiles/ 
+CMakeFiles/
 
 .clang-tidy
 .ycm_extra_conf.py

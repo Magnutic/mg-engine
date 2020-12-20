@@ -1,0 +1,5 @@
+#!/bin/bash
+cd out/clang/rel
+make -j12
+cd ../../..
+out/clang/rel/bin/test_scene
