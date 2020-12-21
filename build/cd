@@ -1,5 +1,0 @@
-#!/bin/bash
-cd out/clang/deb
-make -j12
-cd ../../..
-out/clang/deb/bin/test_scene

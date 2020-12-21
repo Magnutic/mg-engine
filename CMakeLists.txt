@@ -52,6 +52,7 @@ list(APPEND MG_DEPENDENCIES_TO_BUILD zlib libzip fmt glfw glm openal-soft)
 # it otherwise causes conflicts with system provided library.
 find_package(SndFile QUIET)
 if (NOT SndFile_FOUND)
+    message("-- NOTE: System libsndfile not found. Building bundled libsndfile instead.")
     list(APPEND MG_DEPENDENCIES ogg vorbis libsndfile)
     list(APPEND MG_DEPENDENCIES_TO_BUILD ogg vorbis libsndfile)
 endif()
@@ -67,6 +68,7 @@ endif()
 
 # Extract dependency archive. Even if we do not build the bundled dependencies, there are some
 # header-only libraries within that we need.
+file(REMOVE_RECURSE "${MG_DEPENDENCIES_SOURCE_DIR}")
 file(MAKE_DIRECTORY "${MG_DEPENDENCIES_SOURCE_DIR}")
 file(SHA1 "${MG_SOURCE_DIR}/external/mg_dependencies.zip" MG_DEPENDENCY_ZIP_HASH)
 

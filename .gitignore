@@ -21,6 +21,8 @@ CMakeFiles/
 
 .clang-tidy
 
+build/my_configure.sh
+
 tests/catch.hpp
 
 data/textures/contexture*
