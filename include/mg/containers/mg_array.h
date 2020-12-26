@@ -32,6 +32,7 @@ public:
 };
 
 namespace detail {
+
 // Base type common to Mg::Array and Mg::ArrayUnkownSize
 template<typename T, typename DeleterT = DefaultArrayDelete<T>> class ArrayBase {
 public:
@@ -55,6 +56,8 @@ public:
     T* data() noexcept { return m_ptr; }
     const T* data() const noexcept { return m_ptr; }
 
+    bool empty() const noexcept { return m_ptr == nullptr; }
+
 protected:
     void reset() noexcept
     {
@@ -73,6 +76,58 @@ protected:
 
     T* m_ptr = nullptr;
 };
+
+template<typename T, typename Generator>
+static T* make_array(const size_t num_elems, Generator&& generator)
+{
+    struct alignas(T) block {
+        std::byte storage[sizeof(T)];
+    };
+
+    block* p_storage = nullptr;
+    size_t i = 0;
+
+    try {
+        // Allocate storage.
+        p_storage = new block[num_elems];
+
+        // Construct copies in storage.
+        for (; i < num_elems; ++i) {
+            new (&p_storage[i]) T(generator(i));
+        }
+    }
+    catch (...) {
+        // If an exception was thrown, destroy all the so-far constructed objects in reverse
+        // order of construction.
+        for (size_t u = 0; u < i; ++u) {
+            const auto index = i - u - 1;
+            reinterpret_cast<T*>(p_storage)[index].~T(); // NOLINT
+        }
+
+        throw;
+    }
+
+    return reinterpret_cast<T*>(p_storage); // NOLINT
+}
+
+template<typename T> class ArrayCopyGenerator {
+public:
+    explicit ArrayCopyGenerator(const span<const T> source) : m_source(source) {}
+    T operator()(const size_t i) { return m_source[i]; }
+
+private:
+    span<const T> m_source;
+};
+
+template<typename T> class ValueCopyGenerator {
+public:
+    explicit ValueCopyGenerator(const T& value) : m_value(value) {}
+    T operator()(const size_t) { return m_value; }
+
+private:
+    const T& m_value;
+};
+
 } // namespace detail
 
 /** Minimalistic container for heap-allocated arrays. Does not keep track of the array's size --
@@ -84,6 +139,17 @@ template<typename T> class ArrayUnknownSize : public detail::ArrayBase<T> {
 
 public:
     static ArrayUnknownSize make(size_t size) { return ArrayUnknownSize(new T[size]()); }
+
+    static ArrayUnknownSize make(size_t size, const T& value)
+    {
+        return ArrayUnknownSize(detail::make_array<T>(size, detail::ValueCopyGenerator(value)));
+    }
+
+    static ArrayUnknownSize make_copy(span<const T> data)
+    {
+        return ArrayUnknownSize<T>(
+            detail::make_array<T>(data.size(), detail::ArrayCopyGenerator(data)));
+    }
 
     ArrayUnknownSize() = default;
 
@@ -104,6 +170,8 @@ public:
 
     ~ArrayUnknownSize() = default;
 
+    void clear() noexcept { this->reset(); }
+
     void swap(ArrayUnknownSize& p) noexcept { std::swap(this->m_ptr, p.m_ptr); }
 
     T& operator[](size_t i) noexcept { return this->m_ptr[i]; }
@@ -123,37 +191,15 @@ public:
 
     static Array make(size_t size) { return Array(new T[size](), size); }
 
-    static Array<T> make_copy(span<const T> data)
+    static Array make(size_t size, const T& value)
     {
-        struct alignas(T) block {
-            std::byte storage[sizeof(T)];
-        };
+        return Array(detail::make_array<T>(size, detail::ValueCopyGenerator(value), size));
+    }
 
-        block* p_storage = nullptr;
-        size_t i = 0;
-        const size_t num_elems = data.size();
-
-        try {
-            // Allocate storage.
-            p_storage = new block[num_elems];
-
-            // Construct copies in storage.
-            for (; i < num_elems; ++i) {
-                new (&p_storage[i]) T(data[i]);
-            }
-        }
-        catch (...) {
-            // If an exception was thrown, destroy all the so-far constructed objects in reverse
-            // order of construction.
-            for (size_t u = 0; u < i; ++u) {
-                const auto index = i - u - 1;
-                reinterpret_cast<T*>(p_storage)[index].~T(); // NOLINT
-            }
-
-            throw;
-        }
-
-        return Array<T>(reinterpret_cast<T*>(p_storage), num_elems); // NOLINT
+    static Array make_copy(span<const T> data)
+    {
+        return Array<T>(detail::make_array<T>(data.size(), detail::ArrayCopyGenerator(data)),
+                        data.size());
     }
 
     Array() = default;
@@ -178,6 +224,12 @@ public:
     MG_MAKE_NON_COPYABLE(Array);
 
     ~Array() = default;
+
+    void clear() noexcept
+    {
+        this->reset();
+        m_size = 0;
+    }
 
     void swap(Array& p) noexcept
     {
