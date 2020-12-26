@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "mg/utils/mg_macros.h"
+
 #include <cstdint>
 #include <utility>
 
@@ -32,6 +34,8 @@ using GfxObjectHandleValue = uint64_t;
  */
 template<GfxObjectType type_> class GfxObjectHandle {
 public:
+    class Owner;
+
     using Value = GfxObjectHandleValue;
 
     static constexpr GfxObjectType type = type_;
@@ -39,12 +43,12 @@ public:
     static constexpr GfxObjectHandle null_handle() { return GfxObjectHandle{}; }
 
     constexpr GfxObjectHandle() = default;
-
     explicit GfxObjectHandle(GfxObjectHandleValue id) noexcept : m_value{ id } {}
+    ~GfxObjectHandle() = default;
 
     GfxObjectHandle(const GfxObjectHandle&) = default;
-    GfxObjectHandle(GfxObjectHandle&& rhs) : m_value(rhs.m_value) { rhs.m_value = 0; }
-    GfxObjectHandle& operator=(const GfxObjectHandle&) noexcept = default;
+    GfxObjectHandle(GfxObjectHandle&& rhs) noexcept : m_value(rhs.m_value) { rhs.m_value = 0; }
+    GfxObjectHandle& operator=(const GfxObjectHandle&) = default;
     GfxObjectHandle& operator=(GfxObjectHandle&& rhs) noexcept
     {
         GfxObjectHandle temp(std::move(rhs));
@@ -57,6 +61,14 @@ public:
     Value get() const { return m_value; }
     void set(Value value) { m_value = value; }
 
+    void free()
+    {
+        if (m_value != 0) {
+            _free_impl(m_value);
+        }
+        m_value = 0;
+    }
+
     friend bool operator==(const GfxObjectHandle& lhs, const GfxObjectHandle& rhs) noexcept
     {
         return lhs.m_value == rhs.m_value;
@@ -68,23 +80,32 @@ public:
     }
 
 private:
+    static void _free_impl(Value value);
+
     Value m_value = 0;
 };
 
+/** Owning wrapper for a GfxObjectHandle of any type: frees the object upon destruction. */
+template<GfxObjectType type_> class GfxObjectHandle<type_>::Owner {
+public:
+    constexpr Owner() = default;
+    explicit Owner(const GfxObjectHandle handle) : handle(handle) {}
+    explicit Owner(const GfxObjectHandleValue value) : handle(value) {}
+    ~Owner() { handle.free(); }
+
+    MG_MAKE_NON_COPYABLE(Owner);
+    MG_MAKE_DEFAULT_MOVABLE(Owner);
+
+    GfxObjectHandle<type> handle;
+};
+
 using VertexArrayHandle = GfxObjectHandle<GfxObjectType::vertex_array>;
-
 using BufferHandle = GfxObjectHandle<GfxObjectType::buffer>;
-
 using TextureHandle = GfxObjectHandle<GfxObjectType::texture>;
-
 using UniformBufferHandle = GfxObjectHandle<GfxObjectType::uniform_buffer>;
-
 using VertexShaderHandle = GfxObjectHandle<GfxObjectType::vertex_shader>;
-
 using GeometryShaderHandle = GfxObjectHandle<GfxObjectType::geometry_shader>;
-
 using FragmentShaderHandle = GfxObjectHandle<GfxObjectType::fragment_shader>;
-
 using PipelineHandle = GfxObjectHandle<GfxObjectType::pipeline>;
 
 } // namespace Mg::gfx

@@ -30,6 +30,7 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/gfx/mg_frustum.h
     ${MG_HEADER_DIR}/mg/gfx/mg_gfx_debug_group.h
     ${MG_HEADER_DIR}/mg/gfx/mg_gfx_device.h
+    ${MG_HEADER_DIR}/mg/gfx/mg_gfx_object_handles.h
     ${MG_HEADER_DIR}/mg/gfx/mg_light.h
     ${MG_HEADER_DIR}/mg/gfx/mg_material.h
     ${MG_HEADER_DIR}/mg/gfx/mg_material_repository.h
@@ -118,6 +119,7 @@ add_library(mg_engine
     gfx/opengl/mg_debug_renderer.cpp
     gfx/opengl/mg_gfx_debug_group.cpp
     gfx/opengl/mg_gfx_device.cpp
+    gfx/mg_gfx_object_handles.cpp
     gfx/opengl/mg_gl_debug.cpp
     gfx/opengl/mg_mesh_renderer.cpp
     gfx/opengl/mg_mesh_repository.cpp
