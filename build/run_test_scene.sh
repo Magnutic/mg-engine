@@ -15,5 +15,5 @@ Invalid configuration."
     exit 1
 fi
 
-(cd $BUILD_DIR && make -j$(nproc))
+(cd $BUILD_DIR && cmake --build . -j $(nproc)) || exit 1
 $BUILD_DIR/bin/test_scene
