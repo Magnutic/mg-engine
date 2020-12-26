@@ -229,6 +229,7 @@ target_link_libraries(mg_engine
         glad
         glfw
         zip
+        stb
         SndFile::sndfile
         OpenAL::OpenAL
 )

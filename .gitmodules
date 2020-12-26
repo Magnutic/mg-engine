@@ -34,3 +34,6 @@
 [submodule "external/submodules/libsndfile"]
 	path = external/submodules/libsndfile
 	url = https://github.com/erikd/libsndfile
+[submodule "external/submodules/stb"]
+	path = external/submodules/stb
+	url = https://github.com/nothings/stb

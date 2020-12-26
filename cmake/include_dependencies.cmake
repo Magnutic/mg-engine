@@ -3,6 +3,9 @@
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
+message(" - Mg-Engine is looking for its dependencies:")
+message(" - CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+
 # Prefer CMake config files to find modules in find_package. This is for example needed to prefer
 # conan-generated config files to system packages found via CMake's bundled find modules.
 set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
@@ -111,3 +114,7 @@ find_package(OpenAL REQUIRED)
 if (NOT TARGET SndFile::sndfile)
     find_package(SndFile REQUIRED)
 endif()
+
+# stb
+# Sean Barrett's single-file libraries
+add_private_header_only_library(stb "${MG_DEPENDENCIES_SOURCE_DIR}/stb" "")
