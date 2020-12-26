@@ -48,7 +48,7 @@ template<typename IntT, typename FloatT> constexpr IntT round(FloatT value)
 }
 
 /** Integral constexpr power. */
-template<typename T> constexpr T pow(const T base, unsigned const exponent)
+template<typename T> constexpr T intpow(const T base, unsigned const exponent)
 {
     return (exponent == 0) ? 1 : base * pow(base, exponent - 1);
 }
