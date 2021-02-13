@@ -26,7 +26,7 @@ public:
     audio::SoundBufferHandle sound_buffer_handle() const noexcept { return m_handle; }
 
 protected:
-    LoadResourceResult load_resource_impl(const ResourceLoadingInput& input) override;
+    LoadResourceResult load_resource_impl(ResourceLoadingInput& input) override;
 
 private:
     audio::SoundBufferHandle m_handle;

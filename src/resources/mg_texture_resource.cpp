@@ -161,7 +161,7 @@ size_t num_blocks_by_img_size(TextureResource::DimT width, TextureResource::DimT
 // TextureResource implementation
 //--------------------------------------------------------------------------------------------------
 
-LoadResourceResult TextureResource::load_resource_impl(const ResourceLoadingInput& input)
+LoadResourceResult TextureResource::load_resource_impl(ResourceLoadingInput& input)
 {
     const span<const std::byte> dds_data = input.resource_data();
 

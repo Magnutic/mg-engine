@@ -13,12 +13,12 @@
 
 namespace Mg {
 
-LoadResourceResult BaseResource::load_resource(const ResourceLoadingInput& params)
+LoadResourceResult BaseResource::load_resource(ResourceLoadingInput& input)
 {
     g_log.write_verbose(fmt::format("Loading resource '{}'...", resource_id().str_view()));
 
     try {
-        return load_resource_impl(params);
+        return load_resource_impl(input);
     }
     catch (const ResourceNotFound&) {
         return LoadResourceResult::data_error("Dependency not found.");

@@ -11,7 +11,7 @@
 
 namespace Mg {
 
-LoadResourceResult SoundResource::load_resource_impl(const ResourceLoadingInput& input)
+LoadResourceResult SoundResource::load_resource_impl(ResourceLoadingInput& input)
 {
     audio::AudioContext::GenerateSoundBufferResult result =
         audio::AudioContext::get().generate_sound_buffer(input.resource_data());

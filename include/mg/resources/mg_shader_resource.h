@@ -133,7 +133,7 @@ public:
     Identifier type_id() const override { return "ShaderResource"; }
 
 protected:
-    LoadResourceResult load_resource_impl(const ResourceLoadingInput& input) override;
+    LoadResourceResult load_resource_impl(ResourceLoadingInput& input) override;
 
 private:
     std::vector<shader::Parameter> m_parameters;

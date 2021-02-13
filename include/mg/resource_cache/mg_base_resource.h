@@ -50,7 +50,7 @@ public:
     /** Load resource from binary file data. This is the interface through which Mg::ResourceCache
      * initialises resource types.
      */
-    LoadResourceResult load_resource(const ResourceLoadingInput& params);
+    LoadResourceResult load_resource(ResourceLoadingInput& params);
 
     virtual bool should_reload_on_file_change() const = 0;
 
@@ -64,7 +64,7 @@ public:
 
 protected:
     /** Subclasses should override this to implement their resource loading logic. */
-    virtual LoadResourceResult load_resource_impl(const ResourceLoadingInput& params) = 0;
+    virtual LoadResourceResult load_resource_impl(ResourceLoadingInput& input) = 0;
 
 private:
     Identifier m_id;

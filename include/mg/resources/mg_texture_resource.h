@@ -120,7 +120,7 @@ public:
 
 protected:
     /** Constructs a texture from file. Only DDS files are supported. */
-    LoadResourceResult load_resource_impl(const ResourceLoadingInput& input) override;
+    LoadResourceResult load_resource_impl(ResourceLoadingInput& input) override;
 
 private:
     Format m_format;

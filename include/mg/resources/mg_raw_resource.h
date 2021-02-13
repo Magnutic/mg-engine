@@ -38,7 +38,7 @@ public:
     Identifier type_id() const override { return "RawResource"; }
 
 protected:
-    LoadResourceResult load_resource_impl(const ResourceLoadingInput& input) override;
+    LoadResourceResult load_resource_impl(ResourceLoadingInput& input) override;
 
     Array<std::byte> m_buffer;
 };

@@ -37,7 +37,7 @@ static_assert(std::is_trivially_copyable_v<MeshHeader>);
 constexpr uint32_t mesh_4cc = 0x444D474Du; // = MGMD
 constexpr uint32_t k_mesh_format_version = 1;
 
-LoadResourceResult MeshResource::load_resource_impl(const ResourceLoadingInput& input)
+LoadResourceResult MeshResource::load_resource_impl(ResourceLoadingInput& input)
 {
     const std::string_view fname = resource_id().str_view();
     span<const std::byte> bytestream = input.resource_data();

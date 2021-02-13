@@ -50,7 +50,7 @@ public:
     Identifier type_id() const noexcept override { return "MeshResource"; }
 
 protected:
-    LoadResourceResult load_resource_impl(const ResourceLoadingInput& input) override;
+    LoadResourceResult load_resource_impl(ResourceLoadingInput& input) override;
 
 private:
     Array<gfx::SubMesh> m_sub_meshes;

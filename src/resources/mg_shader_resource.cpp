@@ -185,7 +185,7 @@ std::string assemble_shader_code(std::vector<fs::path> include_directories,
 
 } // namespace
 
-LoadResourceResult ShaderResource::load_resource_impl(const ResourceLoadingInput& input)
+LoadResourceResult ShaderResource::load_resource_impl(ResourceLoadingInput& input)
 {
     const std::string_view shader_resource_definition = input.resource_data_as_text();
 
