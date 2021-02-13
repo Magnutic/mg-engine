@@ -19,8 +19,6 @@ mg_engine.cfg
 CMakeCache.txt
 CMakeFiles/
 
-.clang-tidy
-
 build/my_configure.sh
 
 tests/catch.hpp
