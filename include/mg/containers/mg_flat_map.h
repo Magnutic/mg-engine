@@ -42,7 +42,7 @@ public:
     std::pair<iterator, bool> insert(const value_type& value) { insert(value_type{ value }); }
     std::pair<iterator, bool> insert(value_type&& value)
     {
-        auto it = _pos_for_key(value.first);
+        auto it = lower_bound(value.first);
         if (it != end() && it->first == value.first) {
             return { it, false };
         }
@@ -52,18 +52,18 @@ public:
 
     iterator find(const key_type& key) noexcept
     {
-        const auto it = _pos_for_key(key);
+        const auto it = lower_bound(key);
         return (it != end() && it->first == key) ? it : end();
     }
     const_iterator find(const key_type& key) const noexcept
     {
-        const auto it = _pos_for_key(key);
+        const auto it = lower_bound(key);
         return (it != end() && it->first == key) ? it : end();
     }
 
     mapped_type& operator[](const key_type& key)
     {
-        auto it = _pos_for_key(key);
+        auto it = lower_bound(key);
         if (it == end() || it->first != key) {
             it = m_data.insert(it, { key, mapped_type{} });
         }
@@ -71,7 +71,7 @@ public:
     }
     mapped_type& operator[](key_type&& key)
     {
-        auto it = _pos_for_key(key);
+        auto it = lower_bound(key);
         if (it == end() || it->first != key) {
             it = m_data.insert(it, { std::move(key), mapped_type{} });
         }
@@ -92,12 +92,21 @@ public:
     }
     size_t erase(const key_type& key) noexcept
     {
-        const auto it = _pos_for_key(key);
+        const auto it = lower_bound(key);
         if (it != end() && it->first == key) {
             m_data.erase(it);
             return 1;
         }
         return 0;
+    }
+
+    iterator lower_bound(const key_type& key) noexcept
+    {
+        return std::lower_bound(m_data.begin(), m_data.end(), key, ValueKeyCompare{});
+    }
+    const_iterator lower_bound(const key_type& key) const noexcept
+    {
+        return std::lower_bound(m_data.begin(), m_data.end(), key, ValueKeyCompare{});
     }
 
     iterator begin() noexcept { return m_data.begin(); }
@@ -121,15 +130,6 @@ private:
             return key_compare{}(value.first, key);
         }
     };
-
-    iterator _pos_for_key(const key_type& key) noexcept
-    {
-        return std::lower_bound(m_data.begin(), m_data.end(), key, ValueKeyCompare{});
-    }
-    const_iterator _pos_for_key(const key_type& key) const noexcept
-    {
-        return std::lower_bound(m_data.begin(), m_data.end(), key, ValueKeyCompare{});
-    }
 
     std::vector<value_type> m_data;
 };
