@@ -130,7 +130,7 @@ const RenderCommandList& RenderCommandProducer::finalise(const ICamera& camera, 
     // Create sort key sequence
     m_keys.clear();
 
-    for (uint32_t i = 0; i < size(); ++i) {
+    for (size_t i = 0; i < size(); ++i) {
         const RenderCommand& command = m_render_commands_unsorted[i];
         const glm::mat4& M = m_m_transform_matrices_unsorted[i];
 
@@ -141,7 +141,7 @@ const RenderCommandList& RenderCommandProducer::finalise(const ICamera& camera, 
 
         const uint32_t command_fingerprint = render_command_fingerpint(command);
 
-        m_keys.push_back({ depth, command_fingerprint, i });
+        m_keys.push_back({ depth, command_fingerprint, narrow<uint32_t>(i) });
     }
 
     MG_ASSERT(m_keys.size() == size());

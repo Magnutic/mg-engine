@@ -25,7 +25,7 @@ SoundSource::SoundSource()
 SoundSource::~SoundSource()
 {
     if (m_source_id != 0) {
-        ALuint source_id = narrow_cast<ALuint>(m_source_id);
+        auto source_id = narrow_cast<ALuint>(m_source_id);
         alSourceStop(source_id);
         alDeleteSources(1, &source_id);
     }
@@ -83,14 +83,14 @@ SoundSource::State SoundSource::get_state()
     MG_ASSERT_DEBUG(alGetError() == AL_NO_ERROR);
 }
 
-float SoundSource::current_offset(OffsetUnit offset) const
+float SoundSource::current_offset(OffsetUnit unit) const
 {
     MG_ASSERT_DEBUG(alGetError() == AL_NO_ERROR);
 
     float result = 0.0f;
     alGetSourcef(narrow_cast<ALuint>(m_source_id), AL_SEC_OFFSET, &result);
 
-    switch (offset) {
+    switch (unit) {
     case OffsetUnit::seconds:
         return result;
     case OffsetUnit::fraction:

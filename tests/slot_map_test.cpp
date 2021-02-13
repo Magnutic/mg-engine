@@ -20,11 +20,12 @@ using namespace Mg;
 struct Type {
     Type() = default;
     Type(size_t v) : value(v) {}
+    ~Type() = default;
 
     Type(const Type&) = default;
-    Type(Type&&) = default;
+    Type(Type&&) = default; // NOLINT(bugprone-exception-escape)
     Type& operator=(const Type&) = default;
-    Type& operator=(Type&&) = default;
+    Type& operator=(Type&&) = default; // NOLINT(bugprone-exception-escape)
 
     size_t& get_value_checked()
     {
@@ -304,7 +305,8 @@ TEST_CASE("Counting Slot_map test")
     {
         // No element constructors should have been called at Slot_map construction
         REQUIRE(InstanceCounter<Type>::get_counter() == 0);
-        REQUIRE(smap.size() == 0);
+        REQUIRE(smap.size() == 0); // NOLINT
+        REQUIRE(smap.empty());
 
         {
             std::array<Type, 5> counters;
@@ -353,7 +355,8 @@ TEST_CASE("Counting Slot_map test")
         }
         REQUIRE(InstanceCounter<Type>::get_counter() == 0);
         REQUIRE(InstanceCounter<Type>::get_counter_move() == 0);
-        REQUIRE(smap.size() == 0);
+        REQUIRE(smap.size() == 0); // NOLINT
+        REQUIRE(smap.empty());
 
         // Refill Slot_map to make sure new size is fully usable
         for (size_t i = 0; i < 2 * initial_size; ++i) {
@@ -369,6 +372,7 @@ TEST_CASE("Counting Slot_map test")
         REQUIRE(InstanceCounter<Type>::get_counter() == 0);
         REQUIRE(InstanceCounter<Type>::get_counter_move() == 0);
         REQUIRE(smap.size() == 0);
+        REQUIRE(smap.empty());
     }
 
     // Copy construction and assignment
@@ -420,17 +424,17 @@ TEST_CASE("Counting Slot_map test")
         REQUIRE(InstanceCounter<Type>::get_counter() == initial_size);
 
         // Check moved from (should be valid state)
-        REQUIRE(smap.empty());
-        REQUIRE(smap.capacity() == 0);
-        smap.resize(initial_size);
-        smap.emplace();
+        REQUIRE(smap.empty()); // NOLINT
+        REQUIRE(smap.capacity() == 0); // NOLINT
+        smap.resize(initial_size); // NOLINT
+        smap.emplace(); // NOLINT
         REQUIRE(InstanceCounter<Type>::get_counter() == 26);
-        REQUIRE(!smap.is_handle_valid(handle));
+        REQUIRE(!smap.is_handle_valid(handle)); // NOLINT
 
-        REQUIRE(smap2.empty());
-        REQUIRE(smap2.capacity() == 0);
-        smap2.resize(initial_size);
-        smap2.emplace();
+        REQUIRE(smap2.empty()); // NOLINT
+        REQUIRE(smap2.capacity() == 0); // NOLINT
+        smap2.resize(initial_size); // NOLINT
+        smap2.emplace(); // NOLINT
         REQUIRE(InstanceCounter<Type>::get_counter() == 27);
     }
 

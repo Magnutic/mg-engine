@@ -84,7 +84,7 @@ public:
         return string_value(str_token);
     }
 
-    void parse_block(std::function<void(void)> statement_parser)
+    void parse_block(const std::function<void(void)>& statement_parser)
     {
         expect_next(TokenType::CURLY_LEFT);
 

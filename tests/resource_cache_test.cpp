@@ -5,8 +5,8 @@
 
 TEST_CASE("ResourceCache test")
 {
-    constexpr static const char directory_name[] = "data/test-archive";
-    constexpr static const char archive_name[] = "data/test-archive.zip";
+    constexpr auto directory_name = "data/test-archive";
+    constexpr auto archive_name = "data/test-archive.zip";
 
     Mg::ResourceCache cache(std::make_unique<Mg::BasicFileLoader>(directory_name),
                             std::make_unique<Mg::ZipFileLoader>(archive_name));

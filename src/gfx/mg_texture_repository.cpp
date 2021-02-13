@@ -50,7 +50,7 @@ TextureRepositoryData::HandleMap::iterator try_insert_into_handle_map(TextureRep
 
 Texture2D* create_texture_impl(TextureRepositoryData& data,
                                const Identifier id,
-                               std::function<Texture2D()> texture_create_func)
+                               const std::function<Texture2D()>& texture_create_func)
 {
     const auto handle_map_it = try_insert_into_handle_map(data, id);
     const auto texture_it = data.textures.emplace(texture_create_func());

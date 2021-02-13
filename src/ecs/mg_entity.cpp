@@ -16,7 +16,7 @@ size_t ComponentTag::n_component_types = 0;
 void EntityCollection::reset() noexcept
 {
     for (auto& ptr : m_component_collections) {
-        ptr.release();
+        ptr.reset();
     }
     m_entity_data.clear();
     m_component_lists.clear();

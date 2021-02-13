@@ -25,13 +25,13 @@ namespace Mg::gfx {
 namespace {
 
 /** Wrapper for calling convention (GLAPIENTRY) */
-static void APIENTRY ogl_error_callback_wrapper(uint32_t source,
-                                                uint32_t type,
-                                                uint32_t id,
-                                                uint32_t severity,
-                                                int32_t length,
-                                                const GLchar* msg,
-                                                const void* user_param)
+void APIENTRY ogl_error_callback_wrapper(uint32_t source,
+                                         uint32_t type,
+                                         uint32_t id,
+                                         uint32_t severity,
+                                         int32_t length,
+                                         const GLchar* msg,
+                                         const void* user_param)
 {
     ogl_error_callback(source, type, id, severity, length, msg, user_param);
 }
@@ -40,7 +40,7 @@ static void APIENTRY ogl_error_callback_wrapper(uint32_t source,
 #endif
 
 namespace {
-static GfxDevice* p_gfx_device = nullptr;
+GfxDevice* p_gfx_device = nullptr;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -109,7 +109,7 @@ void GfxDevice::clear(bool colour, bool depth) noexcept
     const bool should_set_colour_write = colour &&
                                          std::any_of(prev_colour_write.begin(),
                                                      prev_colour_write.end(),
-                                                     [](GLboolean b) { return b == false; });
+                                                     [](GLboolean b) { return b == GL_FALSE; });
 
     GLboolean prev_depth_write = GL_FALSE;
     glGetBooleanv(GL_DEPTH_WRITEMASK, &prev_depth_write);

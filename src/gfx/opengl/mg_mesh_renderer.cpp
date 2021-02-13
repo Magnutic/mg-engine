@@ -229,7 +229,7 @@ void MeshRenderer::render(const ICamera& cam,
     const auto render_commands = command_list.render_commands();
     size_t matrix_update_countdown = 1;
 
-    for (uint32_t i = 0; i < render_commands.size(); ++i) {
+    for (size_t i = 0; i < render_commands.size(); ++i) {
         if (--matrix_update_countdown == 0) {
             matrix_update_countdown = impl().m_matrix_uniform_handler.set_matrices(
                 command_list.m_transform_matrices().subspan(i),

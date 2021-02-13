@@ -24,9 +24,12 @@ namespace {
 
 std::array<float, 3> camera_acceleration(Mg::input::InputMap& input_map)
 {
-    auto forward_acc = camera_acc * (input_map.is_held("forward") - input_map.is_held("backward"));
-    auto right_acc = camera_acc * (input_map.is_held("right") - input_map.is_held("left"));
-    auto up_acc = camera_acc * (input_map.is_held("up") - input_map.is_held("down"));
+    auto is_held_value = [&input_map](Mg::Identifier mapping) -> float {
+        return static_cast<float>(input_map.is_held(mapping));
+    };
+    auto forward_acc = camera_acc * (is_held_value("forward") - is_held_value("backward"));
+    auto right_acc = camera_acc * (is_held_value("right") - is_held_value("left"));
+    auto up_acc = camera_acc * (is_held_value("up") - is_held_value("down"));
 
     return { forward_acc, right_acc, up_acc };
 }
@@ -591,7 +594,7 @@ void Scene::generate_lights()
         glm::vec4 light_colour(rand(), rand(), rand(), float(RAND_MAX));
         light_colour /= float(RAND_MAX);
 
-        float s = float(std::sin(double(i) * 0.2));
+        const auto s = Mg::narrow<float>(std::sin(double(i) * 0.2));
 
         pos.z += s;
 
@@ -644,7 +647,7 @@ void Scene::on_resource_reload(const Mg::FileChangedEvent& event)
     }
 }
 
-int main(int /*argc*/, char* /*argv*/[])
+int main(int /*argc*/, char* /*argv*/ [])
 {
     try {
         Scene scene;

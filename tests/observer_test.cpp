@@ -43,7 +43,9 @@ struct O : public Mg::Observer<E> {
 TEST_CASE("Basic observer test")
 {
     S s;
-    O o1{ 1, "o1" }, o2{ 2, "o2" }, o3{ 3, "o3" };
+    O o1{ 1, "o1" };
+    O o2{ 2, "o2" };
+    O o3{ 3, "o3" };
 
     s.add_observer(o1);
     s.add_observer(o2);

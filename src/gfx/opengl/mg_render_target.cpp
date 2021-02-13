@@ -97,7 +97,7 @@ struct TextureRenderTargetData {
 
     TextureHandle depth_buffer_id; // Depth renderbuffer which may be used if
                                    // depth target texture is not present.
-    GLuint fbo_id;
+    GLuint fbo_id = 0;
 
     int32_t mip_level = 0;
 };

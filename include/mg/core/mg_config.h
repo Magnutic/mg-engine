@@ -82,10 +82,11 @@ public:
     /** Set the default value for the given key.
      * This only sets the value if a value for the given key does not already exist.
      */
-    void set_default_value(std::string_view key, double value)
+    template<typename NumT, typename = std::enable_if_t<std::is_arithmetic_v<NumT>>>
+    void set_default_value(std::string_view key, NumT value)
     {
         const auto* p_cvar = at(key);
-        if (p_cvar == nullptr) m_values.emplace_back(key, value);
+        if (p_cvar == nullptr) m_values.emplace_back(key, static_cast<double>(value));
     }
 
     /** Set the current value for the given key to string value. */

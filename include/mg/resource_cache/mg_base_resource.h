@@ -50,7 +50,7 @@ public:
     /** Load resource from binary file data. This is the interface through which Mg::ResourceCache
      * initialises resource types.
      */
-    LoadResourceResult load_resource(ResourceLoadingInput& params);
+    LoadResourceResult load_resource(ResourceLoadingInput& input);
 
     virtual bool should_reload_on_file_change() const = 0;
 

@@ -181,7 +181,7 @@ Opt<GLenum> gl_culling_mode(CullingMode mode)
     if (mode == CullingMode::front) {
         return GLenum{ GL_FRONT };
     }
-    else if (mode == CullingMode::back) {
+    if (mode == CullingMode::back) {
         return GLenum{ GL_BACK };
     }
     return nullopt;
@@ -189,9 +189,11 @@ Opt<GLenum> gl_culling_mode(CullingMode mode)
 
 GLenum gl_blend_op(BlendOp op)
 {
-    static constexpr std::array<GLenum, 6> values{
-        GL_FUNC_ADD, GL_FUNC_SUBTRACT, GL_FUNC_REVERSE_SUBTRACT, GL_MIN, GL_MAX
-    };
+    static constexpr std::array<GLenum, 6> values{ GL_FUNC_ADD,
+                                                   GL_FUNC_SUBTRACT,
+                                                   GL_FUNC_REVERSE_SUBTRACT,
+                                                   GL_MIN,
+                                                   GL_MAX };
     return values.at(static_cast<size_t>(op));
 }
 

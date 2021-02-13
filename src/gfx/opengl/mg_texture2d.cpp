@@ -253,7 +253,8 @@ void set_sampling_params(const TextureResource::Settings& settings) noexcept
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, edge_sampling);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, edge_sampling);
 
-    GLint min_filter = 0, mag_filter = 0;
+    GLint min_filter = 0;
+    GLint mag_filter = 0;
 
     switch (settings.filtering) {
     case TextureResource::Filtering::NEAREST:

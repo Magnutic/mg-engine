@@ -73,9 +73,10 @@ class MeshRepositoryImpl;
 class MeshRepository : PImplMixin<MeshRepositoryImpl> {
 public:
     MeshRepository();
+    ~MeshRepository();
+
     MG_MAKE_NON_COPYABLE(MeshRepository);
     MG_MAKE_DEFAULT_MOVABLE(MeshRepository);
-    ~MeshRepository();
 
     /** Create a new mesh using the given mesh resource. */
     MeshHandle create(const MeshResource& mesh_res);

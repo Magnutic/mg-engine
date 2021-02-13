@@ -75,8 +75,8 @@ private:
     void link_buffer_to_source(uintptr_t sound_source_id, const SoundBufferHandle& buffer);
 
     // Used by SoundBufferHandle
-    void increment_ref_count(SoundBuffer* sound_buffer_index);
-    void decrement_ref_count(SoundBuffer* sound_buffer_index);
+    void increment_ref_count(SoundBuffer* ptr);
+    void decrement_ref_count(SoundBuffer* ptr);
 };
 
 } // namespace Mg::audio

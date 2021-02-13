@@ -31,7 +31,7 @@
 
 namespace Mg::gfx::shader_code::mesh_renderer {
 
-static constexpr const char k_shader_framework_vertex_code[] = R"(
+static constexpr const auto k_shader_framework_vertex_code = R"(
 #version 330 core
 
 #define MATRIX_ARRAY_SIZE )" MATRIX_UBO_ARRAY_SIZE_STR R"(
@@ -145,7 +145,7 @@ void main()
 }
 )";
 
-static constexpr const char k_shader_framework_fragment_code[] = R"(
+static constexpr const auto k_shader_framework_fragment_code = R"(
 #version 330 core
 
 #define LIGHT_GRID_WIDTH )" LIGHT_GRID_WIDTH_STR R"(

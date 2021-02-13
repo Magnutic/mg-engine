@@ -40,11 +40,10 @@ const char* gl_error_string(uint32_t error_code) noexcept
 
 void check_gl_error(std::string_view file, std::string_view function, size_t line) noexcept
 {
+    constexpr auto msg = "OpenGL error detected in file: {:s}, function: {:s}, line: {:d}: {:s}";
     uint32_t error_enum = glGetError();
 
     while (error_enum != GL_NO_ERROR) {
-        constexpr char msg[] =
-            "OpenGL error detected in file: {:s}, function: {:s}, line: {:d}: {:s}";
         g_log.write_error(fmt::format(msg, file, function, line, gl_error_string(error_enum)));
 
         error_enum = glGetError();
@@ -153,7 +152,7 @@ void ogl_error_callback(uint32_t source,
         break;
     }
 
-    constexpr char msg_str[] =
+    constexpr auto msg_str =
         "OpenGL debug message: [source: {:s}] [type: {:s}] [severity: {:s}] [id: {:d}] {:s}";
 
     g_log.write(prio, fmt::format(msg_str, src_str, type_str, severity_str, id, msg));

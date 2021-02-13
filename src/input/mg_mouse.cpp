@@ -145,7 +145,8 @@ void Mouse::refresh()
     const float prev_y_pos = m_y_pos;
 
     {
-        double x, y;
+        double x{};
+        double y{};
         glfwGetCursorPos(window_handle, &x, &y);
         m_x_pos = narrow_cast<float>(x);
         m_y_pos = narrow_cast<float>(y);

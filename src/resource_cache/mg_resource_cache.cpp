@@ -62,7 +62,8 @@ void ResourceCache::refresh()
     // Has any of the given ResourceEntry's dependencies' files changed since they were loaded?
     auto dependencies_were_updated = [&](const ResourceEntryBase& entry) -> bool {
         auto dependency_was_updated = [&](const ResourceEntryBase::Dependency& dependency) {
-            return has_file_changed(*file_info(dependency.dependency_id), dependency.time_stamp);
+            return has_file_changed(file_info(dependency.dependency_id).value(),
+                                    dependency.time_stamp);
         };
 
         return find_if(entry.dependencies, dependency_was_updated) != entry.dependencies.end();
@@ -184,8 +185,7 @@ void ResourceCache::rebuild_file_list()
 }
 
 // Throw ResourceNotFound exception and write details to log.
-[[noreturn]] void ResourceCache::throw_resource_not_found(Identifier filename) const
-{
+[[noreturn]] void ResourceCache::throw_resource_not_found(Identifier filename) const {
     std::string msg = "No such file. [ searched in ";
     for (auto&& p_loader : file_loaders()) {
         msg += fmt::format("'{}' ", p_loader->name());
@@ -197,8 +197,10 @@ void ResourceCache::rebuild_file_list()
 }
 
 // Log a message with nice formatting.
-static void
-log(Log::Prio prio, const ResourceCache* origin, Identifier resource, std::string_view message)
+static void log(Log::Prio prio,
+                const ResourceCache* origin,
+                Identifier resource,
+                std::string_view message)
 {
     std::string msg = fmt::format("ResourceCache[{}]: {} [resource: {}]",
                                   static_cast<const void*>(origin),

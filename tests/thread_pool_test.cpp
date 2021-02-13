@@ -21,7 +21,7 @@ TEST_CASE("ThreadPool: timing test")
 
     auto start_time = high_resolution_clock::now();
 
-    for (auto i = 0u; i < job_count; ++i) {
+    for (size_t i = 0u; i < job_count; ++i) {
         pool.add_job([] { std::this_thread::sleep_for(milliseconds(100u)); });
     }
 

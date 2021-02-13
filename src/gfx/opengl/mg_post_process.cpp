@@ -16,12 +16,14 @@
 #include "mg_gl_debug.h"
 #include "mg_glad.h"
 
+#include <array>
+
 namespace Mg::gfx {
 
 namespace {
 
-const float quad_vertices[] = { -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,
-                                1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f };
+const std::array<float, 12> quad_vertices = { -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,
+                                              1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f };
 
 // Texture units 8 & 9 are reserved for input colour and depth texture, respectively.
 constexpr uint32_t k_sampler_colour_texture_unit = 8;
@@ -175,11 +177,10 @@ void PostProcessRenderer::post_process(const RenderGuard&,
                                                       pipeline_settings(),
                                                       impl().binding_context.value());
 
-    std::array shared_input_bindings = {
-        PipelineInputBinding{ k_frame_block_ubo_slot, impl().frame_block_ubo },
-        PipelineInputBinding{ k_sampler_colour_texture_unit, sampler_colour },
-        PipelineInputBinding{ k_sampler_depth_texture_unit, TextureHandle::null_handle() }
-    };
+    std::array shared_input_bindings =
+        { PipelineInputBinding{ k_frame_block_ubo_slot, impl().frame_block_ubo },
+          PipelineInputBinding{ k_sampler_colour_texture_unit, sampler_colour },
+          PipelineInputBinding{ k_sampler_depth_texture_unit, TextureHandle::null_handle() } };
 
     Pipeline::bind_shared_inputs(shared_input_bindings);
 
@@ -206,11 +207,10 @@ void PostProcessRenderer::post_process(const RenderGuard&,
     FrameBlock frame_block{ z_near, z_far };
     impl().frame_block_ubo.set_data(byte_representation(frame_block));
 
-    std::array shared_input_bindings = {
-        PipelineInputBinding{ k_frame_block_ubo_slot, impl().frame_block_ubo },
-        PipelineInputBinding{ k_sampler_colour_texture_unit, sampler_colour },
-        PipelineInputBinding{ k_sampler_depth_texture_unit, sampler_depth }
-    };
+    std::array shared_input_bindings =
+        { PipelineInputBinding{ k_frame_block_ubo_slot, impl().frame_block_ubo },
+          PipelineInputBinding{ k_sampler_colour_texture_unit, sampler_colour },
+          PipelineInputBinding{ k_sampler_depth_texture_unit, sampler_depth } };
 
     Pipeline::bind_shared_inputs(shared_input_bindings);
 

@@ -204,7 +204,7 @@ Log::GetVerbosityReturn Log::get_verbosity() const noexcept
 
 void Log::write(Prio prio, std::string msg)
 {
-    impl().enqueue({ prio, msg });
+    impl().enqueue({ prio, std::move(msg) });
 }
 
 void Log::flush()

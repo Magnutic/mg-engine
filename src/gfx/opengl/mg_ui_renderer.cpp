@@ -24,8 +24,9 @@ namespace Mg::gfx {
 
 namespace {
 
-const float quad_vertices[] = { 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-                                1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f };
+const std::array<float, 12> quad_vertices = {
+    { 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f }
+};
 
 // Binding slots for UniformBufferObjects.
 constexpr uint32_t k_draw_params_ubo_slot = 0;

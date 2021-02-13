@@ -102,8 +102,8 @@ void Identifier::set_full_string(std::string_view str)
     if (it == map.end()) {
         // Hash not found in map; insert the string.
         string_list.push_front(std::string(str));
-        const StringList::iterator it_begin = string_list.begin();
-        const StringList::iterator it_end = std::next(it_begin);
+        const auto it_begin = string_list.begin();
+        const auto it_end = std::next(it_begin);
 
         std::tie(it, std::ignore) = map.insert({ m_hash, { it_begin, it_end } });
         m_str = it_begin->c_str();

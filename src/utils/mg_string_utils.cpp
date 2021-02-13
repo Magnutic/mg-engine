@@ -28,15 +28,15 @@ InitialByteInfo initial_byte_info(uint8_t v)
         return { 0b01111111, 1 };
     }
     // Two leading ones: start of two-byte codepoint.
-    else if ((v & 0b11100000) == 0b11000000) {
+    if ((v & 0b11100000) == 0b11000000) {
         return { 0b00011111, 2 };
     }
     // Three leading ones: start of three-byte codepoint.
-    else if ((v & 0b11110000) == 0b11100000) {
+    if ((v & 0b11110000) == 0b11100000) {
         return { 0b00001111, 3 };
     }
     // Four leading ones: start of four-byte codepoint.
-    else if ((v & 0b11111000) == 0b11110000) {
+    if ((v & 0b11111000) == 0b11110000) {
         return { 0b00000111, 4 };
     }
     // Else not the start of a codepoint.
@@ -77,7 +77,7 @@ CodepointResult get_unicode_codepoint_at(std::string_view utf8_string, size_t ch
     // Then, include bits from following bytes in sequence, if any.
     uint32_t num_bytes_remaining = num_bytes - 1;
     while (num_bytes_remaining > 0) {
-        ++c;
+        c = std::next(c);
         --num_bytes_remaining;
 
         if (!is_non_initial_sequence_byte(*c)) {
@@ -134,7 +134,7 @@ std::vector<std::string_view> tokenise_string(std::string_view s, std::string_vi
     auto elems = std::vector<std::string_view>{};
     bool is_delim = true;
     size_t token_start = std::string::npos;
-    uint32_t i;
+    size_t i;
 
     for (i = 0; i < s.length(); ++i) {
         const char c = s[i];

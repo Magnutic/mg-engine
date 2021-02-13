@@ -43,7 +43,8 @@ bool link_program(GLuint program_id)
     glLinkProgram(program_id);
 
     // Check the program for linking errors.
-    int32_t result = GL_FALSE, log_length;
+    int32_t result = GL_FALSE;
+    int32_t log_length = 0;
     glGetProgramiv(program_id, GL_LINK_STATUS, &result);
     glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &log_length);
 
@@ -159,9 +160,8 @@ bool set_uniform_block_binding(ShaderProgramHandle program,
         glUniformBlockBinding(gl_program_id(program), *opt_block_index, slot_index);
         return true;
     }
-    else {
-        return false;
-    }
+
+    return false;
 }
 
 //--------------------------------------------------------------------------------------------------

@@ -108,22 +108,27 @@ DebugMesh generate_mesh(span<const glm::vec3> positions, span<const uint16_t> in
     return { vao_id, vbo_id, ibo_id, narrow<int32_t>(indices.size()) };
 }
 
-const glm::vec3 box_vertices[] = {
-    { -0.5, -0.5, 0.5 },  { 0.5, -0.5, 0.5 },  { 0.5, 0.5, 0.5 },  { -0.5, 0.5, 0.5 },
-    { -0.5, -0.5, -0.5 }, { 0.5, -0.5, -0.5 }, { 0.5, 0.5, -0.5 }, { -0.5, 0.5, -0.5 },
-};
+const std::array<glm::vec3, 8> box_vertices = { {
+    { -0.5, -0.5, 0.5 },
+    { 0.5, -0.5, 0.5 },
+    { 0.5, 0.5, 0.5 },
+    { -0.5, 0.5, 0.5 },
+    { -0.5, -0.5, -0.5 },
+    { 0.5, -0.5, -0.5 },
+    { 0.5, 0.5, -0.5 },
+    { -0.5, 0.5, -0.5 },
+} };
 
-const uint16_t box_indices[] = { 0, 1, 2, 2, 3, 0,
-
-                                 4, 5, 1, 1, 0, 4,
-
-                                 5, 6, 2, 2, 1, 5,
-
-                                 6, 7, 3, 3, 2, 6,
-
-                                 7, 4, 0, 0, 3, 7,
-
-                                 7, 6, 5, 5, 4, 7 };
+// clang-format off
+const std::array<uint16_t, 36> box_indices = { {
+    0, 1, 2,  2, 3, 0,
+    4, 5, 1,  1, 0, 4,
+    5, 6, 2,  2, 1, 5,
+    6, 7, 3,  3, 2, 6,
+    7, 4, 0,  0, 3, 7,
+    7, 6, 5,  5, 4, 7 
+} };
+// clang-format on
 
 struct EllipsoidData {
     std::vector<glm::vec3> verts;
@@ -143,7 +148,9 @@ EllipsoidData generate_ellipsoid_verts(size_t steps)
 
     // Vertical step
     for (size_t i = 0; i < v_steps; ++i) {
-        const float z_offset = (i + 1) * glm::pi<float>() / (v_steps + 1) - glm::half_pi<float>();
+        const float z_offset = narrow_cast<float>(i + 1) * glm::pi<float>() /
+                                   narrow_cast<float>(v_steps + 1) -
+                               glm::half_pi<float>();
 
         const float z = glm::sin(z_offset);
         const float r = glm::cos(z_offset);
@@ -240,7 +247,9 @@ public:
 
 class ShaderProgramOwner {
 public:
-    explicit ShaderProgramOwner(opengl::ShaderProgramHandle handle_) noexcept : handle(handle_) {}
+    explicit ShaderProgramOwner(opengl::ShaderProgramHandle handle_) noexcept
+        : handle(std::move(handle_))
+    {}
     ~ShaderProgramOwner() { opengl::destroy_shader_program(handle); }
 
     MG_MAKE_DEFAULT_MOVABLE(ShaderProgramOwner);

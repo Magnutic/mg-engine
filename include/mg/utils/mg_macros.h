@@ -53,8 +53,8 @@
 
 /** Generate default move constructors and move assignment operators. */
 #define MG_MAKE_DEFAULT_MOVABLE(class_name) \
-    class_name(class_name&&) = default;     \
-    class_name& operator=(class_name&&) = default;
+    class_name(class_name&&) noexcept = default;     \
+    class_name& operator=(class_name&&) noexcept = default;
 
 /** Generate default copy constructors and copy assignment operators. */
 #define MG_MAKE_DEFAULT_COPYABLE(class_name) \

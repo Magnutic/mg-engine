@@ -31,7 +31,7 @@ namespace Mg {
 namespace {
 
 // Used delimit sections in assembled shader code.
-static constexpr auto k_delimiter_comment = R"(
+constexpr auto k_delimiter_comment = R"(
 //==============================================================================
 // Origin: {}
 //==============================================================================
@@ -41,7 +41,7 @@ static constexpr auto k_delimiter_comment = R"(
 // The search directories for a recursive #include statement, i.e. the same as
 // include_directories but also the included file's directory.
 std::vector<fs::path> include_dirs_for_file(std::vector<fs::path> include_directories,
-                                            fs::path included_file)
+                                            const fs::path& included_file)
 {
     const auto file_directory = included_file.parent_path();
 
@@ -100,12 +100,12 @@ std::pair<bool, std::string> try_parse_line_as_include(std::string_view line)
     return { true, include_path };
 }
 
-std::string assemble_shader_code(std::vector<fs::path> include_directories,
+std::string assemble_shader_code(const std::vector<fs::path>& include_directories,
                                  std::string_view code,
                                  const ResourceLoadingInput& input,
-                                 fs::path source_file);
+                                 const fs::path& source_file);
 
-std::pair<bool, std::string> get_code(const ResourceLoadingInput& input, fs::path file_path)
+std::pair<bool, std::string> get_code(const ResourceLoadingInput& input, const fs::path& file_path)
 {
     try {
         const auto file_id = Identifier::from_runtime_string(file_path.generic_u8string());
@@ -119,12 +119,12 @@ std::pair<bool, std::string> get_code(const ResourceLoadingInput& input, fs::pat
 }
 
 std::pair<bool, std::string> get_include(const ResourceLoadingInput& input,
-                                         std::vector<fs::path> include_directories,
+                                         const std::vector<fs::path>& include_directories,
                                          std::string_view include_file)
 {
     std::string result;
 
-    for (auto include_directory : include_directories) {
+    for (const fs::path& include_directory : include_directories) {
         const fs::path file_path = include_directory / include_file;
 
         // Load include file as a dependency of this resource.
@@ -149,10 +149,10 @@ std::pair<bool, std::string> get_include(const ResourceLoadingInput& input,
 }
 
 // Helper for ShaderResource::load_resource. Assemble shader code by loading included code files.
-std::string assemble_shader_code(std::vector<fs::path> include_directories,
+std::string assemble_shader_code(const std::vector<fs::path>& include_directories,
                                  std::string_view code,
                                  const ResourceLoadingInput& input,
-                                 fs::path source_file)
+                                 const fs::path& source_file)
 {
     // Read line-by-line, try to parse each line as an #include directive; if successful, include
     // the file, otherwise, insert the line as is.
@@ -198,14 +198,10 @@ LoadResourceResult ShaderResource::load_resource_impl(ResourceLoadingInput& inpu
         const auto filepath = fs::path(resource_id().str_view());
         const auto include_directories = include_dirs_for_file({}, filepath);
 
-        m_vertex_code = assemble_shader_code(include_directories,
-                                             parse_result.vertex_code,
-                                             input,
-                                             filepath);
-        m_fragment_code = assemble_shader_code(include_directories,
-                                               parse_result.fragment_code,
-                                               input,
-                                               filepath);
+        m_vertex_code =
+            assemble_shader_code(include_directories, parse_result.vertex_code, input, filepath);
+        m_fragment_code =
+            assemble_shader_code(include_directories, parse_result.fragment_code, input, filepath);
 
         // Sort parameters so that larger types come first (for the sake of alignment)
         sort(m_parameters, [](const shader::Parameter& l, const shader::Parameter& r) {

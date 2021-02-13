@@ -39,11 +39,9 @@ MeshDataView::BoundingInfo calculate_mesh_bounding_info(span<const Vertex> verti
     auto add_position = [&](glm::vec3 vec, uint_vertex_index vert_idx) {
         return vec + vertices[vert_idx].position;
     };
-    const glm::vec3 centre = std::accumulate(indices.begin(),
-                                             indices.end(),
-                                             glm::vec3{ 0.0f },
-                                             add_position) /
-                             num_indices;
+    const glm::vec3 centre =
+        std::accumulate(indices.begin(), indices.end(), glm::vec3{ 0.0f }, add_position) /
+        num_indices;
 
     auto cmp_vertex = [](const Vertex& lhs, const Vertex& rhs) {
         return glm::all(glm::lessThan(lhs.position, rhs.position));
@@ -72,6 +70,9 @@ public:
             _clear_mesh(mesh);
         }
     }
+
+    MG_MAKE_NON_COPYABLE(MeshRepositoryImpl);
+    MG_MAKE_NON_MOVABLE(MeshRepositoryImpl);
 
     MeshHandle create(Identifier name, const MeshDataView& data);
 
@@ -111,8 +112,8 @@ private:
     {
         MG_GFX_DEBUG_GROUP("MeshRepositoryImpl::_make_mesh_from_mesh_data");
 
-        const auto [centre, radius] = data.bounding_info.value_or(
-            calculate_mesh_bounding_info(data.vertices, data.indices));
+        const auto [centre, radius] =
+            data.bounding_info.value_or(calculate_mesh_bounding_info(data.vertices, data.indices));
 
         MakeMeshParams params = {};
         params.vertex_buffer = _make_vertex_buffer(data.vertices.size_bytes());
@@ -136,8 +137,7 @@ private:
 
         Mesh& mesh = *it;
 
-        const auto handle_value = reinterpret_cast<uintptr_t>(&mesh);
-        const auto handle = MeshHandle{ handle_value };
+        const MeshHandle handle = _ptr_to_handle(&mesh);
         const auto [map_it, inserted] = m_mesh_map.insert({ name, handle });
 
         if (inserted) {
@@ -149,6 +149,13 @@ private:
         const auto error_msg = fmt::format(fmt_string, name.str_view());
         g_log.write_error(error_msg);
         throw RuntimeError{};
+    }
+
+    static MeshHandle _ptr_to_handle(Mesh* ptr)
+    {
+        uintptr_t handle_value;
+        std::memcpy(&handle_value, &ptr, sizeof(uintptr_t));
+        return MeshHandle{ handle_value };
     }
 
     void _clear_mesh(Mesh& mesh);
@@ -171,9 +178,8 @@ MeshHandle MeshRepositoryImpl::create(Identifier name, const MeshDataView& mesh_
 
     if (!has_vertices || !has_indices) {
         const std::string problem = !has_vertices ? "no vertex data" : "no index data";
-        const std::string msg = fmt::format("MeshRepository: cannot create mesh '{}': {}.",
-                                            name.str_view(),
-                                            problem);
+        const std::string msg =
+            fmt::format("MeshRepository: cannot create mesh '{}': {}.", name.str_view(), problem);
         throw std::runtime_error(msg);
     }
 
@@ -328,7 +334,7 @@ void MeshRepositoryImpl::_clear_mesh(Mesh& mesh)
         return;
     }
 
-    const auto* meshname [[maybe_unused]] = mesh.name.c_str();
+    const auto* meshname[[maybe_unused]] = mesh.name.c_str();
 
     MG_LOG_DEBUG(fmt::format("Deleting Mesh '{}'", vao_id, meshname));
     glDeleteVertexArrays(1, &vao_id);
@@ -376,8 +382,8 @@ public:
 
         const MeshDataView data = resource.data_view();
 
-        const auto [centre, radius] = data.bounding_info.value_or(
-            calculate_mesh_bounding_info(data.vertices, data.indices));
+        const auto [centre, radius] =
+            data.bounding_info.value_or(calculate_mesh_bounding_info(data.vertices, data.indices));
 
         MeshRepositoryImpl::MakeMeshParams params = {};
         params.vertex_buffer = m_vertex_buffer;
@@ -388,9 +394,10 @@ public:
         params.radius = radius;
         params.mesh_data = data;
 
-        const MeshHandle mesh_handle = m_mesh_repository->_make_mesh(
-            resource.resource_id(),
-            m_mesh_repository->_mesh_params_from_mesh_data(resource.data_view()));
+        const MeshHandle mesh_handle =
+            m_mesh_repository->_make_mesh(resource.resource_id(),
+                                          m_mesh_repository->_mesh_params_from_mesh_data(
+                                              resource.data_view()));
 
         m_vbo_offset += resource.vertices().size_bytes();
         m_ibo_offset += resource.indices().size_bytes();

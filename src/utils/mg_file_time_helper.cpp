@@ -74,15 +74,14 @@ std::time_t last_write_time_t(const std::filesystem::path& file)
 
 #else
     // Try unix approach.
-    struct stat result;
+    struct stat result = {};
     if (stat(file.c_str(), &result) == 0) {
         return result.st_mtime;
     }
-    else {
-        const auto msg = fmt::format(msg_failed_to_read, file.generic_u8string());
-        g_log.write_error(msg);
-        throw RuntimeError{};
-    }
+
+    const auto msg = fmt::format(msg_failed_to_read, file.generic_u8string());
+    g_log.write_error(msg);
+    throw RuntimeError{};
 #endif // _WIN32
 }
 

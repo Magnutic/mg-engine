@@ -58,7 +58,7 @@ void init_OpenAL()
     }
 
     const char* device_name = nullptr;
-    if (alcIsExtensionPresent(device, "ALC_ENUMERATE_ALL_EXT")) {
+    if (alcIsExtensionPresent(device, "ALC_ENUMERATE_ALL_EXT") != 0) {
         device_name = alcGetString(device, ALC_ALL_DEVICES_SPECIFIER);
     }
     if (!device_name || alcGetError(device) != AL_NO_ERROR) {
@@ -70,7 +70,7 @@ void init_OpenAL()
 }
 
 // Destroy OpenAL context and close its device.
-void close_OpenAL(void)
+void close_OpenAL()
 {
     ALCcontext* context = alcGetCurrentContext();
     if (context) {
@@ -99,8 +99,8 @@ struct State {
 
 sf_count_t read(void* ptr, sf_count_t count, void* user_data)
 {
-    State* state = static_cast<State*>(user_data);
-    const sf_count_t file_size = narrow<sf_count_t>(state->data.size_bytes());
+    auto* state = static_cast<State*>(user_data);
+    const auto file_size = narrow<sf_count_t>(state->data.size_bytes());
     const sf_count_t real_count = std::min(file_size - state->pos, count);
     if (real_count <= 0) {
         return 0;
@@ -113,14 +113,14 @@ sf_count_t read(void* ptr, sf_count_t count, void* user_data)
 
 sf_count_t get_filelen(void* user_data)
 {
-    State* state = static_cast<State*>(user_data);
+    auto* state = static_cast<State*>(user_data);
     return narrow<sf_count_t>(state->data.size_bytes());
 }
 
 sf_count_t seek(sf_count_t offset, int whence, void* user_data)
 {
-    State* state = static_cast<State*>(user_data);
-    const sf_count_t file_size = narrow<sf_count_t>(state->data.size_bytes());
+    auto* state = static_cast<State*>(user_data);
+    const auto file_size = narrow<sf_count_t>(state->data.size_bytes());
 
     switch (whence) {
     case SEEK_CUR:
@@ -142,7 +142,7 @@ sf_count_t seek(sf_count_t offset, int whence, void* user_data)
 
 sf_count_t tell(void* user_data)
 {
-    State* state = static_cast<State*>(user_data);
+    auto* state = static_cast<State*>(user_data);
     return state->pos;
 }
 
@@ -157,7 +157,7 @@ using UniqueSndFile = std::unique_ptr<SNDFILE, decltype(&sf_close)>;
 
 class SndFileReader {
 public:
-    SF_INFO sf_info;
+    SF_INFO sf_info{};
     UniqueSndFile sndfile = { nullptr, &sf_close };
     std::string error_reason;
 
@@ -219,7 +219,7 @@ GenerateOpenALBufferResult generate_OpenAL_buffer(SNDFILE* sndfile, SF_INFO& sf_
             return { nullopt, "Failed to read samples." };
         }
 
-        const ALsizei num_bytes = narrow<ALsizei>(buffer.size() * sizeof(short));
+        const auto num_bytes = narrow<ALsizei>(buffer.size() * sizeof(short));
 
         alGenBuffers(1, &al_buffer_id);
         alBufferData(al_buffer_id, format, buffer.data(), num_bytes, sf_info.samplerate);
@@ -227,7 +227,7 @@ GenerateOpenALBufferResult generate_OpenAL_buffer(SNDFILE* sndfile, SF_INFO& sf_
 
     ALenum al_error = alGetError();
     if (al_error != AL_NO_ERROR) {
-        if (alIsBuffer(al_buffer_id)) {
+        if (alIsBuffer(al_buffer_id) != 0) {
             alDeleteBuffers(1, &al_buffer_id);
         }
         return { nullopt, fmt::format("OpenAL Error: {}", alGetString(al_error)) };

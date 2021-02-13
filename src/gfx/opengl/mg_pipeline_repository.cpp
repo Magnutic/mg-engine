@@ -230,8 +230,8 @@ generate_material_input_layout(const Material& material, const uint32_t material
 
     auto result = Array<PipelineInputDescriptor>::make(samplers.size() + 1);
 
-    for (uint32_t i = 0; i < samplers.size(); ++i) {
-        result[i] = { samplers[i].name, PipelineInputType::Sampler2D, i };
+    for (size_t i = 0; i < samplers.size(); ++i) {
+        result[i] = { samplers[i].name, PipelineInputType::Sampler2D, narrow<uint32_t>(i) };
     }
 
     result.back() = { "MaterialParams",
@@ -312,13 +312,15 @@ PipelineRepository::PipelineRepository(Config&& config)
 {
     impl().config = std::move(config);
 
-    for (auto& input_location : config.shared_input_layout) {
+    for (auto& input_location : impl().config.shared_input_layout) {
         switch (input_location.type) {
         case PipelineInputType::BufferTexture:
             [[fallthrough]];
+
         case PipelineInputType::Sampler2D:
             MG_ASSERT(input_location.location >= 8 &&
                       "Texture slots [0,7] are reserved for material samplers.");
+
         default:
             break;
         }
@@ -347,8 +349,9 @@ void PipelineRepository::bind_material_pipeline(const Material& material,
         PipelineInputBinding{ impl().config.material_params_ubo_slot, impl().material_params_ubo });
 
     const auto& samplers = material.samplers();
-    for (uint32_t i = 0; i < samplers.size(); ++i) {
-        material_input_bindings.push_back(PipelineInputBinding{ i, samplers[i].sampler });
+    for (size_t i = 0; i < samplers.size(); ++i) {
+        material_input_bindings.push_back(
+            PipelineInputBinding{ narrow<uint32_t>(i), samplers[i].sampler });
     }
 
     Pipeline::bind_material_inputs(material_input_bindings);

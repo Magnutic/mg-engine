@@ -291,7 +291,7 @@ std::string Keyboard::description(InputSource::Id id) const
 
     // Check if name is in g_key_names cache
     std::string& name = g_key_names.at(id);
-    if (name != "") {
+    if (!name.empty()) {
         return name;
     }
 

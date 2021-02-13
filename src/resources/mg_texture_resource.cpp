@@ -74,6 +74,8 @@ struct DDS_PIXELFORMAT {
     uint32_t dwABitMask;
 };
 
+static_assert(std::is_trivially_copyable_v<DDS_PIXELFORMAT>);
+
 struct DDS_HEADER {
     uint32_t dwSize;
     uint32_t dwFlags;
@@ -82,7 +84,7 @@ struct DDS_HEADER {
     uint32_t dwPitchOrLinearSize;
     uint32_t dwDepth;
     uint32_t dwMipMapCount;
-    uint32_t dwReserved1[11];
+    std::array<uint32_t, 11> dwReserved1;
     DDS_PIXELFORMAT ddspf;
     uint32_t dwCaps;
     uint32_t dwCaps2;
@@ -91,10 +93,13 @@ struct DDS_HEADER {
     uint32_t dwReserved2;
 };
 
+static_assert(std::is_trivially_copyable_v<DDS_HEADER>);
+
 struct PixelFormatResult {
     bool valid;
     TextureResource::PixelFormat format;
 };
+
 /** Determine pixel format of DDS file. Nullopt if format is unsupported. */
 PixelFormatResult dds_pf_to_pixel_format(const DDS_PIXELFORMAT& pf)
 {
@@ -201,7 +206,8 @@ LoadResourceResult TextureResource::load_resource_impl(ResourceLoadingInput& inp
 
     // Count size for all mipmaps
     {
-        auto mip_width = width, mip_height = height;
+        auto mip_width = width;
+        auto mip_height = height;
 
         for (MipIndexT i = 1u; i < num_mip_maps; ++i) {
             mip_width = max(1u, mip_width / 2);

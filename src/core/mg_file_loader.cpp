@@ -284,7 +284,7 @@ void ZipFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
 
     const auto index = zip_name_locate(m_archive_file, file.c_str(), ZIP_FL_NOCASE);
 
-    const auto error_throw = [&](std::string reason) {
+    const auto error_throw = [&](const std::string& reason) {
         g_log.write_error(fmt::format("Could not read file '{}' from archive '{}': {}",
                                       file.c_str(),
                                       m_archive_name,
