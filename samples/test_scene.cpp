@@ -594,7 +594,7 @@ void Scene::generate_lights()
         glm::vec4 light_colour(rand(), rand(), rand(), float(RAND_MAX));
         light_colour /= float(RAND_MAX);
 
-        const auto s = Mg::narrow<float>(std::sin(double(i) * 0.2));
+        const auto s = Mg::narrow_cast<float>(std::sin(double(i) * 0.2));
 
         pos.z += s;
 
