@@ -54,6 +54,7 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/input/mg_keyboard.h
     ${MG_HEADER_DIR}/mg/input/mg_mouse.h
     ${MG_HEADER_DIR}/mg/mg_defs.h
+    ${MG_HEADER_DIR}/mg/mg_unicode.h
     ${MG_HEADER_DIR}/mg/resource_cache/internal/mg_resource_entry.h
     ${MG_HEADER_DIR}/mg/resource_cache/internal/mg_resource_entry_base.h
     ${MG_HEADER_DIR}/mg/resource_cache/mg_base_resource.h
@@ -135,6 +136,7 @@ add_library(mg_engine
     input/mg_joy.cpp
     input/mg_keyboard.cpp
     input/mg_mouse.cpp
+    mg_unicode.cpp
     resource_cache/internal/mg_resource_entry_base.cpp
     resource_cache/mg_base_resource.cpp
     resource_cache/mg_resource_cache.cpp

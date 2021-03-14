@@ -21,61 +21,54 @@
 
 namespace Mg {
 
-struct CodepointResult {
-    char32_t codepoint;
-    uint32_t num_bytes;
-    bool result_valid;
-};
+constexpr std::string_view k_white_space = " \t\f\v\n\r";
 
-/** Gets the Unicode code point starting at the given index of a utf-8-encoded string.
- * If the character at the given index is not the start of a utf8-encoded code point, the result
- * will have codepoint==0, num_bytes==1, and result_valid==false.
- */
-CodepointResult get_unicode_codepoint_at(std::string_view utf8_string, size_t char_index);
+/** Convert char to char32_t s.t. signed/unsigned difference is handled correctly. */
+constexpr char32_t to_char32(char c)
+{
+    return static_cast<char32_t>(static_cast<unsigned char>(c));
+}
 
-/** Convert utf-8 string to utf-32. If the utf8-string contains invalid data, those bytes are
- * ignored and will not be present in resulting string. Optionally, reports whether there was an
- * error in the `error` parameter.
- */
-std::u32string utf8_to_utf32(std::string_view utf8_string, bool* error = nullptr);
-
-static constexpr std::string_view k_white_space = " \t\f\v\n\r";
-
+/** Get whether codepoint is an ASCII character. */
 constexpr bool is_ascii(char32_t codepoint)
 {
     return (codepoint & 0xFFFFFF80) == 0;
+}
+constexpr bool is_ascii(char codepoint)
+{
+    return is_ascii(to_char32(codepoint));
 }
 
 /** Is character an ASCII white-space character? */
 bool is_whitespace(char32_t c) noexcept;
 inline bool is_whitespace(char c) noexcept
 {
-    return is_whitespace(static_cast<char32_t>(c));
+    return is_whitespace(to_char32(c));
 }
 
 /** Is character not an ASCII white-space character? */
 bool is_not_whitespace(char32_t c) noexcept;
 inline bool is_not_whitespace(char c) noexcept
 {
-    return is_not_whitespace(static_cast<char32_t>(c));
+    return is_not_whitespace(to_char32(c));
 }
 
 constexpr bool is_ascii_digit(char32_t c) noexcept
 {
-    return (c >= '0' && c <= '9');
+    return (c >= U'0' && c <= U'9');
 }
 constexpr bool is_ascii_digit(char c) noexcept
 {
-    return is_ascii_digit(static_cast<char32_t>(c));
+    return is_ascii_digit(to_char32(c));
 }
 
 constexpr bool is_ascii_alphanumeric(char32_t c) noexcept
 {
-    return ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_' || is_ascii_digit(c));
+    return ((c >= U'A' && c <= U'Z') || (c >= U'a' && c <= U'z') || c == U'_' || is_ascii_digit(c));
 }
 constexpr bool is_ascii_alphanumeric(char c) noexcept
 {
-    return is_ascii_alphanumeric(static_cast<char32_t>(c));
+    return is_ascii_alphanumeric(to_char32(c));
 }
 
 /** Tokenise string by delimiter, returns tokens in vector. Works on UTF-8
