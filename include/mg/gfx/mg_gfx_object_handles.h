@@ -89,7 +89,7 @@ private:
 template<GfxObjectType type_> class GfxObjectHandle<type_>::Owner {
 public:
     constexpr Owner() = default;
-    explicit Owner(const GfxObjectHandle handle) : handle(handle) {}
+    explicit Owner(const GfxObjectHandle handle_) : handle(handle_) {}
     explicit Owner(const GfxObjectHandleValue value) : handle(value) {}
     ~Owner() { handle.free(); }
 
