@@ -78,6 +78,7 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/utils/mg_gsl.h
     ${MG_HEADER_DIR}/mg/utils/mg_hash_combine.h
     ${MG_HEADER_DIR}/mg/utils/mg_instance_counter.h
+    ${MG_HEADER_DIR}/mg/utils/mg_iteration_utils.h
     ${MG_HEADER_DIR}/mg/utils/mg_macros.h
     ${MG_HEADER_DIR}/mg/utils/mg_math_utils.h
     ${MG_HEADER_DIR}/mg/utils/mg_observer.h
