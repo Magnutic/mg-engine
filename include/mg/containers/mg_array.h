@@ -81,7 +81,7 @@ template<typename T, typename Generator>
 static T* make_array(const size_t num_elems, Generator&& generator)
 {
     struct alignas(T) block {
-        std::byte storage[sizeof(T)];
+        std::byte storage[sizeof(T)]; // NOLINT(cppcoreguidelines-avoid-c-arrays)
     };
 
     block* p_storage = nullptr;
@@ -93,7 +93,8 @@ static T* make_array(const size_t num_elems, Generator&& generator)
 
         // Construct copies in storage.
         for (; i < num_elems; ++i) {
-            new (&p_storage[i]) T(generator(i));
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+            new (&p_storage[i]) T(generator());
         }
     }
     catch (...) {
@@ -113,16 +114,28 @@ static T* make_array(const size_t num_elems, Generator&& generator)
 template<typename T> class ArrayCopyGenerator {
 public:
     explicit ArrayCopyGenerator(const span<const T> source) : m_source(source) {}
-    T operator()(const size_t i) { return m_source[i]; }
+    const T& operator()() { return m_source[m_index++]; }
 
 private:
     span<const T> m_source;
+    size_t m_index = 0;
+};
+
+template<typename T> class InitializerListGenerator {
+public:
+    explicit InitializerListGenerator(const std::initializer_list<T>& ilist) : m_it(ilist.begin())
+    {}
+
+    const T& operator()() { return *(m_it++); }
+
+private:
+    typename std::initializer_list<T>::const_iterator m_it;
 };
 
 template<typename T> class ValueCopyGenerator {
 public:
     explicit ValueCopyGenerator(const T& value) : m_value(value) {}
-    T operator()(const size_t) { return m_value; }
+    const T& operator()() { return m_value; }
 
 private:
     const T& m_value;
@@ -143,6 +156,14 @@ public:
     static ArrayUnknownSize make(size_t size, const T& value)
     {
         return ArrayUnknownSize(detail::make_array<T>(size, detail::ValueCopyGenerator(value)));
+    }
+
+    static ArrayUnknownSize make(std::initializer_list<T> ilist)
+    {
+        const auto size = narrow<size_t>(ilist.end() - ilist.begin());
+        return ArrayUnknownSize(detail::make_array<T>(size,
+                                                      detail::InitializerListGenerator(ilist)),
+                                size);
     }
 
     static ArrayUnknownSize make_copy(span<const T> data)
@@ -194,6 +215,12 @@ public:
     static Array make(size_t size, const T& value)
     {
         return Array(detail::make_array<T>(size, detail::ValueCopyGenerator(value), size));
+    }
+
+    static Array make(std::initializer_list<T> ilist)
+    {
+        const auto size = narrow<size_t>(ilist.end() - ilist.begin());
+        return Array(detail::make_array<T>(size, detail::InitializerListGenerator(ilist)), size);
     }
 
     static Array make_copy(span<const T> data)
