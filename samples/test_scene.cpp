@@ -1,8 +1,10 @@
 ﻿#include "test_scene.h"
 #include "mg/gfx/mg_blend_modes.h"
+#include "mg/gfx/mg_font_handler.h"
 #include "mg/gfx/mg_render_target.h"
+#include "mg/mg_unicode.h"
+#include "mg/utils/mg_string_utils.h"
 
-#include <mg/audio/mg_audio_context.h>
 #include <mg/core/mg_config.h>
 #include <mg/core/mg_identifier.h>
 #include <mg/core/mg_log.h>
@@ -11,6 +13,7 @@
 #include <mg/gfx/mg_texture2d.h>
 #include <mg/resource_cache/internal/mg_resource_entry_base.h>
 #include <mg/resource_cache/mg_resource_access_guard.h>
+#include <mg/resources/mg_font_resource.h>
 #include <mg/resources/mg_mesh_resource.h>
 #include <mg/resources/mg_shader_resource.h>
 #include <mg/resources/mg_sound_resource.h>
@@ -19,6 +22,8 @@
 #include <mg/utils/mg_math_utils.h>
 
 #include <fmt/core.h>
+
+#include <numeric>
 
 namespace {
 
@@ -88,28 +93,39 @@ void Scene::init()
     load_materials();
     generate_lights();
 
+    const auto font_resource =
+        resource_cache.resource_handle<Mg::FontResource>("fonts/LiberationSerif-Regular.ttf");
+    std::vector<Mg::UnicodeRange> unicode_ranges = { Mg::get_unicode_range(
+        Mg::UnicodeBlock::Basic_Latin) };
+    font_id = ui_renderer.font_handler().load_font(font_resource, 24, unicode_ranges);
+
     main_loop();
 }
+
+static double frame_rate = 0.0f;
 
 void Scene::main_loop()
 {
     double accumulator = 0.0;
-    double last_fps_write = time;
-    size_t n_frames = 0;
+
+    std::array<double, 30> frame_time_samples = {};
+    size_t frame_time_sample_index = 0;
 
     while (!exit) {
-        double last_time = time;
+        const double last_time = time;
         time = app.time_since_init();
 
-        ++n_frames;
+        ++frame_time_sample_index;
+        frame_time_sample_index %= frame_time_samples.size();
 
-        if (time - last_fps_write > 1.0) {
-            Mg::g_log.write_verbose(fmt::format("{} FPS", n_frames));
-            last_fps_write = time;
-            n_frames = 0;
-        }
+        frame_rate = 1.0 /
+                     (std::accumulate(frame_time_samples.begin(), frame_time_samples.end(), 0.0) /
+                      frame_time_samples.size());
 
-        accumulator += time - last_time;
+        const double time_delta = time - last_time;
+        frame_time_samples[frame_time_sample_index] = time_delta;
+
+        accumulator += time_delta;
         accumulator = std::min(accumulator, k_accumulator_max_steps * k_time_step);
 
         while (accumulator >= k_time_step) {
@@ -203,21 +219,6 @@ void Scene::time_step()
     if (input_map.was_pressed("toggle_debug_vis")) {
         draw_debug = !draw_debug;
     }
-
-#if 0
-    {
-        Mg::audio::ListenerState listener_state;
-        listener_state.position = current_state.cam_position;
-        listener_state.forward = current_state.cam_rotation.forward();
-        listener_state.up = current_state.cam_rotation.up();
-        listener_state.velocity = (current_state.cam_position - prev_state.cam_position) /
-                                  float(k_time_step);
-
-        Mg::audio::AudioContext::get().set_listener_state(listener_state);
-    }
-
-    Mg::audio::AudioContext::get().check_for_errors();
-#endif
 }
 
 void Scene::render_scene(const double lerp_factor)
@@ -269,16 +270,32 @@ void Scene::render_scene(const double lerp_factor)
     // Draw UI
     {
         Mg::gfx::UIRenderer::TransformParams transform_params = {};
-        transform_params.position = { 0.5f, 0.5f };
-        transform_params.anchor = { 0.5f, 0.5f };
-        transform_params.size = { 0.125f, 0.125f };
-        transform_params.rotation = Mg::Angle::from_radians(Mg::narrow_cast<float>(time));
+        transform_params.position = { 0.0f, 1.0f };
+        transform_params.position_pixel_offset = { 10.0f, -10.0f };
+        transform_params.anchor = { 0.0f, 1.0f };
+        ui_renderer.scaling_factor(1.0f);
+
         ui_material->set_parameter("opacity", 0.5f);
-        ui_renderer.aspect_ratio(app.window().aspect_ratio());
-        ui_renderer.draw_rectangle(transform_params,
-                                   ui_material,
+        ui_renderer.resolution(
+            { app.window().frame_buffer_size().width, app.window().frame_buffer_size().height });
+        ui_renderer.draw_rectangle({ 32.0f, 32.0f },
+                                   transform_params,
+                                   *ui_material,
                                    Mg::gfx::blend_mode_constants::bm_add);
+
+        Mg::gfx::FontHandler::TypesettingParams typesetting_params = {};
+        typesetting_params.line_spacing_factor = 1.25f;
+        typesetting_params.max_width_pixels = app.window().frame_buffer_size().width;
+
+        std::string text = fmt::format("FPS: {:.2f}", frame_rate);
+        Mg::gfx::PreparedText prepared_text =
+            ui_renderer.font_handler().prepare_text(font_id, text, typesetting_params);
+
+        transform_params.position_pixel_offset.x += 32.0f + 10.0f;
+        transform_params.position_pixel_offset.y += 5.0f;
+        ui_renderer.draw_text(prepared_text, transform_params);
     }
+
 
     // Debug geometry
     if (draw_debug) {
@@ -308,11 +325,13 @@ Mg::gfx::MeshHandle Scene::load_mesh(Mg::Identifier file)
 
 Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file)
 {
+    // Get form repository if it exists there.
     Mg::gfx::Texture2D* texture = texture_repository.get(file);
     if (texture) {
         return texture;
     }
 
+    // Otherwise, load from file.
     const Mg::ResourceAccessGuard access =
         resource_cache.access_resource<Mg::TextureResource>(file);
     return texture_repository.create(*access);
@@ -647,7 +666,7 @@ void Scene::on_resource_reload(const Mg::FileChangedEvent& event)
     }
 }
 
-int main(int /*argc*/, char* /*argv*/ [])
+int main(int /*argc*/, char* /*argv*/[])
 {
     try {
         Scene scene;

@@ -3,12 +3,11 @@
 
 #pragma once
 
-#include "mg/audio/mg_sound_buffer_handle.h"
-#include "mg/audio/mg_sound_source.h"
 #include <mg/core/mg_config.h>
 #include <mg/core/mg_window.h>
 #include <mg/gfx/mg_billboard_renderer.h>
 #include <mg/gfx/mg_debug_renderer.h>
+#include <mg/gfx/mg_font_handler.h>
 #include <mg/gfx/mg_gfx_device.h>
 #include <mg/gfx/mg_light.h>
 #include <mg/gfx/mg_material.h>
@@ -106,11 +105,13 @@ public:
     Mg::gfx::TextureRepository texture_repository;
     Mg::gfx::MaterialRepository material_repository;
 
+    Mg::gfx::FontId font_id;
+
     Mg::gfx::MeshRenderer mesh_renderer;
     Mg::gfx::DebugRenderer debug_renderer;
     Mg::gfx::BillboardRenderer billboard_renderer;
     Mg::gfx::PostProcessRenderer post_renderer;
-    Mg::gfx::UIRenderer ui_renderer;
+    Mg::gfx::UIRenderer ui_renderer{ { 1024, 768 } };
 
     Mg::gfx::RenderCommandProducer render_command_producer;
     Mg::gfx::BillboardRenderList billboard_render_list;
@@ -138,8 +139,6 @@ public:
     Mg::gfx::Material* bloom_material;
     Mg::gfx::Material* billboard_material;
     Mg::gfx::Material* ui_material;
-
-    Mg::audio::SoundSource sound_source;
 
     double time = 0.0;
     bool exit = false;

@@ -27,6 +27,7 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/gfx/mg_buffer_texture.h
     ${MG_HEADER_DIR}/mg/gfx/mg_camera.h
     ${MG_HEADER_DIR}/mg/gfx/mg_debug_renderer.h
+    ${MG_HEADER_DIR}/mg/gfx/mg_font_handler.h
     ${MG_HEADER_DIR}/mg/gfx/mg_frustum.h
     ${MG_HEADER_DIR}/mg/gfx/mg_gfx_debug_group.h
     ${MG_HEADER_DIR}/mg/gfx/mg_gfx_device.h
@@ -64,6 +65,7 @@ set(MG_HEADERS
     ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_handle.h
     ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_loading_input.h
     ${MG_HEADER_DIR}/mg/resources/mg_file_changed_event.h
+    ${MG_HEADER_DIR}/mg/resources/mg_font_resource.h
     ${MG_HEADER_DIR}/mg/resources/mg_mesh_resource.h
     ${MG_HEADER_DIR}/mg/resources/mg_raw_resource.h
     ${MG_HEADER_DIR}/mg/resources/mg_shader_resource.h
@@ -104,6 +106,8 @@ add_library(mg_engine
     core/mg_window.cpp
     core/mg_window_settings.cpp
     ecs/mg_entity.cpp
+    gfx/mg_font_handler.cpp
+    gfx/mg_gfx_object_handles.cpp
     gfx/mg_light_buffers.cpp
     gfx/mg_light_buffers.h
     gfx/mg_light_grid.cpp
@@ -120,7 +124,6 @@ add_library(mg_engine
     gfx/opengl/mg_debug_renderer.cpp
     gfx/opengl/mg_gfx_debug_group.cpp
     gfx/opengl/mg_gfx_device.cpp
-    gfx/mg_gfx_object_handles.cpp
     gfx/opengl/mg_gl_debug.cpp
     gfx/opengl/mg_mesh_renderer.cpp
     gfx/opengl/mg_mesh_repository.cpp
@@ -141,6 +144,7 @@ add_library(mg_engine
     resource_cache/internal/mg_resource_entry_base.cpp
     resource_cache/mg_base_resource.cpp
     resource_cache/mg_resource_cache.cpp
+    resources/mg_font_resource.cpp
     resources/mg_mesh_resource.cpp
     resources/mg_raw_resource.cpp
     resources/mg_shader_resource.cpp

@@ -4,13 +4,14 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-/** @file mg_billboard_renderer.h
- * 2D user-interface component renderer.
+/** @file mg_ui_renderer.h
+ * 2D user-interface renderer.
  */
 
 #pragma once
 
 #include <mg/gfx/mg_blend_modes.h>
+#include <mg/gfx/mg_gfx_object_handles.h>
 #include <mg/utils/mg_angle.h>
 #include <mg/utils/mg_macros.h>
 #include <mg/utils/mg_optional.h>
@@ -18,18 +19,23 @@
 
 #include <glm/vec2.hpp>
 
-#include <cmath>
+#include <string_view>
 
 namespace Mg::gfx {
 
 class Material;
 class Texture2D;
+class PreparedText;
+class FontHandler;
 
+namespace detail {
 struct UIRendererData;
+}
 
-class UIRenderer : PImplMixin<UIRendererData> {
+/** 2D user-interface renderer. */
+class UIRenderer : PImplMixin<detail::UIRendererData> {
 public:
-    UIRenderer();
+    explicit UIRenderer(glm::ivec2 resolution, float scaling_factor = 1.0);
     ~UIRenderer();
 
     MG_MAKE_NON_COPYABLE(UIRenderer);
@@ -41,9 +47,10 @@ public:
          */
         glm::vec2 position = { 0.0f, 0.0f };
 
-        /** Size of item to render given as proportion of screen height. */
-        glm::vec2 size = { 1.0f, 1.0f };
+        /** Offset from `position` given in units of pixels. */
+        glm::vec2 position_pixel_offset = { 0.0f, 0.0f };
 
+        /** Rotation of item to render. Measured counter-clockwise. */
         Angle rotation = 0.0_radians;
 
         /** Position within the item that will be at `position` and act as rotation pivot.
@@ -52,12 +59,24 @@ public:
         glm::vec2 anchor = { 0.0f, 0.0f };
     };
 
-    void aspect_ratio(float aspect_ratio);
-    float aspect_ratio() const;
+    void resolution(glm::ivec2 resolution);
+    glm::ivec2 resolution() const;
 
-    void draw_rectangle(const TransformParams& params,
-                        const Material* material,
+    void scaling_factor(float scaling_factor);
+    float scaling_factor() const;
+
+    FontHandler& font_handler();
+    const FontHandler& font_handler() const;
+
+    void draw_rectangle(glm::vec2 size,
+                        const TransformParams& transform_params,
+                        const Material& material,
                         Opt<BlendMode> blend_mode) noexcept;
+
+    void draw_text(const PreparedText& text,
+                   const TransformParams& transform_params,
+                   float scale = 1.0f,
+                   BlendMode blend_mode = blend_mode_constants::bm_alpha_premultiplied) noexcept;
 
     void drop_shaders() noexcept;
 };
