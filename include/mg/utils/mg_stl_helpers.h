@@ -96,6 +96,62 @@ index_where_result index_of(ContT&& container, const ElemT& elem)
                        [&elem](const ElemT& e) { return e == elem; });
 }
 
+template<typename ContT, typename ElemT = typename ContT::value_type>
+bool contains(ContT&& container, const ElemT& elem)
+{
+    return index_of(container, elem).found;
+}
+
+template<typename ContT, typename F> bool any_of(ContT&& container, F&& predicate)
+{
+    return std::any_of(container.begin(), container.end(), predicate);
+}
+
+template<typename ContT, typename F> bool all_of(ContT&& container, F&& predicate)
+{
+    return std::all_of(container.begin(), container.end(), predicate);
+}
+
+template<typename ContT, typename F> bool none_of(ContT&& container, F&& predicate)
+{
+    return std::none_of(container.begin(), container.end(), predicate);
+}
+
+template<typename ContT, typename F> size_t count_if(ContT&& container, F&& predicate)
+{
+    return static_cast<size_t>(std::count_if(container.begin(), container.end(), predicate));
+}
+
+template<typename ContT, typename ElemT = typename ContT::value_type>
+size_t count(ContT&& container, const ElemT& elem)
+{
+    return static_cast<size_t>(std::count(container.begin(), container.end(), elem));
+}
+
+template<typename ContT, typename ElemT = typename ContT::value_type>
+auto lower_bound(ContT&& container, const ElemT& value)
+{
+    return std::lower_bound(container.begin(), container.end(), value);
+}
+
+template<typename ContT, typename Cmp, typename ElemT = typename ContT::value_type>
+auto lower_bound(ContT&& container, const ElemT& value, Cmp&& compare)
+{
+    return std::lower_bound(container.begin(), container.end(), value, std::forward<Cmp>(compare));
+}
+
+template<typename ContT, typename ElemT = typename ContT::value_type>
+auto upper_bound(ContT&& container, const ElemT& value)
+{
+    return std::upper_bound(container.begin(), container.end(), value);
+}
+
+template<typename ContT, typename Cmp, typename ElemT = typename ContT::value_type>
+auto upper_bound(ContT&& container, const ElemT& value, Cmp&& compare)
+{
+    return std::upper_bound(container.begin(), container.end(), value, std::forward<Cmp>(compare));
+}
+
 // find_and_erase_if:
 // The first implementation does not work on maps, because remove_if requires elements to be
 // move assignable; maps store key as const. Fall back to second implementation, if so.
@@ -145,6 +201,12 @@ bool find_and_erase(ContT&& container, const ElemT& element)
                              [&element](const ElemT& e) { e == element; });
 }
 
+/** Sort container and erase duplicate elements. */
+template<typename ContT> void sort_unique(ContT&& container)
+{
+    std::sort(container.begin(), container.end());
+    container.erase(std::unique(container.begin(), container.end()), container.end());
+}
 
 /** Sort elements in container. */
 template<typename ContT> void sort(ContT&& container)
