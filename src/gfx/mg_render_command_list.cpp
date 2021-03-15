@@ -117,7 +117,7 @@ uint32_t render_command_fingerpint(const RenderCommand& command) noexcept
     // TODO: This fingerprint is not much good
     const uint32_t mesh_fingerprint = static_cast<uint8_t>(command.vertex_array.get());
     uintptr_t mat_ptr_as_int{};
-    std::memcpy(&mat_ptr_as_int, &command.material, sizeof(command.material));
+    std::memcpy(&mat_ptr_as_int, &command.material, sizeof(mat_ptr_as_int));
     const auto material_fingerprint = narrow_cast<uint32_t>(mat_ptr_as_int);
     return (material_fingerprint << 8) | mesh_fingerprint;
 }

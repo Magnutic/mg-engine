@@ -34,30 +34,29 @@
 #include <math.h>   // NOLINT(modernize-deprecated-headers)
 #include <stdlib.h> // NOLINT(modernize-deprecated-headers)
 #include <string.h> // NOLINT(modernize-deprecated-headers)
-#include <string>
 
 // Definitions for stb_rect_pack
-#define STBRP_SORT qsort
-#define STBRP_ASSERT assert
+#define STBRP_SORT qsort    // NOLINT
+#define STBRP_ASSERT assert // NOLINT
 
 // Definitions for stb_truetype
-#define STBTT_ifloor(x) ((int)::floor(x))
-#define STBTT_iceil(x) ((int)::ceil(x))
-#define STBTT_sqrt(x) ::sqrt(x)
-#define STBTT_pow(x, y) ::pow(x, y)
-#define STBTT_fmod(x, y) ::fmod(x, y)
-#define STBTT_cos(x) ::cos(x)
-#define STBTT_acos(x) ::acos(x)
-#define STBTT_fabs(x) ::fabs(x)
-#define STBTT_malloc(x, u) ((void)(u), ::malloc(x))
-#define STBTT_free(x, u) ((void)(u), ::free(x))
-#define STBTT_assert(x) assert(x)
-#define STBTT_strlen(x) ::strlen(x)
-#define STBTT_memcpy ::memcpy
-#define STBTT_memset ::memset
+#define STBTT_ifloor(x) ((int)::floor(x))           // NOLINT
+#define STBTT_iceil(x) ((int)::ceil(x))             // NOLINT
+#define STBTT_sqrt(x) ::sqrt(x)                     // NOLINT
+#define STBTT_pow(x, y) ::pow(x, y)                 // NOLINT
+#define STBTT_fmod(x, y) ::fmod(x, y)               // NOLINT
+#define STBTT_cos(x) ::cos(x)                       // NOLINT
+#define STBTT_acos(x) ::acos(x)                     // NOLINT
+#define STBTT_fabs(x) ::fabs(x)                     // NOLINT
+#define STBTT_malloc(x, u) ((void)(u), ::malloc(x)) // NOLINT
+#define STBTT_free(x, u) ((void)(u), ::free(x))     // NOLINT
+#define STBTT_assert(x) assert(x)                   // NOLINT
+#define STBTT_strlen(x) ::strlen(x)                 // NOLINT
+#define STBTT_memcpy ::memcpy                       // NOLINT
+#define STBTT_memset ::memset                       // NOLINT
 
-#define STB_TRUETYPE_IMPLEMENTATION 1
-#define STB_RECT_PACK_IMPLEMENTATION 1
+#define STB_TRUETYPE_IMPLEMENTATION 1  // NOLINT
+#define STB_RECT_PACK_IMPLEMENTATION 1 // NOLINT
 
 // Namespace stb-library definitions to avoid potential symbol conflicts.
 namespace Mg::stb {
@@ -84,6 +83,7 @@ using namespace Mg::stb;
 
 #include <atomic>
 #include <numeric>
+#include <string>
 #include <vector>
 
 namespace Mg::gfx {
@@ -144,13 +144,16 @@ public:
 
         auto merged_ranges = merge_overlapping_ranges(unicode_ranges);
 
-        auto contains_subsistution_char = [](UnicodeRange r) {
-            return contains_codepoint(r, k_substitution_character);
-        };
+        { // Ensure the substitution character is present in merged_ranges.
+            auto contains_subsistution_char = [](UnicodeRange r) {
+                return contains_codepoint(r, k_substitution_character);
+            };
 
-        const bool has_substitution_char = count_if(merged_ranges, contains_subsistution_char) == 1;
-        if (!has_substitution_char) {
-            merged_ranges.push_back({ k_substitution_character, 1 });
+            const bool has_substitution_char = count_if(merged_ranges,
+                                                        contains_subsistution_char) == 1;
+            if (!has_substitution_char) {
+                merged_ranges.push_back({ k_substitution_character, 1 });
+            }
         }
 
         // Pack into a texture.
@@ -189,13 +192,16 @@ private:
             const int stride_in_bytes = 0;
             const int padding = 1;
             void* const alloc_context = nullptr;
-            stbtt_PackBegin(&pack_context,
-                            texture_data.data(),
-                            m_texture_width,
-                            m_texture_height,
-                            stride_in_bytes,
-                            padding,
-                            alloc_context);
+            if (0 == stbtt_PackBegin(&pack_context,
+                                     texture_data.data(),
+                                     m_texture_width,
+                                     m_texture_height,
+                                     stride_in_bytes,
+                                     padding,
+                                     alloc_context)) {
+                log.error("Failed to initiate STBTT font packing context.");
+                throw RuntimeError{};
+            }
 
             const auto font_index = 0;
             const auto font_size = static_cast<float>(pixel_size);

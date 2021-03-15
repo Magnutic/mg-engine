@@ -220,8 +220,8 @@ struct UIRendererData {
     BufferHandle quad_vbo;
     VertexArrayHandle quad_vao;
 
-    glm::ivec2 resolution;
-    float scaling_factor;
+    glm::ivec2 resolution = { 0, 0 };
+    float scaling_factor = 1.0;
 
     Pipeline text_pipeline = make_text_pipeline();
 };
