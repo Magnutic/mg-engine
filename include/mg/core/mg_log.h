@@ -14,6 +14,8 @@
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_simple_pimpl.h"
 
+#include <fmt/core.h>
+
 #include <string>
 #include <string_view>
 #include <utility>
@@ -57,27 +59,56 @@ public:
     /** Get verbosity levels. */
     GetVerbosityReturn get_verbosity() const noexcept;
 
-    /** Writes message with priority prio. */
-    void write(Prio prio, std::string msg);
-
-    // Convenience functions:
+    void write(Prio prio, std::string msg) { write_impl(prio, std::move(msg)); }
 
     /** Writes a message with priority Error */
-    void error(std::string msg) { write(Prio::Error, std::move(msg)); }
+    void error(std::string msg) { write_impl(Prio::Error, std::move(msg)); }
 
     /** Writes a message with priority Warning */
-    void warning(std::string msg) { write(Prio::Warning, std::move(msg)); }
+    void warning(std::string msg) { write_impl(Prio::Warning, std::move(msg)); }
 
     /** Writes a message with priority Message */
-    void message(std::string msg) { write(Prio::Message, std::move(msg)); }
+    void message(std::string msg) { write_impl(Prio::Message, std::move(msg)); }
 
     /** Writes a message with priority Verbose */
-    void verbose(std::string msg) { write(Prio::Verbose, std::move(msg)); }
+    void verbose(std::string msg) { write_impl(Prio::Verbose, std::move(msg)); }
 
+    /** Formats and writes a message with priority Error */
+    template<typename T, typename... Ts> void error(std::string_view msg, T&& arg, Ts&&... args)
+    {
+        write_impl(Prio::Error, fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
+    }
+
+    /** Formats and writes a message with priority Warning */
+    template<typename T, typename... Ts> void warning(std::string_view msg, T&& arg, Ts&&... args)
+    {
+        write_impl(Prio::Warning,
+                   fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
+    }
+
+    /** Formats and writes a message with priority Message */
+    template<typename T, typename... Ts> void message(std::string_view msg, T&& arg, Ts&&... args)
+    {
+        write_impl(Prio::Message,
+                   fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
+    }
+
+    /** Formats and writes a message with priority Verbose */
+    template<typename T, typename... Ts> void verbose(std::string_view msg, T&& arg, Ts&&... args)
+    {
+        write_impl(Prio::Verbose,
+                   fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
+    }
+
+    /** Flush the log, writing to file immediately. */
     void flush();
 
     /** Get path to log output file. */
     std::string_view file_path() const noexcept;
+
+private:
+    /** Writes message with priority prio. */
+    void write_impl(Prio prio, std::string msg);
 };
 
 //--------------------------------------------------------------------------------------------------

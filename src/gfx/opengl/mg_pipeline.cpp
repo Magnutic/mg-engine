@@ -113,10 +113,9 @@ void apply_input_descriptor(const opengl::ShaderProgramHandle& shader_handle,
     }
 
     if (!success) {
-        log.message(fmt::format(
-            "Mg::Pipeline::Pipeline: no such active uniform '{}' (shader-program id {}).",
-            name,
-            static_cast<uint32_t>(shader_handle.get())));
+        log.message("Mg::Pipeline::Pipeline: no such active uniform '{}' (shader-program id {}).",
+                    name,
+                    shader_handle.get());
     }
 }
 

@@ -72,9 +72,9 @@ void Material::set_sampler(Identifier name, TextureHandle texture)
     auto opt_index = sampler_index(name);
 
     if (!opt_index.has_value()) {
-        log.error(fmt::format("Material '{}': set_sampler(\"{}\", ...): no such sampler.",
-                                      m_id.c_str(),
-                                      name.c_str()));
+        log.error("Material '{}': set_sampler(\"{}\", ...): no such sampler.",
+                  m_id.str_view(),
+                  name.str_view());
         throw RuntimeError();
     }
 
@@ -87,9 +87,9 @@ void Material::set_option(Identifier option, bool enabled)
     auto [found, index] = index_of(m_options, option);
 
     if (!found) {
-        log.error(fmt::format("Material '{}': set_option(\"{}\", ...): no such option.",
-                                      m_id.c_str(),
-                                      option.c_str()));
+        log.error("Material '{}': set_option(\"{}\", ...): no such option.",
+                  m_id.str_view(),
+                  option.str_view());
         throw RuntimeError();
     }
 
@@ -101,9 +101,9 @@ bool Material::get_option(Identifier option) const
     auto [found, index] = index_of(m_options, option);
 
     if (!found) {
-        log.error(fmt::format("Material '{}': get_option(\"{}\"): no such option.",
-                                      m_id.c_str(),
-                                      option.c_str()));
+        log.error("Material '{}': get_option(\"{}\"): no such option.",
+                  m_id.str_view(),
+                  option.str_view());
         throw RuntimeError();
     }
 
@@ -194,10 +194,9 @@ void Material::_set_parameter_impl(Identifier name,
     }
 
     if (p_param == nullptr) {
-        log.warning(
-            fmt::format("Material '{}': set_parameter(\"{}\", ...): no such parameter.",
-                        id().c_str(),
-                        name.c_str()));
+        log.warning(fmt::format("Material '{}': set_parameter(\"{}\", ...): no such parameter.",
+                                id().c_str(),
+                                name.c_str()));
         return;
     }
 

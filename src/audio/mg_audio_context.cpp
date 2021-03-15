@@ -299,9 +299,8 @@ AudioContext::generate_sound_buffer(span<const std::byte> sound_file_data)
             return { {}, reader.error_reason };
         }
 
-        const auto [opt_al_buffer_id,
-                    openal_error_reason] = generate_OpenAL_buffer(reader.sndfile.get(),
-                                                                  reader.sf_info);
+        const auto [opt_al_buffer_id, openal_error_reason] =
+            generate_OpenAL_buffer(reader.sndfile.get(), reader.sf_info);
         if (!opt_al_buffer_id) {
             return { {}, openal_error_reason };
         }
@@ -355,7 +354,7 @@ void AudioContext::check_for_errors() const
 {
     const ALenum error = alGetError();
     if (error != AL_NO_ERROR) {
-        log.error(fmt::format("Audio context: {}", al_error_to_str(error)));
+        log.error("Audio context: {}", al_error_to_str(error));
         throw RuntimeError{};
     }
 }

@@ -131,12 +131,10 @@ void log_shader_error(const ShaderCode& code, ShaderErrorFlags::Value error_flag
 // Write details on shader linking error to log.
 void log_shader_link_error(std::string_view shader_name, const ShaderCode& shader_code)
 {
-    log.error(fmt::format("Error linking shaders for program {}.", shader_name));
-    log.verbose(fmt::format("Vertex code:\n{}", error_dump_code(shader_code.vertex.code)));
-    log.verbose(
-        fmt::format("Geometry code:\n{}", error_dump_code(shader_code.geometry.code)));
-    log.verbose(
-        fmt::format("Fragment code:\n{}", error_dump_code(shader_code.fragment.code)));
+    log.error("Error linking shaders for program {}.", shader_name);
+    log.verbose("Vertex code:\n{}", error_dump_code(shader_code.vertex.code));
+    log.verbose(fmt::format("Geometry code:\n{}", error_dump_code(shader_code.geometry.code)));
+    log.verbose(fmt::format("Fragment code:\n{}", error_dump_code(shader_code.fragment.code)));
 }
 
 ShaderCompileResult compile_shader(const ShaderCode& code)
@@ -267,7 +265,7 @@ Pipeline make_pipeline_for_material(const PipelineRepository::Config& config,
 
     const std::string_view shader_name = material.shader().resource_id().str_view();
 
-    log.message(fmt::format("Compiling permutation of shader '{}'.", shader_name));
+    log.message("Compiling permutation of shader '{}'.", shader_name);
 
     // Assemble and compile shader code for this particular material.
     const ShaderCode shader_code = assemble_shader_code(config.preamble_shader_code, material);

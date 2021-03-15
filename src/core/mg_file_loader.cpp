@@ -113,15 +113,14 @@ void BasicFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
 
     const bool file_is_under_directory = is_prefix_of(m_directory, path.generic_u8string());
     if (!file_is_under_directory) {
-        log.error(
-            "BasicFileLoader: trying to load file which is outside file loader's directory.");
+        log.error("BasicFileLoader: trying to load file which is outside file loader's directory.");
         throw RuntimeError();
     }
 
     Opt<std::ifstream> istream = io::make_input_filestream(path.generic_u8string(),
                                                            io::Mode::binary);
     if (!istream) {
-        log.error(fmt::format("Could not read file '{}'", path.generic_u8string()));
+        log.error("Could not read file '{}'", path.generic_u8string());
         throw RuntimeError();
     }
 
@@ -158,9 +157,7 @@ void ZipFileLoader::open_zip_archive()
         zip_error_t error{};
         zip_error_init_with_code(&error, zip_error);
 
-        log.error(fmt::format("Failed to open archive '{}': {}",
-                                      m_archive_name,
-                                      zip_error_strerror(&error)));
+        log.error("Failed to open archive '{}': {}", m_archive_name, zip_error_strerror(&error));
 
         zip_error_fini(&error);
 
@@ -196,7 +193,7 @@ Array<FileRecord> ZipFileLoader::available_files()
         }
         else {
             constexpr auto msg = "Failed to get time stamp of file '{}' in archive '{}'.";
-            log.warning(fmt::format(msg, filename, m_archive_name));
+            log.warning(msg, filename, m_archive_name);
         }
 
         index[i] = FileRecord{ Identifier::from_runtime_string(filename), last_write_time };
@@ -285,10 +282,10 @@ void ZipFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
     const auto index = zip_name_locate(m_archive_file, file.c_str(), ZIP_FL_NOCASE);
 
     const auto error_throw = [&](const std::string& reason) {
-        log.error(fmt::format("Could not read file '{}' from archive '{}': {}",
-                                      file.c_str(),
-                                      m_archive_name,
-                                      reason));
+        log.error("Could not read file '{}' from archive '{}': {}",
+                  file.c_str(),
+                  m_archive_name,
+                  reason);
         throw RuntimeError();
     };
 

@@ -200,7 +200,7 @@ bool MeshRepositoryImpl::update(Identifier name, const MeshDataView& data)
 
     // Use the existing Mesh to ensure MeshHandles remain valid.
     _make_mesh_at(get_mesh(*opt_handle), name, _mesh_params_from_mesh_data(data));
-    log.verbose(fmt::format("MeshRepository::update(): Updated {}", name.str_view()));
+    log.verbose("MeshRepository::update(): Updated {}", name.str_view());
     return true;
 }
 
@@ -334,7 +334,7 @@ void MeshRepositoryImpl::_clear_mesh(Mesh& mesh)
         return;
     }
 
-    const auto* meshname[[maybe_unused]] = mesh.name.c_str();
+    const auto* meshname [[maybe_unused]] = mesh.name.c_str();
 
     MG_LOG_DEBUG(fmt::format("Deleting Mesh '{}'", vao_id, meshname));
     glDeleteVertexArrays(1, &vao_id);

@@ -49,11 +49,11 @@ void ResourceCache::refresh()
         const bool has_changed = file.time_stamp > old_time_stamp;
 
         if (has_changed) {
-            log.message(fmt::format(
+            log.message(
                 "Detected that {} has changed (old time-stamp: {}, new time-stamp: {}).",
                 file.filename.str_view(),
                 format_time(old_time_stamp),
-                format_time(file.time_stamp)));
+                format_time(file.time_stamp));
         }
 
         return has_changed;
@@ -176,7 +176,7 @@ void ResourceCache::rebuild_file_list()
 
     for (auto&& p_loader : file_loaders()) {
         MG_ASSERT(p_loader != nullptr);
-        log.verbose(fmt::format("Refreshing file list for '{}'", p_loader->name()));
+        log.verbose("Refreshing file list for '{}'", p_loader->name());
 
         for (auto&& fr : p_loader->available_files()) {
             update_file_list(fr, *p_loader);

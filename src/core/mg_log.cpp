@@ -202,11 +202,6 @@ Log::GetVerbosityReturn Log::get_verbosity() const noexcept
     return { impl().console_verbosity, impl().log_file_verbosity };
 }
 
-void Log::write(Prio prio, std::string msg)
-{
-    impl().enqueue({ prio, std::move(msg) });
-}
-
 void Log::flush()
 {
     impl().flush();
@@ -215,6 +210,11 @@ void Log::flush()
 std::string_view Log::file_path() const noexcept
 {
     return impl().file_path;
+}
+
+void Log::write_impl(Prio prio, std::string msg)
+{
+    impl().enqueue({ prio, std::move(msg) });
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -268,7 +268,7 @@ void write_crash_log()
 
     const auto outpath = out_directory / log_filename;
 
-    log.message(fmt::format("Saving crash log '{}'", fs::absolute(outpath).generic_u8string()));
+    log.message("Saving crash log '{}'", fs::absolute(outpath).generic_u8string());
     log.flush();
 
     fs::copy(log_path, outpath);

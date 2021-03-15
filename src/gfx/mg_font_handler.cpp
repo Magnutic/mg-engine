@@ -156,11 +156,11 @@ public:
         // Pack into a texture.
         pack_impl(font_access_guard->data(), merged_ranges, pixel_size, texture);
 
-        log.verbose(fmt::format("Packed font {}:{} into {}x{} texture.",
-                                        font.resource_id().str_view(),
-                                        pixel_size,
-                                        m_texture_width,
-                                        m_texture_height));
+        log.verbose("Packed font {}:{} into {}x{} texture.",
+                    font.resource_id().str_view(),
+                    pixel_size,
+                    m_texture_width,
+                    m_texture_height);
     }
 
 private:

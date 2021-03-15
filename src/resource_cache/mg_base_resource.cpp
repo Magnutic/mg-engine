@@ -15,7 +15,7 @@ namespace Mg {
 
 LoadResourceResult BaseResource::load_resource(ResourceLoadingInput& input)
 {
-    log.verbose(fmt::format("Loading resource '{}'...", resource_id().str_view()));
+    log.verbose("Loading resource '{}'...", resource_id().str_view());
 
     try {
         return load_resource_impl(input);

@@ -44,8 +44,10 @@ struct LoadResourceResult {
 class BaseResource {
 public:
     explicit BaseResource(Identifier id) noexcept : m_id(id) {}
+    virtual ~BaseResource() = default;
+
+    MG_MAKE_DEFAULT_MOVABLE(BaseResource);
     MG_MAKE_NON_COPYABLE(BaseResource);
-    virtual ~BaseResource() {}
 
     /** Load resource from binary file data. This is the interface through which Mg::ResourceCache
      * initialises resource types.

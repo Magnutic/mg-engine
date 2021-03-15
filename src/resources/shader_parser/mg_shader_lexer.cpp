@@ -39,10 +39,10 @@ private:
     size_t token_start = 0;
     void lex_error(std::string_view reason)
     {
-        log.error(fmt::format("Error parsing at line {} col {}: {}",
-                                      m_stream.line,
-                                      m_stream.pos_in_line,
-                                      reason));
+        log.error("Error parsing at line {} col {}: {}",
+                  m_stream.line,
+                  m_stream.pos_in_line,
+                  reason);
         throw RuntimeError();
     }
 

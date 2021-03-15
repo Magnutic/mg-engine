@@ -10,8 +10,8 @@
 
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
-#include "mg/utils/mg_assert.h"
 #include "mg/gfx/mg_gfx_debug_group.h"
+#include "mg/utils/mg_assert.h"
 
 #include <fmt/core.h>
 
@@ -56,13 +56,13 @@ void UniformBuffer::set_data(span<const std::byte> data, size_t dest_offset)
     const size_t available_size = m_size - dest_offset;
 
     if (available_size < data.size_bytes()) {
-        log.error(fmt::format(
+        log.error(
             "UniformBuffer at {}: set_data(): could not fit data in buffer (data size {}, "
             "buffer size {}, writing starting at offset {})",
             static_cast<void*>(this),
             data.size_bytes(),
             m_size,
-            dest_offset));
+            dest_offset);
 
         throw RuntimeError{};
     }
@@ -85,7 +85,7 @@ size_t UniformBuffer::max_size()
 
     if (result == 0) {
         glGetInteger64v(GL_MAX_UNIFORM_BLOCK_SIZE, &result);
-        log.verbose(fmt::format("GL_MAX_UNIFORM_BLOCK_SIZE: {}", result));
+        log.verbose("GL_MAX_UNIFORM_BLOCK_SIZE: {}", result);
     }
 
     return narrow<size_t>(result);

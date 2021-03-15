@@ -50,7 +50,7 @@ public:
     MG_MAKE_NON_COPYABLE(ResourceEntryBase);
     MG_MAKE_NON_MOVABLE(ResourceEntryBase);
 
-    virtual ~ResourceEntryBase() {}
+    virtual ~ResourceEntryBase() = default;
 
     virtual BaseResource& get_resource() = 0;
     virtual const BaseResource& get_resource() const = 0;

@@ -42,9 +42,9 @@ void ResourceEntryBase::load_resource()
 
     switch (result.result_code) {
     case LoadResourceResult::DataError:
-        log.error(fmt::format("Loading resource '{}': DataError: {}",
-                                      resource_id().str_view(),
-                                      result.error_reason));
+        log.error("Loading resource '{}': DataError: {}",
+                  resource_id().str_view(),
+                  result.error_reason);
         throw ResourceDataError{};
 
     case LoadResourceResult::Success:

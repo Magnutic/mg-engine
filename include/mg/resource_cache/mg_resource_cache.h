@@ -76,6 +76,8 @@ public:
         refresh();
     }
 
+    ~ResourceCache() = default;
+
     MG_MAKE_NON_COPYABLE(ResourceCache);
     MG_MAKE_NON_MOVABLE(ResourceCache); // Prevents pointer invalidation
 

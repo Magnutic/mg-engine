@@ -44,7 +44,7 @@ void check_gl_error(std::string_view file, std::string_view function, size_t lin
     uint32_t error_enum = glGetError();
 
     while (error_enum != GL_NO_ERROR) {
-        log.error(fmt::format(msg, file, function, line, gl_error_string(error_enum)));
+        log.error(msg, file, function, line, gl_error_string(error_enum));
 
         error_enum = glGetError();
     }
