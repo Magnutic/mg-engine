@@ -113,7 +113,7 @@ void BasicFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
 
     const bool file_is_under_directory = is_prefix_of(m_directory, path.generic_u8string());
     if (!file_is_under_directory) {
-        g_log.write_error(
+        log.error(
             "BasicFileLoader: trying to load file which is outside file loader's directory.");
         throw RuntimeError();
     }
@@ -121,7 +121,7 @@ void BasicFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
     Opt<std::ifstream> istream = io::make_input_filestream(path.generic_u8string(),
                                                            io::Mode::binary);
     if (!istream) {
-        g_log.write_error(fmt::format("Could not read file '{}'", path.generic_u8string()));
+        log.error(fmt::format("Could not read file '{}'", path.generic_u8string()));
         throw RuntimeError();
     }
 
@@ -158,7 +158,7 @@ void ZipFileLoader::open_zip_archive()
         zip_error_t error{};
         zip_error_init_with_code(&error, zip_error);
 
-        g_log.write_error(fmt::format("Failed to open archive '{}': {}",
+        log.error(fmt::format("Failed to open archive '{}': {}",
                                       m_archive_name,
                                       zip_error_strerror(&error)));
 
@@ -196,7 +196,7 @@ Array<FileRecord> ZipFileLoader::available_files()
         }
         else {
             constexpr auto msg = "Failed to get time stamp of file '{}' in archive '{}'.";
-            g_log.write_warning(fmt::format(msg, filename, m_archive_name));
+            log.warning(fmt::format(msg, filename, m_archive_name));
         }
 
         index[i] = FileRecord{ Identifier::from_runtime_string(filename), last_write_time };
@@ -222,7 +222,7 @@ struct zip_stat zip_stat_helper(zip_t* archive, Identifier file_path)
         return sb;
     }
 
-    g_log.write_error(
+    log.error(
         fmt::format("ZipFileLoader::file_size(): Could not find file '{}'", file_path.c_str()));
     throw RuntimeError();
 }
@@ -235,7 +235,7 @@ uintmax_t ZipFileLoader::file_size(Identifier file)
     const auto sb = zip_stat_helper(m_archive_file, file);
 
     if ((sb.valid & ZIP_STAT_SIZE) == 0) {
-        g_log.write_error(
+        log.error(
             fmt::format("ZipFileLoader::file_size(): "
                         "Could not read size of file '{}' in zip archive '{}'",
                         file.c_str(),
@@ -253,7 +253,7 @@ std::time_t ZipFileLoader::file_time_stamp(Identifier file)
 
     const auto sb = zip_stat_helper(m_archive_file, file);
     if ((sb.valid & ZIP_STAT_MTIME) == 0) {
-        g_log.write_error(
+        log.error(
             fmt::format("ZipFileLoader::file_time_stamp(): "
                         "Could not read time stamp of file '{}' in zip archive '{}'",
                         file.c_str(),
@@ -285,7 +285,7 @@ void ZipFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
     const auto index = zip_name_locate(m_archive_file, file.c_str(), ZIP_FL_NOCASE);
 
     const auto error_throw = [&](const std::string& reason) {
-        g_log.write_error(fmt::format("Could not read file '{}' from archive '{}': {}",
+        log.error(fmt::format("Could not read file '{}' from archive '{}': {}",
                                       file.c_str(),
                                       m_archive_name,
                                       reason));

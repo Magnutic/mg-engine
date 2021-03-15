@@ -63,7 +63,7 @@ void check_framebuffer()
     const auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
     if (status != GL_FRAMEBUFFER_COMPLETE) {
-        g_log.write_error(
+        log.error(
             fmt::format("TextureRenderTarget incomplete with status code {:#x}", status));
         throw RuntimeError();
     }
@@ -181,10 +181,10 @@ TextureRenderTarget::with_colour_and_depth_targets(Texture2D* colour_target,
     MG_ASSERT(colour_target != depth_target);
 
     if (colour_target->image_size() != depth_target->image_size()) {
-        g_log.write_warning(
+        log.warning(
             "TextureRenderTarget::with_colour_and_depth_targets(): colour_target and depth_target "
             "have different image sizes.");
-        g_log.write_verbose(
+        log.verbose(
             fmt::format("\n\tColour target '{}': {}x{}\n\tDepth target '{}': {}x{}.",
                         colour_target->id().c_str(),
                         colour_target->image_size().width,

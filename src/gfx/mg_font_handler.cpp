@@ -156,7 +156,7 @@ public:
         // Pack into a texture.
         pack_impl(font_access_guard->data(), merged_ranges, pixel_size, texture);
 
-        g_log.write_verbose(fmt::format("Packed font {}:{} into {}x{} texture.",
+        log.verbose(fmt::format("Packed font {}:{} into {}x{} texture.",
                                         font.resource_id().str_view(),
                                         pixel_size,
                                         m_texture_width,
@@ -436,7 +436,7 @@ std::u32string convert_and_filter(std::string_view text)
     std::u32string codepoints = utf8_to_utf32(text, &utf8_error);
     if (utf8_error) {
         auto msg = fmt::format("FontHandler::prepare_text: invalid UTF-8 in string '{}'.", text);
-        g_log.write_warning(msg);
+        log.warning(msg);
     }
 
     // Filter out ASCII control characters, except for tabs, which we will turn into four spaces,

@@ -645,7 +645,7 @@ void Scene::on_resource_reload(const Mg::FileChangedEvent& event)
     using namespace Mg::literals;
 
     const auto resource_name = event.resource.resource_id().str_view();
-    Mg::g_log.write_message(fmt::format("File '{}' changed and was reloaded.", resource_name));
+    Mg::log.message(fmt::format("File '{}' changed and was reloaded.", resource_name));
     switch (event.resource_type.hash()) {
     case "TextureResource"_hash: {
         Mg::ResourceAccessGuard<Mg::TextureResource> access(event.resource);
@@ -674,7 +674,7 @@ int main(int /*argc*/, char* /*argv*/[])
         scene.main_loop();
     }
     catch (const std::exception& e) {
-        Mg::g_log.write_error(e.what());
+        Mg::log.error(e.what());
         return 1;
     }
 }

@@ -54,7 +54,7 @@ void RenderCommandProducer::add_mesh(MeshHandle mesh_handle,
             auto msg = fmt::format("No material specified for mesh '{}', submesh {}. Skipping.",
                                    mesh.name.c_str(),
                                    i);
-            g_log.write_warning(msg);
+            log.warning(msg);
             continue;
         }
 

@@ -39,10 +39,10 @@ constexpr auto opengl_create_fail_msg =
 void glfw_error_callback(int error, const char* reason)
 {
     if (error == GLFW_VERSION_UNAVAILABLE || error == GLFW_API_UNAVAILABLE) {
-        g_log.write_error(fmt::format(opengl_create_fail_msg, reason));
+        log.error(fmt::format(opengl_create_fail_msg, reason));
     }
     else {
-        g_log.write_error(fmt::format("GLFW error {}:\n%s", error, reason));
+        log.error(fmt::format("GLFW error {}:\n%s", error, reason));
     }
 
     throw RuntimeError();
@@ -62,7 +62,7 @@ Window& window_from_glfw_handle(const GLFWwindow* handle) noexcept
 // Creates window with given video mode settings
 GLFWwindow* create_window() noexcept
 {
-    g_log.write_verbose("Creating window");
+    log.verbose("Creating window");
 
 #ifndef NDEBUG
     // Enabling OpenGL debug context enables the application to receive debug /
@@ -93,7 +93,7 @@ void set_vsync(GLFWwindow* window, bool enable)
         glfwMakeContextCurrent(window);
     }
 
-    g_log.write_message(fmt::format("{} vsync.", enable ? "Enabling" : "Disabling"));
+    log.message(fmt::format("{} vsync.", enable ? "Enabling" : "Disabling"));
     glfwSwapInterval(enable ? 1 : 0);
 
     if (context != window) {
@@ -106,11 +106,11 @@ WindowSettings sanitise_settings(WindowSettings s)
 {
     if (s.video_mode.width <= 0 || s.video_mode.height <= 0) {
         if (s.fullscreen && defs::k_default_to_desktop_res_in_fullscreen) {
-            g_log.write_verbose("Mg::Window: no resolution specified, using desktop resolution.");
+            log.verbose("Mg::Window: no resolution specified, using desktop resolution.");
             s.video_mode = current_monitor_video_mode();
         }
         else {
-            g_log.write_verbose("Mg::Window: no resolution specified, using defaults.");
+            log.verbose("Mg::Window: no resolution specified, using defaults.");
             s.video_mode.width = defs::k_default_res_x;
             s.video_mode.height = defs::k_default_res_y;
         }
@@ -164,7 +164,7 @@ std::unique_ptr<Window> Window::make(WindowSettings settings, std::string title)
 {
     // glfwInit() may be called multiple times
     if (glfwInit() == GLFW_FALSE) {
-        g_log.write_error("Window::make(): failed to initialise GLFW.");
+        log.error("Window::make(): failed to initialise GLFW.");
         return {};
     }
 
@@ -203,11 +203,11 @@ std::unique_ptr<Window> Window::make(WindowSettings settings, std::string title)
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE);
 
     if (glfwRawMouseMotionSupported() != GLFW_FALSE) {
-        g_log.write_message("Raw mouse-motion input enabled.");
+        log.message("Raw mouse-motion input enabled.");
         glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     }
     else {
-        g_log.write_message("Raw mouse-motion input unavailable.");
+        log.message("Raw mouse-motion input unavailable.");
     }
 
     auto window_handle = std::make_unique<Window>(ConstructKey{}, window, settings);
@@ -227,12 +227,12 @@ Window::Window(ConstructKey /*unused*/, GLFWwindow* handle, WindowSettings setti
 
 Window::~Window()
 {
-    g_log.write_message(fmt::format("Closing window '{}'.", m_title));
+    log.message(fmt::format("Closing window '{}'.", m_title));
 
     glfwDestroyWindow(m_window);
     glfwTerminate();
 
-    g_log.write_message("GLFW terminated.");
+    log.message("GLFW terminated.");
 }
 
 VideoMode Window::frame_buffer_size() const noexcept
@@ -276,7 +276,7 @@ void Window::apply_settings(WindowSettings s)
 // Reset window, applying new settings
 void Window::reset()
 {
-    g_log.write_message(fmt::format("Setting video mode: {}x{}, {}",
+    log.message(fmt::format("Setting video mode: {}x{}, {}",
                                     m_settings.video_mode.width,
                                     m_settings.video_mode.height,
                                     m_settings.fullscreen ? "fullscreen" : "windowed"));
@@ -312,7 +312,7 @@ void Window::set_title(std::string title) noexcept
 
 void Window::lock_cursor_to_window()
 {
-    g_log.write_verbose(fmt::format("Window {} caught cursor.", static_cast<void*>(this)));
+    log.verbose(fmt::format("Window {} caught cursor.", static_cast<void*>(this)));
 
     glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     m_is_cursor_locked = true;
@@ -320,7 +320,7 @@ void Window::lock_cursor_to_window()
 
 void Window::release_cursor()
 {
-    g_log.write_verbose(fmt::format("Window {} let go of cursor.", static_cast<void*>(this)));
+    log.verbose(fmt::format("Window {} let go of cursor.", static_cast<void*>(this)));
 
     glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     m_is_cursor_locked = false;
@@ -340,7 +340,7 @@ void Window::mouse_button_callback(int button, bool pressed)
 
 void Window::focus_callback(bool focused)
 {
-    g_log.write_verbose(fmt::format("Window {} {} focus.",
+    log.verbose(fmt::format("Window {} {} focus.",
                                     static_cast<void*>(this),
                                     focused ? "received" : "lost"));
 
@@ -360,7 +360,7 @@ void Window::focus_callback(bool focused)
 // until _after_ video mode switch, which could, depending on system, execute asynchronously.
 void Window::frame_buffer_size_callback(int width, int height)
 {
-    g_log.write_verbose(
+    log.verbose(
         fmt::format("Setting window render target framebuffer size to: {}x{}", width, height));
     render_target.set_size(width, height);
     render_target.update_viewport();
@@ -372,7 +372,7 @@ void Window::window_size_callback(int width, int height)
     VideoMode& conf = m_settings.video_mode;
 
     if (width != conf.width || height != conf.height) {
-        g_log.write_warning(
+        log.warning(
             fmt::format("Failed to set requested video mode: {}x{}. Actual video mode: {}x{}.",
                         conf.width,
                         conf.height,
@@ -383,7 +383,7 @@ void Window::window_size_callback(int width, int height)
         conf.height = height;
     }
     else {
-        g_log.write_verbose(fmt::format("Video mode successfully set to: {}x{}", width, height));
+        log.verbose(fmt::format("Video mode successfully set to: {}x{}", width, height));
     }
 }
 

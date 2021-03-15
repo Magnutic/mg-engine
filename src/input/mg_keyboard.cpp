@@ -149,7 +149,7 @@ const char* default_key_name(Keyboard::Key key)
     case Keyboard::Key::Menu:
         return "Menu";
     default:
-        g_log.write_error(fmt::format("Keyboard::description(): unexpected id {}",
+        log.error(fmt::format("Keyboard::description(): unexpected id {}",
                                       static_cast<InputSource::Id>(key)));
         MG_ASSERT(false);
     }
@@ -306,7 +306,7 @@ std::string Keyboard::description(InputSource::Id id) const
     }
 
     // If glfwGetKeyName does not return localised name, fall back to these.
-    g_log.write_warning(
+    log.warning(
         fmt::format("Input: could not get localised name of key {}.", glfw_key_code(key)));
 
     name = default_key_name(key);

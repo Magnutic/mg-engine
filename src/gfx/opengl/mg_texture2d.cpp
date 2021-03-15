@@ -47,7 +47,7 @@ uint32_t gl_internal_format_for_format(RenderTargetParams::Format format)
     case RenderTargetParams::Format::Depth24:
         return GL_DEPTH24_STENCIL8;
     default:
-        g_log.write_error("gl_internal_format_for_format() undefined for given format type.");
+        log.error("gl_internal_format_for_format() undefined for given format type.");
         throw RuntimeError();
     }
 }
@@ -65,7 +65,7 @@ uint32_t gl_format_for_format(RenderTargetParams::Format format)
     case RenderTargetParams::Format::Depth24:
         return GL_DEPTH_STENCIL;
     default:
-        g_log.write_error("gl_format_for_format() undefined for given format type.");
+        log.error("gl_format_for_format() undefined for given format type.");
         throw RuntimeError();
     }
 }
@@ -83,7 +83,7 @@ uint32_t gl_type_for_format(RenderTargetParams::Format format)
     case RenderTargetParams::Format::Depth24:
         return GL_UNSIGNED_INT_24_8;
     default:
-        g_log.write_error("gl_type_for_format() undefined for given format type.");
+        log.error("gl_type_for_format() undefined for given format type.");
         throw RuntimeError();
     }
 }

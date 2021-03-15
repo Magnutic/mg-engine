@@ -77,7 +77,7 @@ void add_light_to_cluster(size_t light_index, glm::uvec3 cluster, ClusterArray& 
     const auto light_offset = clusters[cluster_index].num_lights;
 
     if (light_offset >= MG_MAX_LIGHTS_PER_CLUSTER) {
-        g_log.write_warning("Too many light sources in cluster.");
+        log.warning("Too many light sources in cluster.");
         return;
     }
 

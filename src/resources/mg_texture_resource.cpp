@@ -224,7 +224,7 @@ LoadResourceResult TextureResource::load_resource_impl(ResourceLoadingInput& inp
 
     if (size > sane_size) {
         const auto fname = resource_id().c_str();
-        g_log.write_warning(
+        log.warning(
             fmt::format("TextureResource '{}': file has different length than "
                         "specified by format and is possibly corrupt.",
                         fname));

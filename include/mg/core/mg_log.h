@@ -19,7 +19,7 @@
 #include <utility>
 
 #if MG_ENABLE_DEBUG_LOGGING
-#    define MG_LOG_DEBUG(msg) ::Mg::g_log.write(::Mg::Log::Prio::Debug, msg)
+#    define MG_LOG_DEBUG(msg) ::Mg::log.write(::Mg::Log::Prio::Debug, msg)
 #else
 #    define MG_LOG_DEBUG(msg) static_cast<void>(0);
 #endif
@@ -63,16 +63,16 @@ public:
     // Convenience functions:
 
     /** Writes a message with priority Error */
-    void write_error(std::string msg) { write(Prio::Error, std::move(msg)); }
+    void error(std::string msg) { write(Prio::Error, std::move(msg)); }
 
     /** Writes a message with priority Warning */
-    void write_warning(std::string msg) { write(Prio::Warning, std::move(msg)); }
+    void warning(std::string msg) { write(Prio::Warning, std::move(msg)); }
 
     /** Writes a message with priority Message */
-    void write_message(std::string msg) { write(Prio::Message, std::move(msg)); }
+    void message(std::string msg) { write(Prio::Message, std::move(msg)); }
 
     /** Writes a message with priority Verbose */
-    void write_verbose(std::string msg) { write(Prio::Verbose, std::move(msg)); }
+    void verbose(std::string msg) { write(Prio::Verbose, std::move(msg)); }
 
     void flush();
 
@@ -95,13 +95,13 @@ static LogInitialiser log_initialiser;
 } // namespace detail
 
 /** Mg Engine main log. */
-extern Log& g_log;
+extern Log& log;
 
 /** Write a copy of log to a crashlog directory.
  *
  * Creates a subdirectory in log's output directory with the name
  * 'crashlog_<date>_<time>' and writes a copy of the log there.
  */
-void write_crash_log(Log& log);
+void write_crash_log();
 
 } // namespace Mg

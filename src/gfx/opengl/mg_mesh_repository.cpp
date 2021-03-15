@@ -147,7 +147,7 @@ private:
 
         const auto fmt_string = "Creating mesh {}: a mesh by that identifier already exists.";
         const auto error_msg = fmt::format(fmt_string, name.str_view());
-        g_log.write_error(error_msg);
+        log.error(error_msg);
         throw RuntimeError{};
     }
 
@@ -200,7 +200,7 @@ bool MeshRepositoryImpl::update(Identifier name, const MeshDataView& data)
 
     // Use the existing Mesh to ensure MeshHandles remain valid.
     _make_mesh_at(get_mesh(*opt_handle), name, _mesh_params_from_mesh_data(data));
-    g_log.write_verbose(fmt::format("MeshRepository::update(): Updated {}", name.str_view()));
+    log.verbose(fmt::format("MeshRepository::update(): Updated {}", name.str_view()));
     return true;
 }
 

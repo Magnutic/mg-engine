@@ -113,29 +113,29 @@ struct ShaderCompileResult {
 void log_shader_error(const ShaderCode& code, ShaderErrorFlags::Value error_flags)
 {
     if ((error_flags & ShaderErrorFlags::VertexShader) != 0) {
-        g_log.write_error("Error compiling vertex shader");
-        g_log.write_message(error_dump_code(code.vertex.code));
+        log.error("Error compiling vertex shader");
+        log.message(error_dump_code(code.vertex.code));
     }
 
     if ((error_flags & ShaderErrorFlags::GeometryShader) != 0) {
-        g_log.write_error("Error compiling geometry shader");
-        g_log.write_message(error_dump_code(code.geometry.code));
+        log.error("Error compiling geometry shader");
+        log.message(error_dump_code(code.geometry.code));
     }
 
     if ((error_flags & ShaderErrorFlags::FragmentShader) != 0) {
-        g_log.write_error("Error compiling fragment shader");
-        g_log.write_message(error_dump_code(code.fragment.code));
+        log.error("Error compiling fragment shader");
+        log.message(error_dump_code(code.fragment.code));
     }
 }
 
 // Write details on shader linking error to log.
 void log_shader_link_error(std::string_view shader_name, const ShaderCode& shader_code)
 {
-    g_log.write_error(fmt::format("Error linking shaders for program {}.", shader_name));
-    g_log.write_verbose(fmt::format("Vertex code:\n{}", error_dump_code(shader_code.vertex.code)));
-    g_log.write_verbose(
+    log.error(fmt::format("Error linking shaders for program {}.", shader_name));
+    log.verbose(fmt::format("Vertex code:\n{}", error_dump_code(shader_code.vertex.code)));
+    log.verbose(
         fmt::format("Geometry code:\n{}", error_dump_code(shader_code.geometry.code)));
-    g_log.write_verbose(
+    log.verbose(
         fmt::format("Fragment code:\n{}", error_dump_code(shader_code.fragment.code)));
 }
 
@@ -244,7 +244,7 @@ generate_material_input_layout(const Material& material, const uint32_t material
 // Make Pipeline to use as fallback when shaders fail to compile.
 Pipeline make_fallback_pipeline(const PipelineRepository::Config& config, const Material& material)
 {
-    g_log.write_message("Using error-fallback shader.");
+    log.message("Using error-fallback shader.");
 
     const ShaderCode fallback_shader_code = append_shader_code(config.preamble_shader_code,
                                                                config.on_error_shader_code);
@@ -267,7 +267,7 @@ Pipeline make_pipeline_for_material(const PipelineRepository::Config& config,
 
     const std::string_view shader_name = material.shader().resource_id().str_view();
 
-    g_log.write_message(fmt::format("Compiling permutation of shader '{}'.", shader_name));
+    log.message(fmt::format("Compiling permutation of shader '{}'.", shader_name));
 
     // Assemble and compile shader code for this particular material.
     const ShaderCode shader_code = assemble_shader_code(config.preamble_shader_code, material);

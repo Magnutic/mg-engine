@@ -56,7 +56,7 @@ bool link_program(GLuint program_id)
         glGetProgramInfoLog(program_id, log_length, nullptr, msg.data());
 
         const auto msg_type = result != 0 ? Log::Prio::Message : Log::Prio::Error;
-        g_log.write(msg_type, fmt::format("Shader linking message: {}", msg));
+        log.write(msg_type, fmt::format("Shader linking message: {}", msg));
     }
 
     // Check whether shaders linked successfully.

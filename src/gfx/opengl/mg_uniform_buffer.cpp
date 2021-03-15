@@ -48,7 +48,7 @@ void UniformBuffer::set_data(span<const std::byte> data, size_t dest_offset)
     const auto ubo_id = narrow<GLuint>(m_handle.get());
 
     if (ubo_id == 0) {
-        g_log.write_warning("Attempting to write to uninitialised UBO");
+        log.warning("Attempting to write to uninitialised UBO");
         return;
     }
 
@@ -56,7 +56,7 @@ void UniformBuffer::set_data(span<const std::byte> data, size_t dest_offset)
     const size_t available_size = m_size - dest_offset;
 
     if (available_size < data.size_bytes()) {
-        g_log.write_error(fmt::format(
+        log.error(fmt::format(
             "UniformBuffer at {}: set_data(): could not fit data in buffer (data size {}, "
             "buffer size {}, writing starting at offset {})",
             static_cast<void*>(this),
@@ -85,7 +85,7 @@ size_t UniformBuffer::max_size()
 
     if (result == 0) {
         glGetInteger64v(GL_MAX_UNIFORM_BLOCK_SIZE, &result);
-        g_log.write_verbose(fmt::format("GL_MAX_UNIFORM_BLOCK_SIZE: {}", result));
+        log.verbose(fmt::format("GL_MAX_UNIFORM_BLOCK_SIZE: {}", result));
     }
 
     return narrow<size_t>(result);

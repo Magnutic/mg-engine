@@ -44,7 +44,7 @@ TextureRepositoryData::HandleMap::iterator try_insert_into_handle_map(TextureRep
     }
     const auto fmt_string = "Creating texture {}: a texture by that identifier already exists.";
     const auto error_msg = fmt::format(fmt_string, key.str_view());
-    g_log.write_error(error_msg);
+    log.error(error_msg);
     throw RuntimeError{};
 }
 
@@ -103,7 +103,7 @@ void TextureRepository::update(const TextureResource& resource)
 
     std::swap(old_texture, new_texture);
 
-    g_log.write_verbose(
+    log.verbose(
         fmt::format("TextureRepository::update(): Updated {}", resource_id.str_view()));
 }
 

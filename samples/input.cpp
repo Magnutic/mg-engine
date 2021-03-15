@@ -16,8 +16,8 @@ void inputTest()
 
     std::unique_ptr window = Window::make({}, "Input test");
 
-    input::InputMap  kb_map;
-    input::InputMap  mouse_map;
+    input::InputMap kb_map;
+    input::InputMap mouse_map;
     input::Keyboard& kb = window->keyboard;
     input::Mouse& mouse = window->mouse;
 
@@ -31,7 +31,9 @@ void inputTest()
         kb_map.bind(command, kb.key(key));
     };
 
-    for (size_t i = 0; i < input::Keyboard::k_num_keys; ++i) { bindId(i); }
+    for (size_t i = 0; i < input::Keyboard::k_num_keys; ++i) {
+        bindId(i);
+    }
 
     kb_map.bind("quit", kb.key(input::Keyboard::Key::Esc));
 
@@ -72,24 +74,23 @@ void inputTest()
         kb_map.refresh();
         mouse_map.refresh();
 
-        bool xMoved     = mouse_map.was_released("xDelta");
-        bool yMoved     = mouse_map.was_released("yDelta");
-        bool isMoving   = mouse_map.is_held("xDelta") || mouse_map.is_held("yDelta");
+        bool xMoved = mouse_map.was_released("xDelta");
+        bool yMoved = mouse_map.was_released("yDelta");
+        bool isMoving = mouse_map.is_held("xDelta") || mouse_map.is_held("yDelta");
         bool mouseMoved = (xMoved || yMoved) && !isMoving;
 
         if (mouseMoved) {
-            g_log.write_message(fmt::format(
-                "Mouse pos: ({}, {})", mouse_map.state("xPos"), mouse_map.state("yPos")));
+            log.message(fmt::format("Mouse pos: ({}, {})",
+                                    mouse_map.state("xPos"),
+                                    mouse_map.state("yPos")));
         }
 
         for (Identifier& command : kb_map.commands()) {
             if (kb_map.was_pressed(command)) {
-                g_log.write_message(
-                    fmt::format("Pressed: {}", kb_map.binding(command).description()));
+                log.message(fmt::format("Pressed: {}", kb_map.binding(command).description()));
             }
             else if (kb_map.was_released(command)) {
-                g_log.write_message(
-                    fmt::format("Released: {}", kb_map.binding(command).description()));
+                log.message(fmt::format("Released: {}", kb_map.binding(command).description()));
             }
         }
 
@@ -101,4 +102,3 @@ int main()
 {
     inputTest();
 }
-

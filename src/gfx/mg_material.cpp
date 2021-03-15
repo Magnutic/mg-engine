@@ -72,7 +72,7 @@ void Material::set_sampler(Identifier name, TextureHandle texture)
     auto opt_index = sampler_index(name);
 
     if (!opt_index.has_value()) {
-        g_log.write_error(fmt::format("Material '{}': set_sampler(\"{}\", ...): no such sampler.",
+        log.error(fmt::format("Material '{}': set_sampler(\"{}\", ...): no such sampler.",
                                       m_id.c_str(),
                                       name.c_str()));
         throw RuntimeError();
@@ -87,7 +87,7 @@ void Material::set_option(Identifier option, bool enabled)
     auto [found, index] = index_of(m_options, option);
 
     if (!found) {
-        g_log.write_error(fmt::format("Material '{}': set_option(\"{}\", ...): no such option.",
+        log.error(fmt::format("Material '{}': set_option(\"{}\", ...): no such option.",
                                       m_id.c_str(),
                                       option.c_str()));
         throw RuntimeError();
@@ -101,7 +101,7 @@ bool Material::get_option(Identifier option) const
     auto [found, index] = index_of(m_options, option);
 
     if (!found) {
-        g_log.write_error(fmt::format("Material '{}': get_option(\"{}\"): no such option.",
+        log.error(fmt::format("Material '{}': get_option(\"{}\"): no such option.",
                                       m_id.c_str(),
                                       option.c_str()));
         throw RuntimeError();
@@ -169,7 +169,7 @@ void wrong_type_error(Identifier material_id,
                     shader::parameter_type_to_string(expected),
                     shader::parameter_type_to_string(actual));
 
-    g_log.write_error(error_msg);
+    log.error(error_msg);
 }
 
 } // namespace
@@ -194,7 +194,7 @@ void Material::_set_parameter_impl(Identifier name,
     }
 
     if (p_param == nullptr) {
-        g_log.write_warning(
+        log.warning(
             fmt::format("Material '{}': set_parameter(\"{}\", ...): no such parameter.",
                         id().c_str(),
                         name.c_str()));

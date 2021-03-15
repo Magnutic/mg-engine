@@ -61,7 +61,7 @@ public:
 
     void parse_error(std::string_view reason, const Token& t)
     {
-        g_log.write_error(
+        log.error(
             fmt::format("Parse error at line {}: {} [parsing '{}']", t.line, reason, t.lexeme));
         throw RuntimeError();
     }
@@ -263,7 +263,7 @@ public:
     const Token& peek_token() const
     {
         if (m_current_token == m_tokens.end()) {
-            g_log.write_error("Parse error: unexpected end of file.");
+            log.error("Parse error: unexpected end of file.");
             throw RuntimeError();
         }
         return *m_current_token;

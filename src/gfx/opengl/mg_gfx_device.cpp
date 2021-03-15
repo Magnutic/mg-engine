@@ -48,7 +48,7 @@ GfxDevice* p_gfx_device = nullptr;
 GfxDevice::GfxDevice(Window& window)
 {
     if (p_gfx_device != nullptr) {
-        g_log.write_error("Only one Mg::gfx::GfxDevice may be constructed at a time.");
+        log.error("Only one Mg::gfx::GfxDevice may be constructed at a time.");
         throw RuntimeError();
     }
 
@@ -59,13 +59,13 @@ GfxDevice::GfxDevice(Window& window)
 
     // Init GLAD
     if (gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)) == 0) { // NOLINT
-        g_log.write_error("Failed to initialise GLAD.");
+        log.error("Failed to initialise GLAD.");
         throw RuntimeError();
     }
 
     // Check for errors.
     if (const uint32_t error = glGetError(); error) {
-        g_log.write_error(fmt::format("OpenGL initialisation: {}", gfx::gl_error_string(error)));
+        log.error(fmt::format("OpenGL initialisation: {}", gfx::gl_error_string(error)));
         throw RuntimeError();
     }
 
@@ -78,7 +78,7 @@ GfxDevice::GfxDevice(Window& window)
         glGetIntegerv(GL_CONTEXT_FLAGS, &context_flags);
 
         if ((context_flags & GL_CONTEXT_FLAG_DEBUG_BIT) != 0) {
-            g_log.write_message("OpenGL debug context enabled.");
+            log.message("OpenGL debug context enabled.");
         }
     }
 #endif

@@ -101,7 +101,7 @@ std::string Config::assignment_line(std::string_view key) const
 bool Config::evaluate_line(std::string_view input)
 {
     const auto error = [&](std::string_view reason) {
-        g_log.write_message(fmt::format("Failed to parse config assignment:\n\t'{}'\n\t{}\n\t{}",
+        log.message(fmt::format("Failed to parse config assignment:\n\t'{}'\n\t{}\n\t{}",
                                         input,
                                         reason,
                                         "Assignments must be of the form 'key = value'"));
@@ -159,12 +159,12 @@ bool Config::evaluate_line(std::string_view input)
 
 void Config::read_from_file(std::string_view filepath)
 {
-    g_log.write_verbose(fmt::format("Reading config file '{}'", filepath));
+    log.verbose(fmt::format("Reading config file '{}'", filepath));
 
     Opt<std::ifstream> reader = io::make_input_filestream(filepath, io::Mode::text);
 
     if (!reader) {
-        g_log.write_warning(fmt::format("Could not read config file '{}'.", filepath));
+        log.warning(fmt::format("Could not read config file '{}'.", filepath));
         return;
     }
 
@@ -208,7 +208,7 @@ bool operator<(const Line& l, const Line& r) noexcept
 
 void Config::write_to_file(std::string_view filepath) const
 {
-    g_log.write_verbose(fmt::format("Writing config file '{}'", filepath));
+    log.verbose(fmt::format("Writing config file '{}'", filepath));
 
     std::vector<Line> lines;
 
@@ -259,7 +259,7 @@ void Config::write_to_file(std::string_view filepath) const
     Opt<std::ofstream> writer = io::make_output_filestream(filepath, true, io::Mode::text);
 
     if (!writer) {
-        g_log.write_error(fmt::format("Error writing config file {}", filepath));
+        log.error(fmt::format("Error writing config file {}", filepath));
         return;
     }
 

@@ -49,7 +49,7 @@ void ResourceCache::refresh()
         const bool has_changed = file.time_stamp > old_time_stamp;
 
         if (has_changed) {
-            g_log.write_message(fmt::format(
+            log.message(fmt::format(
                 "Detected that {} has changed (old time-stamp: {}, new time-stamp: {}).",
                 file.filename.str_view(),
                 format_time(old_time_stamp),
@@ -176,7 +176,7 @@ void ResourceCache::rebuild_file_list()
 
     for (auto&& p_loader : file_loaders()) {
         MG_ASSERT(p_loader != nullptr);
-        g_log.write_verbose(fmt::format("Refreshing file list for '{}'", p_loader->name()));
+        log.verbose(fmt::format("Refreshing file list for '{}'", p_loader->name()));
 
         for (auto&& fr : p_loader->available_files()) {
             update_file_list(fr, *p_loader);
@@ -185,7 +185,8 @@ void ResourceCache::rebuild_file_list()
 }
 
 // Throw ResourceNotFound exception and write details to log.
-[[noreturn]] void ResourceCache::throw_resource_not_found(Identifier filename) const {
+[[noreturn]] void ResourceCache::throw_resource_not_found(Identifier filename) const
+{
     std::string msg = "No such file. [ searched in ";
     for (auto&& p_loader : file_loaders()) {
         msg += fmt::format("'{}' ", p_loader->name());
@@ -196,34 +197,36 @@ void ResourceCache::rebuild_file_list()
     throw ResourceNotFound{};
 }
 
+namespace {
 // Log a message with nice formatting.
-static void log(Log::Prio prio,
-                const ResourceCache* origin,
-                Identifier resource,
-                std::string_view message)
+void log_resource_cache_message(Log::Prio prio,
+                                const ResourceCache* origin,
+                                Identifier resource,
+                                std::string_view message)
 {
     std::string msg = fmt::format("ResourceCache[{}]: {} [resource: {}]",
                                   static_cast<const void*>(origin),
                                   message,
                                   resource.c_str());
-    g_log.write(prio, msg);
+    log.write(prio, msg);
 }
+} // namespace
 
 void ResourceCache::log_verbose(Identifier resource, std::string_view message) const
 {
-    log(Log::Prio::Verbose, this, resource, message);
+    log_resource_cache_message(Log::Prio::Verbose, this, resource, message);
 }
 void ResourceCache::log_message(Identifier resource, std::string_view message) const
 {
-    log(Log::Prio::Message, this, resource, message);
+    log_resource_cache_message(Log::Prio::Message, this, resource, message);
 }
 void ResourceCache::log_warning(Identifier resource, std::string_view message) const
 {
-    log(Log::Prio::Warning, this, resource, message);
+    log_resource_cache_message(Log::Prio::Warning, this, resource, message);
 }
 void ResourceCache::log_error(Identifier resource, std::string_view message) const
 {
-    log(Log::Prio::Error, this, resource, message);
+    log_resource_cache_message(Log::Prio::Error, this, resource, message);
 }
 
 // Unload the least recently used resource for which is not currently in use.

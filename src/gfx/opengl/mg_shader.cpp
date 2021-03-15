@@ -41,7 +41,7 @@ template<GLenum shader_stage> Opt<GLuint> compile_shader(const std::string& code
         glGetShaderInfoLog(id, log_length, nullptr, msg.data());
 
         const auto msg_type = result != 0 ? Log::Prio::Message : Log::Prio::Error;
-        g_log.write(msg_type, fmt::format("Shader compilation message: {}", msg));
+        log.write(msg_type, fmt::format("Shader compilation message: {}", msg));
     }
 
     // Check whether shader compiled successfully.

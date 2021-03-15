@@ -176,7 +176,7 @@ uint32_t buffer_texture_type_to_gl_enums(BufferTexture::Type type)
         break;
     }
 
-    g_log.write_error("Unexpected BufferTexture::Type.");
+    log.error("Unexpected BufferTexture::Type.");
     throw RuntimeError();
 }
 

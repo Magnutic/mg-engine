@@ -42,7 +42,7 @@ void init_OpenAL()
     // TODO: error handling: allow running without sound if OpenAL fails to initialise?
     ALCdevice* device = alcOpenDevice(nullptr);
     if (!device) {
-        g_log.write_error("Audio system error: Failed to open OpenAL device.");
+        log.error("Audio system error: Failed to open OpenAL device.");
         throw RuntimeError();
     }
 
@@ -53,7 +53,7 @@ void init_OpenAL()
         }
 
         alcCloseDevice(device);
-        g_log.write_error("Audio system error: Failed to set OpenAL context.");
+        log.error("Audio system error: Failed to set OpenAL context.");
         throw RuntimeError();
     }
 
@@ -65,7 +65,7 @@ void init_OpenAL()
         device_name = alcGetString(device, ALC_DEVICE_SPECIFIER);
     }
 
-    g_log.write_message(
+    log.message(
         fmt::format("Successfully initialised OpenAL audio context [device: {}].", device_name));
 }
 
@@ -76,11 +76,11 @@ void close_OpenAL()
     if (context) {
         ALCdevice* device = alcGetContextsDevice(context);
 
-        g_log.write_message("Destroying OpenAL context.");
+        log.message("Destroying OpenAL context.");
         alcMakeContextCurrent(nullptr);
         alcDestroyContext(context);
 
-        g_log.write_message("Closing OpenAL device.");
+        log.message("Closing OpenAL device.");
         alcCloseDevice(device);
     }
 }
@@ -355,7 +355,7 @@ void AudioContext::check_for_errors() const
 {
     const ALenum error = alGetError();
     if (error != AL_NO_ERROR) {
-        g_log.write_error(fmt::format("Audio context: {}", al_error_to_str(error)));
+        log.error(fmt::format("Audio context: {}", al_error_to_str(error)));
         throw RuntimeError{};
     }
 }

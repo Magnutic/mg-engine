@@ -113,7 +113,7 @@ void apply_input_descriptor(const opengl::ShaderProgramHandle& shader_handle,
     }
 
     if (!success) {
-        g_log.write_message(fmt::format(
+        log.message(fmt::format(
             "Mg::Pipeline::Pipeline: no such active uniform '{}' (shader-program id {}).",
             name,
             static_cast<uint32_t>(shader_handle.get())));
@@ -189,11 +189,9 @@ Opt<GLenum> gl_culling_mode(CullingMode mode)
 
 GLenum gl_blend_op(BlendOp op)
 {
-    static constexpr std::array<GLenum, 6> values{ GL_FUNC_ADD,
-                                                   GL_FUNC_SUBTRACT,
-                                                   GL_FUNC_REVERSE_SUBTRACT,
-                                                   GL_MIN,
-                                                   GL_MAX };
+    static constexpr std::array<GLenum, 6> values{
+        GL_FUNC_ADD, GL_FUNC_SUBTRACT, GL_FUNC_REVERSE_SUBTRACT, GL_MIN, GL_MAX
+    };
     return values.at(static_cast<size_t>(op));
 }
 

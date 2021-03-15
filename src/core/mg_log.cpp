@@ -224,14 +224,14 @@ static size_t nifty_counter;
 static std::aligned_storage_t<sizeof(Log)> log_buf;
 
 // GCC 7 helpfully warns against strict aliasing violations when using reinterpret_cast; but, as I
-// understand it, this case is actually well-defined, since g_log will only be accessed after
+// understand it, this case is actually well-defined, since log will only be accessed after
 // placement-new in LogInitialiser's constructor.
 #ifdef __GNUC__
 #    pragma GCC diagnostic push
 #    pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif
 
-Log& g_log = reinterpret_cast<Log&>(log_buf); // NOLINT
+Log& log = reinterpret_cast<Log&>(log_buf); // NOLINT
 
 #ifdef __GNUC__
 #    pragma GCC diagnostic pop
@@ -240,18 +240,18 @@ Log& g_log = reinterpret_cast<Log&>(log_buf); // NOLINT
 detail::LogInitialiser::LogInitialiser() noexcept
 {
     if (nifty_counter++ == 0) {
-        new (&g_log) Log{ defs::k_engine_log_file };
+        new (&log) Log{ defs::k_engine_log_file };
     }
 }
 
 detail::LogInitialiser::~LogInitialiser()
 {
     if (--nifty_counter == 0) {
-        (&g_log)->~Log();
+        (&log)->~Log();
     }
 }
 
-void write_crash_log(Log& log)
+void write_crash_log()
 {
     const time_t crash_time = time(nullptr);
     const tm& t = *localtime(&crash_time);
@@ -268,8 +268,7 @@ void write_crash_log(Log& log)
 
     const auto outpath = out_directory / log_filename;
 
-    log.write_message(
-        fmt::format("Saving crash log '{}'", fs::absolute(outpath).generic_u8string()));
+    log.message(fmt::format("Saving crash log '{}'", fs::absolute(outpath).generic_u8string()));
     log.flush();
 
     fs::copy(log_path, outpath);

@@ -61,7 +61,7 @@ LoadResourceResult MeshResource::load_resource_impl(ResourceLoadingInput& input)
 
     // Check file format version
     if (header.version > k_mesh_format_version) {
-        g_log.write_warning(
+        log.warning(
             fmt::format("Mesh '{}': Unknown mesh format: version {:d}. Expected version {:d}",
                         fname,
                         header.version,
@@ -121,7 +121,7 @@ LoadResourceResult MeshResource::load_resource_impl(ResourceLoadingInput& input)
 bool MeshResource::validate() const
 {
     const auto mesh_error = [&](std::string_view what) {
-        g_log.write_warning(
+        log.warning(
             fmt::format("Mesh::validate() for {}: {}", resource_id().str_view(), what));
     };
 

@@ -86,7 +86,7 @@ detail::StrMapInitialiser::~StrMapInitialiser()
 void detail::report_hash_collision(std::string_view first, std::string_view second)
 {
     auto details = fmt::format("'{}' and '{}' have the same hash.", first, second);
-    g_log.write_warning("Detected Identifier hash collision: " + details);
+    log.warning("Detected Identifier hash collision: " + details);
 }
 
 void Identifier::set_full_string(std::string_view str)

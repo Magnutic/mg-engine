@@ -51,13 +51,13 @@ std::time_t last_write_time_t(const std::filesystem::path& file)
 
     if (!gotTime) {
         const auto msg = fmt::format(msg_failed_to_read, file.generic_u8string());
-        g_log.write_error(msg);
+        log.error(msg);
         throw RuntimeError{};
     }
 
     SYSTEMTIME st;
     if (FileTimeToSystemTime(&ft, &st) == 0) {
-        g_log.write_error(msg_failed_to_convert);
+        log.error(msg_failed_to_convert);
         throw RuntimeError{};
     }
 
@@ -80,7 +80,7 @@ std::time_t last_write_time_t(const std::filesystem::path& file)
     }
 
     const auto msg = fmt::format(msg_failed_to_read, file.generic_u8string());
-    g_log.write_error(msg);
+    log.error(msg);
     throw RuntimeError{};
 #endif // _WIN32
 }
