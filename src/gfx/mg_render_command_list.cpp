@@ -98,12 +98,9 @@ bool cmp_draw_call(RenderCommandProducer::SortKey lhs, RenderCommandProducer::So
     return invert ? (lhs_int > rhs_int) : (rhs_int < lhs_int);
 }
 
-bool in_view(const glm::mat4& M, const glm::mat4& MVP, glm::vec3 centre, float radius)
+bool in_view(const glm::mat4& MVP, glm::vec3 centre, float radius)
 {
-    const glm::vec3 scale{ M[0][0], M[1][1], M[2][2] };
-    const float scale_factor = std::max(std::max(scale.x, scale.y), scale.z);
-
-    return !frustum_cull(MVP, centre, scale_factor * radius);
+    return !frustum_cull(MVP, centre, radius);
 }
 
 uint32_t view_depth_in_cm(const ICamera& camera, glm::vec3 pos) noexcept
@@ -162,7 +159,7 @@ const RenderCommandList& RenderCommandProducer::finalise(const ICamera& camera, 
         const glm::mat4& M = m_m_transform_matrices_unsorted[key.index];
         const glm::mat4 MVP = VP * M;
 
-        if (in_view(M, MVP, command.centre, command.radius)) {
+        if (in_view(MVP, command.centre, command.radius)) {
             m_commands.m_render_commands.emplace_back(m_render_commands_unsorted[key.index]);
             m_commands.m_m_transform_matrices.emplace_back(M);
             m_commands.m_mvp_transform_matrices.emplace_back(MVP);
