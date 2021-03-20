@@ -21,9 +21,9 @@
 #include <utility>
 
 #if MG_ENABLE_DEBUG_LOGGING
-#    define MG_LOG_DEBUG(msg) ::Mg::log.write(::Mg::Log::Prio::Debug, msg)
+#    define MG_LOG_DEBUG(...) ::Mg::log.write(::Mg::Log::Prio::Debug, __VA_ARGS__)
 #else
-#    define MG_LOG_DEBUG(msg) static_cast<void>(0);
+#    define MG_LOG_DEBUG(...) static_cast<void>(0);
 #endif
 
 namespace Mg {
@@ -60,6 +60,12 @@ public:
     GetVerbosityReturn get_verbosity() const noexcept;
 
     void write(Prio prio, std::string msg) { write_impl(prio, std::move(msg)); }
+
+    template<typename T, typename... Ts>
+    void write(Prio prio, std::string_view msg, T&& arg, Ts&&... args)
+    {
+        write_impl(prio, fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
+    }
 
     /** Writes a message with priority Error */
     void error(std::string msg) { write_impl(Prio::Error, std::move(msg)); }
