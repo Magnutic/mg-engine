@@ -63,12 +63,15 @@ private:
  */
 class Config {
 public:
-    Config() noexcept {}
+    Config() = default;
 
     Config(std::string_view filepath) { read_from_file(filepath); }
 
+    ~Config() = default;
+
     // Disable copying, avoids risk of bugs caused by accidental copies.
-    Config(const Config&) = delete;
+    MG_MAKE_NON_COPYABLE(Config);
+    MG_MAKE_NON_MOVABLE(Config);
 
     /** Set the default value for the given key.
      * This only sets the value if a value for the given key does not already exist.
