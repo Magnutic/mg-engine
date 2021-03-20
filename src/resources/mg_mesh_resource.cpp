@@ -7,122 +7,280 @@
 #include "mg/resources/mg_mesh_resource.h"
 
 #include "mg/core/mg_log.h"
+#include "mg/gfx/mg_mesh_data.h"
 #include "mg/resource_cache/mg_resource_loading_input.h"
 #include "mg/utils/mg_gsl.h"
 
+#include <cstdlib>
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
 
 #include <fmt/core.h>
 
 #include <cstring>
+#include <numeric>
 #include <type_traits>
 
 namespace Mg {
 
-struct MeshHeader {
-    uint32_t four_cc = 0;      // Filetype identifier
-    uint32_t version = 0;      // Mesh format version
-    uint32_t n_vertices = 0;   // Number of unique vertices
-    uint32_t n_indices = 0;    // Number of vertex indices
-    uint32_t n_sub_meshes = 0; // Number of submeshes
-    glm::vec3 centre = {};     // Mesh centre coordinate
-    float radius = 0.0f;       // Mesh radius
-    glm::vec3 abb_min = {};    // Axis-aligned bounding box
-    glm::vec3 abb_max = {};    // Axis-aligned bounding box
-};
-
-static_assert(std::is_trivially_copyable_v<MeshHeader>);
+namespace {
 
 constexpr uint32_t mesh_4cc = 0x444D474Du; // = MGMD
-constexpr uint32_t k_mesh_format_version = 1;
+
+struct HeaderCommon {
+    uint32_t four_cc = 0; // Filetype identifier
+    uint32_t version = 0; // Mesh format version
+};
+
+enum class Stride : size_t;
+enum class ElemSize : size_t;
+
+struct Range {
+    uint32_t begin;
+    uint32_t end;
+};
+
+// Load bytestream data into arrays. Array size controls number of elements to read.
+// Returns number of bytes read, if successful, otherwise 0.
+// Advances bytestream.
+template<typename T>
+size_t load_to_array(span<const std::byte> bytestream,
+                     T& array_out,
+                     Opt<ElemSize> elem_size = {},
+                     Opt<Stride> stride = {})
+{
+    using TargetT = std::decay_t<decltype(array_out[0])>;
+    const auto size = elem_size ? size_t(*elem_size) : sizeof(TargetT);
+    const auto stride_value = stride ? size_t(*stride) : size;
+
+    // Sanity check
+    static_assert(std::is_trivially_copyable_v<TargetT>);
+    MG_ASSERT(size <= sizeof(TargetT));
+
+    size_t read_offset = 0;
+    for (TargetT& elem : array_out) {
+        if (read_offset + size > bytestream.size()) {
+            return 0;
+        }
+
+        std::memcpy(&elem, &bytestream[read_offset], size);
+        read_offset += stride_value;
+    }
+
+    return read_offset;
+}
+
+template<typename T> size_t load_to_struct(span<const std::byte> bytestream, T& out)
+{
+    static_assert(std::is_trivially_copyable_v<T>);
+    if (bytestream.size() < sizeof(T)) {
+        return 0;
+    }
+
+    std::memcpy(&out, bytestream.data(), sizeof(T));
+    return sizeof(T);
+}
+
+struct LoadResult {
+    Opt<MeshResource::Data> data;
+    std::string error_reason;
+};
+
+template<typename T> Array<T> read_range(span<const std::byte> bytestream, Range range)
+{
+    const size_t elem_size = sizeof(T);
+    const size_t range_length_bytes = range.end - range.begin;
+
+    if (range.end <= range.begin || range_length_bytes % elem_size != 0 ||
+        range.end > bytestream.size()) {
+        return {};
+    }
+
+    const size_t num_elems = range_length_bytes / elem_size;
+    auto result = Array<T>::make(num_elems);
+
+    size_t read_offset = range.begin;
+    for (T& elem : result) {
+        read_offset += load_to_struct(bytestream.subspan(read_offset), elem);
+    }
+
+    MG_ASSERT(read_offset = num_elems * elem_size);
+
+    return result;
+}
+
+std::string_view read_string(span<const std::byte> bytestream, Range range)
+{
+    const size_t range_length_bytes = range.end - range.begin;
+    if (range.end <= range.begin || range.end > bytestream.size()) {
+        return {};
+    }
+
+    return std::string_view(reinterpret_cast<const char*>(&bytestream[range.begin]),
+                            range_length_bytes);
+}
+
+LoadResult load_version_1(ResourceLoadingInput& input)
+{
+    struct Header {
+        HeaderCommon common;
+        uint32_t n_vertices = 0;   // Number of unique vertices
+        uint32_t n_indices = 0;    // Number of vertex indices
+        uint32_t n_sub_meshes = 0; // Number of submeshes
+        glm::vec3 centre = {};     // Mesh centre coordinate
+        float radius = 0.0f;       // Mesh radius
+        glm::vec3 abb_min = {};    // Axis-aligned bounding box
+        glm::vec3 abb_max = {};    // Axis-aligned bounding box
+    };
+
+    const span<const std::byte> bytestream = input.resource_data();
+    size_t pos = 0;
+
+    Header header;
+    pos += load_to_struct(bytestream, header);
+
+    LoadResult result = {};
+    result.data.emplace();
+    result.data->centre = header.centre;
+    result.data->radius = header.radius;
+
+    // Allocate memory for mesh data
+    result.data->sub_meshes = Array<gfx::SubMesh>::make(header.n_sub_meshes);
+    result.data->vertices = Array<gfx::Vertex>::make(header.n_vertices);
+    result.data->indices = Array<gfx::uint_vertex_index>::make(header.n_indices);
+
+    pos += load_to_array(bytestream.subspan(pos),
+                         result.data->sub_meshes,
+                         ElemSize{ 8 },
+                         Stride{ 12 });
+
+    pos += load_to_array(bytestream.subspan(pos), result.data->vertices);
+
+    const bool success = load_to_array(bytestream.subspan(pos), result.data->indices) > 0;
+
+    if (!success) {
+        result.data.reset();
+        result.error_reason = "Missing data.";
+    }
+
+    return result;
+}
+
+LoadResult load_version_2(ResourceLoadingInput& input, std::string_view meshname)
+{
+    struct String {
+        uint32_t begin;
+        uint32_t length;
+    };
+
+    struct SubmeshRecord {
+        String name;
+        String material;
+        uint32_t begin;
+        uint32_t numIndices;
+    };
+
+    struct Header {
+        HeaderCommon common;
+        glm::vec3 centre;
+        float radius;
+        glm::vec3 abb_min;
+        glm::vec3 abb_max;
+        Range vertices;
+        Range indices;
+        Range submeshes;
+        Range strings;
+    };
+
+    const span<const std::byte> bytestream = input.resource_data();
+
+    Header header = {};
+    load_to_struct(bytestream, header);
+
+    const std::string_view strings = read_string(bytestream, header.strings);
+
+    auto get_string = [&strings](String string) -> std::string_view {
+        if (string.begin > strings.size()) {
+            return {};
+        }
+        return strings.substr(string.begin, string.length);
+    };
+
+    LoadResult result;
+    result.data.emplace();
+    result.data->vertices = read_range<gfx::Vertex>(bytestream, header.vertices);
+    result.data->indices = read_range<gfx::uint_vertex_index>(bytestream, header.indices);
+    result.data->centre = header.centre;
+    result.data->radius = header.radius;
+
+    auto submesh_records = read_range<SubmeshRecord>(bytestream, header.submeshes);
+    result.data->sub_meshes = Array<gfx::SubMesh>::make(submesh_records.size());
+
+    for (size_t i = 0; i < submesh_records.size(); ++i) {
+        const SubmeshRecord& record = submesh_records[i];
+        gfx::SubMesh& submesh = result.data->sub_meshes[i];
+
+        submesh.index_range.begin = record.begin;
+        submesh.index_range.amount = record.numIndices;
+        submesh.name = Identifier::from_runtime_string(get_string(record.name));
+        MG_LOG_DEBUG("Loading mesh '{}': found sub-mesh '{}'", meshname, submesh.name.str_view());
+        // TODO record.material
+    }
+
+    return result;
+}
+
+} // namespace
 
 LoadResourceResult MeshResource::load_resource_impl(ResourceLoadingInput& input)
 {
-    const std::string_view fname = resource_id().str_view();
     span<const std::byte> bytestream = input.resource_data();
+    HeaderCommon header_common;
 
-    MeshHeader header;
-    {
-        MG_ASSERT(bytestream.size() >= sizeof(header));
-        // Redundant cast, silences GCC-9 warning "-Wclass-memaccess", which does not understand
-        // that the same aliasing rules apply to std::byte* as to uint8_t*.
-        const auto data = reinterpret_cast<const uint8_t*>(bytestream.data());
-        std::memcpy(&header, data, sizeof(header));
-        bytestream = bytestream.subspan(sizeof(header));
+    if (load_to_struct(bytestream, header_common) < sizeof(HeaderCommon)) {
+        return LoadResourceResult::data_error("No header in file.");
     }
 
-    m_centre = header.centre;
-    m_radius = header.radius;
-
-    if (header.four_cc != mesh_4cc) {
-        return LoadResourceResult::data_error(fmt::format("Invalid data (4CC mismatch).", fname));
+    if (header_common.four_cc != mesh_4cc) {
+        return LoadResourceResult::data_error("Invalid data (4CC mismatch).");
     }
 
-    // Check file format version
-    if (header.version > k_mesh_format_version) {
-        log.warning(
-            fmt::format("Mesh '{}': Unknown mesh format: version {:d}. Expected version {:d}",
-                        fname,
-                        header.version,
-                        k_mesh_format_version));
+    LoadResult load_result;
+
+    // Check file format version and invoke appropriate function.
+    switch (header_common.version) {
+    case 1:
+        load_result = load_version_1(input);
+        break;
+    case 2:
+        load_result = load_version_2(input, resource_id().str_view());
+        break;
+    default:
+        return LoadResourceResult::data_error(
+            fmt::format("Unsupported mesh version: {:d}.", header_common.version));
     }
 
-    // Allocate memory for mesh data
-    m_sub_meshes = Array<gfx::SubMesh>::make(header.n_sub_meshes);
-    m_vertices = Array<gfx::Vertex>::make(header.n_vertices);
-    m_indices = Array<gfx::uint_vertex_index>::make(header.n_indices);
-
-    enum class Stride : size_t;
-    enum class ElemSize : size_t;
-    // Load bytestream data into arrays. Array size controls number of elements to read.
-    auto load_to_array =
-        [&bytestream](auto& array_out, Opt<ElemSize> elem_size = {}, Opt<Stride> stride = {}) {
-            using TargetT = std::decay_t<decltype(array_out[0])>;
-            const auto size = elem_size ? size_t(*elem_size) : sizeof(TargetT);
-            const auto stride_value = stride ? size_t(*stride) : size;
-
-            // Sanity check
-            static_assert(std::is_trivially_copyable_v<TargetT>);
-            MG_ASSERT(size <= sizeof(TargetT));
-
-            for (size_t i = 0; i < array_out.size(); ++i) {
-                if (size > bytestream.size()) {
-                    return false;
-                }
-
-                // Redundant cast, silences GCC-9 warning "-Wclass-memaccess", which does not
-                // understand that the same aliasing rules apply to std::byte* as to uint8_t*.
-                const auto data = reinterpret_cast<const uint8_t*>(bytestream.data());
-                std::memcpy(&array_out[i], data, size);
-                bytestream = bytestream.subspan(stride_value);
-            }
-
-            return true;
-        };
-
-    bool success = true;
-    // Skip unused 'material_index' from submesh header
-    success = success && load_to_array(m_sub_meshes, ElemSize{ 8 }, Stride{ 12 });
-    success = success && load_to_array(m_vertices);
-    success = success && load_to_array(m_indices);
-
-    if (!success) {
-        return LoadResourceResult::data_error("Missing mesh data.");
+    if (load_result.data.has_value()) {
+        m_data = load_result.data.take().value();
     }
+    else {
+        return LoadResourceResult::data_error(load_result.error_reason);
+    }
+
     if (!validate()) {
         return LoadResourceResult::data_error("Mesh validation failed.");
     }
 
+    calculate_bounds();
     return LoadResourceResult::success();
 }
 
-
 bool MeshResource::validate() const
 {
+    bool status = true;
     const auto mesh_error = [&](std::string_view what) {
-        log.warning(
-            fmt::format("Mesh::validate() for {}: {}", resource_id().str_view(), what));
+        log.warning(fmt::format("Mesh::validate() for {}: {}", resource_id().str_view(), what));
+        status = false;
     };
 
     // Check data
@@ -145,7 +303,6 @@ bool MeshResource::validate() const
         const auto [index_begin, index_amount] = sm.index_range;
         if (index_begin >= n_indices || index_begin + index_amount > n_indices) {
             mesh_error(fmt::format("Invalid submesh at index {}", i));
-            return false;
         }
     }
 
@@ -154,7 +311,6 @@ bool MeshResource::validate() const
         const gfx::uint_vertex_index& vi = indices()[i];
         if (vi >= n_vertices) {
             mesh_error(fmt::format("Index data out of bounds at index {}, was {}.", i, vi));
-            return false;
         }
     }
 
@@ -163,35 +319,33 @@ bool MeshResource::validate() const
         mesh_error(fmt::format("Too many vertices. Max is '{}', was '{}'",
                                gfx::k_max_vertices_per_mesh,
                                n_vertices));
-
-        return false;
     }
 
     // TODO: evaluate joints when functionality is present
-    return true;
+    return status;
 }
 
 void MeshResource::calculate_bounds() noexcept
 {
     // Calculate centre position
-    m_centre = {};
+    m_data.centre = {};
 
-    for (const gfx::Vertex& v : m_vertices) {
-        m_centre += v.position;
+    for (const gfx::Vertex& v : m_data.vertices) {
+        m_data.centre += v.position;
     }
 
-    m_centre /= m_vertices.size();
+    m_data.centre /= m_data.vertices.size();
 
     // Calculate mesh radius (distance from centre to most distance vertex)
     float radius_sqr = 0.0f;
 
-    for (const gfx::Vertex& v : m_vertices) {
-        const auto diff = m_centre - v.position;
+    for (const gfx::Vertex& v : m_data.vertices) {
+        const auto diff = m_data.centre - v.position;
         const float new_radius_sqr = glm::dot(diff, diff);
         radius_sqr = glm::max(radius_sqr, new_radius_sqr);
     }
 
-    m_radius = glm::sqrt(radius_sqr);
+    m_data.radius = glm::sqrt(radius_sqr);
 }
 
 } // namespace Mg
