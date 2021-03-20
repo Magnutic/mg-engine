@@ -1,4 +1,5 @@
 #!/bin/bash
+cd "${BASH_SOURCE%/*}/" || exit 1
 
 if [[ $* == *--generate-archive* ]]; then
     read -p "Generating mg_dependencies.zip from submodules.
