@@ -103,8 +103,7 @@ void TextureRepository::update(const TextureResource& resource)
 
     std::swap(old_texture, new_texture);
 
-    log.verbose(
-        fmt::format("TextureRepository::update(): Updated {}", resource_id.str_view()));
+    log.verbose(fmt::format("TextureRepository::update(): Updated {}", resource_id.str_view()));
 }
 
 void TextureRepository::destroy(Texture2D* texture)
@@ -115,5 +114,68 @@ void TextureRepository::destroy(Texture2D* texture)
     impl().textures.erase(it);
     impl().texture_map.erase(texture_id);
 }
+
+const auto num_default_textures =
+    static_cast<size_t>(TextureRepository::DefaultTexture::Checkerboard) + 1;
+
+constexpr std::array<Identifier, num_default_textures> default_texture_identifiers = { {
+    "__default_texture_rgba_white",
+    "__default_texture_rgba_black",
+    "__default_texture_rgba_transparent",
+    "__default_texture_normals_flat",
+    "__default_texture_checkerboard",
+} };
+
+// clang-format off
+constexpr std::array<std::array<uint8_t, 16>, num_default_textures> default_texture_buffers = {{
+    { // White
+         255, 255, 255, 255,
+         255, 255, 255, 255,
+         255, 255, 255, 255,
+         255, 255, 255, 255,
+    },
+    { // Black
+         0, 0, 0, 255,
+         0, 0, 0, 255,
+         0, 0, 0, 255,
+         0, 0, 0, 255,
+    },
+    { // Transparent
+         0, 0, 0, 0,
+         0, 0, 0, 0,
+         0, 0, 0, 0,
+         0, 0, 0, 0,
+    },
+    { // Normals flat
+         127, 127, 255, 255,
+         127, 127, 255, 255,
+         127, 127, 255, 255,
+         127, 127, 255, 255,
+    },
+    { // Checkerboard
+         0, 0, 0, 255,
+         255, 255, 255, 255,
+         255, 255, 255, 255,
+         0, 0, 0, 255,
+    }
+}};
+// clang-format on
+
+Texture2D* TextureRepository::get_default_texture(DefaultTexture type)
+{
+    const size_t index = static_cast<size_t>(type);
+    const Identifier& id = default_texture_identifiers.at(index);
+
+    if (Texture2D* texture = get(id)) {
+        return texture;
+    }
+
+    auto generate_texture = [id, index]() {
+        span<const uint8_t> buffer = default_texture_buffers.at(index);
+        return Texture2D::from_rgba8_buffer(id, buffer, 2, 2);
+    };
+
+    return create_texture_impl(impl(), id, generate_texture);
+};
 
 } // namespace Mg::gfx

@@ -382,6 +382,36 @@ TextureHandle generate_gl_texture_from(const TextureResource& texture_resource) 
     return TextureHandle{ texture_id };
 }
 
+TextureHandle generate_gl_texture_from(span<const uint8_t> rgba8_buffer,
+                                       const int32_t width,
+                                       const int32_t height)
+{
+    GLuint texture_id{};
+    glGenTextures(1, &texture_id);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+
+    MG_ASSERT(narrow<int32_t>(rgba8_buffer.size()) == width * height * 4u);
+
+    glTexImage2D(GL_TEXTURE_2D,
+                 0,
+                 GL_RGBA8,
+                 width,
+                 height,
+                 0,
+                 GL_RGBA,
+                 GL_UNSIGNED_BYTE,
+                 rgba8_buffer.data());
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    MG_CHECK_GL_ERROR();
+
+    return TextureHandle{ texture_id };
+}
+
 } // namespace
 
 //--------------------------------------------------------------------------------------------------
@@ -406,6 +436,20 @@ Texture2D Texture2D::render_target(const RenderTargetParams& params)
     tex.m_id = params.render_target_id;
     tex.m_image_size.width = params.width;
     tex.m_image_size.height = params.height;
+
+    return tex;
+}
+
+Texture2D Texture2D::from_rgba8_buffer(Identifier id,
+                                       span<const uint8_t> rgba8_buffer,
+                                       const int32_t width,
+                                       const int32_t height)
+{
+    Texture2D tex(generate_gl_texture_from(rgba8_buffer, width, height));
+
+    tex.m_id = id;
+    tex.m_image_size.width = width;
+    tex.m_image_size.height = height;
 
     return tex;
 }

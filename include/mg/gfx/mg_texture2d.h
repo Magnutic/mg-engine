@@ -14,6 +14,7 @@
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
 
 #include <cstdint>
@@ -33,6 +34,13 @@ public:
 
     /** Create a render-target texture. */
     static Texture2D render_target(const RenderTargetParams& params);
+
+    /** Create a texture from RGBA8 buffer. */
+    // TODO parameters, mipmaps, compression?
+    static Texture2D from_rgba8_buffer(Identifier id,
+                                       span<const uint8_t> rgba8_buffer,
+                                       int32_t width,
+                                       int32_t height);
 
     MG_MAKE_DEFAULT_MOVABLE(Texture2D);
     MG_MAKE_NON_COPYABLE(Texture2D);

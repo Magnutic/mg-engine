@@ -46,6 +46,16 @@ public:
     void update(const TextureResource& resource);
 
     void destroy(Texture2D* texture);
+
+    enum class DefaultTexture {
+        White,
+        Black,
+        Transparent,
+        NormalsFlat,
+        Checkerboard
+    };
+
+    Texture2D* get_default_texture(DefaultTexture type);
 };
 
 } // namespace Mg::gfx
