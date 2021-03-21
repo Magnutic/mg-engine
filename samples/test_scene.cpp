@@ -2,6 +2,8 @@
 #include "mg/gfx/mg_blend_modes.h"
 #include "mg/gfx/mg_font_handler.h"
 #include "mg/gfx/mg_render_target.h"
+#include "mg/gfx/mg_texture_repository.h"
+#include "mg/gfx/mg_ui_renderer.h"
 #include "mg/mg_unicode.h"
 #include "mg/utils/mg_string_utils.h"
 
@@ -26,6 +28,15 @@
 #include <numeric>
 
 namespace {
+
+constexpr double k_time_step = 1.0 / 60.0;
+constexpr double k_accumulator_max_steps = 10;
+constexpr size_t k_num_lights = 128;
+constexpr float k_light_radius = 3.0f;
+
+constexpr auto camera_max_vel = 0.2f;
+constexpr auto camera_acc = 0.01f;
+constexpr auto camera_friction = 0.005f;
 
 std::array<float, 3> camera_acceleration(Mg::input::InputMap& input_map)
 {
@@ -97,7 +108,7 @@ void Scene::init()
         resource_cache.resource_handle<Mg::FontResource>("fonts/LiberationSerif-Regular.ttf");
     std::vector<Mg::UnicodeRange> unicode_ranges = { Mg::get_unicode_range(
         Mg::UnicodeBlock::Basic_Latin) };
-    font_id = ui_renderer.font_handler().load_font(font_resource, 24, unicode_ranges);
+    font = std::make_unique<Mg::gfx::BitmapFont>(font_resource, 24, unicode_ranges);
 
     main_loop();
 }
@@ -229,6 +240,10 @@ void Scene::render_scene(const double lerp_factor)
     camera.position = render_state.cam_position;
     camera.rotation = render_state.cam_rotation;
 
+    scene_lights.back() = Mg::gfx::make_point_light(current_state.cam_position,
+                                                    glm::vec3(25.0f),
+                                                    0.25f * k_light_radius);
+
     // Draw meshes and billboards
     {
         render_command_producer.clear();
@@ -268,32 +283,31 @@ void Scene::render_scene(const double lerp_factor)
     }
 
     // Draw UI
-    {
-        Mg::gfx::UIRenderer::TransformParams transform_params = {};
-        transform_params.position = { 0.0f, 1.0f };
-        transform_params.position_pixel_offset = { 10.0f, -10.0f };
-        transform_params.anchor = { 0.0f, 1.0f };
-        ui_renderer.scaling_factor(1.0f);
+    ui_renderer.resolution(
+        { app.window().frame_buffer_size().width, app.window().frame_buffer_size().height });
+
+    /*{
+        Mg::gfx::UIPlacement placement = {};
+        placement.position = Mg::gfx::UIPlacement::centre;
+        placement.anchor = Mg::gfx::UIPlacement::centre;
 
         ui_material->set_parameter("opacity", 0.5f);
-        ui_renderer.resolution(
-            { app.window().frame_buffer_size().width, app.window().frame_buffer_size().height });
-        ui_renderer.draw_rectangle({ 32.0f, 32.0f },
-                                   transform_params,
+        ui_renderer.draw_rectangle(placement,
+                                   { 100.0f, 100.0f },
                                    *ui_material,
                                    Mg::gfx::blend_mode_constants::bm_add);
+    }*/
+    {
+        Mg::gfx::UIPlacement placement = {};
+        placement.position = Mg::gfx::UIPlacement::top_left;
+        placement.anchor = Mg::gfx::UIPlacement::top_left;
 
-        Mg::gfx::FontHandler::TypesettingParams typesetting_params = {};
-        typesetting_params.line_spacing_factor = 1.25f;
-        typesetting_params.max_width_pixels = app.window().frame_buffer_size().width;
+        Mg::gfx::TypeSetting typesetting = {};
+        typesetting.line_spacing_factor = 1.25f;
+        typesetting.max_width_pixels = ui_renderer.resolution().x;
 
         std::string text = fmt::format("FPS: {:.2f}", frame_rate);
-        Mg::gfx::PreparedText prepared_text =
-            ui_renderer.font_handler().prepare_text(font_id, text, typesetting_params);
-
-        transform_params.position_pixel_offset.x += 32.0f + 10.0f;
-        transform_params.position_pixel_offset.y += 5.0f;
-        ui_renderer.draw_text(prepared_text, transform_params);
+        ui_renderer.draw_text(placement, font->prepare_text(text, typesetting));
     }
 
 
@@ -332,9 +346,13 @@ Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file)
     }
 
     // Otherwise, load from file.
-    const Mg::ResourceAccessGuard access =
-        resource_cache.access_resource<Mg::TextureResource>(file);
-    return texture_repository.create(*access);
+    if (resource_cache.file_exists(file)) {
+        const Mg::ResourceAccessGuard access =
+            resource_cache.access_resource<Mg::TextureResource>(file);
+        return texture_repository.create(*access);
+    }
+
+    return nullptr;
 }
 
 Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::Identifier> options)
@@ -347,15 +365,33 @@ Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::
     }
 
     const std::string diffuse_filename = fmt::format("textures/{}_da.dds", file.str_view());
+    const std::string diffuse_filename_alt = fmt::format("textures/{}_d.dds", file.str_view());
     const std::string normal_filename = fmt::format("textures/{}_n.dds", file.str_view());
     const std::string specular_filename = fmt::format("textures/{}_s.dds", file.str_view());
 
-    const Mg::gfx::Texture2D* diffuse_texture =
+    Mg::gfx::Texture2D* diffuse_texture =
         load_texture(Mg::Identifier::from_runtime_string(diffuse_filename));
-    const Mg::gfx::Texture2D* normal_texture =
+    if (!diffuse_texture) {
+        diffuse_texture = load_texture(Mg::Identifier::from_runtime_string(diffuse_filename_alt));
+    }
+    if (!diffuse_texture) {
+        diffuse_texture = texture_repository.get_default_texture(
+            Mg::gfx::TextureRepository::DefaultTexture::Checkerboard);
+    }
+
+    Mg::gfx::Texture2D* normal_texture =
         load_texture(Mg::Identifier::from_runtime_string(normal_filename));
-    const Mg::gfx::Texture2D* specular_texture =
+    if (!normal_texture) {
+        normal_texture = texture_repository.get_default_texture(
+            Mg::gfx::TextureRepository::DefaultTexture::NormalsFlat);
+    }
+
+    Mg::gfx::Texture2D* specular_texture =
         load_texture(Mg::Identifier::from_runtime_string(specular_filename));
+    if (!specular_texture) {
+        specular_texture = texture_repository.get_default_texture(
+            Mg::gfx::TextureRepository::DefaultTexture::Transparent);
+    }
 
     m->set_sampler("sampler_diffuse", diffuse_texture->handle());
     m->set_sampler("sampler_normal", normal_texture->handle());
@@ -544,30 +580,17 @@ void Scene::load_models()
     }
 
     {
-        std::array<MaterialAssignment, 1> hest_mats;
-        hest_mats[0] = { 0, "actors/HestDraugr" };
+        std::array<MaterialAssignment, 1> fox_mats;
+        fox_mats[0] = { 0, "actors/fox" };
 
-        std::array<Mg::Identifier, 1> hest_mat_options;
-        hest_mat_options[0] = "RIM_LIGHT";
+        std::array<Mg::Identifier, 1> fox_mat_options;
+        fox_mat_options[0] = "RIM_LIGHT";
 
-        Model& hest_model = scene_models.emplace_back(
-            load_model("meshes/misc/hestdraugr.mgm", hest_mats, hest_mat_options));
+        Model& fox_model =
+            scene_models.emplace_back(load_model("meshes/Fox.mgm", fox_mats, fox_mat_options));
 
-        hest_model.transform.position.x += 2.0f;
-    }
-
-    {
-        std::array<MaterialAssignment, 1> narmask_mats;
-        narmask_mats[0] = { 0, "actors/narmask" };
-
-        std::array<Mg::Identifier, 1> narmask_mat_options;
-        narmask_mat_options[0] = "RIM_LIGHT";
-
-        Model& narmask_model = scene_models.emplace_back(
-            load_model("meshes/misc/narmask.mgm", narmask_mats, narmask_mat_options));
-
-        narmask_model.transform.position.x -= 2.0f;
-        narmask_model.transform.rotation.yaw(90_degrees);
+        fox_model.transform.position.x += 2.0f;
+        fox_model.transform.scale = glm::vec3(0.01f);
     }
 }
 
@@ -627,8 +650,10 @@ void Scene::generate_lights()
         }
 
         scene_lights.push_back(
-            Mg::gfx::make_point_light(pos, light_colour * 100.0f, k_light_radius));
+            Mg::gfx::make_point_light(pos, light_colour * 10.0f, k_light_radius));
     }
+
+    scene_lights.emplace_back(); // temp dummy
 }
 
 void Scene::on_window_focus_change(const bool is_focused)

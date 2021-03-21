@@ -20,11 +20,17 @@
 #include <glm/mat4x4.hpp>
 
 #include "mg_gl_debug.h"
+#include "glm/fwd.hpp"
 #include <glad/glad.h>
 
 namespace Mg::gfx {
 
 namespace {
+
+using glm::ivec2;
+using glm::mat4;
+using glm::vec2;
+using glm::vec4;
 
 const std::array<float, 8> quad_vertices = { { 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f } };
 
@@ -33,7 +39,7 @@ constexpr uint32_t k_draw_params_ubo_slot = 0;
 constexpr uint32_t k_material_params_ubo_slot = 1;
 
 struct DrawParamsBlock {
-    glm::mat4 M;
+    mat4 M;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -155,44 +161,43 @@ Pipeline make_text_pipeline()
     return Pipeline::make(params).value();
 }
 
-glm::mat4 transform_params_to_matrix(const glm::vec2 scale,
-                                     const UIRenderer::TransformParams& transform_params,
-                                     const glm::ivec2 resolution,
-                                     const float scaling_factor)
+mat4 make_transform_matrix(const UIPlacement& placement,
+                           const vec2 scale,
+                           const ivec2 resolution,
+                           const float scaling_factor)
 {
     const float aspect_ratio = static_cast<float>(resolution.x) / static_cast<float>(resolution.y);
 
     // Factors of 2.0f convert from [0.0, 1.0f] range into OpenGL's [-1.0f, 1.0f] range.
-    const glm::vec2 size{ 2.0f * scale.x * scaling_factor / static_cast<float>(resolution.y),
-                          2.0f * scale.y * scaling_factor / static_cast<float>(resolution.y) };
-    glm::mat4 scale_matrix(1.0f);
+    const vec2 size{ 2.0f * scale.x * scaling_factor / static_cast<float>(resolution.y),
+                     2.0f * scale.y * scaling_factor / static_cast<float>(resolution.y) };
+    mat4 scale_matrix(1.0f);
     scale_matrix[0][0] = size.x;
     scale_matrix[1][1] = size.y;
 
-    const glm::vec2 anchor_offset = size * transform_params.anchor;
+    const vec2 anchor_offset = size * placement.anchor;
 
-    glm::vec2 position =
-        2.0f * (glm::vec2{ transform_params.position.x, transform_params.position.y } +
-                (transform_params.position_pixel_offset / glm::vec2(resolution))) -
-        glm::vec2{ 1.0f, 1.0f };
+    vec2 position = 2.0f * (vec2{ placement.position.x, placement.position.y } +
+                            (placement.position_pixel_offset * scaling_factor / vec2(resolution))) -
+                    vec2{ 1.0f, 1.0f };
 
     position.x *= aspect_ratio;
     position -= anchor_offset;
 
-    glm::mat4 translation_matrix(1.0f);
+    mat4 translation_matrix(1.0f);
     translation_matrix[3] = { position, 0.0f, 1.0f };
 
-    glm::mat4 pivot_matrix(1.0f);
-    pivot_matrix[3] = glm::vec4{ anchor_offset, 0.0f, 1.0f };
+    mat4 pivot_matrix(1.0f);
+    pivot_matrix[3] = vec4{ anchor_offset, 0.0f, 1.0f };
 
-    glm::mat4 neg_pivot_matrix(1.0f);
-    neg_pivot_matrix[3] = glm::vec4{ -anchor_offset, 0.0f, 1.0f };
+    mat4 neg_pivot_matrix(1.0f);
+    neg_pivot_matrix[3] = vec4{ -anchor_offset, 0.0f, 1.0f };
 
-    const auto rot = transform_params.rotation.radians();
+    const auto rot = placement.rotation.radians();
     const float cos_rot = std::cos(rot);
     const float sin_rot = std::sin(rot);
 
-    glm::mat4 rot_matrix(1.0f);
+    mat4 rot_matrix(1.0f);
     rot_matrix[0][0] = cos_rot;
     rot_matrix[1][0] = -sin_rot;
     rot_matrix[0][1] = sin_rot;
@@ -201,7 +206,7 @@ glm::mat4 transform_params_to_matrix(const glm::vec2 scale,
     // Apply pivot point.
     rot_matrix = pivot_matrix * rot_matrix * neg_pivot_matrix;
 
-    glm::mat4 aspect_matrix(1.0f);
+    mat4 aspect_matrix(1.0f);
     aspect_matrix[0][0] = 1.0f / aspect_ratio;
 
     return aspect_matrix * translation_matrix * rot_matrix * scale_matrix;
@@ -213,14 +218,12 @@ namespace detail {
 struct UIRendererData {
     PipelineRepository pipeline_repository = make_ui_pipeline_factory();
 
-    FontHandler font_handler;
-
     UniformBuffer draw_params_ubo{ sizeof(DrawParamsBlock) };
 
     BufferHandle quad_vbo;
     VertexArrayHandle quad_vao;
 
-    glm::ivec2 resolution = { 0, 0 };
+    ivec2 resolution = { 0, 0 };
     float scaling_factor = 1.0;
 
     Pipeline text_pipeline = make_text_pipeline();
@@ -229,7 +232,7 @@ struct UIRendererData {
 
 using detail::UIRendererData;
 
-UIRenderer::UIRenderer(const glm::ivec2 resolution, const float scaling_factor)
+UIRenderer::UIRenderer(const ivec2 resolution, const float scaling_factor)
 {
     MG_GFX_DEBUG_GROUP("init UIRenderer")
 
@@ -262,11 +265,11 @@ UIRenderer::~UIRenderer()
     glDeleteVertexArrays(1, &quad_vao_id);
 }
 
-void UIRenderer::resolution(const glm::ivec2 resolution)
+void UIRenderer::resolution(const ivec2 resolution)
 {
     impl().resolution = resolution;
 }
-glm::ivec2 UIRenderer::resolution() const
+ivec2 UIRenderer::resolution() const
 {
     return impl().resolution;
 }
@@ -280,18 +283,9 @@ float UIRenderer::scaling_factor() const
     return impl().scaling_factor;
 }
 
-FontHandler& UIRenderer::font_handler()
-{
-    return impl().font_handler;
-}
-const FontHandler& UIRenderer::font_handler() const
-{
-    return impl().font_handler;
-}
-
 namespace {
 void setup_material_pipeline(UIRendererData& data,
-                             const glm::mat4& M,
+                             const mat4& M,
                              const Material& material,
                              Opt<BlendMode> blend_mode)
 {
@@ -310,15 +304,14 @@ void setup_material_pipeline(UIRendererData& data,
 }
 } // namespace
 
-void UIRenderer::draw_rectangle(const glm::vec2 size,
-                                const TransformParams& params,
+void UIRenderer::draw_rectangle(const UIPlacement& placement,
+                                const vec2 size,
                                 const Material& material,
                                 Opt<BlendMode> blend_mode) noexcept
 {
     MG_GFX_DEBUG_GROUP("UIRenderer::draw_rectangle");
 
-    const glm::mat4 M =
-        transform_params_to_matrix(size, params, impl().resolution, impl().scaling_factor);
+    const mat4 M = make_transform_matrix(placement, size, impl().resolution, impl().scaling_factor);
     setup_material_pipeline(impl(), M, material, blend_mode);
 
     const auto quad_vao_id = narrow<GLuint>(impl().quad_vao.get());
@@ -344,7 +337,7 @@ Pipeline::Settings text_pipeline_settings(const BlendMode blend_mode)
 
 void setup_text_pipeline(UIRendererData& data,
                          const TextureHandle texture,
-                         const glm::mat4& M,
+                         const mat4& M,
                          const BlendMode blend_mode)
 {
     DrawParamsBlock block = {};
@@ -360,19 +353,19 @@ void setup_text_pipeline(UIRendererData& data,
 }
 } // namespace
 
-void UIRenderer::draw_text(const PreparedText& text,
-                           const TransformParams& transform_params,
-                           const float scale,
-                           const BlendMode blend_mode) noexcept
+void UIRenderer::draw_text(const UIPlacement& placement,
+                           const PreparedText& text,
+                           float scale,
+                           BlendMode blend_mode) noexcept
 {
     MG_GFX_DEBUG_GROUP("UIRenderer::draw_text");
 
     static constexpr size_t verts_per_char = 6;
 
-    const glm::mat4 M = transform_params_to_matrix({ scale * text.width(), scale * text.height() },
-                                                   transform_params,
-                                                   impl().resolution,
-                                                   impl().scaling_factor);
+    const mat4 M = make_transform_matrix(placement,
+                                         { scale * text.width(), scale * text.height() },
+                                         impl().resolution,
+                                         impl().scaling_factor);
 
     setup_text_pipeline(impl(), text.gpu_data().texture, M, blend_mode);
 

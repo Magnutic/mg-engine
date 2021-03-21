@@ -28,41 +28,19 @@ class FontResource;
 
 namespace Mg::gfx {
 
-/** Identifies a particular font and size. */
-class FontId {
-public:
-    FontId() = default;
+/** Parameters controlling the typesetting of text. */
+struct TypeSetting {
+    enum class Align { Top, Bottom, Centre };
 
-    FontId(ResourceHandle<FontResource> resource, const int pixel_size)
-        : m_resource(resource), m_pixel_size(pixel_size)
-    {}
+    /** Vertical space between lines of text as factor of line height. */
+    float line_spacing_factor = 1.5f;
 
-    friend bool operator==(const FontId& l, const FontId& r) noexcept
-    {
-        return l.name() == r.name() && l.m_pixel_size == r.m_pixel_size;
-    }
-
-    friend bool operator!=(const FontId& l, const FontId& r) noexcept { return !(l == r); }
-
-    Identifier name() const noexcept { return m_resource.resource_id(); }
-    ResourceHandle<FontResource> resource() const noexcept { return m_resource; }
-    int pixel_size() const noexcept { return m_pixel_size; }
-
-    // Comparator for `FontId`s so that they can be used in a map.
-    struct Cmp {
-        bool operator()(const FontId& l, const FontId& r)
-        {
-            return Identifier::HashCompare{}(l.name(), r.name()) ||
-                   (l.name() == r.name() && l.pixel_size() < r.pixel_size());
-        }
-    };
-
-private:
-    ResourceHandle<FontResource> m_resource;
-    int m_pixel_size = 0;
+    /** Maximum width of a line of text in pixels before line break. Optional, if left
+     * undefined, there will be no automatic line breaks.
+     */
+    Opt<int32_t> max_width_pixels;
 };
 
-// TODO rename DrawableText?
 class PreparedText {
 public:
     struct GpuData {
@@ -84,7 +62,7 @@ public:
     size_t num_glyphs() const { return m_num_glyphs; }
 
 private:
-    friend class FontHandler;
+    friend class BitmapFont;
 
     PreparedText(GpuData gpu_data, float width, float height, size_t num_glyphs)
         : m_gpu_data(std::move(gpu_data))
@@ -104,35 +82,24 @@ private:
     size_t m_num_glyphs;
 };
 
-struct FontHandlerData;
+struct BitmapFontData;
 
-/* Loads and rasterises fonts and prepares texts that can be drawn using Mg::gfx::UIRenderer. */
-class FontHandler : PImplMixin<FontHandlerData> {
+class BitmapFont : PImplMixin<BitmapFontData> {
 public:
-    explicit FontHandler();
-    ~FontHandler();
+    explicit BitmapFont(ResourceHandle<FontResource> font,
+                        int font_size_pixels,
+                        span<const UnicodeRange> unicode_ranges);
 
-    MG_MAKE_NON_COPYABLE(FontHandler);
-    MG_MAKE_NON_MOVABLE(FontHandler);
+    ~BitmapFont();
 
-    FontId load_font(ResourceHandle<FontResource> font,
-                     int32_t pixel_size,
-                     span<const UnicodeRange> unicode_ranges);
+    MG_MAKE_NON_COPYABLE(BitmapFont);
+    MG_MAKE_NON_MOVABLE(BitmapFont);
 
-    /** Parameters controlling the typesetting of text. */
-    struct TypesettingParams {
-        /** Vertical space between lines of text as factor of line height. */
-        float line_spacing_factor = 1.5f;
+    PreparedText prepare_text(std::string_view text_utf8, const TypeSetting& typesetting) const;
 
-        /** Maximum width of a line of text in pixels before line break. Optional, if left
-         * undefined, there will be no automatic line breaks.
-         */
-        Opt<int32_t> max_width_pixels;
-    };
+    span<const UnicodeRange> contained_ranges() const;
 
-    PreparedText prepare_text(FontId font,
-                              std::string_view text_utf8,
-                              const TypesettingParams& typesetting_params);
+    int font_size_pixels() const;
 };
 
 } // namespace Mg::gfx

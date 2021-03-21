@@ -22,6 +22,15 @@ namespace Mg {
 /** Mesh data resource. */
 class MeshResource final : public BaseResource {
 public:
+    struct Data {
+        Array<gfx::SubMesh> sub_meshes;
+        Array<gfx::Vertex> vertices;
+        Array<gfx::uint_vertex_index> indices;
+
+        glm::vec3 centre{};
+        float radius = 0.0f;
+    };
+
     using BaseResource::BaseResource;
 
     gfx::MeshDataView data_view() const noexcept
@@ -29,15 +38,15 @@ public:
         return { vertices(), indices(), sub_meshes(), { { centre(), radius() } } };
     }
 
-    span<const gfx::SubMesh> sub_meshes() const noexcept { return span{ m_sub_meshes }; }
-    span<const gfx::Vertex> vertices() const noexcept { return span{ m_vertices }; }
-    span<const gfx::uint_vertex_index> indices() const noexcept { return span{ m_indices }; }
+    span<const gfx::SubMesh> sub_meshes() const noexcept { return span{ m_data.sub_meshes }; }
+    span<const gfx::Vertex> vertices() const noexcept { return span{ m_data.vertices }; }
+    span<const gfx::uint_vertex_index> indices() const noexcept { return span{ m_data.indices }; }
 
     /** Get model-space centre coordinate (mean vertex coordinate). */
-    glm::vec3 centre() const noexcept { return m_centre; }
+    glm::vec3 centre() const noexcept { return m_data.centre; }
 
     /** Get mesh radius (distance from centre to most distant vertex). */
-    float radius() const noexcept { return m_radius; }
+    float radius() const noexcept { return m_data.radius; }
 
     /** Returns whether mesh data is valid. Useful for debug mode asserts. */
     bool validate() const;
@@ -53,12 +62,7 @@ protected:
     LoadResourceResult load_resource_impl(ResourceLoadingInput& input) override;
 
 private:
-    Array<gfx::SubMesh> m_sub_meshes;
-    Array<gfx::Vertex> m_vertices;
-    Array<gfx::uint_vertex_index> m_indices;
-
-    glm::vec3 m_centre{};
-    float m_radius = 0.0f;
+    Data m_data;
 };
 
 } // namespace Mg

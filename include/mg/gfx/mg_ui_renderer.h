@@ -10,12 +10,12 @@
 
 #pragma once
 
-#include <mg/gfx/mg_blend_modes.h>
-#include <mg/gfx/mg_gfx_object_handles.h>
-#include <mg/utils/mg_angle.h>
-#include <mg/utils/mg_macros.h>
-#include <mg/utils/mg_optional.h>
-#include <mg/utils/mg_simple_pimpl.h>
+#include "mg/gfx/mg_blend_modes.h"
+#include "mg/gfx/mg_gfx_object_handles.h"
+#include "mg/utils/mg_angle.h"
+#include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_optional.h"
+#include "mg/utils/mg_simple_pimpl.h"
 
 #include <glm/vec2.hpp>
 
@@ -26,11 +26,35 @@ namespace Mg::gfx {
 class Material;
 class Texture2D;
 class PreparedText;
-class FontHandler;
 
 namespace detail {
 struct UIRendererData;
 }
+
+/** Defines how a UI item should be placed: where on the screen and rotated in what manner. */
+struct UIPlacement {
+    /** Position of item to render.
+     * Coordinates in [0.0, 1.0] where x = 0.0 is left of screen and y = 0.0 is bottom.
+     */
+    glm::vec2 position = { 0.0f, 0.0f };
+
+    /** Offset from `position` given in units of pixels. */
+    glm::vec2 position_pixel_offset = { 0.0f, 0.0f };
+
+    /** Rotation of item to render. Measured counter-clockwise. */
+    Angle rotation = 0.0_radians;
+
+    /** Position within the item that will be at `position` and act as rotation pivot.
+     * Coordinates in [0.0, 1.0] where x = 0.0 is left of item and y = 0.0 is bottom.
+     */
+    glm::vec2 anchor = { 0.0f, 0.0f };
+
+    static constexpr glm::vec2 bottom_left{ 0.0f, 0.0f };
+    static constexpr glm::vec2 top_left{ 0.0f, 1.0f };
+    static constexpr glm::vec2 top_right{ 1.0f, 1.0f };
+    static constexpr glm::vec2 bottom_right{ 1.0f, 0.0f };
+    static constexpr glm::vec2 centre{ 0.5f, 0.5f };
+};
 
 /** 2D user-interface renderer. */
 class UIRenderer : PImplMixin<detail::UIRendererData> {
@@ -41,40 +65,19 @@ public:
     MG_MAKE_NON_COPYABLE(UIRenderer);
     MG_MAKE_NON_MOVABLE(UIRenderer);
 
-    struct TransformParams {
-        /** Position of item to render.
-         * Coordinates in [0.0, 1.0] where x = 0.0 is left of screen and y = 0.0 is bottom.
-         */
-        glm::vec2 position = { 0.0f, 0.0f };
-
-        /** Offset from `position` given in units of pixels. */
-        glm::vec2 position_pixel_offset = { 0.0f, 0.0f };
-
-        /** Rotation of item to render. Measured counter-clockwise. */
-        Angle rotation = 0.0_radians;
-
-        /** Position within the item that will be at `position` and act as rotation pivot.
-         * Coordinates in [0.0, 1.0] where x = 0.0 is left of item and y = 0.0 is bottom.
-         */
-        glm::vec2 anchor = { 0.0f, 0.0f };
-    };
-
     void resolution(glm::ivec2 resolution);
     glm::ivec2 resolution() const;
 
     void scaling_factor(float scaling_factor);
     float scaling_factor() const;
 
-    FontHandler& font_handler();
-    const FontHandler& font_handler() const;
-
-    void draw_rectangle(glm::vec2 size,
-                        const TransformParams& transform_params,
+    void draw_rectangle(const UIPlacement& placement,
+                        glm::vec2 size,
                         const Material& material,
                         Opt<BlendMode> blend_mode) noexcept;
 
-    void draw_text(const PreparedText& text,
-                   const TransformParams& transform_params,
+    void draw_text(const UIPlacement& placement,
+                   const PreparedText& text,
                    float scale = 1.0f,
                    BlendMode blend_mode = blend_mode_constants::bm_alpha_premultiplied) noexcept;
 

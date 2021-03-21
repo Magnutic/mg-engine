@@ -88,6 +88,22 @@ using namespace Mg::stb;
 
 namespace Mg::gfx {
 
+struct BitmapFontData {
+    // Texture with packed glyph rasters.
+    TextureHandle::Owner texture;
+    int texture_width = 0;
+    int texture_height = 0;
+
+    // Font size (letter height) in pixels.
+    int font_size_pixels = 0;
+
+    // Indexable array of data describing where in texture a glyph resides
+    Array<stbtt_packedchar> packed_chars;
+
+    // The range of unicode code points represented in texture and packed_chars.
+    small_vector<UnicodeRange, 5> unicode_ranges;
+};
+
 //--------------------------------------------------------------------------------------------------
 // Private definitions
 //--------------------------------------------------------------------------------------------------
@@ -101,23 +117,10 @@ constexpr int k_initial_font_texture_height = 128;
 // Character to substitute when trying to display an unsupported codepoint.
 constexpr char32_t k_substitution_character = U'?';
 
-struct FontTexture {
-    // Texture with packed glyph rasters.
-    TextureHandle::Owner texture;
-    int texture_width = 0;
-    int texture_height = 0;
-
-    // Indexable array of data describing where in texture a glyph resides
-    Array<stbtt_packedchar> packed_chars;
-
-    // The range of unicode code points represented in texture and packed_chars.
-    small_vector<UnicodeRange, 5> unicode_ranges;
-};
-
-Opt<int32_t> get_packedchar_index(const FontTexture& font_texture, char32_t codepoint)
+Opt<int32_t> get_packedchar_index(const BitmapFontData& font, char32_t codepoint)
 {
     int32_t result = 0;
-    for (const UnicodeRange& range : font_texture.unicode_ranges) {
+    for (const UnicodeRange& range : font.unicode_ranges) {
         if (contains_codepoint(range, codepoint)) {
             result += narrow<int>(codepoint - range.start);
             return result;
@@ -130,17 +133,17 @@ Opt<int32_t> get_packedchar_index(const FontTexture& font_texture, char32_t code
 
 class FontPacker {
 public:
-    void pack(ResourceHandle<FontResource> font,
+    void pack(ResourceHandle<FontResource> font_resource,
               span<const UnicodeRange> unicode_ranges,
-              const int pixel_size,
-              FontTexture& texture)
+              const int font_size_pixels,
+              BitmapFontData& font)
     {
         // Set initial texture size.
         m_texture_width = k_initial_font_texture_width;
         m_texture_height = k_initial_font_texture_height;
 
         // Load font data.
-        ResourceAccessGuard font_access_guard{ font };
+        ResourceAccessGuard resource_access{ font_resource };
 
         auto merged_ranges = merge_overlapping_ranges(unicode_ranges);
 
@@ -157,11 +160,11 @@ public:
         }
 
         // Pack into a texture.
-        pack_impl(font_access_guard->data(), merged_ranges, pixel_size, texture);
+        pack_impl(resource_access->data(), merged_ranges, font_size_pixels, font);
 
         log.verbose("Packed font {}:{} into {}x{} texture.",
-                    font.resource_id().str_view(),
-                    pixel_size,
+                    font_resource.resource_id().str_view(),
+                    font_size_pixels,
                     m_texture_width,
                     m_texture_height);
     }
@@ -169,8 +172,8 @@ public:
 private:
     void pack_impl(const span<const std::byte>& font_data,
                    const span<const UnicodeRange>& unicode_ranges,
-                   const int pixel_size,
-                   FontTexture& texture)
+                   const int font_size_pixels,
+                   BitmapFontData& font)
     {
         {
             auto texture_data =
@@ -179,7 +182,7 @@ private:
 
             std::copy(unicode_ranges.begin(),
                       unicode_ranges.end(),
-                      std::back_inserter(texture.unicode_ranges));
+                      std::back_inserter(font.unicode_ranges));
 
             const size_t num_packed_chars =
                 std::accumulate(unicode_ranges.begin(),
@@ -187,7 +190,7 @@ private:
                                 size_t(0),
                                 [](size_t acc, UnicodeRange range) { return acc + range.length; });
 
-            texture.packed_chars = Array<stbtt_packedchar>::make(num_packed_chars);
+            font.packed_chars = Array<stbtt_packedchar>::make(num_packed_chars);
 
             const int stride_in_bytes = 0;
             const int padding = 1;
@@ -204,7 +207,7 @@ private:
             }
 
             const auto font_index = 0;
-            const auto font_size = static_cast<float>(pixel_size);
+            const auto font_size = static_cast<float>(font_size_pixels);
 
             bool packing_succeeded = true;
             size_t packed_char_offset = 0;
@@ -214,7 +217,7 @@ private:
                 const auto num_codepoints = narrow<int>(unicode_range.length);
                 const auto* font_data_ptr = reinterpret_cast<const uint8_t*>(font_data.data());
 
-                auto* chardata_for_range = &texture.packed_chars[packed_char_offset];
+                auto* chardata_for_range = &font.packed_chars[packed_char_offset];
                 const auto pack_result = stbtt_PackFontRange(&pack_context,
                                                              font_data_ptr,
                                                              font_index,
@@ -233,16 +236,16 @@ private:
             stbtt_PackEnd(&pack_context);
 
             if (packing_succeeded) {
-                texture.texture = make_texture(pack_context);
-                texture.texture_width = m_texture_width;
-                texture.texture_height = m_texture_height;
+                font.texture = make_texture(pack_context);
+                font.texture_width = m_texture_width;
+                font.texture_height = m_texture_height;
                 return;
             }
         }
 
         // If failed, try again recursively with larger texture.
         grow_texture();
-        pack_impl(font_data, unicode_ranges, pixel_size, texture);
+        pack_impl(font_data, unicode_ranges, font_size_pixels, font);
     }
 
     // Create texture for the given font data.
@@ -290,51 +293,22 @@ PreparedText::~PreparedText()
 }
 
 //--------------------------------------------------------------------------------------------------
-// FontHandler
+// BitmapFont
 //--------------------------------------------------------------------------------------------------
 
-struct FontHandlerData {
-    FlatMap<FontId, FontTexture, FontId::Cmp> font_textures;
-};
-
-namespace {
-
-FontTexture& get_or_make_font_texture_for(FontHandlerData& data,
-                                          ResourceHandle<FontResource> font,
-                                          const int pixel_size,
-                                          span<const UnicodeRange> ranges)
+BitmapFont::BitmapFont(ResourceHandle<FontResource> font,
+                       const int font_size_pixels,
+                       span<const UnicodeRange> unicode_ranges)
 {
-    // Get or create font texture for this font and block.
-    const FontId font_id{ font, pixel_size };
-    auto texture_it = data.font_textures.find(font_id);
-    if (texture_it == data.font_textures.end()) {
-        texture_it = data.font_textures.insert({ font_id, FontTexture{} }).first;
-        FontPacker packer;
-        packer.pack(font, ranges, pixel_size, texture_it->second);
-    }
-
-    return texture_it->second;
+    impl().font_size_pixels = font_size_pixels;
+    FontPacker packer;
+    packer.pack(font, unicode_ranges, font_size_pixels, impl());
 }
 
-} // namespace
+BitmapFont::~BitmapFont() = default;
 
-FontHandler::FontHandler() = default;
-FontHandler::~FontHandler() = default;
+// Implementation of BitmapFont::prepare_text
 
-FontId FontHandler::load_font(ResourceHandle<FontResource> font,
-                              const int32_t pixel_size,
-                              span<const UnicodeRange> unicode_ranges)
-{
-    const FontId font_id{ font, pixel_size };
-    get_or_make_font_texture_for(impl(), font, pixel_size, unicode_ranges);
-    return font_id;
-}
-
-//--------------------------------------------------------------------------------------------------
-// Implementation of FontHandler::prepare_text
-//--------------------------------------------------------------------------------------------------
-
-// Helper functions for FontHandler::prepare_text
 namespace {
 
 struct BreakLinesResult {
@@ -469,17 +443,15 @@ std::u32string convert_and_filter(std::string_view text)
 
 } // namespace
 
-PreparedText FontHandler::prepare_text(FontId font,
-                                       std::string_view text_utf8,
-                                       const TypesettingParams& typesetting_params)
+PreparedText BitmapFont::prepare_text(std::string_view text_utf8,
+                                      const TypeSetting& typesetting) const
 {
     // Convert text to sequence of code points (while filtering out unprintable characters).
     const std::u32string text_codepoints = convert_and_filter(text_utf8);
-    const auto line_height = static_cast<float>(font.pixel_size());
+    const auto line_height = static_cast<float>(font_size_pixels());
 
     // Get texture for font.
-    FontTexture& font_texture = impl().font_textures[font];
-    MG_ASSERT(font_texture.texture.handle != TextureHandle::null_handle());
+    MG_ASSERT(impl().texture.handle != TextureHandle::null_handle());
 
     // Get quads for each codepoint in the string.
     auto char_quads = Array<stbtt_aligned_quad>::make(text_codepoints.size());
@@ -496,13 +468,12 @@ PreparedText FontHandler::prepare_text(FontId font,
             codepoint = (codepoint == '\n' ? ' ' : codepoint);
 
             // Get index of packedchar corresponding to codepoint, or that of '?' if not present.
-            const auto packedchar_index =
-                get_packedchar_index(font_texture, codepoint)
-                    .value_or(get_packedchar_index(font_texture, '?').value());
+            const auto packedchar_index = get_packedchar_index(impl(), codepoint)
+                                              .value_or(get_packedchar_index(impl(), '?').value());
             constexpr int align_to_integer = 1;
-            stbtt_GetPackedQuad(font_texture.packed_chars.data(),
-                                font_texture.texture_width,
-                                font_texture.texture_height,
+            stbtt_GetPackedQuad(impl().packed_chars.data(),
+                                impl().texture_width,
+                                impl().texture_height,
                                 packedchar_index,
                                 &x,
                                 &y,
@@ -514,9 +485,9 @@ PreparedText FontHandler::prepare_text(FontId font,
     // Break quads into multiple lines.
     BreakLinesResult break_lines_result = break_lines(text_codepoints,
                                                       char_quads,
-                                                      typesetting_params.max_width_pixels,
+                                                      typesetting.max_width_pixels,
                                                       line_height,
-                                                      typesetting_params.line_spacing_factor);
+                                                      typesetting.line_spacing_factor);
     char_quads = std::move(break_lines_result.char_quads);
     const float width = break_lines_result.width;
     const float height = break_lines_result.height;
@@ -579,10 +550,20 @@ PreparedText FontHandler::prepare_text(FontId font,
     glBindVertexArray(0);
 
     PreparedText::GpuData gpu_data;
-    gpu_data.texture = font_texture.texture.handle;
+    gpu_data.texture = impl().texture.handle;
     gpu_data.vertex_buffer = BufferHandle(gl_buffer_id);
     gpu_data.vertex_array = VertexArrayHandle(gl_vertex_array_id);
     return PreparedText(gpu_data, width, height, text_codepoints.size());
+}
+
+span<const UnicodeRange> BitmapFont::contained_ranges() const
+{
+    return impl().unicode_ranges;
+}
+
+int BitmapFont::font_size_pixels() const
+{
+    return impl().font_size_pixels;
 }
 
 } // namespace Mg::gfx

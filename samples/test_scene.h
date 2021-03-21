@@ -28,19 +28,12 @@
 
 using Clock = std::chrono::high_resolution_clock;
 
-constexpr double k_time_step = 1.0 / 60.0;
-constexpr double k_accumulator_max_steps = 10;
-constexpr size_t k_num_lights = 128;
-constexpr float k_light_radius = 3.0f;
-
-constexpr auto camera_max_vel = 0.2f;
-constexpr auto camera_acc = 0.01f;
-constexpr auto camera_friction = 0.005f;
+static constexpr auto config_file = "mg_engine.cfg";
 
 class ApplicationContext {
 public:
     ApplicationContext()
-        : m_config("mg_engine.cfg")
+        : m_config(config_file)
         , m_window(Mg::Window::make(Mg::WindowSettings{}, "Mg Engine Test Scene"))
         , m_gfx_device(*m_window)
         , m_start_time(Clock::now())
@@ -105,7 +98,7 @@ public:
     Mg::gfx::TextureRepository texture_repository;
     Mg::gfx::MaterialRepository material_repository;
 
-    Mg::gfx::FontId font_id;
+    std::unique_ptr<Mg::gfx::BitmapFont> font;
 
     Mg::gfx::MeshRenderer mesh_renderer;
     Mg::gfx::DebugRenderer debug_renderer;
