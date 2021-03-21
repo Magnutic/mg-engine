@@ -1,0 +1,7 @@
+Files from third-party sources:
+
+# Fox.mgm, Fox_d.dds
+Derived from GLTF data at https://github.com/KhronosGroup/glTF-Sample-Models/tree/master/2.0/Fox
+CC0: Low poly fox by PixelMannen: https://opengameart.org/content/fox-and-shiba
+CC-BY 4.0: Rigging and animation by @tomkranis on Sketchfab: https://sketchfab.com/models/371dea88d7e04a76af5763f2a36866bc
+glTF conversion by @AsoboStudio and @scurest: https://github.com/KhronosGroup/glTF-Sample-Models/pull/150#issuecomment-406300118
