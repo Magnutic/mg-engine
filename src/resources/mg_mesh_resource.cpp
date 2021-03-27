@@ -7,9 +7,7 @@
 #include "mg/resources/mg_mesh_resource.h"
 
 #include "mg/core/mg_log.h"
-#include "mg/gfx/mg_mesh_data.h"
 #include "mg/resource_cache/mg_resource_loading_input.h"
-#include "mg/utils/mg_gsl.h"
 
 #include <cstdlib>
 #include <glm/common.hpp>
