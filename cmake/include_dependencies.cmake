@@ -118,3 +118,13 @@ endif()
 # stb
 # Sean Barrett's single-file libraries
 add_private_header_only_library(stb "${MG_DEPENDENCIES_SOURCE_DIR}/stb" "")
+
+#---------------------------------------------------------------------------------------------------
+# Dependencies for tools
+#---------------------------------------------------------------------------------------------------
+
+if (MG_BUILD_TOOLS)
+    # AssImp
+    # Asset importer for various 3D model formats.
+    find_package(assimp REQUIRED)
+endif()

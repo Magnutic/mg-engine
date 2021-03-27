@@ -14,6 +14,7 @@ set(MG_CONFIG_INSTALL_PATH "${CMAKE_INSTALL_LIBDIR}/cmake/mg_engine-${mg_engine_
 
 option(MG_BUILD_TESTS "Build Mg Engine's test suite." ON)
 option(MG_BUILD_SAMPLES "Build Mg Engine sample applications." ON)
+option(MG_BUILD_TOOLS "Build Mg Engine tools." ON)
 
 # Sanitisers disabled by default to avoid compiler compatibility issues.
 # (e.g. building the library with GCC then linking to an application built with Clang).
@@ -45,13 +46,19 @@ set(MG_BUILD_DEPENDENCIES_INSTALL_DIR "${MG_BUILD_DIR}/external" CACHE STRING "W
 # (They have to be explicitly listed since order matters due to dependencies between them.)
 list(APPEND MG_DEPENDENCIES zlib libzip fmt glfw glm function2 plf_colony optional openal-soft stb)
 
-# Dependencies that will be built and installed using CMake.
+# Dependencies that will be built and locally installed using CMake.
 list(APPEND MG_DEPENDENCIES_TO_BUILD zlib libzip fmt glfw glm openal-soft)
+
+# If building tools, we need some more dependencies.
+if(MG_BUILD_TOOLS)
+    list(APPEND MG_DEPENDENCIES assimp)
+    list(APPEND MG_DEPENDENCIES_TO_BUILD assimp)
+endif()
 
 # Only build bundled libsndfile if system libsndfile is not available -- prefer system version since
 # it otherwise causes conflicts with system provided library.
 find_package(SndFile QUIET)
-if (NOT SndFile_FOUND)
+if(NOT SndFile_FOUND)
     message("-- NOTE: System libsndfile not found. Building bundled libsndfile instead.")
     list(APPEND MG_DEPENDENCIES ogg vorbis libsndfile)
     list(APPEND MG_DEPENDENCIES_TO_BUILD ogg vorbis libsndfile)
@@ -61,7 +68,7 @@ set(MG_DEPENDENCIES_SOURCE_DIR "${MG_SOURCE_DIR}/external/mg_dependencies")
 set(MG_DEPENDENCIES_BUILD_DIR "${MG_BUILD_DIR}/mg_dependencies/build")
 
 # Optionally, generate mg_dependencies.zip from submodules.
-# (Off by default; mg_dependencies.zip is intended to be bundled -- but this is how it is generated.)
+# (Off by default; mg_dependencies.zip is intended to be bundled, but this is how it is generated.)
 if(MG_GENERATE_DEPENDENCY_ARCHIVE)
     include(cmake/generate_dependency_archive.cmake)
 endif()
@@ -109,6 +116,10 @@ endif()
 
 if(MG_BUILD_SAMPLES)
     add_subdirectory(samples)
+endif()
+
+if(MG_BUILD_TOOLS)
+    add_subdirectory(tools)
 endif()
 
 add_subdirectory(src)

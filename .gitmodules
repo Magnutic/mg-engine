@@ -37,3 +37,6 @@
 [submodule "external/submodules/stb"]
 	path = external/submodules/stb
 	url = https://github.com/nothings/stb
+[submodule "external/submodules/assimp"]
+	path = external/submodules/assimp
+	url = https://github.com/assimp/assimp
