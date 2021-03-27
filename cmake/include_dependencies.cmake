@@ -3,8 +3,22 @@
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-message(" - Mg-Engine is looking for its dependencies:")
-message(" - CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+message("-- Mg-Engine is looking for its dependencies:")
+message("-- CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+
+# If the prefix path points to a dependency installation made using build_dependencies.cmake, then
+# make sure it is up to date.
+set(INSTALLED_DEPENDENCIES_HASH_FILE "${CMAKE_PREFIX_PATH}/.mg_dependencies_zip_hash")
+if(EXISTS "${INSTALLED_DEPENDENCIES_HASH_FILE}")
+    message("-- mg-dependencies installation found at ${CMAKE_PREFIX_PATH}")
+    file(READ "${INSTALLED_DEPENDENCIES_HASH_FILE}" MG_INSTALLED_DEPENDENCIES_HASH)
+    file(SHA1 "${MG_DEPENDENCIES_ARCHIVE}" MG_DEPENDENCIES_ZIP_HASH)
+
+    if(NOT MG_INSTALLED_DEPENDENCIES_HASH STREQUAL MG_DEPENDENCIES_ZIP_HASH)
+        message(FATAL_ERROR "Dependencies found at:\n\t${CMAKE_PREFIX_PATH}\nare not up-to-date with\n\t${MG_DEPENDENCIES_ARCHIVE}\n"
+            "Note: If you used \"build/configure.sh\", re-run it to re-build dependencies.")
+    endif()
+endif()
 
 # Prefer CMake config files to find modules in find_package. This is for example needed to prefer
 # conan-generated config files to system packages found via CMake's bundled find modules.
@@ -44,7 +58,7 @@ endfunction()
 # These functions prevent CMake from linking debug libraries to RelWithDebInfo/MinSizeRel builds,
 # which fails to compile under MSVC.
 set(CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL Release)
-set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO Release) 
+set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO Release)
 
 #---------------------------------------------------------------------------------------------------
 

@@ -7,19 +7,16 @@ of mg-engine's build options.
 
 ## Usage
 
-- First run `build_dependencies.sh`.
+First, run `configure.sh` with your compiler(s) of choice, e.g.:
 
-This will extract, build, and locally install third-party dependencies to `out/deps-install/`; the
-other scripts are configured to look for dependencies there.
-This only has to be done once.
-
-- Then, _configure_ with your compiler(s) of choice, e.g.:
-
-    ./configure clang_debug clang clang++ --debug
-    ./configure gcc_release gcc g++
+    ./configure.sh clang_debug clang clang++ --debug
+    ./configure.sh gcc_release gcc g++
 
 This will create two build configurations, titled `clang_debug` in `out/clang_debug/` and
-`gcc_release`.
+`gcc_release`. The first time it is run, it will also compile all dependencies at put them in
+`out/mg_dependencies`.
+
+Run `configure.sh` without any arguments for information on available options.
 
 The `build_and_run.sh <configuration> <build-target>` script is a convenience for building and
 running a given configuration. For example, using the `clang_debug` configuration from the previous

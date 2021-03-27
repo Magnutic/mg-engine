@@ -37,70 +37,27 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIRECTORY}../libs/")
 
 # Add bundled CMake modules.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-
-option(MG_GENERATE_DEPENDENCY_ARCHIVE "Generate mg_dependencies.zip from submodules (not usually needed, mg_dependencies.zip is bundled)." OFF)
 option(MG_BUILD_DEPENDENCIES "Build and (locally) install Mg Engine's dependencies." OFF)
 set(MG_BUILD_DEPENDENCIES_INSTALL_DIR "${MG_BUILD_DIR}/external" CACHE STRING "Where to install dependencies built when MG_BUILD_DEPENDENCIES is enabled.")
 
-# The list of dependencies. This corresponds to submodules in external/submodules.
-# (They have to be explicitly listed since order matters due to dependencies between them.)
-list(APPEND MG_DEPENDENCIES zlib libzip fmt glfw glm function2 plf_colony optional openal-soft stb)
-
-# Dependencies that will be built and locally installed using CMake.
-list(APPEND MG_DEPENDENCIES_TO_BUILD zlib libzip fmt glfw glm openal-soft)
-
-# If building tools, we need some more dependencies.
-if(MG_BUILD_TOOLS)
-    list(APPEND MG_DEPENDENCIES assimp)
-    list(APPEND MG_DEPENDENCIES_TO_BUILD assimp)
-endif()
-
-# Only build bundled libsndfile if system libsndfile is not available -- prefer system version since
-# it otherwise causes conflicts with system provided library.
-find_package(SndFile QUIET)
-if(NOT SndFile_FOUND)
-    message("-- NOTE: System libsndfile not found. Building bundled libsndfile instead.")
-    list(APPEND MG_DEPENDENCIES ogg vorbis libsndfile)
-    list(APPEND MG_DEPENDENCIES_TO_BUILD ogg vorbis libsndfile)
-endif()
-
+set(MG_DEPENDENCIES_ARCHIVE "${MG_SOURCE_DIR}/external/mg_dependencies.zip")
 set(MG_DEPENDENCIES_SOURCE_DIR "${MG_SOURCE_DIR}/external/mg_dependencies")
-set(MG_DEPENDENCIES_BUILD_DIR "${MG_BUILD_DIR}/mg_dependencies/build")
 
-# Optionally, generate mg_dependencies.zip from submodules.
-# (Off by default; mg_dependencies.zip is intended to be bundled, but this is how it is generated.)
-if(MG_GENERATE_DEPENDENCY_ARCHIVE)
-    include(cmake/generate_dependency_archive.cmake)
-endif()
+# Trigger reconfiguration when dependencies archive changes.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${MG_DEPENDENCIES_ARCHIVE})
 
 # Extract dependency archive. Even if we do not build the bundled dependencies, there are some
 # header-only libraries within that we need.
 file(REMOVE_RECURSE "${MG_DEPENDENCIES_SOURCE_DIR}")
 file(MAKE_DIRECTORY "${MG_DEPENDENCIES_SOURCE_DIR}")
-file(SHA1 "${MG_SOURCE_DIR}/external/mg_dependencies.zip" MG_DEPENDENCY_ZIP_HASH)
-
-if(EXISTS "${MG_DEPENDENCIES_SOURCE_DIR}/zip_hash")
-    file(READ "${MG_DEPENDENCIES_SOURCE_DIR}/zip_hash" MG_DEPENDENCY_EXTRACTED_HASH)
-endif()
-
-if(MG_DEPENDENCY_EXTRACTED_HASH STREQUAL MG_DEPENDENCY_ZIP_HASH)
-    message("-- NOTE: using already extracted dependencies at ${MG_DEPENDENCIES_SOURCE_DIR}")
-else()
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xf "${MG_SOURCE_DIR}/external/mg_dependencies.zip" --format=zip
-        WORKING_DIRECTORY "${MG_DEPENDENCIES_SOURCE_DIR}"
-    )
-    file(WRITE "${MG_DEPENDENCIES_SOURCE_DIR}/zip_hash" "${MG_DEPENDENCIES_SOURCE_DIR}/zip_hash")
-endif()
+execute_process(
+    COMMAND ${CMAKE_COMMAND} -E tar xf "${MG_DEPENDENCIES_ARCHIVE}" --format=zip
+    WORKING_DIRECTORY "${MG_DEPENDENCIES_SOURCE_DIR}"
+)
 
 # Build and install dependencies if requested (off by default).
 if(MG_BUILD_DEPENDENCIES)
-    # Some extra params passed into each build-configuration.
-    set(fmt_EXTRA_BUILD_PARAMS "-DFMT_TEST=0")
-    set(glfw_EXTRA_BUILD_PARAMS "-DGLFW_BUILD_EXAMPLES=0" "-DGLFW_BUILD_TESTS=0")
-    set(glm_EXTRA_BUILD_PARAMS "-DGLM_TEST_ENABLE=0")
-    set(libzip_EXTRA_BUILD_PARAMS "-DBUILD_TOOLS=0" "-DBUILD_REGRESS=0" "-DBUILD_EXAMPLES=0")
-    set(libsndfile_EXTRA_BUILD_PARAMS "-DCMAKE_FIND_PACKAGE_PREFER_CONFIG=1" "-DBUILD_SHARED_LIBS=1" "-DBUILD_PROGRAMS=0" "-DBUILD_EXAMPLES=0" "-DBUILD_TESTING=0")
+    # Perform the build.
     include(cmake/build_dependencies.cmake)
 endif()
 
