@@ -37,7 +37,7 @@ function(add_private_header_only_library LIBRARY INCLUDE_DIR)
     add_library(${LIBRARY} INTERFACE)
     # CMake will shout at us if we do not set up an install for this target, since mg_engine links
     # to this. So we have to set up an empty installation just to be allowed to build.
-    target_include_directories(${LIBRARY} INTERFACE
+    target_include_directories(${LIBRARY} SYSTEM INTERFACE
         $<BUILD_INTERFACE:${INCLUDE_DIR}>
         $<INSTALL_INTERFACE:include>
     )
@@ -50,7 +50,7 @@ endfunction()
 # SUB_DIR_TO_INSTALL: subdirectory under INCLUDE_DIR to be installed. May be empty.
 function(add_public_header_only_library LIBRARY INCLUDE_DIR SUB_DIR_TO_INSTALL)
     add_library(${LIBRARY} INTERFACE)
-    target_include_directories(${LIBRARY} INTERFACE
+    target_include_directories(${LIBRARY} SYSTEM INTERFACE
         $<BUILD_INTERFACE:${INCLUDE_DIR}>
         $<INSTALL_INTERFACE:include>
     )
@@ -73,7 +73,7 @@ set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO Release)
 # No attempt to find installed version -- GLAD is generated for each project, see
 # http://glad.dav1d.de/
 add_library(glad STATIC "${MG_SOURCE_DIR}/external/glad/src/glad.c")
-target_include_directories(glad PUBLIC
+target_include_directories(glad SYSTEM PUBLIC
     $<BUILD_INTERFACE:${MG_SOURCE_DIR}/external/glad/include>
     $<INSTALL_INTERFACE:${MG_HEADER_INSTALL_PATH}/glad/include>
 )
