@@ -17,6 +17,7 @@ flags = [
     '-I', './external/mg_dependencies/fmt/include',
     '-I', './external/mg_dependencies/openal-soft/include',
     '-I', './external/mg_dependencies/stb',
+    '-I', './build/out/mg_dependencies/include',
     '-I', './external/glad/include',
     '-I', './include',
     '-I', './src',

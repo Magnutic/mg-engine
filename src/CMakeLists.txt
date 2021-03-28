@@ -230,13 +230,13 @@ target_link_libraries(mg_engine
         Threads::Threads
         glm::glm
         tl::optional
-    PRIVATE
         fmt::fmt
+    PRIVATE
         function2
         plf_colony
         glad
         glfw
-        zip
+        libzip::zip
         stb
         SndFile::sndfile
         OpenAL::OpenAL

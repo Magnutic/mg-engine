@@ -34,8 +34,6 @@ TEST_CASE("ThreadPool: timing test")
     // TODO: quite brittle. Is there a better way?
     CHECK(diff >= 90);
     CHECK(diff <= 110);
-
-    puts("Expected runtime: 2 seconds.");
 }
 
 TEST_CASE("ThreadPool: return test")

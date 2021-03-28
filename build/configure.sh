@@ -68,16 +68,16 @@ fi
 # If a dependency build was canceled, delete it.
 if [ -f "$DEPENDENCY_INSTALL_DIR/build_in_progress" ]; then
     echo "Last dependency build was canceled, re-building."
-    rm -rf "$DEPENDENCY_INSTALL_DIR"
+    rm -r "$DEPENDENCY_INSTALL_DIR"
 fi
 
 # If dependencies are already there, check if they are out of date and need to be re-built.
 if [ -f "$DEPENDENCIES_ZIP_HASH_FILE" ]; then
     DEPENDENCY_HASH=$(cat "$DEPENDENCIES_ZIP_HASH_FILE")
-    ARCHIVE_HASH=$(sha1sum "../external/mg_dependencies.zip" | sed 's/\(.*\) .*/\1/')
-    if [[ $DEPENDENCY_HASH != $ARCHIVE_HASH ]]; then
-        echo "Dependencies in $DEPENDENCY_INSTALL_DIR are out of date, rebuilding..."
-        rm -rf "$DEPENDENCY_INSTALL_DIR"
+    ARCHIVE_HASH=$(sha1sum "../external/mg_dependencies.zip")
+    if [[ ! "${ARCHIVE_HASH,,}" == "${DEPENDENCY_HASH}"* ]]; then
+        echo "Dependencies in $DEPENDENCY_INSTALL_DIR are out of date, rebuilding."
+        rm -r "$DEPENDENCY_INSTALL_DIR"
     fi
 else
     echo "Dependencies not found in $DEPENDENCY_INSTALL_DIR"
@@ -87,6 +87,7 @@ fi
 if [ ! -d "$DEPENDENCY_INSTALL_DIR" ]; then
     echo "Building dependencies (this may take some time)..."
 
+    [ -d "$DEPENDENCY_BUILD_DIR" ] && rm -r "$DEPENDENCY_BUILD_DIR"
     mkdir "$DEPENDENCY_BUILD_DIR" || exit 1
     mkdir "$DEPENDENCY_INSTALL_DIR" || exit 1
     touch "$DEPENDENCY_INSTALL_DIR/build_in_progress"
@@ -107,7 +108,7 @@ if [ ! -d "$DEPENDENCY_INSTALL_DIR" ]; then
     fi
 
     # We do not need to keep the dependency build directory.
-    rm -rf "$DEPENDENCY_BUILD_DIR"
+    rm -r "$DEPENDENCY_BUILD_DIR"
 
     echo "Successfully built dependencies."
     rm "$DEPENDENCY_INSTALL_DIR/build_in_progress"
@@ -121,7 +122,7 @@ if [[ $CLANG_TIDY_COMMAND != "" ]]; then
     echo "Clang-tidy enabled with command: $CLANG_TIDY_COMMAND"
 fi
 
-rm -rf "$BUILD_ROOT/$CONFNAME"
+rm -r "$BUILD_ROOT/$CONFNAME"
 mkdir "$BUILD_ROOT/$CONFNAME" || exit 1
 
 (cd "$BUILD_ROOT/$CONFNAME" &&

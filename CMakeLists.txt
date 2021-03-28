@@ -5,6 +5,9 @@ project(mg_engine VERSION 0.1 LANGUAGES C CXX)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
+# Add bundled CMake modules.
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
 set(MG_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(MG_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 
@@ -35,8 +38,6 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIRECTORY}../libs/")
 # Dependency management
 #---------------------------------------------------------------------------------------------------
 
-# Add bundled CMake modules.
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 option(MG_BUILD_DEPENDENCIES "Build and (locally) install Mg Engine's dependencies." OFF)
 set(MG_BUILD_DEPENDENCIES_INSTALL_DIR "${MG_BUILD_DIR}/external" CACHE STRING "Where to install dependencies built when MG_BUILD_DEPENDENCIES is enabled.")
 
@@ -44,7 +45,7 @@ set(MG_DEPENDENCIES_ARCHIVE "${MG_SOURCE_DIR}/external/mg_dependencies.zip")
 set(MG_DEPENDENCIES_SOURCE_DIR "${MG_SOURCE_DIR}/external/mg_dependencies")
 
 # Trigger reconfiguration when dependencies archive changes.
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${MG_DEPENDENCIES_ARCHIVE})
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${MG_DEPENDENCIES_ARCHIVE}")
 
 # Extract dependency archive. Even if we do not build the bundled dependencies, there are some
 # header-only libraries within that we need.
@@ -53,7 +54,12 @@ file(MAKE_DIRECTORY "${MG_DEPENDENCIES_SOURCE_DIR}")
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E tar xf "${MG_DEPENDENCIES_ARCHIVE}" --format=zip
     WORKING_DIRECTORY "${MG_DEPENDENCIES_SOURCE_DIR}"
+    RESULT_VARIABLE EXTRACT_RESULT
 )
+
+if(NOT ${EXTRACT_RESULT} EQUAL 0)
+    message(FATAL_ERROR "Failed to extract ${MG_DEPENDENCIES_ARCHIVE} to ${MG_DEPENDENCIES_SOURCE_DIR}")
+endif()
 
 # Build and install dependencies if requested (off by default).
 if(MG_BUILD_DEPENDENCIES)

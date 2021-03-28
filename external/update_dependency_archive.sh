@@ -8,6 +8,7 @@ if [ -f $DEPENDENCY_ARCHIVE ]; then
     rm $DEPENDENCY_ARCHIVE
 fi
 
+git add submodules
 echo "Initialising submodules."
 for d in submodules/*/
 do

@@ -11,10 +11,16 @@ message("-- CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
 set(INSTALLED_DEPENDENCIES_HASH_FILE "${CMAKE_PREFIX_PATH}/.mg_dependencies_zip_hash")
 if(EXISTS "${INSTALLED_DEPENDENCIES_HASH_FILE}")
     message("-- mg-dependencies installation found at ${CMAKE_PREFIX_PATH}")
+
+    # Compare hash saved in mg_dependencies installation directory with that of mg_dependencies.zip
     file(READ "${INSTALLED_DEPENDENCIES_HASH_FILE}" MG_INSTALLED_DEPENDENCIES_HASH)
     file(SHA1 "${MG_DEPENDENCIES_ARCHIVE}" MG_DEPENDENCIES_ZIP_HASH)
 
-    if(NOT MG_INSTALLED_DEPENDENCIES_HASH STREQUAL MG_DEPENDENCIES_ZIP_HASH)
+    # Cut off at HASH_LENGTH, othterwise MG_INSTALLED_DEPENDENCIES_HASH may contain ending newline.
+    string(LENGTH "${MG_DEPENDENCIES_ZIP_HASH}" HASH_LENGTH)
+    string(SUBSTRING "${MG_INSTALLED_DEPENDENCIES_HASH}" 0 ${HASH_LENGTH} MG_INSTALLED_DEPENDENCIES_HASH)
+
+    if(NOT MG_INSTALLED_DEPENDENCIES_HASH STREQUAL "${MG_DEPENDENCIES_ZIP_HASH}")
         message(FATAL_ERROR "Dependencies found at:\n\t${CMAKE_PREFIX_PATH}\nare not up-to-date with\n\t${MG_DEPENDENCIES_ARCHIVE}\n"
             "Note: If you used \"build/configure.sh\", re-run it to re-build dependencies.")
     endif()
@@ -77,26 +83,20 @@ find_package(Threads REQUIRED)
 
 # Libzip
 # Zip-file handling library.
-find_package(libzip 1.6.1 REQUIRED)
+find_package(libzip 1.7.3 REQUIRED)
 
 # fmt
 # Text formatting
-find_package(fmt 6.0 REQUIRED)
+find_package(fmt 7.1 REQUIRED)
 
 # GLFW
 # Window and input library.
-find_package(glfw3 3.3 REQUIRED)
+find_package(glfw3 3.3.3 REQUIRED)
 
 # GLM
 # GL Mathematics library.
 find_package(glm 0.9.9 REQUIRED)
-if(NOT TARGET glm::glm)
-    # I have come across GLM configurations that
-    #  - define only target glm, or
-    #  - define both targets glm and glm::glm, the latter an alias of the former, or
-    #  - define only target glm::glm.
-    # So there is no universal name for the glm target. As a work-around, we make sure glm::glm
-    # exists.
+if(NOT TARGET glm::glm AND TARGET glm)
     set_target_properties(glm PROPERTIES IMPORTED_GLOBAL TRUE)
     add_library(glm::glm ALIAS glm)
 endif()

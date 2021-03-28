@@ -390,7 +390,7 @@ TextureHandle generate_gl_texture_from(span<const uint8_t> rgba8_buffer,
     glGenTextures(1, &texture_id);
     glBindTexture(GL_TEXTURE_2D, texture_id);
 
-    MG_ASSERT(narrow<int32_t>(rgba8_buffer.size()) == width * height * 4u);
+    MG_ASSERT(narrow<int32_t>(rgba8_buffer.size()) == width * height * 4);
 
     glTexImage2D(GL_TEXTURE_2D,
                  0,
