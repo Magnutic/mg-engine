@@ -38,6 +38,13 @@ struct Range {
     uint32_t end;
 };
 
+// Cast const std::byte* to const std::uint8_t*, since GCC will (incorrectly, as far as I can tell)
+// warn on memcpy from std::byte*.
+const uint8_t* as_uint8_t_ptr(const std::byte* byte_ptr)
+{
+    return reinterpret_cast<const uint8_t*>(byte_ptr); // NOLINT
+}
+
 // Load bytestream data into arrays. Array size controls number of elements to read.
 // Returns number of bytes read, if successful, otherwise 0.
 // Advances bytestream.
@@ -61,7 +68,7 @@ size_t load_to_array(span<const std::byte> bytestream,
             return 0;
         }
 
-        std::memcpy(&elem, &bytestream[read_offset], size);
+        std::memcpy(&elem, as_uint8_t_ptr(&bytestream[read_offset]), size);
         read_offset += stride_value;
     }
 
@@ -75,7 +82,7 @@ template<typename T> size_t load_to_struct(span<const std::byte> bytestream, T& 
         return 0;
     }
 
-    std::memcpy(&out, bytestream.data(), sizeof(T));
+    std::memcpy(&out, as_uint8_t_ptr(bytestream.data()), sizeof(T));
     return sizeof(T);
 }
 
@@ -164,7 +171,7 @@ LoadResult load_version_1(ResourceLoadingInput& input)
     return result;
 }
 
-LoadResult load_version_2(ResourceLoadingInput& input, std::string_view meshname)
+LoadResult load_version_2(ResourceLoadingInput& input, [[maybe_unused]] std::string_view meshname)
 {
     struct String {
         uint32_t begin;
