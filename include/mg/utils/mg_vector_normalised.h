@@ -11,6 +11,9 @@
 
 #pragma once
 
+#include "mg/utils/mg_assert.h"
+
+#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <type_traits>
@@ -21,36 +24,57 @@
 
 namespace Mg {
 
-/** Creates a "normalised" integer of T from a floating point value in the range
- * [-1.0f, 1.0f] by using T's entire range as fixed-point representation. For
- * use with OpenGL's normalised vertex attributes.
+/** Creates a "normalised" integer of T from a floating point value in the range [-1.0f, 1.0f] (or
+ * [0.0f, 1.0f], if T is unsigned) by using T's entire range as fixed-point representation. For use
+ * with OpenGL's normalised vertex attributes.
  *
- * For input values outside the range the fractional part is used.
+ * Unsafe version: assumes value is in [0.0, 1.0], if T is unsigned; or in [-1.0, 1.0], if T is
+ * unsigned.
  */
-template<typename T> inline T normalise(float value) noexcept
+template<typename T> constexpr T normalise_unsafe(float value) noexcept
 {
-    static_assert(std::is_integral<T>::value, "Can only normalise to integers");
-
-    // Wrap around if value is outside normalised range
-    if (value > 1.0f) {
-        value -= static_cast<T>(value);
-    }
-    else if (value < -1.0f) {
-        value += static_cast<T>(value);
-    }
-
-    // Multiply by max to obtain normalised value
+    static_assert(std::is_integral<T>::value);
+    MG_ASSERT_DEBUG(value <= 1.0f);
+    MG_ASSERT_DEBUG(value >= (std::is_signed_v<T> ? -1.0f : 0.0f));
     return static_cast<T>(value * std::numeric_limits<T>::max());
 }
 
-/** Denormalise an integer by converting its range to a float [-1.0f, 1.0f]. */
-template<typename T> constexpr float denormalise(T value)
-{
-    static_assert(std::is_integral<T>::value, "Can only denormalise integers");
+static_assert(normalise_unsafe<uint8_t>(0.0f) == 0);
+static_assert(normalise_unsafe<uint8_t>(1.0f) == 255);
+static_assert(normalise_unsafe<uint8_t>(0.5f) == 127);
+static_assert(normalise_unsafe<int8_t>(0.0f) == 0);
+static_assert(normalise_unsafe<int8_t>(1.0f) == 127);
+static_assert(normalise_unsafe<int8_t>(-1.0f) == -127);
 
-    // Divide by max to obtain denormalised value
+/** Creates a "normalised" integer of T from a floating point value in the range [-1.0f, 1.0f] (or
+ * [0.0f, 1.0f], if T is unsigned) by using T's entire range as fixed-point representation. For use
+ * with OpenGL's normalised vertex attributes.
+ *
+ * For input values outside the range the fractional part is used.
+ */
+template<typename T> T normalise(float value) noexcept
+{
+    // Wrap around if value is outside normalised range.
+    if (std::abs(value) > 1.0f) {
+        float i;
+        value = std::modf(value, &i);
+    }
+
+    return normalise_unsafe<T>(value);
+}
+
+/** Denormalise an integer, reversing the operation done by `normalise()`. */
+template<typename T> constexpr float denormalise(T value) noexcept
+{
+    static_assert(std::is_integral<T>::value);
     return static_cast<float>(value) / std::numeric_limits<T>::max();
 }
+
+static_assert(denormalise<uint8_t>(0) == 0.0f);
+static_assert(denormalise<uint8_t>(255) == 1.0f);
+static_assert(denormalise<int8_t>(0) == 0.0f);
+static_assert(denormalise<int8_t>(127) == 1.0f);
+static_assert(denormalise<int8_t>(-127) == -1.0f);
 
 /** Two-element normalised fixed-point vector, 16-bit elements. */
 struct vec2_normalised {
