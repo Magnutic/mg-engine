@@ -28,7 +28,11 @@ namespace Mg {
 /** Default deleter for Mg::Array and Mg::ArrayUnknownSize. */
 template<typename T> class DefaultArrayDelete {
 public:
-    void operator()(T* ptr) noexcept { delete[] ptr; }
+    void operator()(T* ptr) noexcept
+    {
+        static_assert(sizeof(T) != 0); // Ensure type is complete before deleting.
+        delete[] ptr;
+    }
 };
 
 namespace detail {
