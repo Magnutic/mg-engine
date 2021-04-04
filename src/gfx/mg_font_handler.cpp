@@ -55,6 +55,7 @@
 #define STBTT_memcpy ::memcpy                       // NOLINT
 #define STBTT_memset ::memset                       // NOLINT
 
+#define STBTT_STATIC 1                 // NOLINT
 #define STB_TRUETYPE_IMPLEMENTATION 1  // NOLINT
 #define STB_RECT_PACK_IMPLEMENTATION 1 // NOLINT
 
