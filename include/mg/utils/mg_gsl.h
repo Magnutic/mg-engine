@@ -215,7 +215,7 @@ public:
     constexpr size_type size() const noexcept { return narrow_cast<size_type>(m_end - m_begin); }
     constexpr size_type length() const noexcept { return size(); }
 
-    constexpr bool empty() const noexcept { return size() == 0; }
+    constexpr bool empty() const noexcept { return m_end == m_begin; }
 
     constexpr size_type size_bytes() const noexcept { return size() * elem_size; }
 
