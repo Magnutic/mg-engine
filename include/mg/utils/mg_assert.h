@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2021, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -42,6 +42,7 @@ class ContractViolation {};
 /** Function invoked on contract violation in e.g. MG_ASSERT */
 [[noreturn]] inline void contract_violation(const char* expr, const char* file, int line)
 {
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg)
     fprintf(stderr, "Assertion failed: %s at %s:%d\n", expr, file, line);
 
 #if MG_CONTRACT_VIOLATION_THROWS
