@@ -101,7 +101,7 @@ PipelineRepository make_post_process_pipeline_repository()
         sampler_colour_descriptor.input_name = "sampler_colour";
         sampler_colour_descriptor.type = PipelineInputType::Sampler2D;
         sampler_colour_descriptor.location = k_sampler_colour_texture_unit;
-        sampler_colour_descriptor.mandatory = false;
+        sampler_colour_descriptor.mandatory = true;
 
         PipelineInputDescriptor& sampler_depth_descriptor = config.shared_input_layout[2];
         sampler_depth_descriptor.input_name = "sampler_depth";
