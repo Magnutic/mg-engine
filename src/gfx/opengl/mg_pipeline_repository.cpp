@@ -226,17 +226,22 @@ generate_material_input_layout(const Material& material, const uint32_t material
 {
     const auto& samplers = material.samplers();
 
-    auto result = Array<PipelineInputDescriptor>::make(samplers.size() + 1);
+    auto descriptors = Array<PipelineInputDescriptor>::make(samplers.size() + 1);
 
     for (size_t i = 0; i < samplers.size(); ++i) {
-        result[i] = { samplers[i].name, PipelineInputType::Sampler2D, narrow<uint32_t>(i) };
+        descriptors[i].input_name = samplers[i].name;
+        descriptors[i].type = PipelineInputType::Sampler2D;
+        descriptors[i].location = narrow<uint32_t>(i);
+        descriptors[i].mandatory = false;
     }
 
-    result.back() = { "MaterialParams",
-                      PipelineInputType::UniformBuffer,
-                      material_params_ubo_slot };
+    PipelineInputDescriptor& material_params_descriptor = descriptors.back();
+    material_params_descriptor.input_name = "MaterialParams";
+    material_params_descriptor.type = PipelineInputType::UniformBuffer;
+    material_params_descriptor.location = material_params_ubo_slot;
+    material_params_descriptor.mandatory = false;
 
-    return result;
+    return descriptors;
 }
 
 // Make Pipeline to use as fallback when shaders fail to compile.

@@ -118,21 +118,36 @@ PipelineRepository make_mesh_pipeline_repository()
     config.on_error_shader_code = { {}, {}, FragmentShaderCode{ mesh_fs_fallback } };
 
     config.shared_input_layout = Array<PipelineInputDescriptor>::make(5);
-    config.shared_input_layout[0] = { "MatrixBlock",
-                                      PipelineInputType::UniformBuffer,
-                                      k_matrix_ubo_slot },
-    config.shared_input_layout[1] = { "FrameBlock",
-                                      PipelineInputType::UniformBuffer,
-                                      k_frame_ubo_slot },
-    config.shared_input_layout[2] = { "LightBlock",
-                                      PipelineInputType::UniformBuffer,
-                                      k_light_ubo_slot },
-    config.shared_input_layout[3] = { "_sampler_tile_data",
-                                      PipelineInputType::BufferTexture,
-                                      k_sampler_tile_data_index },
-    config.shared_input_layout[4] = { "_sampler_light_index",
-                                      PipelineInputType::BufferTexture,
-                                      k_sampler_light_index_index };
+    auto& matrix_block_descriptor = config.shared_input_layout[0];
+    auto& frame_block_descriptor = config.shared_input_layout[1];
+    auto& light_block_descriptor = config.shared_input_layout[2];
+    auto& sampler_tile_data_descriptor = config.shared_input_layout[3];
+    auto& sampler_light_index_descriptor = config.shared_input_layout[4];
+
+    matrix_block_descriptor.input_name = "MatrixBlock";
+    matrix_block_descriptor.location = k_matrix_ubo_slot;
+    matrix_block_descriptor.type = PipelineInputType::UniformBuffer;
+    matrix_block_descriptor.mandatory = true;
+
+    frame_block_descriptor.input_name = "FrameBlock";
+    frame_block_descriptor.location = k_frame_ubo_slot;
+    frame_block_descriptor.type = PipelineInputType::UniformBuffer;
+    frame_block_descriptor.mandatory = true;
+
+    light_block_descriptor.input_name = "LightBlock";
+    light_block_descriptor.type = PipelineInputType::UniformBuffer;
+    light_block_descriptor.location = k_light_ubo_slot;
+    light_block_descriptor.mandatory = true;
+
+    sampler_tile_data_descriptor.input_name = "_sampler_tile_data";
+    sampler_tile_data_descriptor.type = PipelineInputType::BufferTexture;
+    sampler_tile_data_descriptor.location = k_sampler_tile_data_index;
+    sampler_tile_data_descriptor.mandatory = true;
+
+    sampler_light_index_descriptor.input_name = "_sampler_light_index";
+    sampler_light_index_descriptor.type = PipelineInputType::BufferTexture;
+    sampler_light_index_descriptor.location = k_sampler_light_index_index;
+    sampler_light_index_descriptor.mandatory = true;
 
     config.material_params_ubo_slot = k_material_params_ubo_slot;
 

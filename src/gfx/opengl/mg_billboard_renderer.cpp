@@ -133,9 +133,13 @@ PipelineRepository make_billboard_pipeline_factory()
     PipelineRepository::Config config{};
 
     config.shared_input_layout = Array<PipelineInputDescriptor>::make(1);
-    config.shared_input_layout[0] = { "CameraBlock",
-                                      PipelineInputType::UniformBuffer,
-                                      k_camera_ubo_slot };
+    {
+        PipelineInputDescriptor& camera_block_descriptor = config.shared_input_layout[0];
+        camera_block_descriptor.input_name = "CameraBlock";
+        camera_block_descriptor.type = PipelineInputType::UniformBuffer;
+        camera_block_descriptor.location = k_camera_ubo_slot;
+        camera_block_descriptor.mandatory = true;
+    }
 
     config.preamble_shader_code = { VertexShaderCode{ billboard_vertex_shader_preamble },
                                     GeometryShaderCode{ billboard_geometry_shader },
@@ -286,8 +290,8 @@ void BillboardRenderer::render(const ICamera& camera,
 
     PipelineBindingContext binding_context;
     impl().pipeline_repository.bind_material_pipeline(material,
-                                                          pipeline_settings(),
-                                                          binding_context);
+                                                      pipeline_settings(),
+                                                      binding_context);
 
     glBindVertexArray(narrow<GLuint>(impl().vao.get()));
     glDrawArrays(GL_POINTS, 0, narrow<GLint>(billboards.size()));

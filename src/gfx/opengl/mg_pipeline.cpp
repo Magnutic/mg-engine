@@ -7,6 +7,7 @@
 #include "mg/gfx/mg_pipeline.h"
 
 #include "../mg_shader.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg_opengl_shader.h"
 #include "mg_glad.h"
 
@@ -91,7 +92,7 @@ void apply_input_descriptor(const opengl::ShaderProgramHandle& shader_handle,
 {
     using namespace opengl;
 
-    const auto& [input_name, type, location] = input_descriptor;
+    const auto& [input_name, type, location, mandatory] = input_descriptor;
     const auto name = input_name.str_view();
 
     bool success = false;
@@ -112,10 +113,11 @@ void apply_input_descriptor(const opengl::ShaderProgramHandle& shader_handle,
         break;
     }
 
-    if (!success) {
-        log.message("Mg::Pipeline::Pipeline: no such active uniform '{}' (shader-program id {}).",
-                    name,
-                    shader_handle.get());
+    if (!success && mandatory) {
+        log.error("Mg::Pipeline::Pipeline: no such active uniform '{}' (shader-program id {}).",
+                  name,
+                  shader_handle.get());
+        throw RuntimeError{};
     }
 }
 

@@ -130,9 +130,13 @@ PipelineRepository make_ui_pipeline_factory()
     PipelineRepository::Config config = {};
 
     config.shared_input_layout = Array<PipelineInputDescriptor>::make(1);
-    config.shared_input_layout[0] = { "DrawParamsBlock",
-                                      PipelineInputType::UniformBuffer,
-                                      k_draw_params_ubo_slot };
+    {
+        PipelineInputDescriptor& draw_params_block_descriptor = config.shared_input_layout[0];
+        draw_params_block_descriptor.input_name = "DrawParamsBlock";
+        draw_params_block_descriptor.type = PipelineInputType::UniformBuffer;
+        draw_params_block_descriptor.location = k_draw_params_ubo_slot;
+        draw_params_block_descriptor.mandatory = true;
+    }
 
     config.preamble_shader_code = { VertexShaderCode{ ui_vertex_shader },
                                     {},
@@ -153,10 +157,10 @@ Pipeline make_text_pipeline()
     Pipeline::Params params;
     params.vertex_shader = vs.value();
     params.fragment_shader = fs.value();
-    std::array<PipelineInputDescriptor, 2> inputs;
-    inputs[0] = { "DrawParamsBlock", PipelineInputType::UniformBuffer, 0 };
-    inputs[1] = { "font_texture", PipelineInputType::Sampler2D, 0 };
-    params.shared_input_layout = inputs;
+    std::array<PipelineInputDescriptor, 2> input_descriptors;
+    input_descriptors[0] = { "DrawParamsBlock", PipelineInputType::UniformBuffer, 0, true };
+    input_descriptors[1] = { "font_texture", PipelineInputType::Sampler2D, 0, true };
+    params.shared_input_layout = input_descriptors;
 
     return Pipeline::make(params).value();
 }

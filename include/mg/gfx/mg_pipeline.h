@@ -47,9 +47,21 @@ enum class PipelineInputType : unsigned { BufferTexture, Sampler2D, UniformBuffe
 
 /** Describes an input to a pipeline: the input's type, name, and its binding location. */
 struct PipelineInputDescriptor {
+    /** The name of the input as defined in shader code. */
     Identifier input_name;
+
+    /** What type of input. */
     PipelineInputType type;
+
+    /** Binding location to assign this input. */
     uint32_t location;
+
+    /** Whether the input is mandatory; is it an error if the pipeline has no such active input?
+     * Note that it is not uncommon for pipelines not to have an active input even if they are
+     * defined in the shader code, since they will be optimised away by the shader compiler if they
+     * are unused.
+     */
+    bool mandatory;
 };
 
 /** A pipeline input binding is an association from input-location index value to a graphics
