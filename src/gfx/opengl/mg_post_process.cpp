@@ -172,25 +172,27 @@ PostProcessRenderer::~PostProcessRenderer()
     glDeleteVertexArrays(1, &vao_id);
 }
 
-PostProcessRenderer::RenderGuard PostProcessRenderer::get_guard() noexcept
+PostProcessRenderer::Context PostProcessRenderer::make_context() noexcept
 {
     return { impl() };
 }
 
-void PostProcessRenderer::post_process(const RenderGuard&,
+void PostProcessRenderer::post_process(const Context& context,
                                        const Material& material,
                                        TextureHandle sampler_colour) noexcept
 {
+    MG_ASSERT(context.m_data == &impl() && "Context belongs to a different PostProcessRenderer");
     MG_GFX_DEBUG_GROUP("PostProcessRenderer::post_process")
 
     impl().pipeline_repository.bind_material_pipeline(material,
                                                       pipeline_settings(),
                                                       impl().binding_context.value());
 
-    std::array shared_input_bindings =
-        { PipelineInputBinding{ k_frame_block_ubo_slot, impl().frame_block_ubo },
-          PipelineInputBinding{ k_sampler_colour_texture_unit, sampler_colour },
-          PipelineInputBinding{ k_sampler_depth_texture_unit, TextureHandle::null_handle() } };
+    std::array shared_input_bindings = {
+        PipelineInputBinding{ k_frame_block_ubo_slot, impl().frame_block_ubo },
+        PipelineInputBinding{ k_sampler_colour_texture_unit, sampler_colour },
+        PipelineInputBinding{ k_sampler_depth_texture_unit, TextureHandle::null_handle() }
+    };
 
     Pipeline::bind_shared_inputs(shared_input_bindings);
 
@@ -201,13 +203,14 @@ void PostProcessRenderer::post_process(const RenderGuard&,
     MG_CHECK_GL_ERROR();
 }
 
-void PostProcessRenderer::post_process(const RenderGuard&,
+void PostProcessRenderer::post_process(const Context& context,
                                        const Material& material,
                                        TextureHandle sampler_colour,
                                        TextureHandle sampler_depth,
                                        float z_near,
                                        float z_far) noexcept
 {
+    MG_ASSERT(context.m_data == &impl() && "Context belongs to a different PostProcessRenderer");
     MG_GFX_DEBUG_GROUP("PostProcessRenderer::post_process")
 
     impl().pipeline_repository.bind_material_pipeline(material,
@@ -217,10 +220,11 @@ void PostProcessRenderer::post_process(const RenderGuard&,
     FrameBlock frame_block{ z_near, z_far };
     impl().frame_block_ubo.set_data(byte_representation(frame_block));
 
-    std::array shared_input_bindings =
-        { PipelineInputBinding{ k_frame_block_ubo_slot, impl().frame_block_ubo },
-          PipelineInputBinding{ k_sampler_colour_texture_unit, sampler_colour },
-          PipelineInputBinding{ k_sampler_depth_texture_unit, sampler_depth } };
+    std::array shared_input_bindings = {
+        PipelineInputBinding{ k_frame_block_ubo_slot, impl().frame_block_ubo },
+        PipelineInputBinding{ k_sampler_colour_texture_unit, sampler_colour },
+        PipelineInputBinding{ k_sampler_depth_texture_unit, sampler_depth }
+    };
 
     Pipeline::bind_shared_inputs(shared_input_bindings);
 
@@ -237,12 +241,12 @@ void PostProcessRenderer::drop_shaders() noexcept
     impl().pipeline_repository.drop_pipelines();
 }
 
-PostProcessRenderer::RenderGuard::RenderGuard(PostProcessRendererData& data) : m_data(&data)
+PostProcessRenderer::Context::Context(PostProcessRendererData& data) : m_data(&data)
 {
     m_data->binding_context = PipelineBindingContext{};
 }
 
-PostProcessRenderer::RenderGuard::~RenderGuard()
+PostProcessRenderer::Context::~Context()
 {
     m_data->binding_context = nullopt;
 }

@@ -197,6 +197,7 @@ struct Pipeline::Settings {
 class PipelineBindingContext {
 public:
     explicit PipelineBindingContext();
+    ~PipelineBindingContext();
 
     MG_MAKE_NON_COPYABLE(PipelineBindingContext);
     MG_MAKE_DEFAULT_MOVABLE(PipelineBindingContext);

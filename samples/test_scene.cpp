@@ -277,7 +277,7 @@ void Scene::render_scene(const double lerp_factor)
         bloom_material->set_sampler("sampler_bloom",
                                     blur_targets.vert_pass_target_texture->handle());
 
-        post_renderer.post_process(post_renderer.get_guard(),
+        post_renderer.post_process(post_renderer.make_context(),
                                    *bloom_material,
                                    hdr_target->colour_target()->handle());
     }
@@ -513,7 +513,7 @@ void Scene::render_bloom()
                                        *blur_targets.vert_pass_targets[0],
                                        blit_settings);
 
-    Mg::gfx::PostProcessRenderer::RenderGuard post_render_guard = post_renderer.get_guard();
+    Mg::gfx::PostProcessRenderer::Context post_render_context = post_renderer.make_context();
 
     for (size_t mip_i = 0; mip_i < num_blur_targets; ++mip_i) {
         Mg::gfx::TextureRenderTarget& hor_target = *blur_targets.hor_pass_targets[mip_i];
@@ -528,7 +528,7 @@ void Scene::render_bloom()
             // Horizontal pass
             blur_material->set_option("HORIZONTAL", true);
             hor_target.bind();
-            post_renderer.post_process(post_render_guard,
+            post_renderer.post_process(post_render_context,
                                        *blur_material,
                                        vert_target.colour_target()->handle());
 
@@ -537,7 +537,7 @@ void Scene::render_bloom()
             // Vertical pass
             blur_material->set_option("HORIZONTAL", false);
             vert_target.bind();
-            post_renderer.post_process(post_render_guard,
+            post_renderer.post_process(post_render_context,
                                        *blur_material,
                                        hor_target.colour_target()->handle());
         }

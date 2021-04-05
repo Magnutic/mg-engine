@@ -284,9 +284,24 @@ void apply_pipeline_settings(const Pipeline::Settings settings,
     }
 }
 
+PipelineBindingContext* g_current_context = nullptr;
+
 } // namespace
 
-PipelineBindingContext::PipelineBindingContext() = default;
+PipelineBindingContext::PipelineBindingContext()
+{
+    if (g_current_context != nullptr) {
+        log.error("Attempting to create multiple simultaneous PipelineBindingContext instances.");
+        throw RuntimeError{};
+    }
+
+    g_current_context = this;
+}
+
+PipelineBindingContext::~PipelineBindingContext()
+{
+    g_current_context = nullptr;
+}
 
 void PipelineBindingContext::bind_pipeline(const Pipeline& pipeline,
                                            const Pipeline::Settings& settings)

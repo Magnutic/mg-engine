@@ -28,17 +28,22 @@ public:
     MG_MAKE_NON_COPYABLE(PostProcessRenderer);
     MG_MAKE_DEFAULT_MOVABLE(PostProcessRenderer);
 
-    class RenderGuard;
+    class Context;
 
-    RenderGuard get_guard() noexcept;
+    /** Create a post-processing context. This initialises some state within the renderer so that it
+     * can be re-used between multiple sequential invocations to `post_process`. It should not live
+     * longer than necessary; in particular, it is not allowed to keep the Context while rendering
+     * using some other renderer.
+     */
+    Context make_context() noexcept;
 
     /** Post-process using only colour texture as input. */
-    void post_process(const RenderGuard& guard,
+    void post_process(const Context& context,
                       const Material& material,
                       TextureHandle sampler_colour) noexcept;
 
     /** Post-process using colour and depth textures. */
-    void post_process(const RenderGuard& guard,
+    void post_process(const Context& context,
                       const Material& material,
                       TextureHandle sampler_colour,
                       TextureHandle sampler_depth,
@@ -48,17 +53,20 @@ public:
     void drop_shaders() noexcept;
 };
 
-class PostProcessRenderer::RenderGuard {
+/** RAII class that allows a post-process rendering context to be re-used between multiple
+ * invocations to PostProcessRenderer::post_process.
+ */
+class PostProcessRenderer::Context {
     friend class PostProcessRenderer;
 
 public:
-    ~RenderGuard();
+    ~Context();
 
-    MG_MAKE_NON_COPYABLE(RenderGuard);
-    MG_MAKE_NON_MOVABLE(RenderGuard);
+    MG_MAKE_NON_COPYABLE(Context);
+    MG_MAKE_NON_MOVABLE(Context);
 
 private:
-    RenderGuard(PostProcessRendererData& data);
+    Context(PostProcessRendererData& data);
 
     PostProcessRendererData* m_data = nullptr;
 };
