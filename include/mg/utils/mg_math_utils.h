@@ -72,7 +72,7 @@ template<typename T> constexpr const T& max(const T& l, const T& r) noexcept
  */
 template<typename T> constexpr const T& min(const T& l, const T& r) noexcept
 {
-    return l > r ? l : r;
+    return l > r ? r : l;
 }
 
 } // namespace Mg
