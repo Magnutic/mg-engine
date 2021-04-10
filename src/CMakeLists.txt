@@ -2,99 +2,8 @@ cmake_minimum_required(VERSION 3.11)
 
 set(MG_HEADER_DIR "${MG_SOURCE_DIR}/include/")
 
-# Public headers
-set(MG_HEADERS
-    ${MG_HEADER_DIR}/mg/audio/mg_audio_context.h
-    ${MG_HEADER_DIR}/mg/audio/mg_sound_buffer_handle.h
-    ${MG_HEADER_DIR}/mg/audio/mg_sound_source.h
-    ${MG_HEADER_DIR}/mg/containers/mg_array.h
-    ${MG_HEADER_DIR}/mg/containers/mg_flat_map.h
-    ${MG_HEADER_DIR}/mg/containers/mg_slot_map.h
-    ${MG_HEADER_DIR}/mg/containers/mg_small_vector.h
-    ${MG_HEADER_DIR}/mg/core/mg_config.h
-    ${MG_HEADER_DIR}/mg/core/mg_file_loader.h
-    ${MG_HEADER_DIR}/mg/core/mg_identifier.h
-    ${MG_HEADER_DIR}/mg/core/mg_log.h
-    ${MG_HEADER_DIR}/mg/core/mg_rotation.h
-    ${MG_HEADER_DIR}/mg/core/mg_runtime_error.h
-    ${MG_HEADER_DIR}/mg/core/mg_transform.h
-    ${MG_HEADER_DIR}/mg/core/mg_window.h
-    ${MG_HEADER_DIR}/mg/core/mg_window_settings.h
-    ${MG_HEADER_DIR}/mg/ecs/mg_component.h
-    ${MG_HEADER_DIR}/mg/ecs/mg_entity.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_billboard_renderer.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_blend_modes.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_buffer_texture.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_camera.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_debug_renderer.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_font_handler.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_frustum.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_gfx_debug_group.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_gfx_device.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_gfx_object_handles.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_light.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_material.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_material_repository.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_matrix_uniform_handler.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_mesh_data.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_mesh_handle.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_mesh_renderer.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_mesh_repository.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_pipeline.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_pipeline_repository.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_post_process.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_render_command_list.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_render_target.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_texture2d.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_texture_related_types.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_texture_repository.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_ui_renderer.h
-    ${MG_HEADER_DIR}/mg/gfx/mg_uniform_buffer.h
-    ${MG_HEADER_DIR}/mg/input/mg_input.h
-    ${MG_HEADER_DIR}/mg/input/mg_joy.h
-    ${MG_HEADER_DIR}/mg/input/mg_keyboard.h
-    ${MG_HEADER_DIR}/mg/input/mg_mouse.h
-    ${MG_HEADER_DIR}/mg/mg_defs.h
-    ${MG_HEADER_DIR}/mg/mg_unicode.h
-    ${MG_HEADER_DIR}/mg/resource_cache/internal/mg_resource_entry.h
-    ${MG_HEADER_DIR}/mg/resource_cache/internal/mg_resource_entry_base.h
-    ${MG_HEADER_DIR}/mg/resource_cache/mg_base_resource.h
-    ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_access_guard.h
-    ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_cache.h
-    ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_exceptions.h
-    ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_handle.h
-    ${MG_HEADER_DIR}/mg/resource_cache/mg_resource_loading_input.h
-    ${MG_HEADER_DIR}/mg/resources/mg_file_changed_event.h
-    ${MG_HEADER_DIR}/mg/resources/mg_font_resource.h
-    ${MG_HEADER_DIR}/mg/resources/mg_mesh_resource.h
-    ${MG_HEADER_DIR}/mg/resources/mg_raw_resource.h
-    ${MG_HEADER_DIR}/mg/resources/mg_shader_resource.h
-    ${MG_HEADER_DIR}/mg/resources/mg_sound_resource.h
-    ${MG_HEADER_DIR}/mg/resources/mg_text_resource.h
-    ${MG_HEADER_DIR}/mg/resources/mg_texture_resource.h
-    ${MG_HEADER_DIR}/mg/resources/shader_parser/mg_shader_parser.h
-    ${MG_HEADER_DIR}/mg/utils/mg_angle.h
-    ${MG_HEADER_DIR}/mg/utils/mg_assert.h
-    ${MG_HEADER_DIR}/mg/utils/mg_file_io.h
-    ${MG_HEADER_DIR}/mg/utils/mg_file_time_helper.h
-    ${MG_HEADER_DIR}/mg/utils/mg_gsl.h
-    ${MG_HEADER_DIR}/mg/utils/mg_hash_combine.h
-    ${MG_HEADER_DIR}/mg/utils/mg_instance_counter.h
-    ${MG_HEADER_DIR}/mg/utils/mg_iteration_utils.h
-    ${MG_HEADER_DIR}/mg/utils/mg_macros.h
-    ${MG_HEADER_DIR}/mg/utils/mg_math_utils.h
-    ${MG_HEADER_DIR}/mg/utils/mg_observer.h
-    ${MG_HEADER_DIR}/mg/utils/mg_optional.h
-    ${MG_HEADER_DIR}/mg/utils/mg_point_normal_plane.h
-    ${MG_HEADER_DIR}/mg/utils/mg_simple_pimpl.h
-    ${MG_HEADER_DIR}/mg/utils/mg_stl_helpers.h
-    ${MG_HEADER_DIR}/mg/utils/mg_string_utils.h
-    ${MG_HEADER_DIR}/mg/utils/mg_vector_normalised.h
-)
-
 # Create mg_engine library
 add_library(mg_engine
-    ${MG_HEADERS} # Including headers in library target allows them to show up in IDE project trees.
     audio/mg_audio_context.cpp
     audio/mg_sound_buffer_handle.cpp
     audio/mg_sound_source.cpp
@@ -109,15 +18,12 @@ add_library(mg_engine
     gfx/mg_font_handler.cpp
     gfx/mg_gfx_object_handles.cpp
     gfx/mg_light_buffers.cpp
-    gfx/mg_light_buffers.h
     gfx/mg_light_grid.cpp
-    gfx/mg_light_grid.h
     gfx/mg_material.cpp
     gfx/mg_material_repository.cpp
     gfx/mg_matrix_uniform_handler.cpp
-    gfx/mg_mesh.h
     gfx/mg_render_command_list.cpp
-    gfx/mg_shader.h
+    gfx/mg_skeleton.cpp
     gfx/mg_texture_repository.cpp
     gfx/opengl/mg_billboard_renderer.cpp
     gfx/opengl/mg_buffer_texture.cpp
@@ -136,11 +42,13 @@ add_library(mg_engine
     gfx/opengl/mg_texture2d.cpp
     gfx/opengl/mg_ui_renderer.cpp
     gfx/opengl/mg_uniform_buffer.cpp
+    gfx/opengl/shader_code/mg_mesh_renderer_shader_framework.cpp
     input/mg_input.cpp
     input/mg_joy.cpp
     input/mg_keyboard.cpp
     input/mg_mouse.cpp
     mg_unicode.cpp
+    mg_bounding_volumes.cpp
     resource_cache/internal/mg_resource_entry_base.cpp
     resource_cache/mg_base_resource.cpp
     resource_cache/mg_resource_cache.cpp

@@ -11,52 +11,41 @@
 #include "mg/core/mg_runtime_error.h"
 #include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
+#include "mg/gfx/mg_joint.h"
+#include "mg/gfx/mg_mesh_data.h"
 #include "mg/resources/mg_mesh_resource.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_stl_helpers.h"
 
-#include "../mg_mesh.h"
+#include "../mg_mesh_internal.h"
 #include "mg_glad.h"
 
 #include <plf_colony.h>
 
-#include <glm/glm.hpp>
-
-#include <fmt/core.h>
-
+#include <cstddef>
 #include <numeric>
+
+using namespace std::literals;
 
 namespace Mg::gfx {
 
 namespace {
 
-MeshDataView::BoundingInfo calculate_mesh_bounding_info(span<const Vertex> vertices,
-                                                        span<const uint_vertex_index> indices)
-{
-    MG_ASSERT(!vertices.empty() && !indices.empty());
-    const auto num_indices = static_cast<float>(indices.size());
+struct MakeMeshParams {
+    // Where to put the data
+    SharedBuffer* vertex_buffer;
+    size_t vertex_buffer_data_offset;
+    SharedBuffer* index_buffer;
+    size_t index_buffer_data_offset;
+    SharedBuffer* influences_buffer;
+    size_t influences_buffer_data_offset;
 
-    auto add_position = [&](glm::vec3 vec, uint_vertex_index vert_idx) {
-        return vec + vertices[vert_idx].position;
-    };
-    const glm::vec3 centre =
-        std::accumulate(indices.begin(), indices.end(), glm::vec3{ 0.0f }, add_position) /
-        num_indices;
-
-    auto cmp_vertex = [](const Vertex& lhs, const Vertex& rhs) {
-        return glm::all(glm::lessThan(lhs.position, rhs.position));
-    };
-    const auto [min_it, max_it] = std::minmax_element(vertices.begin(), vertices.end(), cmp_vertex);
-
-    const float radius = std::max(glm::distance(centre, min_it->position),
-                                  glm::distance(centre, max_it->position));
-
-    return { centre, radius };
-}
+    // Data itself
+    Mesh::MeshDataView mesh_data;
+    BoundingSphere bounding_sphere;
+};
 
 } // namespace
-
-//--------------------------------------------------------------------------------------------------
 
 class MeshRepositoryImpl {
 public:
@@ -66,7 +55,7 @@ public:
     {
         MG_GFX_DEBUG_GROUP("destroy MeshRepository");
 
-        for (Mesh& mesh : m_mesh_data) {
+        for (MeshInternal& mesh : m_mesh_data) {
             _clear_mesh(mesh);
         }
     }
@@ -74,9 +63,9 @@ public:
     MG_MAKE_NON_COPYABLE(MeshRepositoryImpl);
     MG_MAKE_NON_MOVABLE(MeshRepositoryImpl);
 
-    MeshHandle create(Identifier name, const MeshDataView& data);
+    MeshHandle create(Identifier name, const Mesh::MeshDataView& data);
 
-    bool update(Identifier name, const MeshDataView& new_data);
+    bool update(Identifier name, const Mesh::MeshDataView& new_data);
 
     void destroy(MeshHandle handle);
 
@@ -95,39 +84,30 @@ private:
     SharedBuffer* _make_vertex_buffer(size_t size);
     SharedBuffer* _make_index_buffer(size_t size);
 
-    struct MakeMeshParams {
-        // Where to put the data
-        SharedBuffer* vertex_buffer;
-        size_t vbo_data_offset;
-        SharedBuffer* index_buffer;
-        size_t ibo_data_offset;
-
-        // Data itself
-        MeshDataView mesh_data;
-        glm::vec3 centre;
-        float radius;
-    };
-
-    MakeMeshParams _mesh_params_from_mesh_data(const MeshDataView& data)
+    MakeMeshParams _mesh_params_from_mesh_data(const Mesh::MeshDataView& data)
     {
         MG_GFX_DEBUG_GROUP("MeshRepositoryImpl::_make_mesh_from_mesh_data");
 
-        const auto [centre, radius] =
-            data.bounding_info.value_or(calculate_mesh_bounding_info(data.vertices, data.indices));
+        const bool has_influences = !data.influences.empty();
 
         MakeMeshParams params = {};
+
         params.vertex_buffer = _make_vertex_buffer(data.vertices.size_bytes());
         params.index_buffer = _make_index_buffer(data.indices.size_bytes());
-        params.vbo_data_offset = 0;
-        params.ibo_data_offset = 0;
-        params.centre = centre;
-        params.radius = radius;
+        params.influences_buffer = has_influences
+                                       ? _make_vertex_buffer(data.influences.size_bytes())
+                                       : nullptr;
+        params.vertex_buffer_data_offset = 0;
+        params.index_buffer_data_offset = 0;
+        params.influences_buffer_data_offset = 0;
         params.mesh_data = data;
+        params.bounding_sphere =
+            data.bounding_sphere.value_or(calculate_mesh_bounding_sphere(data.vertices));
 
         return params;
     }
 
-    void _make_mesh_at(Mesh& mesh, Identifier name, const MakeMeshParams& params);
+    void _make_mesh_at(MeshInternal& mesh, Identifier name, const MakeMeshParams& params);
 
     MeshHandle _make_mesh(Identifier name, const MakeMeshParams& params)
     {
@@ -135,7 +115,7 @@ private:
 
         const auto it = m_mesh_data.emplace();
 
-        Mesh& mesh = *it;
+        MeshInternal& mesh = *it;
 
         const MeshHandle handle = _ptr_to_handle(&mesh);
         const auto [map_it, inserted] = m_mesh_map.insert({ name, handle });
@@ -145,30 +125,28 @@ private:
             return handle;
         }
 
-        const auto fmt_string = "Creating mesh {}: a mesh by that identifier already exists.";
-        const auto error_msg = fmt::format(fmt_string, name.str_view());
-        log.error(error_msg);
+        log.error("Creating mesh {}: a mesh by that identifier already exists.", name.str_view());
         throw RuntimeError{};
     }
 
-    static MeshHandle _ptr_to_handle(Mesh* ptr)
+    static MeshHandle _ptr_to_handle(MeshInternal* ptr)
     {
         uintptr_t handle_value;
         std::memcpy(&handle_value, &ptr, sizeof(uintptr_t));
         return MeshHandle{ handle_value };
     }
 
-    void _clear_mesh(Mesh& mesh);
+    void _clear_mesh(MeshInternal& mesh);
 
     plf::colony<SharedBuffer> m_vertex_buffers;
     plf::colony<SharedBuffer> m_index_buffers;
-    plf::colony<Mesh> m_mesh_data;
+    plf::colony<MeshInternal> m_mesh_data;
 
     // Used for looking up a mesh by identifier.
     FlatMap<Identifier, MeshHandle, Identifier::HashCompare> m_mesh_map;
 };
 
-MeshHandle MeshRepositoryImpl::create(Identifier name, const MeshDataView& mesh_data)
+MeshHandle MeshRepositoryImpl::create(Identifier name, const Mesh::MeshDataView& mesh_data)
 {
     MG_GFX_DEBUG_GROUP("MeshRepositoryImpl::create");
 
@@ -177,17 +155,16 @@ MeshHandle MeshRepositoryImpl::create(Identifier name, const MeshDataView& mesh_
     const bool has_indices = !mesh_data.indices.empty();
 
     if (!has_vertices || !has_indices) {
-        const std::string problem = !has_vertices ? "no vertex data" : "no index data";
-        const std::string msg =
-            fmt::format("MeshRepository: cannot create mesh '{}': {}.", name.str_view(), problem);
-        throw std::runtime_error(msg);
+        const auto problem = (!has_vertices) ? "no vertex data"sv : "no index data"sv;
+        log.error("MeshRepository: cannot create mesh '{}': {}.", name.str_view(), problem);
+        throw RuntimeError{};
     }
 
     const MakeMeshParams params = _mesh_params_from_mesh_data(mesh_data);
     return _make_mesh(name, params);
 }
 
-bool MeshRepositoryImpl::update(Identifier name, const MeshDataView& data)
+bool MeshRepositoryImpl::update(Identifier name, const Mesh::MeshDataView& data)
 {
     MG_GFX_DEBUG_GROUP("MeshRepositoryImpl::update");
 
@@ -208,7 +185,7 @@ void MeshRepositoryImpl::destroy(MeshHandle handle)
 {
     MG_GFX_DEBUG_GROUP("MeshRepositoryImpl::destroy");
 
-    Mesh* p_mesh = &get_mesh(handle);
+    MeshInternal* p_mesh = &get_mesh(handle);
     const Identifier name = p_mesh->name;
 
     const auto it = m_mesh_data.get_iterator_from_pointer(p_mesh);
@@ -221,15 +198,16 @@ void MeshRepositoryImpl::destroy(MeshHandle handle)
 
 SharedBuffer* MeshRepositoryImpl::_make_vertex_buffer(size_t size)
 {
+    MG_ASSERT(size > 0);
     MG_GFX_DEBUG_GROUP("MeshRepositoryImpl::_make_vertex_buffer");
 
-    GLuint vbo_id = 0;
-    glGenBuffers(1, &vbo_id);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
+    GLuint vertex_buffer_id = 0;
+    glGenBuffers(1, &vertex_buffer_id);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
     glBufferData(GL_ARRAY_BUFFER, narrow<GLsizeiptr>(size), nullptr, GL_STATIC_DRAW);
 
     const auto it = m_vertex_buffers.emplace();
-    it->handle.set(vbo_id);
+    it->handle.set(vertex_buffer_id);
     return &*it;
 }
 
@@ -237,170 +215,211 @@ SharedBuffer* MeshRepositoryImpl::_make_index_buffer(size_t size)
 {
     MG_GFX_DEBUG_GROUP("MeshRepositoryImpl::_make_index_buffer");
 
-    GLuint ibo_id = 0;
-    glGenBuffers(1, &ibo_id);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_id);
+    GLuint index_buffer_id = 0;
+    glGenBuffers(1, &index_buffer_id);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, narrow<GLsizeiptr>(size), nullptr, GL_STATIC_DRAW);
 
     const auto it = m_index_buffers.emplace();
-    it->handle.set(ibo_id);
+    it->handle.set(index_buffer_id);
     return &*it;
 }
 
-// Create mesh from MeshResouce, storing data in the given vertex and index buffers
-void MeshRepositoryImpl::_make_mesh_at(Mesh& mesh, Identifier name, const MakeMeshParams& params)
+namespace {
+
+void setup_vertex_attribute(const uint32_t attribute_index,
+                            const VertexAttribute& attribute,
+                            const int32_t stride,
+                            const size_t offset)
+{
+    const bool is_normalised = attribute.int_value_meaning == IntValueMeaning::Normalise;
+
+    glVertexAttribPointer(attribute_index,
+                          narrow<GLint>(attribute.num_elements),
+                          static_cast<GLuint>(attribute.type),
+                          static_cast<GLboolean>(is_normalised),
+                          stride,
+                          reinterpret_cast<GLvoid*>(offset)); // NOLINT
+
+    glEnableVertexAttribArray(attribute_index);
+}
+
+// Set up vertex attributes (how OpenGL is to interpret the vertex data).
+void setup_opengl_mesh_vertex_attributes()
+{
+    const uint32_t stride = sizeof(Mesh::Vertex);
+    uintptr_t offset = 0;
+    uint32_t i = 0;
+
+    for (const VertexAttribute& vertex_attribute : Mesh::mesh_vertex_attributes) {
+        const uint32_t attribute_index = i++;
+        setup_vertex_attribute(attribute_index, vertex_attribute, stride, offset);
+        offset += vertex_attribute.size;
+    }
+}
+
+void setup_opengl_influences_attributes()
+{
+    const uint32_t stride = sizeof(Mesh::Influences);
+    uintptr_t offset = 0;
+    uint32_t i = Mesh::mesh_vertex_attributes.size();
+
+    for (const VertexAttribute& vertex_attribute : Mesh::influences_attributes) {
+        const uint32_t attribute_index = i++;
+        setup_vertex_attribute(attribute_index, vertex_attribute, stride, offset);
+        offset += vertex_attribute.size;
+    }
+}
+
+} // namespace
+
+// Create mesh GPU buffers inside `mesh` from the data referenced by `params`.
+void MeshRepositoryImpl::_make_mesh_at(MeshInternal& mesh,
+                                       Identifier name,
+                                       const MakeMeshParams& params)
 {
     MG_GFX_DEBUG_GROUP("MeshRepositoryImpl::_make_mesh_at");
+    const bool has_skeletal_animation_data = !params.mesh_data.influences.empty();
 
     _clear_mesh(mesh);
 
     mesh.name = name;
-    mesh.centre = params.centre;
-    mesh.radius = params.radius;
+    mesh.bounding_sphere = params.bounding_sphere;
 
-    for (const SubMesh& sm : params.mesh_data.sub_meshes) {
+    for (const Mesh::Submesh& sm : params.mesh_data.submeshes) {
         mesh.submeshes.push_back({ sm.index_range.begin, sm.index_range.amount });
     }
 
-    GLuint vao_id = 0;
-    glGenVertexArrays(1, &vao_id);
-    mesh.vertex_array.set(vao_id);
+    GLuint vertex_array_id = 0;
+    glGenVertexArrays(1, &vertex_array_id);
+    mesh.vertex_array.set(vertex_array_id);
 
-    glBindVertexArray(vao_id);
+    glBindVertexArray(vertex_array_id);
 
     { // Upload vertex data to GPU
         mesh.vertex_buffer = params.vertex_buffer;
         ++mesh.vertex_buffer->num_users;
 
-        const auto vbo_data = params.mesh_data.vertices.as_bytes();
-        const auto vbo_id = narrow<GLuint>(mesh.vertex_buffer->handle.get());
-        glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
+        const auto vertex_data = params.mesh_data.vertices.as_bytes();
+        const auto vertex_buffer_id = narrow<GLuint>(mesh.vertex_buffer->handle.get());
+
+        glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
         glBufferSubData(GL_ARRAY_BUFFER,
-                        narrow<GLintptr>(params.vbo_data_offset),
-                        narrow<GLsizeiptr>(vbo_data.size()),
-                        vbo_data.data());
+                        narrow<GLintptr>(params.vertex_buffer_data_offset),
+                        narrow<GLsizeiptr>(vertex_data.size()),
+                        vertex_data.data());
+
+        setup_opengl_mesh_vertex_attributes();
     }
 
     { // Upload index data to GPU
         mesh.index_buffer = params.index_buffer;
         ++mesh.index_buffer->num_users;
 
-        const auto ibo_data = params.mesh_data.indices.as_bytes();
-        const auto ibo_id = narrow<GLuint>(mesh.index_buffer->handle.get());
+        const auto index_buffer_data = params.mesh_data.indices.as_bytes();
+        const auto index_buffer_id = narrow<GLuint>(mesh.index_buffer->handle.get());
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_id);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER,
-                        narrow<GLintptr>(params.ibo_data_offset),
-                        narrow<GLsizeiptr>(ibo_data.size()),
-                        ibo_data.data());
+                        narrow<GLintptr>(params.index_buffer_data_offset),
+                        narrow<GLsizeiptr>(index_buffer_data.size()),
+                        index_buffer_data.data());
     }
 
-    // Set up vertex attributes (how OpenGL is to interpret the vertex data).
-    uint32_t attrib_i = 0;
-    uintptr_t offset = 0;
-    uint32_t stride = 0;
 
-    for (const VertexAttribute& a : g_attrib_array) {
-        stride += a.size;
-    }
+    // For meshes with skeletal animation, we must also upload the joint influences for each vertex.
+    if (has_skeletal_animation_data) {
+        mesh.influences_buffer = params.influences_buffer;
+        ++mesh.influences_buffer->num_users;
 
-    for (const VertexAttribute& a : g_attrib_array) {
-        const GLvoid* gl_offset{};
-        std::memcpy(&gl_offset, &offset, sizeof(offset));
-        glVertexAttribPointer(attrib_i,
-                              narrow<GLint>(a.num),
-                              static_cast<uint32_t>(a.type),
-                              static_cast<GLboolean>(a.normalised),
-                              narrow<int32_t>(stride),
-                              gl_offset); // NOLINT
+        const auto influences_data = params.mesh_data.influences.as_bytes();
+        const auto influences_buffer_id = narrow<GLuint>(mesh.influences_buffer->handle.get());
 
-        glEnableVertexAttribArray(attrib_i);
+        glBindBuffer(GL_ARRAY_BUFFER, influences_buffer_id);
+        glBufferSubData(GL_ARRAY_BUFFER,
+                        narrow<GLintptr>(params.influences_buffer_data_offset),
+                        narrow<GLsizeiptr>(influences_data.size()),
+                        influences_data.data());
 
-        offset += a.size;
-        ++attrib_i;
+        setup_opengl_influences_attributes();
     }
 
     glBindVertexArray(0);
 }
 
-void MeshRepositoryImpl::_clear_mesh(Mesh& mesh)
+void MeshRepositoryImpl::_clear_mesh(MeshInternal& mesh)
 {
     MG_GFX_DEBUG_GROUP("MeshRepositoryImpl::_clear_mesh");
 
-    const auto vao_id = narrow<GLuint>(mesh.vertex_array.get());
+    const auto vertex_array_id = narrow<GLuint>(mesh.vertex_array.get());
     mesh.vertex_array.set(0);
 
-    if (vao_id == 0) {
+    if (vertex_array_id == 0) {
         return;
     }
 
-    const auto* meshname [[maybe_unused]] = mesh.name.c_str();
-
-    MG_LOG_DEBUG(fmt::format("Deleting Mesh '{}'", vao_id, meshname));
-    glDeleteVertexArrays(1, &vao_id);
+    MG_LOG_DEBUG("Unloading mesh '{}' (VAO {})", mesh.name.str_view(), vertex_array_id);
+    glDeleteVertexArrays(1, &vertex_array_id);
 
     MG_ASSERT(mesh.vertex_buffer && mesh.index_buffer);
 
-    if (--mesh.vertex_buffer->num_users == 0) {
-        const auto vbo_id = narrow<GLuint>(mesh.vertex_buffer->handle.get());
-        glDeleteBuffers(1, &vbo_id);
-        const auto vbo_it = m_vertex_buffers.get_iterator_from_pointer(mesh.vertex_buffer);
-        m_vertex_buffers.erase(vbo_it);
-    }
+    // Un-reference shared buffer and delete, if this was the only referer.
+    auto unref_buffer = [](SharedBuffer* buffer, auto& buffer_container) {
+        if (buffer && --buffer->num_users == 0) {
+            const auto buffer_id = narrow<GLuint>(buffer->handle.get());
+            glDeleteBuffers(1, &buffer_id);
+            const auto it = buffer_container.get_iterator_from_pointer(buffer);
+            buffer_container.erase(it);
+        }
+    };
 
-    if (--mesh.index_buffer->num_users == 0) {
-        const auto ibo_id = narrow<GLuint>(mesh.index_buffer->handle.get());
-        glDeleteBuffers(1, &ibo_id);
-        const auto ibo_it = m_index_buffers.get_iterator_from_pointer(mesh.index_buffer);
-        m_index_buffers.erase(ibo_it);
-    }
+    unref_buffer(mesh.vertex_buffer, m_vertex_buffers);
+    unref_buffer(mesh.index_buffer, m_index_buffers);
+    unref_buffer(mesh.influences_buffer, m_vertex_buffers);
 }
 
 class MeshBufferImpl {
 public:
     MeshBufferImpl(MeshRepositoryImpl& mesh_repository,
                    VertexBufferSize vertex_buffer_size,
-                   IndexBufferSize index_buffer_size)
+                   IndexBufferSize index_buffer_size,
+                   InfluencesBufferSize influences_buffer_size)
         : m_mesh_repository(&mesh_repository)
-        , m_vbo_size(static_cast<size_t>(vertex_buffer_size))
-        , m_ibo_size(static_cast<size_t>(index_buffer_size))
-        , m_vertex_buffer(mesh_repository._make_vertex_buffer(m_vbo_size))
-        , m_index_buffer(mesh_repository._make_index_buffer(m_ibo_size))
-    {}
+        , m_vertex_buffer_size(static_cast<size_t>(vertex_buffer_size))
+        , m_index_buffer_size(static_cast<size_t>(index_buffer_size))
+        , m_influences_buffer_size(static_cast<size_t>(influences_buffer_size))
+        , m_vertex_buffer(mesh_repository._make_vertex_buffer(m_vertex_buffer_size))
+        , m_index_buffer(mesh_repository._make_index_buffer(m_index_buffer_size))
+        , m_influences_buffer(m_influences_buffer_size > 0
+                                  ? mesh_repository._make_vertex_buffer(m_influences_buffer_size)
+                                  : nullptr)
+    {
+        MG_ASSERT(m_vertex_buffer_size > 0);
+        MG_ASSERT(m_index_buffer_size > 0);
+    }
 
-    MeshBuffer::CreateReturn create(const MeshResource& resource)
+    MeshBuffer::CreateReturn create_in_buffer(const Mesh::MeshDataView& data, Identifier name)
     {
         MG_GFX_DEBUG_GROUP("MeshBufferImpl::create");
 
-        if (resource.vertices().size_bytes() + m_vbo_offset > m_vbo_size) {
+        if (data.vertices.size_bytes() + m_vertex_buffer_offset > m_vertex_buffer_size) {
             return { nullopt, MeshBuffer::ReturnCode::Vertex_buffer_full };
         }
 
-        if (resource.indices().size_bytes() + m_ibo_offset > m_ibo_size) {
+        if (data.indices.size_bytes() + m_index_buffer_offset > m_index_buffer_size) {
             return { nullopt, MeshBuffer::ReturnCode::Index_buffer_full };
         }
 
-        const MeshDataView data = resource.data_view();
+        if (data.influences.size_bytes() + m_influences_buffer_offset > m_influences_buffer_size) {
+            return { nullopt, MeshBuffer::ReturnCode::Influences_buffer_full };
+        }
 
-        const auto [centre, radius] =
-            data.bounding_info.value_or(calculate_mesh_bounding_info(data.vertices, data.indices));
+        MakeMeshParams params = m_mesh_repository->_mesh_params_from_mesh_data(data);
+        const MeshHandle mesh_handle = m_mesh_repository->_make_mesh(name, params);
 
-        MeshRepositoryImpl::MakeMeshParams params = {};
-        params.vertex_buffer = m_vertex_buffer;
-        params.index_buffer = m_index_buffer;
-        params.vbo_data_offset = 0;
-        params.ibo_data_offset = 0;
-        params.centre = centre;
-        params.radius = radius;
-        params.mesh_data = data;
-
-        const MeshHandle mesh_handle =
-            m_mesh_repository->_make_mesh(resource.resource_id(),
-                                          m_mesh_repository->_mesh_params_from_mesh_data(
-                                              resource.data_view()));
-
-        m_vbo_offset += resource.vertices().size_bytes();
-        m_ibo_offset += resource.indices().size_bytes();
+        m_vertex_buffer_offset += data.vertices.size_bytes();
+        m_index_buffer_offset += data.indices.size_bytes();
+        m_influences_buffer_offset += data.influences.size_bytes();
 
         return { mesh_handle, MeshBuffer::ReturnCode::Success };
     }
@@ -408,23 +427,32 @@ public:
 private:
     MeshRepositoryImpl* m_mesh_repository = nullptr;
 
-    size_t m_vbo_offset = 0; // Current offset into vertex buffer -- where to put next mesh's data
-    size_t m_ibo_offset = 0; // Current offset into index buffer -- where to put next mesh's data
+    // Data offsets; where to put next mesh's data.
+    size_t m_vertex_buffer_offset = 0;     // Current offset into vertex buffer
+    size_t m_index_buffer_offset = 0;      // Current offset into index buffer
+    size_t m_influences_buffer_offset = 0; // Current offset into influences buffer
 
-    size_t m_vbo_size = 0;
-    size_t m_ibo_size = 0;
+    size_t m_vertex_buffer_size = 0;
+    size_t m_index_buffer_size = 0;
+    size_t m_influences_buffer_size = 0;
 
     SharedBuffer* m_vertex_buffer = nullptr;
     SharedBuffer* m_index_buffer = nullptr;
+    SharedBuffer* m_influences_buffer = nullptr;
 };
 
 //--------------------------------------------------------------------------------------------------
 
 MeshBuffer::~MeshBuffer() = default;
 
-MeshBuffer::CreateReturn MeshBuffer::create(const MeshResource& resource)
+MeshBuffer::CreateReturn MeshBuffer::create_in_buffer(const MeshResource& resource)
 {
-    return impl().create(resource);
+    return impl().create_in_buffer(resource.data_view(), resource.resource_id());
+}
+MeshBuffer::CreateReturn MeshBuffer::create_in_buffer(const Mesh::MeshDataView& mesh_data,
+                                                      Identifier name)
+{
+    return impl().create_in_buffer(mesh_data, name);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -438,7 +466,7 @@ MeshHandle MeshRepository::create(const MeshResource& mesh_res)
     return impl().create(mesh_res.resource_id(), mesh_res.data_view());
 }
 
-MeshHandle MeshRepository::create(const MeshDataView& mesh_data, Identifier name)
+MeshHandle MeshRepository::create(const Mesh::MeshDataView& mesh_data, Identifier name)
 {
     MG_GFX_DEBUG_GROUP("MeshRepository::create")
     return impl().create(name, mesh_data);
@@ -462,10 +490,11 @@ bool MeshRepository::update(const MeshResource& mesh_res)
 }
 
 MeshBuffer MeshRepository::new_mesh_buffer(VertexBufferSize vertex_buffer_size,
-                                           IndexBufferSize index_buffer_size)
+                                           IndexBufferSize index_buffer_size,
+                                           InfluencesBufferSize influences_buffer_size)
 {
     MG_GFX_DEBUG_GROUP("MeshRepository::new_mesh_buffer")
-    return MeshBuffer{ impl(), vertex_buffer_size, index_buffer_size };
+    return MeshBuffer{ impl(), vertex_buffer_size, index_buffer_size, influences_buffer_size };
 }
 
 } // namespace Mg::gfx

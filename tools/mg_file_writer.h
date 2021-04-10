@@ -10,8 +10,7 @@
 
 #pragma once
 
-#include "mg_file_data_range.h"
-
+#include <mg/mg_file_data_range.h>
 #include <mg/utils/mg_gsl.h>
 
 #include <filesystem>

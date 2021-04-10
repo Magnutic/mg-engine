@@ -39,14 +39,24 @@ public:
     MG_MAKE_DEFAULT_MOVABLE(MeshBuffer);
     ~MeshBuffer();
 
-    enum class ReturnCode { Success, Vertex_buffer_full, Index_buffer_full };
+    enum class ReturnCode {
+        Success,
+        Vertex_buffer_full,
+        Index_buffer_full,
+        Influences_buffer_full
+    };
 
     struct CreateReturn {
         Opt<MeshHandle> opt_mesh;
         ReturnCode return_code;
     };
 
-    CreateReturn create(const MeshResource& resource);
+    /** Try to create a new mesh in this buffer using the given mesh resource. */
+    CreateReturn create_in_buffer(const MeshResource& resource);
+
+    /** Try to create a new mesh in this buffer using the given mesh data. */
+    CreateReturn create_in_buffer(const Mesh::MeshDataView& mesh_data, Identifier name);
+
 
 private:
     friend class MeshRepository;
@@ -67,6 +77,12 @@ enum class VertexBufferSize : size_t;
  */
 enum class IndexBufferSize : size_t;
 
+/** Strongly typed size type for vertex influences buffers, specified in number of bytes.
+ * Can be cast to and from size_t using static_cast.
+ * Can also be constructed directly, for example: `InfluencesBufferSize{ 512 }`
+ */
+enum class InfluencesBufferSize : size_t;
+
 class MeshRepositoryImpl;
 
 /** Creates, stores, and updates meshes. */
@@ -82,7 +98,7 @@ public:
     MeshHandle create(const MeshResource& mesh_res);
 
     /** Create a new mesh using the given mesh data. */
-    MeshHandle create(const MeshDataView& mesh_data, Identifier name);
+    MeshHandle create(const Mesh::MeshDataView& mesh_data, Identifier name);
 
     Opt<MeshHandle> get(Identifier name) const;
 
@@ -102,7 +118,9 @@ public:
      * underlying GPU storage buffers.
      */
     MeshBuffer new_mesh_buffer(VertexBufferSize vertex_buffer_size,
-                               IndexBufferSize index_buffer_size);
+                               IndexBufferSize index_buffer_size,
+                               InfluencesBufferSize influences_buffer_size = InfluencesBufferSize{
+                                   0 });
 };
 
 } // namespace Mg::gfx

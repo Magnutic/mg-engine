@@ -11,48 +11,50 @@
 #pragma once
 
 #include "mg/containers/mg_array.h"
-#include "mg/gfx/mg_mesh_data.h"
+#include "mg/mg_bounding_volumes.h"
 #include "mg/resource_cache/mg_base_resource.h"
 #include "mg/utils/mg_gsl.h"
 
-#include <glm/vec3.hpp>
+#include <memory>
+
+namespace Mg::gfx::Mesh {
+struct Vertex;
+struct JointData;
+struct Submesh;
+struct Joint;
+struct Influences;
+struct MeshDataView;
+using Index = uint16_t;
+} // namespace Mg::gfx::Mesh
 
 namespace Mg {
 
 /** Mesh data resource. */
 class MeshResource final : public BaseResource {
 public:
-    struct Data {
-        Array<gfx::SubMesh> sub_meshes;
-        Array<gfx::Vertex> vertices;
-        Array<gfx::uint_vertex_index> indices;
+    struct Data;
 
-        glm::vec3 centre{};
-        float radius = 0.0f;
-    };
+    MeshResource(Identifier id);
+    ~MeshResource() override;
 
-    using BaseResource::BaseResource;
+    MG_MAKE_DEFAULT_MOVABLE(MeshResource);
+    MG_MAKE_NON_COPYABLE(MeshResource);
 
-    gfx::MeshDataView data_view() const noexcept
-    {
-        return { vertices(), indices(), sub_meshes(), { { centre(), radius() } } };
-    }
+    gfx::Mesh::MeshDataView data_view() const noexcept;
 
-    span<const gfx::SubMesh> sub_meshes() const noexcept { return span{ m_data.sub_meshes }; }
-    span<const gfx::Vertex> vertices() const noexcept { return span{ m_data.vertices }; }
-    span<const gfx::uint_vertex_index> indices() const noexcept { return span{ m_data.indices }; }
+    span<const gfx::Mesh::Vertex> vertices() const noexcept;
+    span<const gfx::Mesh::Index> indices() const noexcept;
+    span<const gfx::Mesh::Submesh> submeshes() const noexcept;
+    span<const gfx::Mesh::Influences> influences() const noexcept;
+    span<const gfx::Mesh::Joint> joints() const noexcept;
 
-    /** Get model-space centre coordinate (mean vertex coordinate). */
-    glm::vec3 centre() const noexcept { return m_data.centre; }
+    bool has_joints() const noexcept { return !joints().empty(); }
 
-    /** Get mesh radius (distance from centre to most distant vertex). */
-    float radius() const noexcept { return m_data.radius; }
+    /** Get model-space bounding sphere. */
+    BoundingSphere bounding_sphere() const noexcept;
 
     /** Returns whether mesh data is valid. Useful for debug mode asserts. */
     bool validate() const;
-
-    /** Calculate bounds of this mesh, i.e. centre and radius. */
-    void calculate_bounds() noexcept;
 
     bool should_reload_on_file_change() const noexcept override { return true; }
 
@@ -62,7 +64,9 @@ protected:
     LoadResourceResult load_resource_impl(ResourceLoadingInput& input) override;
 
 private:
-    Data m_data;
+    // Calculate bounds of this mesh, i.e. centre and radius.
+    void calculate_bounds() noexcept;
+    std::unique_ptr<Data> m_data;
 };
 
 } // namespace Mg

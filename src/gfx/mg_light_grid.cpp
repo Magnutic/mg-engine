@@ -25,11 +25,11 @@ void LightGrid::calculate_delim_planes(glm::mat4 P) noexcept
     }
     m_prev_projection = P;
 
-    const auto scale = glm::vec2{ MG_LIGHT_GRID_WIDTH, MG_LIGHT_GRID_HEIGHT } / 2.0f;
+    const auto scale = glm::vec2{ defs::light_grid_width, defs::light_grid_height } / 2.0f;
 
     // Create delimiter plane for each horizontal/vertical step by creating the frustum projection
     // matrix for that tile column/row, and then extracting frustum planes.
-    for (size_t i = 0; i < MG_LIGHT_GRID_WIDTH + 1; ++i) {
+    for (size_t i = 0; i < defs::light_grid_width + 1; ++i) {
         const float tile_bias = -scale.x + float(i) - 1.0f;
 
         // Frustum projection matrix columns
@@ -41,7 +41,7 @@ void LightGrid::calculate_delim_planes(glm::mat4 P) noexcept
         m_delim_plane_vert[i] = DelimPlane{ left.x, left.z };
     }
 
-    for (size_t u = 0; u < MG_LIGHT_GRID_HEIGHT + 1; ++u) {
+    for (size_t u = 0; u < defs::light_grid_height + 1; ++u) {
         const float tile_bias = -scale.y + float(u) - 1.0f;
 
         // Frustum projection matrix columns
@@ -67,7 +67,7 @@ size_t LightGrid::extents(const glm::vec3& pos_view,
     const float depth = pos_view.z;
 
     size_t min = 0;
-    size_t max = horizontal ? MG_LIGHT_GRID_HEIGHT : MG_LIGHT_GRID_WIDTH;
+    size_t max = horizontal ? defs::light_grid_height : defs::light_grid_width;
 
     if (signed_sqr_distance(planes[min], offset, depth) < cmp_sign * radius_sqr) {
         return 0;

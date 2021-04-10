@@ -12,7 +12,7 @@
 #include "mg/gfx/mg_frustum.h"
 #include "mg/utils/mg_stl_helpers.h"
 
-#include "mg_mesh.h"
+#include "mg_mesh_internal.h"
 
 #include <fmt/core.h>
 
@@ -45,16 +45,15 @@ void RenderCommandProducer::add_mesh(MeshHandle mesh_handle,
                                      const Transform& transform,
                                      span<const MaterialBinding> material_bindings)
 {
-    const Mesh& mesh = get_mesh(mesh_handle);
+    const MeshInternal& mesh = get_mesh(mesh_handle);
 
     for (size_t i = 0; i < mesh.submeshes.size(); ++i) {
         const auto* material = material_for_submesh(material_bindings, i);
 
         if (material == nullptr) {
-            auto msg = fmt::format("No material specified for mesh '{}', submesh {}. Skipping.",
-                                   mesh.name.c_str(),
-                                   i);
-            log.warning(msg);
+            log.warning("No material specified for mesh '{}', submesh {}. Skipping.",
+                        mesh.name.str_view(),
+                        i);
             continue;
         }
 
@@ -64,13 +63,26 @@ void RenderCommandProducer::add_mesh(MeshHandle mesh_handle,
             RenderCommand& command = m_render_commands_unsorted.emplace_back();
 
             command.vertex_array = mesh.vertex_array;
-            command.centre = mesh.centre;
+            command.bounding_sphere = mesh.bounding_sphere;
             command.begin = mesh.submeshes[i].begin;
             command.amount = mesh.submeshes[i].amount;
             command.material = material;
-            command.radius = mesh.radius;
         }
     }
+}
+
+void RenderCommandProducer::add_skinned_mesh(MeshHandle mesh_handle,
+                                             const Transform& transform,
+                                             span<const MaterialBinding> material_bindings,
+                                             span<const glm::mat4> skinning_matrices)
+{
+    add_mesh(mesh_handle, transform, material_bindings);
+    RenderCommand& command = m_render_commands_unsorted.back();
+    command.skinning_matrices_begin = m_skinning_matrices.size();
+    command.num_skinning_matrices = skinning_matrices.size();
+    std::copy(skinning_matrices.begin(),
+              skinning_matrices.end(),
+              std::back_inserter(m_skinning_matrices));
 }
 
 void RenderCommandProducer::clear() noexcept
@@ -81,6 +93,7 @@ void RenderCommandProducer::clear() noexcept
     m_commands.m_mvp_transform_matrices.clear();
     m_render_commands_unsorted.clear();
     m_m_transform_matrices_unsorted.clear();
+    m_skinning_matrices.clear();
 }
 
 namespace {
@@ -98,9 +111,9 @@ bool cmp_draw_call(RenderCommandProducer::SortKey lhs, RenderCommandProducer::So
     return invert ? (lhs_int > rhs_int) : (rhs_int < lhs_int);
 }
 
-bool in_view(const glm::mat4& MVP, glm::vec3 centre, float radius)
+bool in_view(const glm::mat4& MVP, const BoundingSphere& bounding_sphere)
 {
-    return !frustum_cull(MVP, centre, radius);
+    return !frustum_cull(MVP, bounding_sphere.centre, bounding_sphere.radius);
 }
 
 uint32_t view_depth_in_cm(const ICamera& camera, glm::vec3 pos) noexcept
@@ -152,6 +165,9 @@ const RenderCommandList& RenderCommandProducer::finalise(const ICamera& camera, 
     m_commands.m_m_transform_matrices.reserve(size());
     m_commands.m_mvp_transform_matrices.reserve(size());
 
+    // TODO temp inefficient
+    m_commands.m_skinning_matrices = m_skinning_matrices;
+
     const glm::mat4 VP = camera.view_proj_matrix();
 
     for (const SortKey& key : m_keys) {
@@ -159,7 +175,7 @@ const RenderCommandList& RenderCommandProducer::finalise(const ICamera& camera, 
         const glm::mat4& M = m_m_transform_matrices_unsorted[key.index];
         const glm::mat4 MVP = VP * M;
 
-        if (in_view(MVP, command.centre, command.radius)) {
+        if (in_view(MVP, command.bounding_sphere)) {
             m_commands.m_render_commands.emplace_back(m_render_commands_unsorted[key.index]);
             m_commands.m_m_transform_matrices.emplace_back(M);
             m_commands.m_mvp_transform_matrices.emplace_back(MVP);

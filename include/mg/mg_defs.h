@@ -48,50 +48,35 @@ constexpr std::size_t k_max_options_per_material = 30;
 /** Size of storage for material parameter values. */
 constexpr std::size_t k_material_parameters_buffer_size = 128;
 
+//--------------------------------------------------------------------------------------------------
 // Light cluster grid configuration. The renderer divides the view frustum into a grid, each element
 // of which holds a list of lights that intersect it. This allows faster light calculation.
-// These are preprocessor defines so that they can be stringified and included in string literals
-// (for shader code).
 // See mg_light_grid.h and mg_light_buffers.h
 
-#ifndef MG_MAX_LIGHTS_PER_CLUSTER
 /** Maximum number of lights that may simultaneously affect a cluster. If more lights than this
  * number overlap a cluster, there will be artefacts. It is, however, best to keep this number
  * relatively small, to avoid growing data requirements.
  */
-#    define MG_MAX_LIGHTS_PER_CLUSTER 128
-#endif
+constexpr std::size_t max_lights_per_cluster = 128;
 
-#ifndef MG_MAX_NUM_LIGHTS
 /** Maximum number of lights that may be rendered at a time. */
-#    define MG_MAX_NUM_LIGHTS 512
-#endif
+constexpr std::size_t max_num_lights = 512;
 
-#ifndef MG_LIGHT_GRID_WIDTH
 /** Width of light cluster grid. */
-#    define MG_LIGHT_GRID_WIDTH 16
-#endif
+constexpr std::size_t light_grid_width = 16;
 
-#ifndef MG_LIGHT_GRID_HEIGHT
 /** Height of light cluster grid. */
-#    define MG_LIGHT_GRID_HEIGHT 8
-#endif
+constexpr std::size_t light_grid_height = 8;
 
-#ifndef MG_LIGHT_GRID_DEPTH
 /** Depth of light cluster grid. */
-#    define MG_LIGHT_GRID_DEPTH 24
-#endif
+constexpr std::size_t light_grid_depth = 24;
 
-#ifndef MG_LIGHT_GRID_FAR_PLANE
 /** Depth at which the light grid ends. Lights beyond this will be inside the final grid slice. */
-#    define MG_LIGHT_GRID_FAR_PLANE 500
-#endif
+constexpr std::size_t light_grid_far_plane = 500;
 
-#ifndef MG_LIGHT_GRID_DEPTH_BIAS
 /** Bias in depth slice calculation, used to avoid too many thin slices near the camera. */
-#    define MG_LIGHT_GRID_DEPTH_BIAS -3.5f
-#endif
+constexpr float light_grid_depth_bias = -3.5f;
 
-#define MG_LIGHT_GRID_SIZE (MG_LIGHT_GRID_WIDTH * MG_LIGHT_GRID_HEIGHT * MG_LIGHT_GRID_DEPTH)
+constexpr std::size_t light_grid_size = light_grid_width * light_grid_height * light_grid_depth;
 
 } // namespace Mg::defs

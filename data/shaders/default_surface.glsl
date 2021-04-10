@@ -19,22 +19,22 @@ const float parallax_depth = 1.0;
 #if PARALLAX
 // Apply parallax displacement. Assumes alpha channel of map contains height. View vector should be
 // in tangent space.
-vec3 parallax(float amount, vec3 view_vector, vec3 uv, sampler2D map)
+vec3 parallax(float amount, vec3 view_vector, vec3 tex_coord, sampler2D map)
 {
     float parallax_bias = -amount * 0.5;
 
     for (int i = 0; i < 4; ++i) {
-        float height = amount * texture(map, uv.xy).a + parallax_bias;
-        uv += ((height - uv.z) * view_vector) * vec3(1.0, -1.0, 1.0);
+        float height = amount * texture(map, tex_coord.xy).a + parallax_bias;
+        tex_coord += ((height - tex_coord.z) * view_vector) * vec3(1.0, -1.0, 1.0);
     }
 
-    return uv;
+    return tex_coord;
 }
 #endif
 
 void surface(const SurfaceInput s_in, out SurfaceParams s_out) {
-    // parallax mapping algorithm requires three-dimensional uv coords
-    vec3 uv_coord = vec3(UV_COORD0, 0.0);
+    // parallax mapping algorithm requires three-dimensional texture coords
+    vec3 tex_coord = vec3(TEX_COORD, 0.0);
 
 #if PARALLAX
     vec3 view_vector               = CAMERA_POSITION - WORLD_POSITION;
@@ -47,13 +47,13 @@ void surface(const SurfaceInput s_in, out SurfaceParams s_out) {
     if (dist_sqr < parallax_range_sqr) {
         // fade out effect of parallax with distance
         float fade = smoothstep(1.0, 0.0, dist_sqr / parallax_range_sqr);
-        uv_coord   = parallax(parallax_depth * 0.03 * fade, view_tangentspace, uv_coord, sampler_diffuse);
+        tex_coord   = parallax(parallax_depth * 0.03 * fade, view_tangentspace, tex_coord, sampler_diffuse);
     }
 #endif
 
-    vec4 spec_gloss = texture(sampler_specular, uv_coord.xy);
-    vec4 albedo_alpha = texture(sampler_diffuse, uv_coord.xy);
-    vec3 normal = unpack_normal(texture(sampler_normal, uv_coord.xy).xyz);
+    vec4 spec_gloss = texture(sampler_specular, tex_coord.xy);
+    vec4 albedo_alpha = texture(sampler_diffuse, tex_coord.xy);
+    vec3 normal = unpack_normal(texture(sampler_normal, tex_coord.xy).xyz);
 
     s_out.albedo   = albedo_alpha.rgb;
     s_out.specular = spec_gloss.rgb;

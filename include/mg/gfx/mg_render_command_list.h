@@ -13,10 +13,10 @@
 #include "mg/containers/mg_array.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_mesh_handle.h"
+#include "mg/mg_bounding_volumes.h"
 #include "mg/utils/mg_gsl.h"
 
 #include <glm/mat4x4.hpp>
-#include <glm/vec3.hpp>
 
 #include <cstdint>
 #include <vector>
@@ -34,16 +34,23 @@ enum class SortFunc { NEAR_TO_FAR, FAR_TO_NEAR };
 
 /** Description of an individual draw call. */
 struct RenderCommand {
-    // May be expanded with different types of commands, flags?
-    glm::vec3 centre{};
-    float radius{};
+    // Bounding sphere for quick frustum culling.
+    BoundingSphere bounding_sphere;
 
+    // Vertex array handle points out the GPU data buffers for the draw call.
     VertexArrayHandle vertex_array{};
 
+    // Begin and end indices, into in the vertex-index buffer.
     uint32_t begin{};
     uint32_t amount{};
 
+    // Material to use for this draw call.
     const Material* material{};
+
+    // If rendering a skinned mesh, this will point out which skinning matrices to upload to GPU.
+    // If not, num_skinning_matrices will be 0.
+    uint16_t skinning_matrices_begin{};
+    uint16_t num_skinning_matrices{};
 };
 
 /** Tells which material to use for a given submesh (by numeric index). */
@@ -65,11 +72,13 @@ public:
     {
         return m_mvp_transform_matrices;
     }
+    span<const glm::mat4> skinning_matrices() const noexcept { return m_skinning_matrices; }
 
 private:
     std::vector<RenderCommand> m_render_commands;
     std::vector<glm::mat4> m_m_transform_matrices;
     std::vector<glm::mat4> m_mvp_transform_matrices;
+    std::vector<glm::mat4> m_skinning_matrices;
 };
 
 /** Interface for producing RenderCommandList. */
@@ -78,6 +87,11 @@ public:
     void add_mesh(MeshHandle mesh,
                   const Transform& transform,
                   span<const MaterialBinding> material_bindings);
+
+    void add_skinned_mesh(MeshHandle mesh,
+                          const Transform& transform,
+                          span<const MaterialBinding> material_bindings,
+                          span<const glm::mat4> skinning_matrices);
 
     /** Removes all added render commands, resetting the state of the RenderCommandProducer.
      * N.B. it is better to re-use the same RenderCommandProducer and clear each frame than to
@@ -109,6 +123,7 @@ private:
 
     std::vector<RenderCommand> m_render_commands_unsorted;
     std::vector<glm::mat4> m_m_transform_matrices_unsorted;
+    std::vector<glm::mat4> m_skinning_matrices;
 };
 
 } // namespace Mg::gfx

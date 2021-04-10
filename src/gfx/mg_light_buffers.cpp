@@ -32,7 +32,7 @@ namespace Mg::gfx {
 
 namespace {
 
-using LightBlock = std::array<Light, MG_MAX_NUM_LIGHTS>;
+using LightBlock = std::array<Light, defs::max_num_lights>;
 
 constexpr size_t k_max_ubo_size = 16 * 1024;
 
@@ -59,12 +59,12 @@ constexpr BufferTexture::Type light_grid_tex_type()
 
 struct ClusterData {
     uint16_t num_lights;
-    std::array<uint16_t, MG_MAX_LIGHTS_PER_CLUSTER> light_indices;
+    std::array<uint16_t, defs::max_lights_per_cluster> light_indices;
 };
 
-using ClusterArray = std::array<ClusterData, MG_LIGHT_GRID_SIZE>;
-using LightIndexArray = std::array<uint16_t, MG_LIGHT_GRID_SIZE * MG_MAX_LIGHTS_PER_CLUSTER>;
-using LightGridData = std::array<uint32_t, MG_LIGHT_GRID_SIZE * 2u>;
+using ClusterArray = std::array<ClusterData, defs::light_grid_size>;
+using LightIndexArray = std::array<uint16_t, defs::light_grid_size * defs::max_lights_per_cluster>;
+using LightGridData = std::array<uint32_t, defs::light_grid_size * 2u>;
 
 static_assert(std::is_trivially_copyable_v<ClusterArray>);
 static_assert(std::is_trivially_copyable_v<LightIndexArray>);
@@ -72,11 +72,11 @@ static_assert(std::is_trivially_copyable_v<LightGridData>);
 
 void add_light_to_cluster(size_t light_index, glm::uvec3 cluster, ClusterArray& clusters) noexcept
 {
-    auto cluster_index = MG_LIGHT_GRID_WIDTH * (MG_LIGHT_GRID_HEIGHT * cluster.z + cluster.y) +
-                         cluster.x;
+    auto cluster_index =
+        defs::light_grid_width * (defs::light_grid_height * cluster.z + cluster.y) + cluster.x;
     const auto light_offset = clusters[cluster_index].num_lights;
 
-    if (light_offset >= MG_MAX_LIGHTS_PER_CLUSTER) {
+    if (light_offset >= defs::max_lights_per_cluster) {
         log.warning("Too many light sources in cluster.");
         return;
     }

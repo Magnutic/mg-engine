@@ -4,7 +4,7 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-/** @file mg_mesh.h
+/** @file mg_mesh_internal.h
  * Internal mesh structure. @see MeshRepository
  */
 
@@ -31,34 +31,44 @@ struct SharedBuffer {
     int32_t num_users = 0;
 };
 
-using SubMeshRanges = small_vector<SubMeshRange, 4>;
-
 /** Internal mesh structure. @see MeshRepository */
-struct Mesh {
-    SubMeshRanges submeshes;
-    glm::vec3 centre{};
-    float radius{};
+struct MeshInternal {
+    /** Submeshes, defined as ranges in the index_buffer. */
+    small_vector<Mesh::SubmeshRange, 8> submeshes;
+
+    /** Bounding sphere used for frustum culling. */
+    BoundingSphere bounding_sphere;
+
+    /** Mesh identifier, for debugging purposes. */
     Identifier name{ "" };
 
-    // Identifier for the mesh buffers in the graphics API.
+    /** Identifier for the mesh buffers in the graphics API. */
     VertexArrayHandle vertex_array;
+
+    /** Vertex data buffer. */
     SharedBuffer* vertex_buffer = nullptr;
+
+    /** Index buffer, triangle list of indexes into vertex_buffer. */
     SharedBuffer* index_buffer = nullptr;
+
+    /** Buffer for per-vertex joint influences, for skeletal animation. May be nullptr. */
+    SharedBuffer* influences_buffer = nullptr;
 };
 
-inline MeshHandle make_mesh_handle(const Mesh* mesh) noexcept
+/** Convert pointer to public opaque handle. */
+inline MeshHandle make_mesh_handle(const MeshInternal* p) noexcept
 {
     MeshHandle handle{};
-    static_assert(sizeof(handle) >= sizeof(mesh));
-    std::memcpy(&handle, &mesh, sizeof(mesh));
+    static_assert(sizeof(handle) >= sizeof(p)); // NOLINT(bugprone-sizeof-expression)
+    std::memcpy(&handle, &p, sizeof(p));     // NOLINT(bugprone-sizeof-expression)
     return handle;
 }
 
 /** Dereference mesh handle. */
-inline Mesh& get_mesh(MeshHandle handle) noexcept
+inline MeshInternal& get_mesh(MeshHandle handle) noexcept
 {
-    Mesh* p = nullptr;
-    std::memcpy(&p, &handle, sizeof(handle));
+    MeshInternal* p = nullptr;
+    std::memcpy(&p, &handle, sizeof(p)); // NOLINT(bugprone-sizeof-expression)
     MG_ASSERT(p != nullptr);
     return *p;
 }

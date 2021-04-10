@@ -7,6 +7,8 @@
 #include "mg/gfx/mg_debug_renderer.h"
 
 #include "mg/core/mg_rotation.h"
+#include "mg/gfx/mg_joint.h"
+#include "mg/gfx/mg_skeleton.h"
 #include "mg/utils/mg_assert.h"
 
 #include "../mg_shader.h"
@@ -23,6 +25,7 @@
 #include <array>
 #include <cstdint>
 #include <map>
+#include <numeric>
 #include <vector>
 
 namespace Mg::gfx {
@@ -60,7 +63,7 @@ public:
     GLuint vbo_id = 0;
     GLuint ibo_id = 0;
 
-    int32_t num_indices = 0;
+    GLsizei num_indices = 0;
 
     DebugMesh() = default;
 
@@ -89,6 +92,38 @@ DebugMesh generate_mesh(span<const glm::vec3> positions, span<const uint16_t> in
     glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_id);
 
+    if (!positions.empty()) {
+        glBufferData(GL_ARRAY_BUFFER,
+                     narrow<GLsizeiptr>(positions.size_bytes()),
+                     positions.data(),
+                     GL_STATIC_DRAW);
+    }
+    if (!indices.empty()) {
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                     narrow<GLsizeiptr>(indices.size_bytes()),
+                     indices.data(),
+                     GL_STATIC_DRAW);
+    }
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), nullptr);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+
+    MG_CHECK_GL_ERROR();
+
+    return { vao_id, vbo_id, ibo_id, narrow<GLsizei>(indices.size()) };
+}
+
+void update_mesh(DebugMesh& debug_mesh,
+                 span<const glm::vec3> positions,
+                 span<const uint16_t> indices)
+{
+    glBindVertexArray(debug_mesh.vao_id);
+
+    glBindBuffer(GL_ARRAY_BUFFER, debug_mesh.vbo_id);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, debug_mesh.ibo_id);
+
     glBufferData(GL_ARRAY_BUFFER,
                  narrow<GLsizeiptr>(positions.size_bytes()),
                  positions.data(),
@@ -103,9 +138,9 @@ DebugMesh generate_mesh(span<const glm::vec3> positions, span<const uint16_t> in
 
     glBindVertexArray(0);
 
-    MG_CHECK_GL_ERROR();
+    debug_mesh.num_indices = narrow<GLsizei>(indices.size());
 
-    return { vao_id, vbo_id, ibo_id, narrow<int32_t>(indices.size()) };
+    MG_CHECK_GL_ERROR();
 }
 
 const std::array<glm::vec3, 8> box_vertices = { {
@@ -157,7 +192,7 @@ EllipsoidData generate_ellipsoid_verts(size_t steps)
 
         // Horizontal step (flat circle)
         for (size_t u = 0; u < h_steps; ++u) {
-            const float h_offset = u * (2.0f * glm::pi<float>() / h_steps);
+            const float h_offset = float(u) * (2.0f * glm::pi<float>() / float(h_steps));
             const float x = glm::cos(h_offset) * r;
             const float y = glm::sin(h_offset) * r;
             data.verts.emplace_back(x, y, z);
@@ -274,39 +309,46 @@ struct DebugRendererData {
 
     DebugMesh box = generate_mesh(box_vertices, box_indices);
     std::map<size_t, Sphere> spheres;
+    DebugMesh line = generate_mesh({}, {});
 };
 
 DebugRenderer::DebugRenderer() = default;
 DebugRenderer::~DebugRenderer() = default;
 
-static void draw_primitive(opengl::ShaderProgramHandle program,
-                           const ICamera& camera,
-                           const DebugMesh& mesh,
-                           const DebugRenderer::PrimitiveDrawParams& params)
-{
-    const glm::mat4 M = glm::translate(glm::mat4{ 1.0f }, params.centre) *
-                        params.orientation.to_matrix() * glm::scale(params.dimensions);
+namespace {
 
+void draw(opengl::ShaderProgramHandle program,
+          const glm::mat4& MVP,
+          const DebugMesh& mesh,
+          const glm::vec4& colour,
+          const bool wireframe,
+          const bool line_mode,
+          const float line_width = 1.0f)
+{
     opengl::use_program(program);
-    opengl::set_uniform(opengl::uniform_location(program, "colour").value(), params.colour);
-    opengl::set_uniform(opengl::uniform_location(program, "MVP").value(),
-                        camera.view_proj_matrix() * M);
+    opengl::set_uniform(opengl::uniform_location(program, "colour").value(), colour);
+    opengl::set_uniform(opengl::uniform_location(program, "MVP").value(), MVP);
 
     glBindVertexArray(mesh.vao_id);
 
     std::array<GLint, 2> old_poly_mode = { 0, 0 };
     GLboolean old_culling = 0;
 
-    if (params.wireframe) {
+    if (wireframe) {
         glGetIntegerv(GL_POLYGON_MODE, old_poly_mode.data());
         glGetBooleanv(GL_CULL_FACE, &old_culling);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glDisable(GL_CULL_FACE);
     }
 
-    glDrawElements(GL_TRIANGLES, mesh.num_indices, GL_UNSIGNED_SHORT, nullptr);
+    float old_line_width = 0.0f;
+    glGetFloatv(GL_LINE_WIDTH, &old_line_width);
+    glLineWidth(line_width);
 
-    if (params.wireframe) {
+    const GLenum primitive_type = line_mode ? GL_LINES : GL_TRIANGLES;
+    glDrawElements(primitive_type, mesh.num_indices, GL_UNSIGNED_SHORT, nullptr);
+
+    if (wireframe) {
         // glGet(GL_POLYGON_MODE) returns front- and back polygon modes separately; but since
         // GL 3.2, it is not allowed to set front- and back separately.
         MG_ASSERT_DEBUG(old_poly_mode[0] == old_poly_mode[1]);
@@ -314,8 +356,24 @@ static void draw_primitive(opengl::ShaderProgramHandle program,
         glEnable(GL_CULL_FACE);
     }
 
+    glLineWidth(old_line_width);
+
     glBindVertexArray(0);
 }
+
+void draw_primitive(opengl::ShaderProgramHandle program,
+                    const ICamera& camera,
+                    const DebugMesh& mesh,
+                    const DebugRenderer::PrimitiveDrawParams& params)
+{
+    const glm::mat4 MVP = camera.view_proj_matrix() *
+                          glm::translate(glm::mat4{ 1.0f }, params.centre) *
+                          params.orientation.to_matrix() * glm::scale(params.dimensions);
+
+    draw(program, MVP, mesh, params.colour, params.wireframe, false);
+}
+
+} // namespace
 
 void DebugRenderer::draw_box(const ICamera& camera, BoxDrawParams params)
 {
@@ -334,6 +392,75 @@ void DebugRenderer::draw_ellipsoid(const ICamera& camera, EllipsoidDrawParams pa
 
     const Sphere& sphere = it->second;
     draw_primitive(impl().program.handle, camera, sphere.mesh, params);
+}
+
+void DebugRenderer::draw_line(const ICamera& camera,
+                              span<const glm::vec3> points,
+                              const glm::vec4 colour,
+                              const float width)
+{
+    std::vector<uint16_t> indices(points.size());
+    std::iota(indices.begin(), indices.end(), uint16_t(0));
+    update_mesh(impl().line, points, indices);
+    draw(impl().program.handle, camera.view_proj_matrix(), impl().line, colour, false, true, width);
+}
+
+void DebugRenderer::draw_bones(const ICamera& camera,
+                               const glm::mat4 M,
+                               const Skeleton& skeleton,
+                               const SkeletonPose& pose)
+{
+    std::vector<glm::mat4> joint_poses;
+    {
+        joint_poses.resize(skeleton.joints().size());
+        const bool success = calculate_pose_transformations(skeleton, pose, joint_poses);
+        MG_ASSERT(success);
+    }
+
+    if (joint_poses.empty()) {
+        return;
+    }
+
+    const float bone_line_width = 10.0f;
+    const float joint_axis_length = 0.1f;
+
+    const glm::vec4 bone_colour(0.5f, 0.5f, 1.0f, 0.5f);
+
+    const glm::vec4 origo(0.0f, 0.0f, 0.0f, 1.0f);
+
+    auto draw_joint_axes = [&](const glm::mat4 matrix) {
+        const glm::vec4 centre = matrix * origo;
+        const glm::vec4 x_axis_point = matrix * glm::vec4(joint_axis_length, 0.0f, 0.0f, 1.0f);
+        const glm::vec4 y_axis_point = matrix * glm::vec4(0.0f, joint_axis_length, 0.0f, 1.0f);
+        const glm::vec4 z_axis_point = matrix * glm::vec4(0.0f, 0.0f, joint_axis_length, 1.0f);
+
+        draw_line(camera, centre, x_axis_point, { 1.0f, 0.0f, 0.0f, 1.0f }, 2.0f);
+        draw_line(camera, centre, y_axis_point, { 0.0f, 1.0f, 0.0f, 1.0f }, 2.0f);
+        draw_line(camera, centre, z_axis_point, { 0.0f, 0.0f, 1.0f, 1.0f }, 2.0f);
+    };
+
+    auto draw_bones_impl = [&](const glm::vec4& parent_position,
+                               const Mesh::JointId parent_joint_id,
+                               const Mesh::JointId joint_id,
+                               auto&& recurse) -> void {
+        const bool is_root_joint = parent_joint_id == Mesh::joint_id_none;
+
+        const glm::mat4 matrix = M * joint_poses.at(joint_id);
+        draw_joint_axes(matrix);
+
+        const glm::vec4 position = matrix * origo;
+        if (!is_root_joint) {
+            draw_line(camera, parent_position, position, bone_colour, bone_line_width);
+        }
+
+        for (const Mesh::JointId child_id : skeleton.joints()[joint_id].children) {
+            if (child_id != Mesh::joint_id_none) {
+                recurse(position, joint_id, child_id, recurse);
+            }
+        }
+    };
+
+    draw_bones_impl({}, Mesh::joint_id_none, 0, draw_bones_impl);
 }
 
 } // namespace Mg::gfx

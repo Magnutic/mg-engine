@@ -23,7 +23,7 @@ namespace Mg::gfx {
 /* Divides the view space frustum into a grid of tiles. Used for the Tiled Rendering and Clustered
  * Rendering techniques.
  *
- * In tiled rendering, the screen is divided into a set of tiles (see MG_LIGHT_GRID_xxx, above). For
+ * In tiled rendering, the screen is divided into a set of tiles (see defs::light_grid_xxx). For
  * each tile, the set of light sources potentially affecting that tile is found and added to a list.
  * Then, the fragment shader calculates the tile in which it is located, and applies all lights
  * listed in said tile's light-list. This allows arbitrary number of lights in a scene in a manner
@@ -31,7 +31,7 @@ namespace Mg::gfx {
  *
  * Clustered rendering is an extension of tiled rendering, where depth is also taken into account --
  * each screen-space tile now corresponds to several projection-space clusters (see
- * MG_LIGHT_GRID_DEPTH). This allows more precise light lists, with less redundant light
+ * defs::light_grid_depth). This allows more precise light lists, with less redundant light
  * calculations for tiles with large depth disparity.
  *
  * For more details, research 'Tiled Rendering' and 'Clustered Rendering'.
@@ -54,9 +54,9 @@ public:
      */
     static std::pair<size_t, size_t> depth_extents(float depth, float radius) noexcept
     {
-        static const float log2_max_dist = std::log2(float{ MG_LIGHT_GRID_FAR_PLANE });
-        constexpr float grid_depth = float{ MG_LIGHT_GRID_DEPTH };
-        constexpr float grid_bias = float{ MG_LIGHT_GRID_DEPTH_BIAS };
+        static const auto log2_max_dist = std::log2(float(defs::light_grid_far_plane));
+        constexpr auto grid_depth = float(defs::light_grid_depth);
+        constexpr auto grid_bias = float(defs::light_grid_depth_bias);
 
         const float fmin_z = (std::log2(depth - radius) / log2_max_dist) * grid_depth + grid_bias;
         const float fmax_z = (std::log2(depth + radius) / log2_max_dist) * grid_depth + grid_bias;
@@ -87,8 +87,8 @@ private:
     float signed_sqr_distance(const DelimPlane& plane, float offset, float depth) noexcept;
 
     // View-space tile delimiter plane -- the planes that divide the screen into tiles.
-    std::array<DelimPlane, MG_LIGHT_GRID_WIDTH + 1> m_delim_plane_vert; // Facing negative x
-    std::array<DelimPlane, MG_LIGHT_GRID_HEIGHT + 1> m_delim_plane_hor; // Facing negative y
+    std::array<DelimPlane, defs::light_grid_width + 1> m_delim_plane_vert; // Facing negative x
+    std::array<DelimPlane, defs::light_grid_height + 1> m_delim_plane_hor; // Facing negative y
 
     // Cache camera projection matrix, so that we know whether tile-delimiter-planes need to be
     // re-calculated or not.

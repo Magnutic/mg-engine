@@ -24,6 +24,11 @@ UniformBuffer::UniformBuffer(size_t size, void* data) : m_size(size)
 {
     MG_GFX_DEBUG_GROUP("Create UniformBuffer")
 
+    if (size > max_size()) {
+        log.error("UniformBuffer of size {} exceeds system maximum of {}.", size, max_size());
+        throw RuntimeError{};
+    }
+
     GLuint ubo_id = 0;
     glGenBuffers(1, &ubo_id);
     glBindBuffer(GL_UNIFORM_BUFFER, ubo_id);

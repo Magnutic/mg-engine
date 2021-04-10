@@ -12,7 +12,7 @@
 *.swn
 *.session
 *.vim
-.lvimrc
+.lvimrc*
 
 mg_log.txt
 mg_engine.cfg

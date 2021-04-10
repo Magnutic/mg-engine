@@ -2,6 +2,7 @@
 #include "mg/gfx/mg_blend_modes.h"
 #include "mg/gfx/mg_font_handler.h"
 #include "mg/gfx/mg_render_target.h"
+#include "mg/gfx/mg_skeleton.h"
 #include "mg/gfx/mg_texture_repository.h"
 #include "mg/gfx/mg_ui_renderer.h"
 #include "mg/mg_unicode.h"
@@ -29,6 +30,8 @@
 
 namespace {
 
+using namespace Mg::literals;
+
 constexpr double k_time_step = 1.0 / 60.0;
 constexpr double k_accumulator_max_steps = 10;
 constexpr size_t k_num_lights = 128;
@@ -52,7 +55,19 @@ std::array<float, 3> camera_acceleration(Mg::input::InputMap& input_map)
 
 void add_to_render_list(const Model& model, Mg::gfx::RenderCommandProducer& renderlist)
 {
-    renderlist.add_mesh(model.mesh, model.transform, model.material_bindings);
+    if (model.skeleton && model.pose) {
+        std::vector<glm::mat4> matrix_palette;
+        matrix_palette.resize(model.skeleton->joints().size());
+        Mg::gfx::calculate_skinning_matrices(*model.skeleton, *model.pose, matrix_palette);
+
+        renderlist.add_skinned_mesh(model.mesh,
+                                    model.transform,
+                                    model.material_bindings,
+                                    matrix_palette);
+    }
+    else {
+        renderlist.add_mesh(model.mesh, model.transform, model.material_bindings);
+    }
 }
 
 Scene::State lerp(const Scene::State& fst, const Scene::State& snd, double x)
@@ -248,7 +263,7 @@ void Scene::render_scene(const double lerp_factor)
     {
         render_command_producer.clear();
 
-        for (auto&& model : scene_models) {
+        for (auto&& [model_id, model] : scene_models) {
             add_to_render_list(model, render_command_producer);
         }
 
@@ -310,10 +325,23 @@ void Scene::render_scene(const double lerp_factor)
         ui_renderer.draw_text(placement, font->prepare_text(text, typesetting));
     }
 
+    Model& fox = scene_models["meshes/Fox.mgm"];
+    const Mg::gfx::Mesh::JointId head_joint_id = fox.skeleton->find_joint("b_Head_05").value();
+    const Mg::gfx::Mesh::JointId neck_joint_id = fox.skeleton->find_joint("b_Neck_04").value();
+    const Mg::gfx::Mesh::JointId tail_2_joint_id = fox.skeleton->find_joint("b_Tail02_013").value();
+    const Mg::Angle nod_angle = 25.0_degrees * std::sin(float(5.0 * time));
+    const Mg::Angle shake_angle = 15.0_degrees * std::sin(float(10.0 * time));
+    auto& head_pose = fox.pose.value().joint_poses[head_joint_id];
+    auto& neck_pose = fox.pose.value().joint_poses[neck_joint_id];
+    auto& tail_2_pose = fox.pose.value().joint_poses[tail_2_joint_id];
+    head_pose.rotation.roll(-15_degrees + shake_angle - head_pose.rotation.roll());
+    neck_pose.rotation.yaw(nod_angle - neck_pose.rotation.yaw());
+    tail_2_pose.rotation.roll(30_degrees + nod_angle * 0.5f - tail_2_pose.rotation.roll());
 
     // Debug geometry
     if (draw_debug) {
-        render_light_debug_geometry();
+        // render_light_debug_geometry();
+        render_skeleton_debug_geometry();
     }
 
     app.window().refresh();
@@ -335,6 +363,20 @@ Mg::gfx::MeshHandle Scene::load_mesh(Mg::Identifier file)
 
     const Mg::ResourceAccessGuard access = resource_cache.access_resource<Mg::MeshResource>(file);
     return mesh_repository.create(*access);
+}
+
+Mg::Opt<Mg::gfx::Skeleton> Scene::load_skeleton(Mg::Identifier file)
+{
+    const Mg::ResourceAccessGuard access = resource_cache.access_resource<Mg::MeshResource>(file);
+    if (access->joints().empty()) {
+        return Mg::nullopt;
+    }
+
+    Mg::gfx::Skeleton skeleton(file, access->joints().size());
+    for (size_t i = 0; i < skeleton.joints().size(); ++i) {
+        skeleton.joints()[i] = access->joints()[i];
+    }
+    return skeleton;
 }
 
 Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file)
@@ -400,16 +442,22 @@ Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::
     return m;
 }
 
-Model Scene::load_model(Mg::Identifier mesh_file,
-                        Mg::span<const MaterialAssignment> material_files,
-                        Mg::span<const Mg::Identifier> options)
+Model& Scene::load_model(Mg::Identifier mesh_file,
+                         Mg::span<const MaterialAssignment> material_files,
+                         Mg::span<const Mg::Identifier> options)
 {
-    Model model;
+    const auto [it, inserted] = scene_models.insert({ mesh_file, Model{} });
+    Model& model = it->second;
     model.mesh = load_mesh(mesh_file);
 
     for (auto&& [submesh_index, material_fname] : material_files) {
         model.material_bindings.push_back(
             Mg::gfx::MaterialBinding{ submesh_index, load_material(material_fname, options) });
+    }
+
+    model.skeleton = load_skeleton(mesh_file);
+    if (model.skeleton) {
+        model.pose = model.skeleton->get_bind_pose();
     }
 
     return model;
@@ -554,10 +602,24 @@ void Scene::render_light_debug_geometry()
         }
         Mg::gfx::DebugRenderer::EllipsoidDrawParams params;
         params.centre = glm::vec3(light.vector);
-        params.colour = glm::vec4(normalize(light.colour), 0.15f);
+        params.colour = glm::vec4(normalize(light.colour), 0.05f);
         params.dimensions = glm::vec3(std::sqrt(light.range_sqr));
         params.wireframe = true;
         debug_renderer.draw_ellipsoid(camera, params);
+    }
+}
+
+void Scene::render_skeleton_debug_geometry()
+{
+    MG_GFX_DEBUG_GROUP("Scene::render_skeleton_debug_geometry")
+
+    for (const auto& [model_id, model] : scene_models) {
+        if (model.skeleton.has_value() && model.pose.has_value()) {
+            debug_renderer.draw_bones(camera,
+                                      model.transform.matrix(),
+                                      *model.skeleton,
+                                      *model.pose);
+        }
     }
 }
 
@@ -574,9 +636,7 @@ void Scene::load_models()
 
         std::array<Mg::Identifier, 1> scene_mat_options;
         scene_mat_options[0] = "PARALLAX";
-
-        scene_models.emplace_back(
-            load_model("meshes/misc/test_scene_2.mgm", scene_mats, scene_mat_options));
+        load_model("meshes/misc/test_scene_2.mgm", scene_mats, scene_mat_options);
     }
 
     {
@@ -586,11 +646,9 @@ void Scene::load_models()
         std::array<Mg::Identifier, 1> fox_mat_options;
         fox_mat_options[0] = "RIM_LIGHT";
 
-        Model& fox_model =
-            scene_models.emplace_back(load_model("meshes/Fox.mgm", fox_mats, fox_mat_options));
+        Model& fox_model = load_model("meshes/Fox.mgm", fox_mats, fox_mat_options);
 
         fox_model.transform.position.x += 2.0f;
-        fox_model.transform.scale = glm::vec3(0.01f);
     }
 }
 

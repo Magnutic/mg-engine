@@ -31,9 +31,9 @@ struct RenderParameters {
 class MeshRenderer : PImplMixin<MeshRendererData> {
 public:
     MeshRenderer();
+    ~MeshRenderer();
     MG_MAKE_DEFAULT_MOVABLE(MeshRenderer);
     MG_MAKE_NON_COPYABLE(MeshRenderer);
-    ~MeshRenderer();
 
     /** Drop all shaders generated for this renderer. This means that each shader will be recompiled
      * from source on the next use. This is useful for hot-reloading of shader assets.

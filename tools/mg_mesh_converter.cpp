@@ -2,10 +2,10 @@
 
 #include "mg_assimp_utils.h"
 #include "mg_file_writer.h"
-#include "mg_mesh_definitions.h"
+
+#include <mg/resources/mg_mesh_resource_data.h>
 
 #include <glm/glm.hpp>
-#include <glm/gtx/norm.hpp>
 #include <glm/gtx/transform.hpp>
 
 #include <assimp/DefaultLogger.hpp>
@@ -23,21 +23,33 @@
 
 namespace Mg {
 namespace {
+using namespace Mg::gfx;
+using namespace Mg::MeshResourceData;
 using namespace std::literals;
 using glm::vec1, glm::vec2, glm::vec3, glm::vec4, glm::mat4;
+
+constexpr float k_scaling_factor = 0.01f; // TODO configurable or deduced somehow?
+
+// Converts from AssImp's Y-up coordinate system to Mg's Z-up coordinate system.
+constexpr glm::mat4 to_mg_space({ -k_scaling_factor, 0, 0, 0 },
+                                { 0, 0, k_scaling_factor, 0 },
+                                { 0, k_scaling_factor, 0, 0 },
+                                { 0, 0, 0, 1 });
+
+const glm::mat4& from_mg_space = glm::inverse(to_mg_space);
 
 mat4 to_glm_matrix(const aiMatrix4x4& aiMat)
 {
     mat4 result;
-    for (size_t i = 0; i < 4; ++i) {
-        for (size_t u = 0; u < 4; ++u) {
-            result[i][u] = aiMat[i][u];
+    for (uint32_t i = 0; i < 4; ++i) {
+        for (uint32_t u = 0; u < 4; ++u) {
+            result[narrow_cast<int>(i)][narrow_cast<int>(u)] = aiMat[u][i];
         }
     }
     return result;
 }
 
-//------------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 
 // Stores all the strings that are to be written to file.
 class StringData {
@@ -86,7 +98,7 @@ StringRange StringData::store(const aiString& string)
     return store(to_string_view(string));
 }
 
-//------------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 
 // All joints needed to represent skeletal animation of the mesh.
 class JointData {
@@ -135,7 +147,7 @@ JointId JointData::add_joint(const aiBone& bone)
     // Create the joint, using bone data if available.
     Joint& joint = m_joints.emplace_back();
     joint.name = m_string_data->store(to_string_view(bone.mName));
-    joint.inverse_bind_matrix = to_glm_matrix(bone.mOffsetMatrix);
+    joint.inverse_bind_matrix = to_mg_space * to_glm_matrix(bone.mOffsetMatrix) * from_mg_space;
     joint.children.fill(joint_id_none);
 
     return joint_id;
@@ -219,53 +231,62 @@ JointData::JointData(const aiScene& scene, StringData& string_data) : m_string_d
 
     // Build final joints list by recursively visiting the hierarchy and copying out information
     // from all subtrees that contain bones. Takes itself as parameter to allow recursion.
-    auto create_joint_hierarchy =
-        [&](const aiNode& node, const aiBone* maybe_bone, auto&& recurse) -> JointId {
-        const JointId joint_id = maybe_bone ? add_joint(*maybe_bone)
-                                            : add_dummy_joint(to_string_view(node.mName));
-
-        JointId current = joint_id;
-        size_t child_index = 0;
+    auto create_joint_hierarchy = [&](const aiNode& node, auto&& recurse) -> JointId {
+        std::vector<const aiNode*> subtrees_containing_bones;
 
         for_each_child(node, [&](const aiNode& child) {
             const auto it = joint_nodes.find(&child);
-            const bool subtree_contains_bones = it != joint_nodes.end();
-            if (subtree_contains_bones) {
-                const bool no_space_is_left = child_index + 1 == k_max_num_children_per_joint;
-                if (no_space_is_left) {
-                    // No space left in joint, add a dummy joint to fit in the rest.
-                    const std::string parent_name(get_joint_name(current));
-                    const JointId dummy_joint_id = add_dummy_joint(parent_name + "_ext");
-                    m_joints.at(current).children[child_index] = dummy_joint_id;
-                    current = dummy_joint_id;
-                    child_index = 0;
-                }
-
-                const aiBone* child_bone = it->second;
-                m_joints.at(current).children.at(child_index++) =
-                    recurse(child, child_bone, recurse);
+            if (it != joint_nodes.end()) {
+                subtrees_containing_bones.push_back(it->first);
             }
         });
+
+        const auto bone_it = joint_nodes.find(&node);
+        const aiBone* maybe_bone = bone_it != joint_nodes.end() ? bone_it->second : nullptr;
+        const bool is_first_joint = m_joints.empty();
+
+        // Skip nodes at the root of the hierarchy that do not have any transformation, as they will
+        // not affect the rest of the skeleton.
+        const bool should_skip_node = is_first_joint && !maybe_bone &&
+                                      node.mTransformation.IsIdentity() &&
+                                      subtrees_containing_bones.size() == 1;
+
+        if (should_skip_node) {
+            return recurse(*subtrees_containing_bones[0], recurse);
+        }
+
+        const JointId joint_id = maybe_bone ? add_joint(*maybe_bone)
+                                            : add_dummy_joint(to_string_view(node.mName));
+
+        JointId current_parent = joint_id;
+        size_t insert_index = 0;
+
+        for (const aiNode* child : subtrees_containing_bones) {
+            const bool no_space_is_left = insert_index + 1 == max_num_children_per_joint;
+            if (no_space_is_left) {
+                // No space left in joint, add a dummy joint to fit in the rest.
+                const std::string parent_name(get_joint_name(current_parent));
+                const JointId dummy_joint_id = add_dummy_joint(parent_name + "_ext");
+                m_joints.at(current_parent).children[insert_index] = dummy_joint_id;
+                current_parent = dummy_joint_id;
+                insert_index = 0;
+            }
+
+            m_joints.at(current_parent).children.at(insert_index++) = recurse(*child, recurse);
+        }
 
         return joint_id;
     };
 
-    const auto root_it = joint_nodes.find(scene.mRootNode);
-    assert(root_it != joint_nodes.end());
-
-    const auto& [root_node, maybe_bone] = *root_it;
-    const auto root_joint_id =
-        create_joint_hierarchy(*root_node, maybe_bone, create_joint_hierarchy);
+    const auto root_joint_id = create_joint_hierarchy(*scene.mRootNode, create_joint_hierarchy);
     assert(root_joint_id == 0);
 }
 
-//------------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 
 // Data for the mesh itself: the vertices, indices, and submeshes.
 class MeshData {
 public:
-    static constexpr float scale = 1.00f; // TODO configurable or deduced somehow?
-
     explicit MeshData(const aiScene& scene, const JointData& joint_data, StringData& string_data)
         : m_scene(&scene), m_joint_data(&joint_data), m_string_data(&string_data)
     {
@@ -275,7 +296,8 @@ public:
 
     const std::vector<Submesh>& submeshes() const { return m_submeshes; }
     const std::vector<Vertex>& vertices() const { return m_vertices; }
-    const std::vector<VertexIndex>& indices() const { return m_indices; }
+    const std::vector<Index>& indices() const { return m_indices; }
+    const std::vector<Influences>& influences() const { return m_influences; }
 
 private:
     void visit(const aiMesh& mesh, const aiMatrix4x4& accumulate_transform);
@@ -288,19 +310,22 @@ private:
 
     std::vector<Submesh> m_submeshes;
     std::vector<Vertex> m_vertices;
-    std::vector<VertexIndex> m_indices;
+    std::vector<Index> m_indices;
+    std::vector<Influences> m_influences;
 
     const aiScene* m_scene = nullptr;
     const JointData* m_joint_data = nullptr;
     StringData* m_string_data = nullptr;
 };
 
-std::optional<size_t> get_joint_index_to_use(const Vertex& vertex, const float weight)
+// If any influences have weight less than the given weight, return the one index of the one with
+// the smallest weight.
+std::optional<size_t> get_influence_index_to_use(const Influences& bindings, const float weight)
 {
     const auto normalised_weight = normalise<JointWeights::value_type>(weight);
-    auto it = std::min_element(vertex.joint_weights.begin(), vertex.joint_weights.end());
+    auto it = std::min_element(bindings.weights.begin(), bindings.weights.end());
     if (*it < normalised_weight) {
-        return size_t(std::distance(vertex.joint_weights.begin(), it));
+        return size_t(std::distance(bindings.weights.begin(), it));
     }
     return std::nullopt;
 }
@@ -341,12 +366,12 @@ void MeshData::visit(const aiMesh& mesh, const aiMatrix4x4& accumulate_transform
     for_each_face(mesh, [&](const aiFace& face) {
         assert(face.mNumIndices == 3);
         for_each_index(face, [&](const uint32_t index) {
-            const auto max_index = std::numeric_limits<VertexIndex>::max();
+            const auto max_index = std::numeric_limits<Index>::max();
             if (index > max_index) {
                 log_error("Vertex index out of bounds (limit: ", max_index, ", was: ", index, ").");
                 return;
             }
-            m_indices.push_back(VertexIndex(index));
+            m_indices.push_back(narrow_cast<Index>(index));
         });
     });
 
@@ -354,6 +379,11 @@ void MeshData::visit(const aiMesh& mesh, const aiMatrix4x4& accumulate_transform
     const auto normal_transform = aiMatrix3x3(accumulate_transform);
     for (uint32_t i = 0; i < mesh.mNumVertices; i++) {
         add_vertex(mesh, i, accumulate_transform, normal_transform);
+    }
+
+    // If the mesh contains joint info, also prepare a joint binding for each vertex.
+    if (hasJoints) {
+        m_influences.resize(m_vertices.size());
     }
 
     for_each_bone(mesh, [&](const aiBone& bone) {
@@ -365,15 +395,30 @@ void MeshData::visit(const aiMesh& mesh, const aiMatrix4x4& accumulate_transform
             }
 
             const float weight = bone.mWeights[wi].mWeight;
-            Vertex& vertex = m_vertices[vertex_index];
+            Influences& influences = m_influences[vertex_index];
 
-            if (std::optional<size_t> index = get_joint_index_to_use(vertex, weight);
+            if (std::optional<size_t> index = get_influence_index_to_use(influences, weight);
                 index.has_value()) {
-                vertex.joint_id[index.value()] = m_joint_data->get_joint_id(bone);
-                vertex.joint_weights[index.value()] = normalise<JointWeights::value_type>(weight);
+                influences.ids[index.value()] = m_joint_data->get_joint_id(bone);
+                influences.weights[index.value()] = normalise<JointWeights::value_type>(weight);
             }
         }
     });
+
+    // Normalise influence weights, such that each vertex's weights sum to 1.0.
+    for (Influences& influences : m_influences) {
+        float total_weight = 0.0f;
+        for (const auto weight : influences.weights) {
+            total_weight += denormalise(weight);
+        }
+        if (total_weight <= 0.0f) {
+            continue;
+        }
+
+        for (auto& weight : influences.weights) {
+            weight = normalise<JointWeights::value_type>(denormalise(weight) / total_weight);
+        }
+    }
 
     Submesh& submesh = m_submeshes.emplace_back();
     submesh.name = m_string_data->store(mesh.mName);
@@ -392,12 +437,12 @@ void MeshData::add_vertex(const aiMesh& mesh,
     position *= transform4x4;
 
     Vertex& vertex = m_vertices.emplace_back();
-    vertex.position.x = -position.x * scale;
-    vertex.position.y = position.z * scale;
-    vertex.position.z = position.y * scale;
+    vertex.position.x = -position.x * k_scaling_factor;
+    vertex.position.y = position.z * k_scaling_factor;
+    vertex.position.z = position.y * k_scaling_factor;
 
-    vertex.uv0.x = mesh.mTextureCoords[0][index].x;
-    vertex.uv0.y = 1.0f - mesh.mTextureCoords[0][index].y;
+    vertex.tex_coord.x = mesh.mTextureCoords[0][index].x;
+    vertex.tex_coord.y = 1.0f - mesh.mTextureCoords[0][index].y;
 
     const bool hasUv1 = mesh.GetNumUVChannels() > 1;
     if (hasUv1) {
@@ -423,36 +468,7 @@ void MeshData::visit(const aiNode& node, const aiMatrix4x4& accumulate_transform
     for_each_child(node, [&](const aiNode& child) { visit(child, transform); });
 }
 
-// Returns {min, max} bounding box.
-std::pair<vec3, vec3> calculate_bounding_box(const std::vector<Vertex>& vertices)
-{
-    // Calculate bounding box
-    vec3 abb_min(std::numeric_limits<float>::max());
-    vec3 abb_max(std::numeric_limits<float>::min());
-
-    for (const auto& v : vertices) {
-        abb_min.x = std::min(v.position.x, abb_min.x);
-        abb_min.y = std::min(v.position.y, abb_min.y);
-        abb_min.z = std::min(v.position.z, abb_min.z);
-
-        abb_max.x = std::max(v.position.x, abb_max.x);
-        abb_max.y = std::max(v.position.y, abb_max.y);
-        abb_max.z = std::max(v.position.z, abb_max.z);
-    }
-
-    return { abb_min, abb_max };
-}
-
-float calculate_radius(const vec3 centre, const std::vector<Vertex>& vertices)
-{
-    auto distance_to_centre = [&centre](const Vertex& lhs, const Vertex& rhs) {
-        return distance2(lhs.position, centre) < distance2(rhs.position, centre);
-    };
-    auto farthes_vertex_id = std::max_element(vertices.begin(), vertices.end(), distance_to_centre);
-    return distance(centre, farthes_vertex_id->position);
-}
-
-//------------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 
 namespace logging {
 void print_heading(const std::string& text)
@@ -517,9 +533,9 @@ void dump_joints(const JointData& joint_data)
     {
         const auto& joints = joint_data.joints();
         for (const Joint& joint : joints) {
-            const auto joint_id = std::distance(joints.data(), &joint);
+            const auto joint_id = narrow<JointId>(std::distance(joints.data(), &joint));
             const bool has_inverse_bind_matrix = joint.inverse_bind_matrix != mat4(1.0f);
-            print(0, '[', joint_id, "] ", joint_data.get_joint_name(joint_id), ':');
+            print(0, '[', std::to_string(joint_id), "] ", joint_data.get_joint_name(joint_id), ':');
             print(0, "\tHas inverse_bind_matrix: ", has_inverse_bind_matrix ? "true" : "false");
             std::cout << "\tChildren: ";
             for (JointId child_id : joint.children) {
@@ -592,20 +608,21 @@ bool write_file(const std::filesystem::path& file_path,
 {
     FileWriter writer;
 
-    MeshHeader header = {};
-    header.four_cc = k_four_cc;
-    header.version = k_mesh_format_version;
+    Header header = {};
+    header.four_cc = fourcc;
+    header.version = version;
 
     {
-        std::tie(header.abb_min, header.abb_max) = calculate_bounding_box(mesh_data.vertices());
-        header.centre = (header.abb_min + header.abb_max) / 2.0f;
-        header.radius = calculate_radius(header.centre, mesh_data.vertices());
+        const BoundingSphere bounding_sphere = calculate_mesh_bounding_sphere(mesh_data.vertices());
+        header.centre = bounding_sphere.centre;
+        header.radius = bounding_sphere.radius;
     }
 
     writer.enqueue(header);
     header.submeshes = writer.enqueue(mesh_data.submeshes());
     header.vertices = writer.enqueue(mesh_data.vertices());
     header.indices = writer.enqueue(mesh_data.indices());
+    header.influences = writer.enqueue(mesh_data.influences());
     header.joints = writer.enqueue(joint_data.joints());
     header.strings = writer.enqueue(string_data.all_strings());
 

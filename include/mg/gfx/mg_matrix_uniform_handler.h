@@ -17,43 +17,58 @@
 
 namespace Mg::gfx {
 
-#ifndef MATRIX_UBO_ARRAY_SIZE
-// Corresponds to guaranteed lower bound of GL_MAX_UNIFORM_BLOCK_SIZE.
-#    define MATRIX_UBO_ARRAY_SIZE 128
-#endif
-
 class ICamera;
 
-/** Handles UBO for transformation matrices.
- * Passes transformation matrices to a shader.
- *
- * The shader must declare a uniform block consisting of an two arrays of length
- * MATRIX_UBO_ARRAY_SIZE of matrix structs, e.g.:
- * @code
- *     layout(std140) uniform MatrixBlock {
- *         mat4 m_matrices[MATRIX_UBO_ARRAY_SIZE];
- *         mat4 mvp_matri:es[MATRIX_UBO_ARRAY_SIZE];
- *     } mat_block;
- * @endcode
- */
+/** Handles a uniform buffer for matrices, for efficiently passing such data to a shader. */
 class MatrixUniformHandler {
 public:
-    /** Constructs new UBO for matrices. */
-    MatrixUniformHandler();
-
-    /** Set matrix UBO data to hold transformation matrices.
-     * m_matrices and mvp_matrices should be equally long.
-     * Note that UBO size may be limited -- in this case, as much of the input as possible is set.
-     * @return The number of matrices passed into the UBO (i.e. min(MATRIX_UBO_ARRAY_SIZE,
-     * m_matrices.size())
+    /** Constructs new UBO for matrices. The parameters define the layout of matrices in the shader.
+     * @param num_matrices_per_array Number of matrices in each matrix array.
+     * @param num_matrix_arrays Number of matrix arrays in the uniform block.
+     *
+     * For example, given the following GLSL uniform block definition, `num_matrices_per_array`
+     * should be 128, since that is the size of `m_matrices` and `mvp_matrices`, and
+     * `num_matrix_arrays` should be 2, since there are two arrays:
+     *
+     * @code
+     *     layout(std140) uniform MatrixBlock {
+     *         mat4 m_matrices[128];
+     *         mat4 mvp_matrices[128];
+     *     } mat_block;
+     * @endcode
      */
-    size_t set_matrices(span<const glm::mat4> m_matrices, span<const glm::mat4> mvp_matrices);
+    explicit MatrixUniformHandler(size_t num_matrices_per_array, size_t num_matrix_arrays);
+
+    /** Set matrix UBO data to hold given transformation matrix arrays.
+     * All matrix arrays should be equally long.
+     * Note that UBO size may be limited -- in this case, as much of the input as possible is set.
+     * @param matrix_array span of spans of matrices; number of arrays should match
+     * num_matrix_arrays().
+     * @return The number of matrices passed into the UBO.
+     */
+    size_t set_matrix_arrays(span<const span<const glm::mat4>> matrix_arrays);
+
+    /** Set matrix UBO data to hold given transformation matrix array.
+     * Single-array overload for the case of num_matrix_arrays == 1.
+     * Note that UBO size may be limited -- in this case, as much of the input as possible is set.
+     * @return The number of matrices passed into the UBO.
+     */
+    size_t set_matrix_array(span<const glm::mat4> matrix_array)
+    {
+        MG_ASSERT(m_num_matrix_arrays == 1);
+        return set_matrix_arrays({ &matrix_array, 1 });
+    }
 
     /** Get matrix UBO. */
     const UniformBuffer& ubo() const noexcept { return m_matrix_ubo; }
 
+    size_t num_matrices_per_array() const noexcept { return m_num_matrices_per_array; }
+    size_t num_matrix_arrays() const noexcept { return m_num_matrix_arrays; }
+
 private:
     UniformBuffer m_matrix_ubo;
+    size_t m_num_matrices_per_array;
+    size_t m_num_matrix_arrays;
 };
 
 } // namespace Mg::gfx

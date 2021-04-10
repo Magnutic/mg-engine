@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <mg/containers/mg_flat_map.h>
 #include <mg/core/mg_config.h>
 #include <mg/core/mg_window.h>
 #include <mg/gfx/mg_billboard_renderer.h>
@@ -17,6 +18,7 @@
 #include <mg/gfx/mg_post_process.h>
 #include <mg/gfx/mg_render_command_list.h>
 #include <mg/gfx/mg_render_target.h>
+#include <mg/gfx/mg_skeleton.h>
 #include <mg/gfx/mg_texture_repository.h>
 #include <mg/gfx/mg_ui_renderer.h>
 #include <mg/input/mg_input.h>
@@ -66,6 +68,8 @@ struct Model {
     Mg::Transform transform;
     Mg::gfx::MeshHandle mesh;
     Mg::small_vector<Mg::gfx::MaterialBinding, 10> material_bindings;
+    Mg::Opt<Mg::gfx::Skeleton> skeleton;
+    Mg::Opt<Mg::gfx::SkeletonPose> pose;
 };
 
 struct MaterialAssignment {
@@ -125,7 +129,8 @@ public:
     State prev_state{};
     State current_state{};
 
-    std::vector<Model> scene_models;
+    using SceneModels = Mg::FlatMap<Mg::Identifier, Model, Mg::Identifier::HashCompare>;
+    SceneModels scene_models;
     std::vector<Mg::gfx::Light> scene_lights;
 
     Mg::gfx::Material* blur_material;
@@ -147,14 +152,15 @@ private:
     void setup_config();
 
     Mg::gfx::MeshHandle load_mesh(Mg::Identifier file);
+    Mg::Opt<Mg::gfx::Skeleton> load_skeleton(Mg::Identifier file);
 
     Mg::gfx::Texture2D* load_texture(Mg::Identifier file);
 
     Mg::gfx::Material* load_material(Mg::Identifier file, Mg::span<const Mg::Identifier> options);
 
-    Model load_model(Mg::Identifier mesh_file,
-                     Mg::span<const MaterialAssignment> material_files,
-                     Mg::span<const Mg::Identifier> options);
+    Model& load_model(Mg::Identifier mesh_file,
+                      Mg::span<const MaterialAssignment> material_files,
+                      Mg::span<const Mg::Identifier> options);
 
     void make_input_map();
 
@@ -169,5 +175,6 @@ private:
     void on_resource_reload(const Mg::FileChangedEvent& event);
 
     void render_light_debug_geometry();
+    void render_skeleton_debug_geometry();
     void render_bloom();
 };

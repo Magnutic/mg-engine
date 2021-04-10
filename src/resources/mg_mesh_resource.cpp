@@ -7,7 +7,9 @@
 #include "mg/resources/mg_mesh_resource.h"
 
 #include "mg/core/mg_log.h"
+#include "mg/gfx/mg_mesh_data.h"
 #include "mg/resource_cache/mg_resource_loading_input.h"
+#include "mg/resources/mg_mesh_resource_data.h"
 
 #include <cstdlib>
 #include <glm/common.hpp>
@@ -21,9 +23,19 @@
 
 namespace Mg {
 
-namespace {
+using namespace gfx::Mesh;
 
-constexpr uint32_t mesh_4cc = 0x444D474Du; // = MGMD
+struct MeshResource::Data {
+    Array<Vertex> vertices;
+    Array<Index> indices;
+    Array<Submesh> submeshes;
+    Array<Influences> influences;
+    Array<Joint> joints;
+
+    BoundingSphere bounding_sphere;
+};
+
+namespace {
 
 struct HeaderCommon {
     uint32_t four_cc = 0; // Filetype identifier
@@ -32,11 +44,6 @@ struct HeaderCommon {
 
 enum class Stride : size_t;
 enum class ElemSize : size_t;
-
-struct Range {
-    uint32_t begin;
-    uint32_t end;
-};
 
 // Cast const std::byte* to const std::uint8_t*, since GCC will (incorrectly, as far as I can tell)
 // warn on memcpy from std::byte*.
@@ -87,11 +94,11 @@ template<typename T> size_t load_to_struct(span<const std::byte> bytestream, T& 
 }
 
 struct LoadResult {
-    Opt<MeshResource::Data> data;
+    std::unique_ptr<MeshResource::Data> data;
     std::string error_reason;
 };
 
-template<typename T> Array<T> read_range(span<const std::byte> bytestream, Range range)
+template<typename T> Array<T> read_range(span<const std::byte> bytestream, FileDataRange range)
 {
     const size_t elem_size = sizeof(T);
     const size_t range_length_bytes = range.end - range.begin;
@@ -114,7 +121,7 @@ template<typename T> Array<T> read_range(span<const std::byte> bytestream, Range
     return result;
 }
 
-std::string_view read_string(span<const std::byte> bytestream, Range range)
+std::string_view read_string(span<const std::byte> bytestream, FileDataRange range)
 {
     const size_t range_length_bytes = range.end - range.begin;
     if (range.end <= range.begin || range.end > bytestream.size()) {
@@ -129,13 +136,13 @@ LoadResult load_version_1(ResourceLoadingInput& input)
 {
     struct Header {
         HeaderCommon common;
-        uint32_t n_vertices = 0;   // Number of unique vertices
-        uint32_t n_indices = 0;    // Number of vertex indices
-        uint32_t n_sub_meshes = 0; // Number of submeshes
-        glm::vec3 centre = {};     // Mesh centre coordinate
-        float radius = 0.0f;       // Mesh radius
-        glm::vec3 abb_min = {};    // Axis-aligned bounding box
-        glm::vec3 abb_max = {};    // Axis-aligned bounding box
+        uint32_t n_vertices = 0;  // Number of unique vertices
+        uint32_t n_indices = 0;   // Number of vertex indices
+        uint32_t n_submeshes = 0; // Number of submeshes
+        glm::vec3 centre = {};    // Mesh centre coordinate
+        float radius = 0.0f;      // Mesh radius
+        glm::vec3 abb_min = {};   // Axis-aligned bounding box
+        glm::vec3 abb_max = {};   // Axis-aligned bounding box
     };
 
     const span<const std::byte> bytestream = input.resource_data();
@@ -145,21 +152,23 @@ LoadResult load_version_1(ResourceLoadingInput& input)
     pos += load_to_struct(bytestream, header);
 
     LoadResult result = {};
-    result.data.emplace();
-    result.data->centre = header.centre;
-    result.data->radius = header.radius;
+    result.data = std::make_unique<MeshResource::Data>();
 
     // Allocate memory for mesh data
-    result.data->sub_meshes = Array<gfx::SubMesh>::make(header.n_sub_meshes);
-    result.data->vertices = Array<gfx::Vertex>::make(header.n_vertices);
-    result.data->indices = Array<gfx::uint_vertex_index>::make(header.n_indices);
+    result.data->submeshes = Array<Submesh>::make(header.n_submeshes);
+    result.data->vertices = Array<Vertex>::make(header.n_vertices);
+    result.data->indices = Array<Index>::make(header.n_indices);
+
+    result.data->bounding_sphere.centre = header.centre;
+    result.data->bounding_sphere.radius = header.radius;
+
+    pos +=
+        load_to_array(bytestream.subspan(pos), result.data->submeshes, ElemSize{ 8 }, Stride{ 12 });
 
     pos += load_to_array(bytestream.subspan(pos),
-                         result.data->sub_meshes,
-                         ElemSize{ 8 },
-                         Stride{ 12 });
-
-    pos += load_to_array(bytestream.subspan(pos), result.data->vertices);
+                         result.data->vertices,
+                         ElemSize{ sizeof(Vertex) },
+                         Stride{ 60 });
 
     const bool success = load_to_array(bytestream.subspan(pos), result.data->indices) > 0;
 
@@ -173,38 +182,14 @@ LoadResult load_version_1(ResourceLoadingInput& input)
 
 LoadResult load_version_2(ResourceLoadingInput& input, [[maybe_unused]] std::string_view meshname)
 {
-    struct String {
-        uint32_t begin;
-        uint32_t length;
-    };
-
-    struct SubmeshRecord {
-        String name;
-        String material;
-        uint32_t begin;
-        uint32_t numIndices;
-    };
-
-    struct Header {
-        HeaderCommon common;
-        glm::vec3 centre;
-        float radius;
-        glm::vec3 abb_min;
-        glm::vec3 abb_max;
-        Range vertices;
-        Range indices;
-        Range submeshes;
-        Range strings;
-    };
-
     const span<const std::byte> bytestream = input.resource_data();
 
-    Header header = {};
+    MeshResourceData::Header header = {};
     load_to_struct(bytestream, header);
 
     const std::string_view strings = read_string(bytestream, header.strings);
 
-    auto get_string = [&strings](String string) -> std::string_view {
+    auto get_string = [&strings](MeshResourceData::StringRange string) -> std::string_view {
         if (string.begin > strings.size()) {
             return {};
         }
@@ -212,30 +197,77 @@ LoadResult load_version_2(ResourceLoadingInput& input, [[maybe_unused]] std::str
     };
 
     LoadResult result;
-    result.data.emplace();
-    result.data->vertices = read_range<gfx::Vertex>(bytestream, header.vertices);
-    result.data->indices = read_range<gfx::uint_vertex_index>(bytestream, header.indices);
-    result.data->centre = header.centre;
-    result.data->radius = header.radius;
+    result.data = std::make_unique<MeshResource::Data>();
+    result.data->vertices = read_range<Vertex>(bytestream, header.vertices);
+    result.data->indices = read_range<Index>(bytestream, header.indices);
+    result.data->influences = read_range<Influences>(bytestream, header.influences);
+    result.data->bounding_sphere.centre = header.centre;
+    result.data->bounding_sphere.radius = header.radius;
 
-    auto submesh_records = read_range<SubmeshRecord>(bytestream, header.submeshes);
-    result.data->sub_meshes = Array<gfx::SubMesh>::make(submesh_records.size());
+    auto submesh_records = read_range<MeshResourceData::Submesh>(bytestream, header.submeshes);
+    result.data->submeshes = Array<Submesh>::make(submesh_records.size());
 
     for (size_t i = 0; i < submesh_records.size(); ++i) {
-        const SubmeshRecord& record = submesh_records[i];
-        gfx::SubMesh& submesh = result.data->sub_meshes[i];
+        const MeshResourceData::Submesh& record = submesh_records[i];
+        Submesh& submesh = result.data->submeshes[i];
 
         submesh.index_range.begin = record.begin;
-        submesh.index_range.amount = record.numIndices;
+        submesh.index_range.amount = record.num_indices;
         submesh.name = Identifier::from_runtime_string(get_string(record.name));
         MG_LOG_DEBUG("Loading mesh '{}': found sub-mesh '{}'", meshname, submesh.name.str_view());
         // TODO record.material
+    }
+
+    auto joint_records = read_range<MeshResourceData::Joint>(bytestream, header.joints);
+    result.data->joints = Array<Joint>::make(joint_records.size());
+
+    for (size_t i = 0; i < joint_records.size(); ++i) {
+        const MeshResourceData::Joint record = joint_records[i];
+        Joint& joint = result.data->joints[i];
+
+        joint.children = record.children;
+        joint.inverse_bind_matrix = record.inverse_bind_matrix;
+        joint.name = Identifier::from_runtime_string(get_string(record.name));
     }
 
     return result;
 }
 
 } // namespace
+
+MeshResource::MeshResource(Identifier id) : BaseResource(id) {}
+MeshResource::~MeshResource() = default;
+
+MeshDataView MeshResource::data_view() const noexcept
+{
+    return { vertices(), indices(), submeshes(), influences(), bounding_sphere() };
+}
+
+span<const Vertex> MeshResource::vertices() const noexcept
+{
+    return m_data ? m_data->vertices : span<const Vertex>{};
+}
+span<const Index> MeshResource::indices() const noexcept
+{
+    return m_data ? m_data->indices : span<const Index>{};
+}
+span<const Submesh> MeshResource::submeshes() const noexcept
+{
+    return m_data ? m_data->submeshes : span<const Submesh>{};
+}
+span<const Influences> MeshResource::influences() const noexcept
+{
+    return m_data ? m_data->influences : span<const Influences>{};
+}
+span<const Joint> MeshResource::joints() const noexcept
+{
+    return m_data ? m_data->joints : span<const Joint>{};
+}
+
+BoundingSphere MeshResource::bounding_sphere() const noexcept
+{
+    return m_data ? m_data->bounding_sphere : BoundingSphere{};
+}
 
 LoadResourceResult MeshResource::load_resource_impl(ResourceLoadingInput& input)
 {
@@ -246,7 +278,7 @@ LoadResourceResult MeshResource::load_resource_impl(ResourceLoadingInput& input)
         return LoadResourceResult::data_error("No header in file.");
     }
 
-    if (header_common.four_cc != mesh_4cc) {
+    if (header_common.four_cc != MeshResourceData::fourcc) {
         return LoadResourceResult::data_error("Invalid data (4CC mismatch).");
     }
 
@@ -265,33 +297,35 @@ LoadResourceResult MeshResource::load_resource_impl(ResourceLoadingInput& input)
             fmt::format("Unsupported mesh version: {:d}.", header_common.version));
     }
 
-    if (load_result.data.has_value()) {
-        m_data = load_result.data.take().value();
-    }
-    else {
+    if (load_result.data == nullptr) {
         return LoadResourceResult::data_error(load_result.error_reason);
     }
+
+    m_data = std::move(load_result.data);
 
     if (!validate()) {
         return LoadResourceResult::data_error("Mesh validation failed.");
     }
 
-    calculate_bounds();
     return LoadResourceResult::success();
 }
 
 bool MeshResource::validate() const
 {
     bool status = true;
-    const auto mesh_error = [&](std::string_view what) {
-        log.warning(fmt::format("Mesh::validate() for {}: {}", resource_id().str_view(), what));
+    const auto mesh_error = [&](std::string_view msg, auto&&... args) {
+        log.warning("MeshResource::validate() for {}: {}",
+                    resource_id().str_view(),
+                    fmt::format(msg, std::forward<decltype(args)>(args)...));
         status = false;
     };
 
     // Check data
-    const auto n_sub_meshes = sub_meshes().size();
+    const auto n_submeshes = submeshes().size();
     const auto n_vertices = vertices().size();
     const auto n_indices = indices().size();
+    const auto n_influences = influences().size();
+    const auto n_joints = joints().size();
 
     // Check triangle-list validity
     if (n_indices % 3 != 0) {
@@ -299,58 +333,70 @@ bool MeshResource::validate() const
     }
 
     // Check submeshes
-    if (n_sub_meshes == 0) {
+    if (n_submeshes == 0) {
         mesh_error("No submeshes present.");
     }
 
-    for (size_t i = 0; i < n_sub_meshes; ++i) {
-        const gfx::SubMesh& sm = sub_meshes()[i];
+    for (size_t i = 0; i < n_submeshes; ++i) {
+        const Submesh& sm = submeshes()[i];
         const auto [index_begin, index_amount] = sm.index_range;
         if (index_begin >= n_indices || index_begin + index_amount > n_indices) {
-            mesh_error(fmt::format("Invalid submesh at index {}", i));
+            mesh_error("Invalid submesh at index {}", i);
         }
     }
 
     // Check indices
     for (size_t i = 0; i < n_indices; ++i) {
-        const gfx::uint_vertex_index& vi = indices()[i];
+        const Index& vi = indices()[i];
         if (vi >= n_vertices) {
-            mesh_error(fmt::format("Index data out of bounds at index {}, was {}.", i, vi));
+            mesh_error("Index data out of bounds at index {}, was {}.", i, vi);
         }
     }
 
     // Check vertices
-    if (n_vertices > gfx::k_max_vertices_per_mesh) {
-        mesh_error(fmt::format("Too many vertices. Max is '{}', was '{}'",
-                               gfx::k_max_vertices_per_mesh,
-                               n_vertices));
+    if (n_vertices > max_vertices_per_mesh) {
+        mesh_error("Too many vertices. Max is '{}', was '{}'.", max_vertices_per_mesh, n_vertices);
     }
 
-    // TODO: evaluate joints when functionality is present
+    // Check joints
+    for (JointId ji = 0; ji < n_joints; ++ji) {
+        const Joint& joint = joints()[ji];
+
+        for (const JointId child_id : joint.children) {
+            if (child_id != joint_id_none && child_id >= joints().size()) {
+                mesh_error(
+                    "In children of joint '{}' (JointId {}): "
+                    "JointId out of bounds: was {}, max is {}.",
+                    joint.name.str_view(),
+                    ji,
+                    child_id,
+                    joints().size());
+            }
+        }
+    }
+
+    // Check joint influences
+    {
+        if (n_influences > 0 && n_influences != n_vertices) {
+            mesh_error("Number of joint influences ({}) does not match number of vertices ({}).",
+                       n_influences,
+                       n_vertices);
+        }
+
+        for (size_t ii = 0; ii < n_influences; ++ii) {
+            const Influences& vertex_influences = influences()[ii];
+            for (const JointId id : vertex_influences.ids) {
+                if (id != joint_id_none && id >= joints().size()) {
+                    mesh_error("In influences index {}: JointId out of bounds; was {}, max is {}.",
+                               ii,
+                               id,
+                               n_joints);
+                }
+            }
+        }
+    }
+
     return status;
-}
-
-void MeshResource::calculate_bounds() noexcept
-{
-    // Calculate centre position
-    m_data.centre = {};
-
-    for (const gfx::Vertex& v : m_data.vertices) {
-        m_data.centre += v.position;
-    }
-
-    m_data.centre /= m_data.vertices.size();
-
-    // Calculate mesh radius (distance from centre to most distance vertex)
-    float radius_sqr = 0.0f;
-
-    for (const gfx::Vertex& v : m_data.vertices) {
-        const auto diff = m_data.centre - v.position;
-        const float new_radius_sqr = glm::dot(diff, diff);
-        radius_sqr = glm::max(radius_sqr, new_radius_sqr);
-    }
-
-    m_data.radius = glm::sqrt(radius_sqr);
 }
 
 } // namespace Mg

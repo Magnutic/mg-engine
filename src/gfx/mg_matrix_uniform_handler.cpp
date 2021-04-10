@@ -8,29 +8,32 @@
 
 #include "mg/gfx/mg_camera.h"
 #include "mg/utils/mg_assert.h"
-
-#include <algorithm>
+#include "mg/utils/mg_math_utils.h"
 
 namespace Mg::gfx {
 
-MatrixUniformHandler::MatrixUniformHandler()
-    : m_matrix_ubo(sizeof(glm::mat4) * MATRIX_UBO_ARRAY_SIZE * 2)
+MatrixUniformHandler::MatrixUniformHandler(const size_t num_matrices_per_array,
+                                           const size_t num_matrix_arrays)
+    : m_matrix_ubo(sizeof(glm::mat4) * num_matrices_per_array * num_matrix_arrays)
+    , m_num_matrices_per_array(num_matrices_per_array)
+    , m_num_matrix_arrays(num_matrix_arrays)
 {}
 
-size_t MatrixUniformHandler::set_matrices(span<const glm::mat4> m_matrices,
-                                          span<const glm::mat4> mvp_matrices)
+size_t
+MatrixUniformHandler::set_matrix_arrays(const span<const span<const glm::mat4>> matrix_arrays)
 {
-    MG_ASSERT(m_matrices.size() == mvp_matrices.size());
+    MG_ASSERT(matrix_arrays.size() == m_num_matrix_arrays);
 
-    const size_t num_to_write = std::min<size_t>(MATRIX_UBO_ARRAY_SIZE, m_matrices.size());
+    size_t destination_offset = 0;
+    const size_t num_to_write = min(m_num_matrices_per_array, matrix_arrays[0].size());
 
-    // Write M-matrices to GPU buffer.
-    auto m_matrices_to_write = span{ m_matrices }.subspan(0, num_to_write);
-    m_matrix_ubo.set_data(as_bytes(m_matrices_to_write));
+    for (const auto& matrix_array : matrix_arrays) {
+        MG_ASSERT(matrix_array.size() >= num_to_write);
+        const auto matrices_to_write = matrix_array.subspan(0, num_to_write);
+        m_matrix_ubo.set_data(as_bytes(matrices_to_write), destination_offset);
+        destination_offset += sizeof(glm::mat4) * m_num_matrices_per_array;
+    }
 
-    // Write MVP-matrices to GPU buffer following the M-matrices.
-    constexpr size_t k_mvp_dest_offset = sizeof(glm::mat4) * MATRIX_UBO_ARRAY_SIZE;
-    m_matrix_ubo.set_data(as_bytes(span{ mvp_matrices }), k_mvp_dest_offset);
     return num_to_write;
 }
 
