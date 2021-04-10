@@ -19,7 +19,7 @@
 #include "mg/gfx/mg_light.h"
 #include "mg/gfx/mg_material.h"
 #include "mg/gfx/mg_matrix_uniform_handler.h"
-#include "mg/gfx/mg_pipeline_repository.h"
+#include "mg/gfx/mg_pipeline_pool.h"
 #include "mg/gfx/mg_render_command_list.h"
 
 #include "shader_code/mg_mesh_renderer_shader_framework.h"
@@ -119,13 +119,13 @@ FrameBlock make_frame_block(const ICamera& camera, float current_time, float cam
     return frame_block;
 }
 
-enum class MeshPipelineRepositoryKind { Static, Animated };
-PipelineRepository make_mesh_pipeline_repository(const MeshPipelineRepositoryKind kind)
+enum class MeshPipelinePoolKind { Static, Animated };
+PipelinePool make_mesh_pipeline_pool(const MeshPipelinePoolKind kind)
 {
     internal::MeshRendererFrameworkShaderParams params = {};
     params.matrix_array_size = k_matrix_ubo_array_size;
     params.max_num_lights = defs::max_num_lights;
-    params.skinning_matrix_array_size = kind == MeshPipelineRepositoryKind::Animated
+    params.skinning_matrix_array_size = kind == MeshPipelinePoolKind::Animated
                                             ? k_skinning_matrix_ubo_array_size
                                             : 0;
     params.light_grid_width = defs::light_grid_width;
@@ -137,7 +137,7 @@ PipelineRepository make_mesh_pipeline_repository(const MeshPipelineRepositoryKin
     const std::string framework_fragment_code =
         internal::mesh_renderer_fragment_shader_framework_code(params);
 
-    PipelineRepository::Config config{};
+    PipelinePoolConfig config{};
     config.preamble_shader_code = { VertexShaderCode{ framework_vertex_code },
                                     {},
                                     FragmentShaderCode{ framework_fragment_code } };
@@ -184,17 +184,16 @@ PipelineRepository make_mesh_pipeline_repository(const MeshPipelineRepositoryKin
 
     config.material_params_ubo_slot = k_material_params_ubo_slot;
 
-    return PipelineRepository(std::move(config));
+    return PipelinePool(std::move(config));
 }
 
 } // namespace
 
 /** MeshRenderer's state. */
 struct MeshRendererData {
-    PipelineRepository static_mesh_pipeline_repository =
-        make_mesh_pipeline_repository(MeshPipelineRepositoryKind::Static);
-    PipelineRepository animated_mesh_pipeline_repository =
-        make_mesh_pipeline_repository(MeshPipelineRepositoryKind::Animated);
+    PipelinePool static_mesh_pipeline_pool = make_mesh_pipeline_pool(MeshPipelinePoolKind::Static);
+    PipelinePool animated_mesh_pipeline_pool =
+        make_mesh_pipeline_pool(MeshPipelinePoolKind::Animated);
 
     MatrixUniformHandler matrix_uniform_handler{ k_matrix_ubo_array_size, 2 };
     MatrixUniformHandler skinning_matrix_uniform_handler{ k_skinning_matrix_ubo_array_size, 1 };
@@ -261,8 +260,8 @@ MeshRenderer::~MeshRenderer() = default;
 void MeshRenderer::drop_shaders()
 {
     MG_GFX_DEBUG_GROUP("Mesh_renderer::drop_shaders")
-    impl().static_mesh_pipeline_repository.drop_pipelines();
-    impl().animated_mesh_pipeline_repository.drop_pipelines();
+    impl().static_mesh_pipeline_pool.drop_pipelines();
+    impl().animated_mesh_pipeline_pool.drop_pipelines();
 }
 
 void MeshRenderer::render(const ICamera& cam,
@@ -295,8 +294,8 @@ void MeshRenderer::render(const ICamera& cam,
 
         const RenderCommand& command = render_commands[i];
         const bool is_skinned_mesh = command.num_skinning_matrices > 0;
-        auto* pipeline_repository = is_skinned_mesh ? &impl().animated_mesh_pipeline_repository
-                                                    : &impl().static_mesh_pipeline_repository;
+        auto* pipeline_pool = is_skinned_mesh ? &impl().animated_mesh_pipeline_pool
+                                              : &impl().static_mesh_pipeline_pool;
 
         MG_ASSERT_DEBUG(command.material != nullptr);
 
@@ -310,9 +309,9 @@ void MeshRenderer::render(const ICamera& cam,
 
         // Set up material state
         if (current_material != command.material) {
-            pipeline_repository->bind_material_pipeline(*command.material,
-                                                        pipeline_settings(),
-                                                        binding_context);
+            pipeline_pool->bind_material_pipeline(*command.material,
+                                                  pipeline_settings(),
+                                                  binding_context);
             current_material = command.material;
         }
 

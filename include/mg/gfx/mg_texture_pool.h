@@ -4,7 +4,7 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-/** @file mg_texture_repository.h
+/** @file mg_texture_pool.h
  * Creates, stores, and updates texturees.
  */
 
@@ -23,15 +23,15 @@ namespace Mg::gfx {
 class Texture2D;
 
 struct RenderTargetParams; // Defined in mg_texture_related_types.h
-struct TextureRepositoryData;
+struct TexturePoolData;
 
-class TextureRepository : PImplMixin<TextureRepositoryData> {
+class TexturePool : PImplMixin<TexturePoolData> {
 public:
-    TextureRepository();
-    ~TextureRepository();
+    TexturePool();
+    ~TexturePool();
 
-    MG_MAKE_NON_MOVABLE(TextureRepository);
-    MG_MAKE_NON_COPYABLE(TextureRepository);
+    MG_MAKE_NON_MOVABLE(TexturePool);
+    MG_MAKE_NON_COPYABLE(TexturePool);
 
     Texture2D* create(const TextureResource& resource);
 
@@ -47,13 +47,7 @@ public:
 
     void destroy(Texture2D* texture);
 
-    enum class DefaultTexture {
-        White,
-        Black,
-        Transparent,
-        NormalsFlat,
-        Checkerboard
-    };
+    enum class DefaultTexture { White, Black, Transparent, NormalsFlat, Checkerboard };
 
     Texture2D* get_default_texture(DefaultTexture type);
 };

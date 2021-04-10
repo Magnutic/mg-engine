@@ -4,7 +4,7 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-/** @file mg_pipeline_repository.
+/** @file mg_pipeline_pool.
  * Creates, stores, and updates graphics pipelines from materials using a given template.
  */
 
@@ -43,17 +43,24 @@ struct ShaderCode {
     FragmentShaderCode fragment;
 };
 
-struct PipelineRepositoryData;
+struct PipelinePoolConfig {
+    ShaderCode preamble_shader_code;
+    ShaderCode on_error_shader_code;
 
-class PipelineRepository : PImplMixin<PipelineRepositoryData> {
+    uint32_t material_params_ubo_slot;
+
+    Array<PipelineInputDescriptor> shared_input_layout;
+};
+
+struct PipelinePoolData;
+
+class PipelinePool : PImplMixin<PipelinePoolData> {
 public:
-    struct Config;
+    explicit PipelinePool(PipelinePoolConfig&& config);
+    ~PipelinePool();
 
-    explicit PipelineRepository(Config&& config);
-    ~PipelineRepository();
-
-    MG_MAKE_NON_COPYABLE(PipelineRepository);
-    MG_MAKE_NON_MOVABLE(PipelineRepository);
+    MG_MAKE_NON_COPYABLE(PipelinePool);
+    MG_MAKE_NON_MOVABLE(PipelinePool);
 
     /** Binds the pipeline corresponding the the given material, creating it if needed. Requires
      * that you create a `PipelineBindingContext` first.
@@ -62,16 +69,15 @@ public:
                                 const Pipeline::Settings& settings,
                                 PipelineBindingContext& binding_context);
 
+    /** Drops all stored pipelines, releasing resources. This can be used to enable hot reloading of
+     * material data. If the materials have changed since last binding, the changes (including
+     * shader-code changes) will take effect after pipelines have been dropped, since the pipelines
+     * will be regenerated on first use after dropping.
+     */
     void drop_pipelines() noexcept;
-};
 
-struct PipelineRepository::Config {
-    ShaderCode preamble_shader_code;
-    ShaderCode on_error_shader_code;
-
-    uint32_t material_params_ubo_slot;
-
-    Array<PipelineInputDescriptor> shared_input_layout;
+    /** Drops stored pipeline for the given material, if it has been created. */
+    void drop_pipeline(const Material& material) noexcept;
 };
 
 } // namespace Mg::gfx

@@ -4,7 +4,7 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-/** @file mg_mesh_repository.h
+/** @file mg_mesh_pool.h
  * Creates, stores, and updates meshes.
  */
 
@@ -31,7 +31,7 @@ class MeshBufferImpl;
  * performance reasons -- keeping meshes that are often used together in the same buffer may result
  * in better performance.
  *
- * Construct using Mg::MeshRepository::new_mesh_buffer()
+ * Construct using Mg::MeshPool::new_mesh_buffer()
  */
 class MeshBuffer : PImplMixin<MeshBufferImpl> {
 public:
@@ -59,7 +59,7 @@ public:
 
 
 private:
-    friend class MeshRepository;
+    friend class MeshPool;
     using PImplMixin::PImplMixin; // Constructor forwarding to pImpl class constructor.
 };
 
@@ -83,16 +83,16 @@ enum class IndexBufferSize : size_t;
  */
 enum class InfluencesBufferSize : size_t;
 
-class MeshRepositoryImpl;
+class MeshPoolImpl;
 
 /** Creates, stores, and updates meshes. */
-class MeshRepository : PImplMixin<MeshRepositoryImpl> {
+class MeshPool : PImplMixin<MeshPoolImpl> {
 public:
-    MeshRepository();
-    ~MeshRepository();
+    MeshPool();
+    ~MeshPool();
 
-    MG_MAKE_NON_COPYABLE(MeshRepository);
-    MG_MAKE_DEFAULT_MOVABLE(MeshRepository);
+    MG_MAKE_NON_COPYABLE(MeshPool);
+    MG_MAKE_DEFAULT_MOVABLE(MeshPool);
 
     /** Create a new mesh using the given mesh resource. */
     MeshHandle create(const MeshResource& mesh_res);

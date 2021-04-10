@@ -4,7 +4,7 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-#include "mg/gfx/mg_pipeline_repository.h"
+#include "mg/gfx/mg_pipeline_pool.h"
 
 #include "../mg_shader.h"
 
@@ -193,13 +193,13 @@ ShaderCode assemble_shader_code(const ShaderCode& preamble_shader_code, const Ma
 } // namespace
 
 //--------------------------------------------------------------------------------------------------
-// PipelineRepository implementation
+// PipelinePool implementation
 //--------------------------------------------------------------------------------------------------
 
-struct PipelineRepositoryData {
+struct PipelinePoolData {
     using PipelineMap = FlatMap<Material::PipelineId, Pipeline, MaterialPipelineIdCmp>;
 
-    PipelineRepository::Config config;
+    PipelinePoolConfig config;
     PipelineMap pipelines;
     UniformBuffer material_params_ubo{ defs::k_material_parameters_buffer_size };
 };
@@ -245,7 +245,7 @@ generate_material_input_layout(const Material& material, const uint32_t material
 }
 
 // Make Pipeline to use as fallback when shaders fail to compile.
-Pipeline make_fallback_pipeline(const PipelineRepository::Config& config, const Material& material)
+Pipeline make_fallback_pipeline(const PipelinePoolConfig& config, const Material& material)
 {
     log.message("Using error-fallback shader.");
 
@@ -263,8 +263,7 @@ Pipeline make_fallback_pipeline(const PipelineRepository::Config& config, const 
     return std::move(pipeline.value());
 }
 
-Pipeline make_pipeline_for_material(const PipelineRepository::Config& config,
-                                    const Material& material)
+Pipeline make_pipeline_for_material(const PipelinePoolConfig& config, const Material& material)
 {
     MG_GFX_DEBUG_GROUP("make_pipeline_for_material")
 
@@ -293,7 +292,7 @@ Pipeline make_pipeline_for_material(const PipelineRepository::Config& config,
     return std::move(opt_pipeline.value());
 }
 
-Pipeline& get_or_make_pipeline(PipelineRepositoryData& data, const Material& material)
+Pipeline& get_or_make_pipeline(PipelinePoolData& data, const Material& material)
 {
     const Material::PipelineId key = material.pipeline_identifier();
 
@@ -311,7 +310,7 @@ Pipeline& get_or_make_pipeline(PipelineRepositoryData& data, const Material& mat
 
 } // anonymous namespace
 
-PipelineRepository::PipelineRepository(Config&& config)
+PipelinePool::PipelinePool(PipelinePoolConfig&& config)
 {
     impl().config = std::move(config);
 
@@ -330,13 +329,13 @@ PipelineRepository::PipelineRepository(Config&& config)
     }
 }
 
-PipelineRepository::~PipelineRepository() = default;
+PipelinePool::~PipelinePool() = default;
 
-void PipelineRepository::bind_material_pipeline(const Material& material,
-                                                const Pipeline::Settings& settings,
-                                                PipelineBindingContext& binding_context)
+void PipelinePool::bind_material_pipeline(const Material& material,
+                                          const Pipeline::Settings& settings,
+                                          PipelineBindingContext& binding_context)
 {
-    MG_GFX_DEBUG_GROUP("PipelineRepository::bind_pipeline")
+    MG_GFX_DEBUG_GROUP("PipelinePool::bind_pipeline")
 
     const Pipeline& pipeline = get_or_make_pipeline(impl(), material);
     binding_context.bind_pipeline(pipeline, settings);
@@ -349,20 +348,27 @@ void PipelineRepository::bind_material_pipeline(const Material& material,
     small_vector<PipelineInputBinding, 9> material_input_bindings;
 
     material_input_bindings.push_back(
-        PipelineInputBinding{ impl().config.material_params_ubo_slot, impl().material_params_ubo });
+        { impl().config.material_params_ubo_slot, impl().material_params_ubo });
 
     const auto& samplers = material.samplers();
     for (size_t i = 0; i < samplers.size(); ++i) {
-        material_input_bindings.push_back(
-            PipelineInputBinding{ narrow<uint32_t>(i), samplers[i].sampler });
+        material_input_bindings.push_back({ narrow<uint32_t>(i), samplers[i].sampler });
     }
 
     Pipeline::bind_material_inputs(material_input_bindings);
 }
 
-void PipelineRepository::drop_pipelines() noexcept
+void PipelinePool::drop_pipelines() noexcept
 {
     impl().pipelines.clear();
+}
+
+void PipelinePool::drop_pipeline(const Material& material) noexcept
+{
+    const auto it = impl().pipelines.find(material.pipeline_identifier());
+    if (it != impl().pipelines.end()) {
+        impl().pipelines.erase(it);
+    }
 }
 
 } // namespace Mg::gfx

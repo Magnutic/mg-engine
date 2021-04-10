@@ -5,7 +5,7 @@
 //**************************************************************************************************
 
 /** @file mg_mesh_internal.h
- * Internal mesh structure. @see MeshRepository
+ * Internal mesh structure. @see MeshPool
  */
 
 #pragma once
@@ -31,7 +31,7 @@ struct SharedBuffer {
     int32_t num_users = 0;
 };
 
-/** Internal mesh structure. @see MeshRepository */
+/** Internal mesh structure. @see MeshPool */
 struct MeshInternal {
     /** Submeshes, defined as ranges in the index_buffer. */
     small_vector<Mesh::SubmeshRange, 8> submeshes;

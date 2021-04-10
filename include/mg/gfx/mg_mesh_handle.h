@@ -5,7 +5,7 @@
 //**************************************************************************************************
 
 /** @file mg_mesh_handle.h
- * Handle to a mesh. @see MeshRepository
+ * Handle to a mesh. @see MeshPool
  */
 
 #pragma once
@@ -18,7 +18,7 @@ namespace Mg::gfx {
 // differ depending on renderer backend. As of writing, only an OpenGL-backend exists. This may or
 // may not change in the future.
 
-/** Opaque handle to a mesh. @see MeshRepository */
+/** Opaque handle to a mesh. @see MeshPool */
 enum class MeshHandle : uintptr_t;
 
 } // namespace Mg::gfx

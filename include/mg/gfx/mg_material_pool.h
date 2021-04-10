@@ -4,7 +4,7 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-/** @file mg_material_repository.h
+/** @file mg_material_pool.h
  * Creates, stores, and updates materials.
  */
 
@@ -22,15 +22,15 @@ class ShaderResource;
 namespace Mg::gfx {
 
 class Material;
-struct MaterialRepositoryData;
+struct MaterialPoolData;
 
-class MaterialRepository : PImplMixin<MaterialRepositoryData> {
+class MaterialPool : PImplMixin<MaterialPoolData> {
 public:
-    MG_MAKE_NON_MOVABLE(MaterialRepository);
-    MG_MAKE_NON_COPYABLE(MaterialRepository);
+    MG_MAKE_NON_MOVABLE(MaterialPool);
+    MG_MAKE_NON_COPYABLE(MaterialPool);
 
-    MaterialRepository();
-    ~MaterialRepository();
+    MaterialPool();
+    ~MaterialPool();
 
     Material* create(Identifier id, ResourceHandle<ShaderResource> shader);
 

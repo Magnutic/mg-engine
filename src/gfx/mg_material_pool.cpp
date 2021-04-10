@@ -4,7 +4,7 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-#include "mg/gfx/mg_material_repository.h"
+#include "mg/gfx/mg_material_pool.h"
 
 #include "mg/gfx/mg_material.h"
 
@@ -14,20 +14,20 @@
 
 namespace Mg::gfx {
 
-struct MaterialRepositoryData {
+struct MaterialPoolData {
     plf::colony<Material> materials;
 };
 
-MaterialRepository::MaterialRepository() = default;
-MaterialRepository::~MaterialRepository() = default;
+MaterialPool::MaterialPool() = default;
+MaterialPool::~MaterialPool() = default;
 
-Material* MaterialRepository::create(Identifier id, ResourceHandle<ShaderResource> shader)
+Material* MaterialPool::create(Identifier id, ResourceHandle<ShaderResource> shader)
 {
     const auto it = impl().materials.emplace(Material{ id, shader });
     return &(*it);
 }
 
-void MaterialRepository::destroy(const Material* handle)
+void MaterialPool::destroy(const Material* handle)
 {
     Material* non_const_ptr = const_cast<Material*>(handle); // NOLINT
     impl().materials.erase(impl().materials.get_iterator_from_pointer(non_const_ptr));

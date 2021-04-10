@@ -13,7 +13,7 @@
 #include "mg/gfx/mg_font_handler.h"
 #include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
-#include "mg/gfx/mg_pipeline_repository.h"
+#include "mg/gfx/mg_pipeline_pool.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 
 #include <glm/mat2x2.hpp>
@@ -125,9 +125,9 @@ Pipeline::Settings pipeline_settings(Opt<BlendMode> blend_mode)
     return settings;
 }
 
-PipelineRepository make_ui_pipeline_factory()
+PipelinePool make_ui_pipeline_factory()
 {
-    PipelineRepository::Config config = {};
+    PipelinePoolConfig config = {};
 
     config.shared_input_layout = Array<PipelineInputDescriptor>::make(1);
     {
@@ -146,7 +146,7 @@ PipelineRepository make_ui_pipeline_factory()
 
     config.material_params_ubo_slot = k_material_params_ubo_slot;
 
-    return PipelineRepository(std::move(config));
+    return PipelinePool(std::move(config));
 }
 
 Pipeline make_text_pipeline()
@@ -220,7 +220,7 @@ mat4 make_transform_matrix(const UIPlacement& placement,
 
 namespace detail {
 struct UIRendererData {
-    PipelineRepository pipeline_repository = make_ui_pipeline_factory();
+    PipelinePool pipeline_pool = make_ui_pipeline_factory();
 
     UniformBuffer draw_params_ubo{ sizeof(DrawParamsBlock) };
 
@@ -302,9 +302,9 @@ void setup_material_pipeline(UIRendererData& data,
     Pipeline::bind_shared_inputs(input_bindings);
 
     PipelineBindingContext binding_context;
-    data.pipeline_repository.bind_material_pipeline(material,
-                                                    pipeline_settings(blend_mode),
-                                                    binding_context);
+    data.pipeline_pool.bind_material_pipeline(material,
+                                              pipeline_settings(blend_mode),
+                                              binding_context);
 }
 } // namespace
 
@@ -380,7 +380,7 @@ void UIRenderer::draw_text(const UIPlacement& placement,
 void UIRenderer::drop_shaders() noexcept
 {
     MG_GFX_DEBUG_GROUP("UIRenderer::drop_shaders")
-    impl().pipeline_repository.drop_pipelines();
+    impl().pipeline_pool.drop_pipelines();
 }
 
 } // namespace Mg::gfx

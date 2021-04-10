@@ -11,7 +11,7 @@
 #include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_gfx_device.h"
 #include "mg/gfx/mg_material.h"
-#include "mg/gfx/mg_pipeline_repository.h"
+#include "mg/gfx/mg_pipeline_pool.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_stl_helpers.h"
@@ -128,9 +128,9 @@ constexpr auto billboard_fragment_shader_fallback = R"(
     void main() { frag_out = vec4(1.0, 0.0, 1.0, 1.0); }
 )";
 
-PipelineRepository make_billboard_pipeline_factory()
+PipelinePool make_billboard_pipeline_factory()
 {
-    PipelineRepository::Config config{};
+    PipelinePoolConfig config{};
 
     config.shared_input_layout = Array<PipelineInputDescriptor>::make(1);
     {
@@ -151,7 +151,7 @@ PipelineRepository make_billboard_pipeline_factory()
 
     config.material_params_ubo_slot = k_material_params_ubo_slot;
 
-    return PipelineRepository(std::move(config));
+    return PipelinePool(std::move(config));
 }
 
 Pipeline::Settings pipeline_settings()
@@ -183,7 +183,7 @@ void BillboardRenderList::sort_farthest_first(const ICamera& camera) noexcept
 struct BillboardRendererData {
     UniformBuffer camera_ubo{ sizeof(CameraBlock) };
 
-    PipelineRepository pipeline_repository = make_billboard_pipeline_factory();
+    PipelinePool pipeline_pool = make_billboard_pipeline_factory();
 
     // Size of VBO
     size_t vertex_buffer_size = 0;
@@ -289,7 +289,7 @@ void BillboardRenderer::render(const ICamera& camera,
     Pipeline::bind_shared_inputs(shared_inputs);
 
     PipelineBindingContext binding_context;
-    impl().pipeline_repository.bind_material_pipeline(material,
+    impl().pipeline_pool.bind_material_pipeline(material,
                                                       pipeline_settings(),
                                                       binding_context);
 
@@ -300,7 +300,7 @@ void BillboardRenderer::render(const ICamera& camera,
 void BillboardRenderer::drop_shaders() noexcept
 {
     MG_GFX_DEBUG_GROUP("BillboardRenderer::drop_shaders")
-    impl().pipeline_repository.drop_pipelines();
+    impl().pipeline_pool.drop_pipelines();
 }
 
 } // namespace Mg::gfx

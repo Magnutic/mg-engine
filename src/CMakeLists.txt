@@ -20,11 +20,11 @@ add_library(mg_engine
     gfx/mg_light_buffers.cpp
     gfx/mg_light_grid.cpp
     gfx/mg_material.cpp
-    gfx/mg_material_repository.cpp
+    gfx/mg_material_pool.cpp
     gfx/mg_matrix_uniform_handler.cpp
     gfx/mg_render_command_list.cpp
     gfx/mg_skeleton.cpp
-    gfx/mg_texture_repository.cpp
+    gfx/mg_texture_pool.cpp
     gfx/opengl/mg_billboard_renderer.cpp
     gfx/opengl/mg_buffer_texture.cpp
     gfx/opengl/mg_debug_renderer.cpp
@@ -32,10 +32,10 @@ add_library(mg_engine
     gfx/opengl/mg_gfx_device.cpp
     gfx/opengl/mg_gl_debug.cpp
     gfx/opengl/mg_mesh_renderer.cpp
-    gfx/opengl/mg_mesh_repository.cpp
+    gfx/opengl/mg_mesh_pool.cpp
     gfx/opengl/mg_opengl_shader.cpp
     gfx/opengl/mg_pipeline.cpp
-    gfx/opengl/mg_pipeline_repository.cpp
+    gfx/opengl/mg_pipeline_pool.cpp
     gfx/opengl/mg_post_process.cpp
     gfx/opengl/mg_render_target.cpp
     gfx/opengl/mg_shader.cpp

@@ -9,7 +9,7 @@
 #include "mg/containers/mg_small_vector.h"
 #include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_material.h"
-#include "mg/gfx/mg_pipeline_repository.h"
+#include "mg/gfx/mg_pipeline_pool.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/mg_defs.h"
 
@@ -77,11 +77,11 @@ float linearise_depth(float depth) {
 constexpr const char* post_process_fs_fallback =
     R"(void main() { frag_out = vec4(1.0, 0.0, 1.0, 1.0); })";
 
-PipelineRepository make_post_process_pipeline_repository()
+PipelinePool make_post_process_pipeline_pool()
 {
-    MG_GFX_DEBUG_GROUP("make_post_process_pipeline_repository")
+    MG_GFX_DEBUG_GROUP("make_post_process_pipeline_pool")
 
-    PipelineRepository::Config config{};
+    PipelinePoolConfig config{};
 
     config.preamble_shader_code = { VertexShaderCode{ post_process_vs },
                                     {},
@@ -112,7 +112,7 @@ PipelineRepository make_post_process_pipeline_repository()
 
     config.material_params_ubo_slot = k_material_params_ubo_slot;
 
-    return PipelineRepository(std::move(config));
+    return PipelinePool(std::move(config));
 }
 
 Pipeline::Settings pipeline_settings()
@@ -126,7 +126,7 @@ Pipeline::Settings pipeline_settings()
 } // namespace
 
 struct PostProcessRendererData {
-    PipelineRepository pipeline_repository = make_post_process_pipeline_repository();
+    PipelinePool pipeline_pool = make_post_process_pipeline_pool();
 
     UniformBuffer frame_block_ubo{ sizeof(FrameBlock) };
 
@@ -184,7 +184,7 @@ void PostProcessRenderer::post_process(const Context& context,
     MG_ASSERT(context.m_data == &impl() && "Context belongs to a different PostProcessRenderer");
     MG_GFX_DEBUG_GROUP("PostProcessRenderer::post_process")
 
-    impl().pipeline_repository.bind_material_pipeline(material,
+    impl().pipeline_pool.bind_material_pipeline(material,
                                                       pipeline_settings(),
                                                       impl().binding_context.value());
 
@@ -213,7 +213,7 @@ void PostProcessRenderer::post_process(const Context& context,
     MG_ASSERT(context.m_data == &impl() && "Context belongs to a different PostProcessRenderer");
     MG_GFX_DEBUG_GROUP("PostProcessRenderer::post_process")
 
-    impl().pipeline_repository.bind_material_pipeline(material,
+    impl().pipeline_pool.bind_material_pipeline(material,
                                                       pipeline_settings(),
                                                       impl().binding_context.value());
 
@@ -238,7 +238,7 @@ void PostProcessRenderer::post_process(const Context& context,
 void PostProcessRenderer::drop_shaders() noexcept
 {
     MG_GFX_DEBUG_GROUP("PostProcessRenderer::drop_shaders")
-    impl().pipeline_repository.drop_pipelines();
+    impl().pipeline_pool.drop_pipelines();
 }
 
 PostProcessRenderer::Context::Context(PostProcessRendererData& data) : m_data(&data)
