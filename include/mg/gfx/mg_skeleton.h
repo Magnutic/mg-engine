@@ -66,10 +66,13 @@ struct SkeletonPose {
     Array<JointPose> joint_poses;
 };
 
-/** Evaluate pose for a given skeleton and write the resulting transformation matrices to
- * skinning_matrices_out. Fails if pose is impossible to apply to the given skeleton, and if
- * skinning_matrices_out is too small to fit matrices for all joints.
+/** Evaluate pose for a given skeleton and write the resulting skinning transformation matrices
+ * (model space to world space) to skinning_matrices_out. This can fail if pose is impossible to
+ * apply to the given skeleton, and if skinning_matrices_out is too small to fit matrices for all
+ * joints.
  *
+ * @param transform Model-space-to-world-space transformation. This will be baked into the resulting
+ * skinning matrices.
  * @param skeleton The skeleton onto which to apply the pose.
  * @param pose The pose to evaluate.
  * @param skinning_matrices_out The output matrices will be written to this buffer, if evaluation is
@@ -82,6 +85,17 @@ bool calculate_skinning_matrices(const Transform& transform,
                                  const SkeletonPose& pose,
                                  span<glm::mat4> skinning_matrices_out);
 
+/** Evaluate pose for a given skeleton and write the resulting joint transformation matrices
+ * (joint space to parent-joint space) to matrices_out. This can fail if pose is impossible to apply
+ * to the given skeleton, and if matrices_out is too small to fit matrices for all joints.
+ *
+ * @param skeleton The skeleton onto which to apply the pose.
+ * @param pose The pose to evaluate.
+ * @param matrices_out The output matrices will be written to this buffer, if evaluation is
+ * successful.
+ *
+ * @return Whether the evaluation was successful.
+ */
 bool calculate_pose_transformations(const Skeleton& skeleton,
                                     const SkeletonPose& pose,
                                     span<glm::mat4> matrices_out);
