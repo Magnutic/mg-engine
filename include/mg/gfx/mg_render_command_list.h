@@ -58,7 +58,7 @@ struct RenderCommand {
 };
 
 /** Tells which material to use for a given submesh (by numeric index). */
-struct MaterialBinding {
+struct MaterialAssignment {
     size_t sub_mesh_index = 0;
     Material* material{};
 };
@@ -139,14 +139,14 @@ public:
      */
     void add_mesh(MeshHandle mesh,
                   const Transform& transform,
-                  span<const MaterialBinding> material_bindings);
+                  span<const MaterialAssignment> material_assignment);
 
     /** Add a skinned (animated) mesh to be rendered, with the given transformation and material
      * assignments.
      */
     void add_skinned_mesh(MeshHandle mesh,
                           const Transform& transform,
-                          span<const MaterialBinding> material_bindings,
+                          span<const MaterialAssignment> material_assignment,
                           const SkinningMatrixPalette& skinning_matrix_palette);
 
     /** Allocate space for a skinning matrix palette, for use with `add_skinned_mesh`. The matrix

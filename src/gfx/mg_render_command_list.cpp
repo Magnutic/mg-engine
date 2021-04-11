@@ -22,13 +22,13 @@ namespace Mg::gfx {
 
 namespace {
 
-Material* material_for_submesh(span<const MaterialBinding> material_bindings, size_t sub_mesh_index)
+Material* material_for_submesh(span<const MaterialAssignment> assignment, size_t sub_mesh_index)
 {
-    auto it = find_if(material_bindings, [&](const MaterialBinding& mb) {
+    auto it = find_if(assignment, [&](const MaterialAssignment& mb) {
         return mb.sub_mesh_index == sub_mesh_index;
     });
 
-    if (it != material_bindings.end()) {
+    if (it != assignment.end()) {
         return it->material;
     }
 
@@ -36,7 +36,7 @@ Material* material_for_submesh(span<const MaterialBinding> material_bindings, si
         return nullptr;
     }
 
-    return material_for_submesh(material_bindings, 0);
+    return material_for_submesh(assignment, 0);
 }
 
 // Key used for sorting render commands.
@@ -66,12 +66,12 @@ RenderCommandProducer::~RenderCommandProducer() = default;
 
 void RenderCommandProducer::add_mesh(MeshHandle mesh_handle,
                                      const Transform& transform,
-                                     span<const MaterialBinding> material_bindings)
+                                     span<const MaterialAssignment> material_assignment)
 {
     const MeshInternal& mesh = get_mesh(mesh_handle);
 
     for (size_t i = 0; i < mesh.submeshes.size(); ++i) {
-        const auto* material = material_for_submesh(material_bindings, i);
+        const auto* material = material_for_submesh(material_assignment, i);
 
         if (material == nullptr) {
             log.warning("No material specified for mesh '{}', submesh {}. Skipping.",
@@ -96,10 +96,10 @@ void RenderCommandProducer::add_mesh(MeshHandle mesh_handle,
 
 void RenderCommandProducer::add_skinned_mesh(MeshHandle mesh,
                                              const Transform& transform,
-                                             span<const MaterialBinding> material_bindings,
+                                             span<const MaterialAssignment> material_assignment,
                                              const SkinningMatrixPalette& skinning_matrix_palette)
 {
-    add_mesh(mesh, transform, material_bindings);
+    add_mesh(mesh, transform, material_assignment);
     RenderCommand& command = impl().render_commands_unsorted.back();
 
     // Keep track of where the skinning matrix palette's data resides.

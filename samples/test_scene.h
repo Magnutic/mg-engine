@@ -67,12 +67,12 @@ private:
 struct Model {
     Mg::Transform transform;
     Mg::gfx::MeshHandle mesh;
-    Mg::small_vector<Mg::gfx::MaterialBinding, 10> material_bindings;
+    Mg::small_vector<Mg::gfx::MaterialAssignment, 10> material_assignments;
     Mg::Opt<Mg::gfx::Skeleton> skeleton;
     Mg::Opt<Mg::gfx::SkeletonPose> pose;
 };
 
-struct MaterialAssignment {
+struct MaterialFileAssignment {
     size_t submesh_index = 0;
     Mg::Identifier material_fname = "";
 };
@@ -159,7 +159,7 @@ private:
     Mg::gfx::Material* load_material(Mg::Identifier file, Mg::span<const Mg::Identifier> options);
 
     Model& load_model(Mg::Identifier mesh_file,
-                      Mg::span<const MaterialAssignment> material_files,
+                      Mg::span<const MaterialFileAssignment> material_files,
                       Mg::span<const Mg::Identifier> options);
 
     void make_input_map();

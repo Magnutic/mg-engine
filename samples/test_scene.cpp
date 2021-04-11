@@ -63,10 +63,13 @@ void add_to_render_list(const Model& model, Mg::gfx::RenderCommandProducer& rend
                                              *model.skeleton,
                                              *model.pose,
                                              palette.skinning_matrices());
-        renderlist.add_skinned_mesh(model.mesh, model.transform, model.material_bindings, palette);
+        renderlist.add_skinned_mesh(model.mesh,
+                                    model.transform,
+                                    model.material_assignments,
+                                    palette);
     }
     else {
-        renderlist.add_mesh(model.mesh, model.transform, model.material_bindings);
+        renderlist.add_mesh(model.mesh, model.transform, model.material_assignments);
     }
 }
 
@@ -439,11 +442,13 @@ Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::
     m->set_sampler("sampler_normal", normal_texture->handle());
     m->set_sampler("sampler_specular", specular_texture->handle());
 
+    mesh_renderer.prepare_shader(*m, true, true);
+
     return m;
 }
 
 Model& Scene::load_model(Mg::Identifier mesh_file,
-                         Mg::span<const MaterialAssignment> material_files,
+                         Mg::span<const MaterialFileAssignment> material_files,
                          Mg::span<const Mg::Identifier> options)
 {
     const auto [it, inserted] = scene_models.insert({ mesh_file, Model{} });
@@ -451,8 +456,8 @@ Model& Scene::load_model(Mg::Identifier mesh_file,
     model.mesh = load_mesh(mesh_file);
 
     for (auto&& [submesh_index, material_fname] : material_files) {
-        model.material_bindings.push_back(
-            Mg::gfx::MaterialBinding{ submesh_index, load_material(material_fname, options) });
+        model.material_assignments.push_back(
+            { submesh_index, load_material(material_fname, options) });
     }
 
     model.skeleton = load_skeleton(mesh_file);
@@ -628,7 +633,7 @@ void Scene::load_models()
     using namespace Mg::literals;
 
     {
-        std::array<MaterialAssignment, 4> scene_mats;
+        std::array<MaterialFileAssignment, 4> scene_mats;
         scene_mats[0] = { 0, "buildings/GreenBrick" };
         scene_mats[1] = { 1, "buildings/W31_1" };
         scene_mats[2] = { 2, "buildings/BigWhiteBricks" };
@@ -640,7 +645,7 @@ void Scene::load_models()
     }
 
     {
-        std::array<MaterialAssignment, 1> fox_mats;
+        std::array<MaterialFileAssignment, 1> fox_mats;
         fox_mats[0] = { 0, "actors/fox" };
 
         std::array<Mg::Identifier, 1> fox_mat_options;
