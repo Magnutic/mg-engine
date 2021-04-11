@@ -335,7 +335,7 @@ void PipelinePool::bind_material_pipeline(const Material& material,
                                           const Pipeline::Settings& settings,
                                           PipelineBindingContext& binding_context)
 {
-    MG_GFX_DEBUG_GROUP("PipelinePool::bind_pipeline")
+    MG_GFX_DEBUG_GROUP("PipelinePool::bind_material_pipeline")
 
     const Pipeline& pipeline = get_or_make_pipeline(impl(), material);
     binding_context.bind_pipeline(pipeline, settings);
@@ -356,6 +356,12 @@ void PipelinePool::bind_material_pipeline(const Material& material,
     }
 
     Pipeline::bind_material_inputs(material_input_bindings);
+}
+
+void PipelinePool::prepare_material_pipeline(const Material& material)
+{
+    MG_GFX_DEBUG_GROUP("PipelinePool::prepare_material_pipeline")
+    get_or_make_pipeline(impl(), material);
 }
 
 void PipelinePool::drop_pipelines() noexcept

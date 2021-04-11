@@ -69,6 +69,13 @@ public:
                                 const Pipeline::Settings& settings,
                                 PipelineBindingContext& binding_context);
 
+    /** Creates a pipeline corresponding to the given parameters. This will make sure it is
+     * immediately available before using it with `bind_material_pipeline`. It is not necessary to
+     * prepare pipelines using this function, but doing so can reduce stuttering by making sure
+     * shaders are compiled in advance.
+     */
+    void prepare_material_pipeline(const Material& material);
+
     /** Drops all stored pipelines, releasing resources. This can be used to enable hot reloading of
      * material data. If the materials have changed since last binding, the changes (including
      * shader-code changes) will take effect after pipelines have been dropped, since the pipelines

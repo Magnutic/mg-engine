@@ -270,13 +270,6 @@ MeshRenderer::MeshRenderer() = default;
 
 MeshRenderer::~MeshRenderer() = default;
 
-void MeshRenderer::drop_shaders()
-{
-    MG_GFX_DEBUG_GROUP("Mesh_renderer::drop_shaders")
-    impl().static_mesh_pipeline_pool.drop_pipelines();
-    impl().animated_mesh_pipeline_pool.drop_pipelines();
-}
-
 void MeshRenderer::render(const ICamera& cam,
                           const RenderCommandList& command_list,
                           span<const Light> lights,
@@ -347,6 +340,25 @@ void MeshRenderer::render(const ICamera& cam,
 
     // Error check the traditional way once every frame to catch GL errors even in release builds
     MG_CHECK_GL_ERROR();
+}
+
+void MeshRenderer::prepare_shader(const Material& material,
+                                  const bool prepare_for_static_mesh,
+                                  const bool prepare_for_animated_mesh)
+{
+    if (prepare_for_static_mesh) {
+        impl().static_mesh_pipeline_pool.prepare_material_pipeline(material);
+    }
+    if (prepare_for_animated_mesh) {
+        impl().animated_mesh_pipeline_pool.prepare_material_pipeline(material);
+    }
+}
+
+void MeshRenderer::drop_shaders()
+{
+    MG_GFX_DEBUG_GROUP("Mesh_renderer::drop_shaders")
+    impl().static_mesh_pipeline_pool.drop_pipelines();
+    impl().animated_mesh_pipeline_pool.drop_pipelines();
 }
 
 } // namespace Mg::gfx
