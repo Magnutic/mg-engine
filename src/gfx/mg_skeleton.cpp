@@ -7,6 +7,7 @@
 #include "mg/gfx/mg_skeleton.h"
 
 #include "mg/core/mg_log.h"
+#include "mg/core/mg_transform.h"
 
 #include <glm/mat3x3.hpp>
 #include <glm/mat4x4.hpp>
@@ -130,7 +131,8 @@ SkeletonPose Skeleton::get_bind_pose() const
     return result;
 }
 
-bool calculate_skinning_matrices(const Skeleton& skeleton,
+bool calculate_skinning_matrices(const Transform& transform,
+                                 const Skeleton& skeleton,
                                  const SkeletonPose& pose,
                                  const span<glm::mat4> skinning_matrices_out)
 {
@@ -140,13 +142,16 @@ bool calculate_skinning_matrices(const Skeleton& skeleton,
         return false;
     }
 
+    const span<const Mesh::Joint> joints = skeleton.joints();
+    const glm::mat4 transform_matrix = transform.matrix();
+
     // At this point, skinning_matrices_out contains the accumulated pose (joint-space to
     // model-space) transform, not the skinning (model-space to model-space) transform.
-    // Applying the corresponding inverse bind-pose matrix results in the skinning matrix for each
-    // joint.
-    for (size_t i = 0; i < skeleton.joints().size(); ++i) {
-        skinning_matrices_out[i] = skinning_matrices_out[i] *
-                                   skeleton.joints()[i].inverse_bind_matrix;
+    // Applying the corresponding inverse bind-pose matrix results in the skinning matrix for
+    // each joint. Then we also bake in the transform.
+    for (size_t i = 0; i < joints.size(); ++i) {
+        skinning_matrices_out[i] = transform_matrix * skinning_matrices_out[i] *
+                                   joints[i].inverse_bind_matrix;
     }
 
     return true;

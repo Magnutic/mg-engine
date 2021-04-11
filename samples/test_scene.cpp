@@ -59,7 +59,8 @@ void add_to_render_list(const Model& model, Mg::gfx::RenderCommandProducer& rend
     if (model.skeleton && model.pose) {
         const auto num_joints = Mg::narrow<uint16_t>(model.skeleton->joints().size());
         auto palette = renderlist.allocate_skinning_matrix_palette(num_joints);
-        Mg::gfx::calculate_skinning_matrices(*model.skeleton,
+        Mg::gfx::calculate_skinning_matrices(model.transform,
+                                             *model.skeleton,
                                              *model.pose,
                                              palette.skinning_matrices());
         renderlist.add_skinned_mesh(model.mesh, model.transform, model.material_bindings, palette);

@@ -18,6 +18,10 @@
 
 #include <glm/vec3.hpp>
 
+namespace Mg {
+class Transform;
+}
+
 namespace Mg::gfx {
 
 struct SkeletonPose;
@@ -73,7 +77,8 @@ struct SkeletonPose {
  *
  * @return Whether the evaluation was successful.
  */
-bool calculate_skinning_matrices(const Skeleton& skeleton,
+bool calculate_skinning_matrices(const Transform& transform,
+                                 const Skeleton& skeleton,
                                  const SkeletonPose& pose,
                                  span<glm::mat4> skinning_matrices_out);
 

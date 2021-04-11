@@ -126,7 +126,7 @@ void RenderCommandProducer::clear() noexcept
 
     data.commands.m_render_commands.clear();
     data.commands.m_m_transforms.clear();
-    data.commands.m_mvp_transforms.clear();
+    data.commands.m_vp_transforms.clear();
     data.commands.m_skinning_matrices.clear();
 
     data.render_commands_unsorted.clear();
@@ -206,19 +206,17 @@ const RenderCommandList& RenderCommandProducer::finalise(const ICamera& camera,
     // Write out sorted render commands to data.commands.
     data.commands.m_render_commands.reserve(size());
     data.commands.m_m_transforms.reserve(size());
-    data.commands.m_mvp_transforms.reserve(size());
+    data.commands.m_vp_transforms.reserve(size());
 
-    const glm::mat4 VP = camera.view_proj_matrix();
+    const auto VP = camera.view_proj_matrix();
 
     for (const SortKey& key : data.keys) {
         const RenderCommand& command = data.render_commands_unsorted[key.index];
         const glm::mat4& M = data.m_transforms_unsorted[key.index];
-        const glm::mat4 MVP = VP * M;
-
-        if (in_view(MVP, command.bounding_sphere)) {
+        if (in_view(VP * M, command.bounding_sphere)) {
             data.commands.m_render_commands.emplace_back(data.render_commands_unsorted[key.index]);
             data.commands.m_m_transforms.emplace_back(M);
-            data.commands.m_mvp_transforms.emplace_back(MVP);
+            data.commands.m_vp_transforms.emplace_back(VP);
         }
     }
 

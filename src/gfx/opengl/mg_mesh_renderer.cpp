@@ -254,7 +254,7 @@ size_t upload_next_matrix_batch(MeshRendererData& data,
                                 const size_t starting_command_index) noexcept
 {
     std::array matrix_arrays{ command_list.m_transforms().subspan(starting_command_index),
-                              command_list.mvp_transforms().subspan(starting_command_index) };
+                              command_list.vp_transforms().subspan(starting_command_index) };
 
     const size_t num_uploaded = data.matrix_uniform_handler.set_matrix_arrays(matrix_arrays);
     return num_uploaded;

@@ -81,11 +81,11 @@ public:
      */
     span<const glm::mat4> m_transforms() const noexcept { return m_m_transforms; }
 
-    /** The model-view-perspective space transformation matrices for each render command. This array
-     * is sorted in the same order as `render_commands`, i.e. the matrix for `render_commands()[i]`
-     * is `m_transforms()[i]`
+    /** The view-perspective space transformation matrices for each render command. This array is
+     * sorted in the same order as `render_commands`, i.e. the matrix for `render_commands()[i]` is
+     * `m_transforms()[i]`
      */
-    span<const glm::mat4> mvp_transforms() const noexcept { return m_mvp_transforms; }
+    span<const glm::mat4> vp_transforms() const noexcept { return m_vp_transforms; }
 
     /** Skinning matrix palette for skinned (animated) meshes.
      * `RenderCommand::skinning_matrices_begin` and `RenderCommand::num_skinning_matrices` refer to
@@ -96,7 +96,7 @@ public:
 private:
     std::vector<RenderCommand> m_render_commands;
     std::vector<glm::mat4> m_m_transforms;
-    std::vector<glm::mat4> m_mvp_transforms;
+    std::vector<glm::mat4> m_vp_transforms;
     std::vector<glm::mat4> m_skinning_matrices;
 };
 

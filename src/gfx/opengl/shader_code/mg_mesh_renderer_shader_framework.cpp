@@ -27,11 +27,11 @@ layout(location = 8) in uint _matrix_index;
 
 layout(std140) uniform MatrixBlock {
     mat4 m_matrices[MATRIX_ARRAY_SIZE];
-    mat4 mvp_matrices[MATRIX_ARRAY_SIZE];
+    mat4 vp_matrices[MATRIX_ARRAY_SIZE];
 } _matrix_block;
 
 #define MATRIX_M   (_matrix_block.m_matrices[_matrix_index])
-#define MATRIX_MVP (_matrix_block.mvp_matrices[_matrix_index])
+#define MATRIX_VP (_matrix_block.vp_matrices[_matrix_index])
 
 #if SKELETAL_ANIMATION_ENABLED
 
@@ -118,39 +118,35 @@ void main()
     vec3 position = vec3(0.0);
     vec3 tangent = vec3(0.0);
     vec3 bitangent = vec3(0.0);
-    vec3 normal = vec3(0.0);
 
     for (uint i = 0u; i < 4u; ++i) {
         uint joint_index = uint(vert_influences[i]);
         float weight = vert_joint_weights[i];
-        position  += (weight * SKINNING_MATRIX(joint_index) * vec4(POSITION,  1.0)).xyz;
-        tangent   += (weight * SKINNING_MATRIX(joint_index) * vec4(TANGENT,   0.0)).xyz;
-        bitangent += (weight * SKINNING_MATRIX(joint_index) * vec4(BITANGENT, 0.0)).xyz;
-        normal    += (weight * SKINNING_MATRIX(joint_index) * vec4(NORMAL,    0.0)).xyz;
+
+        // Note: MATRIX_M is already multiplied into the skinning matrices.
+        position        += (weight * SKINNING_MATRIX(joint_index) * vec4(POSITION,  1.0)).xyz;
+        tangent         += (weight * SKINNING_MATRIX(joint_index) * vec4(TANGENT,   0.0)).xyz;
+        bitangent       += (weight * SKINNING_MATRIX(joint_index) * vec4(BITANGENT, 0.0)).xyz;
+        vert_out.normal += (weight * SKINNING_MATRIX(joint_index) * vec4(NORMAL,    0.0)).xyz;
     }
 
 #else
 
-    vec3 position  = POSITION;
-    vec3 tangent   = TANGENT;
-    vec3 bitangent = BITANGENT;
-    vec3 normal    = NORMAL;
+    vec3 position   = (MATRIX_M * vec4(POSITION,  1.0)).xyz;
+    vec3 tangent    = (MATRIX_M * vec4(TANGENT,   0.0)).xyz;
+    vec3 bitangent  = (MATRIX_M * vec4(BITANGENT, 0.0)).xyz;
+    vert_out.normal = (MATRIX_M * vec4(NORMAL,    0.0)).xyz;
 
 #endif // SKELETAL_ANIMATION_ENABLED
 
     // Transform vertex location to projection space
-    gl_Position = MATRIX_MVP * vec4(position, 1.0);
+    gl_Position = MATRIX_VP * vec4(position, 1.0);
 
     // Pass through world-space position
-    vert_out.position = (MATRIX_M * vec4(position, 1.0)).xyz;
-
-    // Transform tangent space vectors
-    tangent         = normalize(MATRIX_M * vec4(tangent,   0.0)).xyz;
-    bitangent       = normalize(MATRIX_M * vec4(bitangent, 0.0)).xyz;
-    vert_out.normal = normalize(MATRIX_M * vec4(normal,    0.0)).xyz;
+    vert_out.position = position.xyz;
 
     // Create tangent space basis matrix
-    vert_out.TBN = mat3(tangent, bitangent, vert_out.normal);
+    vert_out.TBN = mat3(normalize(tangent), normalize(bitangent), normalize(vert_out.normal));
 }
 )"sv;
 
