@@ -43,7 +43,7 @@ public:
     /** Sets the rotation so the forward vector faces target. */
     void look_at(glm::vec3 target, glm::vec3 up = world_vector::up) const
     {
-        rotation.look_to(target - position, up);
+        Rotation::look_to(target - position, up);
     }
 };
 
