@@ -1,19 +1,19 @@
 ﻿#include "test_scene.h"
-#include "mg/gfx/mg_blend_modes.h"
-#include "mg/gfx/mg_font_handler.h"
-#include "mg/gfx/mg_render_target.h"
-#include "mg/gfx/mg_skeleton.h"
-#include "mg/gfx/mg_texture_pool.h"
-#include "mg/gfx/mg_ui_renderer.h"
-#include "mg/mg_unicode.h"
-#include "mg/utils/mg_string_utils.h"
+#include "mg/gfx/mg_render_command_list.h"
 
 #include <mg/core/mg_config.h>
 #include <mg/core/mg_identifier.h>
 #include <mg/core/mg_log.h>
+#include <mg/gfx/mg_blend_modes.h>
+#include <mg/gfx/mg_font_handler.h>
 #include <mg/gfx/mg_gfx_debug_group.h>
 #include <mg/gfx/mg_mesh_renderer.h>
+#include <mg/gfx/mg_render_target.h>
+#include <mg/gfx/mg_skeleton.h>
 #include <mg/gfx/mg_texture2d.h>
+#include <mg/gfx/mg_texture_pool.h>
+#include <mg/gfx/mg_ui_renderer.h>
+#include <mg/mg_unicode.h>
 #include <mg/resource_cache/internal/mg_resource_entry_base.h>
 #include <mg/resource_cache/mg_resource_access_guard.h>
 #include <mg/resources/mg_font_resource.h>
@@ -23,6 +23,7 @@
 #include <mg/resources/mg_texture_resource.h>
 #include <mg/utils/mg_angle.h>
 #include <mg/utils/mg_math_utils.h>
+#include <mg/utils/mg_string_utils.h>
 
 #include <fmt/core.h>
 
@@ -56,14 +57,12 @@ std::array<float, 3> camera_acceleration(Mg::input::InputMap& input_map)
 void add_to_render_list(const Model& model, Mg::gfx::RenderCommandProducer& renderlist)
 {
     if (model.skeleton && model.pose) {
-        std::vector<glm::mat4> matrix_palette;
-        matrix_palette.resize(model.skeleton->joints().size());
-        Mg::gfx::calculate_skinning_matrices(*model.skeleton, *model.pose, matrix_palette);
-
-        renderlist.add_skinned_mesh(model.mesh,
-                                    model.transform,
-                                    model.material_bindings,
-                                    matrix_palette);
+        const auto num_joints = Mg::narrow<uint16_t>(model.skeleton->joints().size());
+        auto palette = renderlist.allocate_skinning_matrix_palette(num_joints);
+        Mg::gfx::calculate_skinning_matrices(*model.skeleton,
+                                             *model.pose,
+                                             palette.skinning_matrices());
+        renderlist.add_skinned_mesh(model.mesh, model.transform, model.material_bindings, palette);
     }
     else {
         renderlist.add_mesh(model.mesh, model.transform, model.material_bindings);
@@ -271,7 +270,7 @@ void Scene::render_scene(const double lerp_factor)
         app.gfx_device().clear();
 
         const auto& commands = render_command_producer.finalise(camera,
-                                                                Mg::gfx::SortFunc::NEAR_TO_FAR);
+                                                                Mg::gfx::SortingMode::near_to_far);
 
         Mg::gfx::RenderParameters params = {};
         params.current_time = Mg::narrow_cast<float>(time);

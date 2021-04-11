@@ -21,7 +21,6 @@ glm::mat4 pose_to_matrix(const JointPose& pose)
     return glm::translate(pose.translation) * pose.rotation.to_matrix() * glm::mat4(pose.scale);
 }
 
-// TODO: verify/fix correctness
 JointPose affine_matrix_to_pose(const glm::mat4x4 m)
 {
     if (m[0][3] != 0.0f || m[1][3] != 0.0f || m[2][3] != 0.0f || m[3][3] != 1.0f) {

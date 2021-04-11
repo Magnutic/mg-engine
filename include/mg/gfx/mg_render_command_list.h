@@ -15,6 +15,7 @@
 #include "mg/gfx/mg_mesh_handle.h"
 #include "mg/mg_bounding_volumes.h"
 #include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_simple_pimpl.h"
 
 #include <glm/mat4x4.hpp>
 
@@ -28,27 +29,30 @@ class Transform;
 namespace Mg::gfx {
 
 class Material;
+class Skeleton;
+class SkeletonPose;
 
 /** Function for sorting draw calls */
-enum class SortFunc { NEAR_TO_FAR, FAR_TO_NEAR };
+enum class SortingMode { near_to_far, far_to_near };
 
 /** Description of an individual draw call. */
 struct RenderCommand {
-    // Bounding sphere for quick frustum culling.
+    /** Bounding sphere for quick frustum culling. */
     BoundingSphere bounding_sphere;
 
-    // Vertex array handle points out the GPU data buffers for the draw call.
+    /** Vertex array handle points out the GPU data buffers for the draw call. */
     VertexArrayHandle vertex_array{};
 
-    // Begin and end indices, into in the vertex-index buffer.
+    /** Begin and end indices, into in the vertex-index buffer. */
     uint32_t begin{};
     uint32_t amount{};
 
-    // Material to use for this draw call.
+    /** Material to use for this draw call. */
     const Material* material{};
 
-    // If rendering a skinned mesh, this will point out which skinning matrices to upload to GPU.
-    // If not, num_skinning_matrices will be 0.
+    /** If rendering a skinned mesh, this will point out which skinning matrices to upload to GPU.
+     * If not, `num_skinning_matrices` will be 0.
+     */
     uint16_t skinning_matrices_begin{};
     uint16_t num_skinning_matrices{};
 };
@@ -66,32 +70,96 @@ class RenderCommandList {
     friend class RenderCommandProducer;
 
 public:
+    /** Sequence of render commands, containing references to the data that is reachable by the
+     * other member functions on this class.
+     */
     span<const RenderCommand> render_commands() const noexcept { return m_render_commands; }
-    span<const glm::mat4> m_transform_matrices() const noexcept { return m_m_transform_matrices; }
-    span<const glm::mat4> mvp_transform_matrices() const noexcept
-    {
-        return m_mvp_transform_matrices;
-    }
+
+    /** The model-to-world space transformation matrices for each render command. This array is
+     * sorted in the same order as `render_commands`, i.e. the matrix for `render_commands()[i]` is
+     * `m_transforms()[i]`
+     */
+    span<const glm::mat4> m_transforms() const noexcept { return m_m_transforms; }
+
+    /** The model-view-perspective space transformation matrices for each render command. This array
+     * is sorted in the same order as `render_commands`, i.e. the matrix for `render_commands()[i]`
+     * is `m_transforms()[i]`
+     */
+    span<const glm::mat4> mvp_transforms() const noexcept { return m_mvp_transforms; }
+
+    /** Skinning matrix palette for skinned (animated) meshes.
+     * `RenderCommand::skinning_matrices_begin` and `RenderCommand::num_skinning_matrices` refer to
+     * this array.
+     */
     span<const glm::mat4> skinning_matrices() const noexcept { return m_skinning_matrices; }
 
 private:
     std::vector<RenderCommand> m_render_commands;
-    std::vector<glm::mat4> m_m_transform_matrices;
-    std::vector<glm::mat4> m_mvp_transform_matrices;
+    std::vector<glm::mat4> m_m_transforms;
+    std::vector<glm::mat4> m_mvp_transforms;
     std::vector<glm::mat4> m_skinning_matrices;
 };
 
-/** Interface for producing RenderCommandList. */
-class RenderCommandProducer {
+/** Matrix palette for skinned meshes. This is a view into data owned by `RenderCommandList`.
+ * Construct using `RenderCommandList::allocate_skinning_matrix_palette.`
+ * @note Objects of this class will be invalidated when the originating `RenderCommandProducer` is
+ * cleared (`RenderCommandProducer::clear`) or destroyed.
+ */
+class SkinningMatrixPalette {
 public:
+    /** Access to the skinning_matrices. Write the appropriate data to this before rendering.
+     * @see Mg::gfx::calculate_skinning_matrices
+     */
+    span<glm::mat4> skinning_matrices() const noexcept { return m_skinning_matrices; }
+
+private:
+    friend class RenderCommandProducer;
+
+    SkinningMatrixPalette(const span<glm::mat4> skinning_matrices, const uint16_t start_index)
+        : m_skinning_matrices(skinning_matrices), m_start_index(start_index)
+    {}
+
+    span<glm::mat4> m_skinning_matrices;
+    const uint16_t m_start_index;
+};
+
+struct RenderCommandProducerData;
+
+/** Interface for producing RenderCommandList. */
+class RenderCommandProducer : PImplMixin<RenderCommandProducerData> {
+public:
+    explicit RenderCommandProducer();
+    ~RenderCommandProducer();
+
+    MG_MAKE_NON_COPYABLE(RenderCommandProducer);
+    MG_MAKE_NON_MOVABLE(RenderCommandProducer);
+
+    /** Add a non-animated mesh to be rendered, with the given transformation and material
+     * assignments.
+     */
     void add_mesh(MeshHandle mesh,
                   const Transform& transform,
                   span<const MaterialBinding> material_bindings);
 
+    /** Add a skinned (animated) mesh to be rendered, with the given transformation and material
+     * assignments.
+     */
     void add_skinned_mesh(MeshHandle mesh,
                           const Transform& transform,
                           span<const MaterialBinding> material_bindings,
-                          span<const glm::mat4> skinning_matrices);
+                          const SkinningMatrixPalette& skinning_matrix_palette);
+
+    /** Allocate space for a skinning matrix palette, for use with `add_skinned_mesh`. The matrix
+     * palette must be filled with the appropriate skinning matrix data.
+     *
+     * @see Mg::gfx::calculate_skinning_matrices.
+     *
+     * @note The reason for this interface -- letting the caller calculate the matrices, instead of
+     * just calculating them automatically within this class -- is that the caller can then decide
+     * how and when to perform the calculations. For example, the jobs could then be divided to
+     * multiple threads.
+     */
+    [[nodiscard]] SkinningMatrixPalette allocate_skinning_matrix_palette(uint16_t num_joints);
 
     /** Removes all added render commands, resetting the state of the RenderCommandProducer.
      * N.B. it is better to re-use the same RenderCommandProducer and clear each frame than to
@@ -103,27 +171,13 @@ public:
     /** Sorts and frustum culls draw list and makes render commands available as
      * RenderCommandList.
      * @param camera The camera to consider for sorting and frustum culling.
-     * @param sort_func Sorting order for the command sequence.
+     * @param sorting_mode Sorting order for the command sequence.
      * @return Reference to sorted command sequence along with associated transformation matrices.
      */
-    const RenderCommandList& finalise(const ICamera& camera, SortFunc sort_func);
+    const RenderCommandList& finalise(const ICamera& camera, SortingMode sorting_mode);
 
-    size_t size() const noexcept { return m_render_commands_unsorted.size(); }
-
-    struct SortKey {
-        uint32_t depth;
-        uint32_t fingerprint;
-        uint32_t index;
-    };
-
-private:
-    RenderCommandList m_commands;
-
-    std::vector<SortKey> m_keys;
-
-    std::vector<RenderCommand> m_render_commands_unsorted;
-    std::vector<glm::mat4> m_m_transform_matrices_unsorted;
-    std::vector<glm::mat4> m_skinning_matrices;
+    /** Number of enqueued RenderCommand instances. */
+    size_t size() const noexcept;
 };
 
 } // namespace Mg::gfx

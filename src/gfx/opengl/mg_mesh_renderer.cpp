@@ -242,9 +242,22 @@ void draw_elements(size_t num_elements, size_t starting_element) noexcept
                    reinterpret_cast<GLvoid*>(begin));
 }
 
+// Set the index into the matrix array for the next render command.
 void set_matrix_index(uint32_t index) noexcept
 {
     glVertexAttribI1ui(k_matrix_index_vertex_attrib_location, index);
+}
+
+// Upload the next batch of transformation matrices.
+size_t upload_next_matrix_batch(MeshRendererData& data,
+                                const RenderCommandList& command_list,
+                                const size_t starting_command_index) noexcept
+{
+    std::array matrix_arrays{ command_list.m_transforms().subspan(starting_command_index),
+                              command_list.mvp_transforms().subspan(starting_command_index) };
+
+    const size_t num_uploaded = data.matrix_uniform_handler.set_matrix_arrays(matrix_arrays);
+    return num_uploaded;
 }
 
 } // namespace
@@ -270,44 +283,47 @@ void MeshRenderer::render(const ICamera& cam,
                           RenderParameters params)
 {
     MG_GFX_DEBUG_GROUP("Mesh_renderer::renderer")
+    MeshRendererData& data = impl();
 
     auto current_vao = uint32_t(-1);
     const Material* current_material = nullptr;
 
-    update_light_data(impl().light_buffers, lights, cam, impl().light_grid);
+    // Upload the data buffers used for lighting.
+    update_light_data(data.light_buffers, lights, cam, data.light_grid);
 
+    // Set up shared pipeline context and input bindings, to reduce amount of state changes during
+    // the render loop.
     PipelineBindingContext binding_context;
-    bind_shared_inputs(impl(), cam, params);
+    bind_shared_inputs(data, cam, params);
 
     const auto render_commands = command_list.render_commands();
-    size_t matrix_update_countdown = 1;
+
+    // Number of iterations until we have consumed the transformation matrices so far uploaded to
+    // the CPU.
+    size_t matrix_upload_countdown = 0;
 
     for (size_t i = 0; i < render_commands.size(); ++i) {
-        if (--matrix_update_countdown == 0) {
-            std::array<span<const glm::mat4>, 2> matrix_arrays{
-                command_list.m_transform_matrices().subspan(i),
-                command_list.mvp_transform_matrices().subspan(i)
-            };
-            matrix_update_countdown =
-                impl().matrix_uniform_handler.set_matrix_arrays(matrix_arrays);
+        // If we have consumed all matrices uploaded to GPU, then upload the next batch.
+        if (matrix_upload_countdown == 0) {
+            matrix_upload_countdown = upload_next_matrix_batch(data, command_list, i);
         }
+        --matrix_upload_countdown;
 
         const RenderCommand& command = render_commands[i];
         const bool is_skinned_mesh = command.num_skinning_matrices > 0;
-        auto* pipeline_pool = is_skinned_mesh ? &impl().animated_mesh_pipeline_pool
-                                              : &impl().static_mesh_pipeline_pool;
+        auto* pipeline_pool = is_skinned_mesh ? &data.animated_mesh_pipeline_pool
+                                              : &data.static_mesh_pipeline_pool;
 
         MG_ASSERT_DEBUG(command.material != nullptr);
 
-        // Set up mesh state
+        // Set up mesh state.
         const auto vao_id = static_cast<GLuint>(command.vertex_array.get());
-
         if (current_vao != vao_id) {
             current_vao = vao_id;
             glBindVertexArray(current_vao);
         }
 
-        // Set up material state
+        // Set up material state.
         if (current_material != command.material) {
             pipeline_pool->bind_material_pipeline(*command.material,
                                                   pipeline_settings(),
@@ -315,12 +331,12 @@ void MeshRenderer::render(const ICamera& cam,
             current_material = command.material;
         }
 
-        // Set up mesh transform matrix index
+        // Set up mesh transform matrix index.
         set_matrix_index(i % k_matrix_ubo_array_size);
 
-        // If a skinned mesh, set up skinning matrices
+        // If render command is a skinned mesh, also upload skinning matrices.
         if (command.num_skinning_matrices > 0) {
-            impl().skinning_matrix_uniform_handler.set_matrix_array(
+            data.skinning_matrix_uniform_handler.set_matrix_array(
                 command_list.skinning_matrices().subspan(command.skinning_matrices_begin,
                                                          command.num_skinning_matrices));
         }

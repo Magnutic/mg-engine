@@ -34,12 +34,14 @@ layout(std140) uniform MatrixBlock {
 #define MATRIX_MVP (_matrix_block.mvp_matrices[_matrix_index])
 
 #if SKELETAL_ANIMATION_ENABLED
+
     layout(std140) uniform SkinningMatrixBlock {
         mat4 skinning_matrices[SKINNING_MATRIX_ARRAY_SIZE];
     } _skinning_matrix_block;
 
-#define SKINNING_MATRIX(index) (_skinning_matrix_block.skinning_matrices[index])
-#endif
+#    define SKINNING_MATRIX(index) (_skinning_matrix_block.skinning_matrices[index])
+
+#endif // SKELETAL_ANIMATION_ENABLED
 
 struct ClusterGridParams {
     vec2 z_param;
@@ -61,10 +63,10 @@ layout(std140) uniform FrameBlock {
 #define VIEWPORT_SIZE (_frame_block.viewport_size)
 
 out v2f {
-    vec2 tex_coord;      // Primary texture coordinate
-    vec3 position; // Position (world space)
-    vec3 normal;   // Surface normal (world space)
-    mat3 TBN;      // Tangent space basis matrix
+    vec2 tex_coord; // Primary texture coordinate
+    vec3 position;  // Position (world space)
+    vec3 normal;    // Surface normal (world space)
+    mat3 TBN;       // Tangent space basis matrix
 } vert_out;
 
 struct VertexParams {
@@ -83,6 +85,7 @@ void vertex_preprocess(inout VertexParams v_out);
 void main()
 {
 #if VERTEX_PREPROCESS_ENABLED
+
     VertexParams v_o;
     v_o.position = vert_position;
     v_o.tex_coord = vert_tex_coord;
@@ -92,19 +95,19 @@ void main()
 
     vertex_preprocess(v_o);
 
-#define POSITION (v_o.position)
-#define TEX_COORD (v_o.tex_coord)
-#define NORMAL (v_o.normal)
-#define TANGENT (v_o.tangent)
-#define BITANGENT (v_o.bitangent)
+#    define POSITION (v_o.position)
+#    define TEX_COORD (v_o.tex_coord)
+#    define NORMAL (v_o.normal)
+#    define TANGENT (v_o.tangent)
+#    define BITANGENT (v_o.bitangent)
 
 #else
 
-#define POSITION (vert_position)
-#define TEX_COORD (vert_tex_coord)
-#define NORMAL (vert_normal)
-#define TANGENT (vert_tangent)
-#define BITANGENT (vert_bitangent)
+#    define POSITION (vert_position)
+#    define TEX_COORD (vert_tex_coord)
+#    define NORMAL (vert_normal)
+#    define TANGENT (vert_tangent)
+#    define BITANGENT (vert_bitangent)
 
 #endif // VERTEX_PREPROCESS_ENABLED
 
@@ -112,45 +115,39 @@ void main()
 
 #if SKELETAL_ANIMATION_ENABLED
 
-    vec3 skinned_position = vec3(0.0);
+    vec3 position = vec3(0.0);
     vec3 tangent = vec3(0.0);
     vec3 bitangent = vec3(0.0);
     vec3 normal = vec3(0.0);
 
     for (uint i = 0u; i < 4u; ++i) {
         uint joint_index = uint(vert_influences[i]);
-        float weight     = vert_joint_weights[i];
-        skinned_position += (weight * SKINNING_MATRIX(joint_index) * vec4(POSITION, 1.0)).xyz;
-        tangent          += (weight * SKINNING_MATRIX(joint_index) * vec4(TANGENT, 0.0)).xyz;
-        bitangent        += (weight * SKINNING_MATRIX(joint_index) * vec4(BITANGENT, 0.0)).xyz;
-        normal           += (weight * SKINNING_MATRIX(joint_index) * vec4(NORMAL, 0.0)).xyz;
+        float weight = vert_joint_weights[i];
+        position  += (weight * SKINNING_MATRIX(joint_index) * vec4(POSITION,  1.0)).xyz;
+        tangent   += (weight * SKINNING_MATRIX(joint_index) * vec4(TANGENT,   0.0)).xyz;
+        bitangent += (weight * SKINNING_MATRIX(joint_index) * vec4(BITANGENT, 0.0)).xyz;
+        normal    += (weight * SKINNING_MATRIX(joint_index) * vec4(NORMAL,    0.0)).xyz;
     }
 
+#else
+
+    vec3 position  = POSITION;
+    vec3 tangent   = TANGENT;
+    vec3 bitangent = BITANGENT;
+    vec3 normal    = NORMAL;
+
+#endif // SKELETAL_ANIMATION_ENABLED
+
     // Transform vertex location to projection space
-    gl_Position = MATRIX_MVP * vec4(skinned_position, 1.0);
+    gl_Position = MATRIX_MVP * vec4(position, 1.0);
 
     // Pass through world-space position
-    vert_out.position = (MATRIX_M * vec4(skinned_position, 1.0)).xyz;
+    vert_out.position = (MATRIX_M * vec4(position, 1.0)).xyz;
 
     // Transform tangent space vectors
     tangent         = normalize(MATRIX_M * vec4(tangent,   0.0)).xyz;
     bitangent       = normalize(MATRIX_M * vec4(bitangent, 0.0)).xyz;
     vert_out.normal = normalize(MATRIX_M * vec4(normal,    0.0)).xyz;
-
-#else
-
-    // Transform vertex location to projection space
-    gl_Position = MATRIX_MVP * vec4(POSITION, 1.0);
-
-    // Pass through world-space position
-    vert_out.position = (MATRIX_M * vec4(POSITION, 1.0)).xyz;
-
-    // Transform tangent space vectors
-    vec3 tangent    = normalize(MATRIX_M * vec4(TANGENT,   0.0)).xyz;
-    vec3 bitangent  = normalize(MATRIX_M * vec4(BITANGENT, 0.0)).xyz;
-    vert_out.normal = normalize(MATRIX_M * vec4(NORMAL,    0.0)).xyz;
-
-#endif
 
     // Create tangent space basis matrix
     vert_out.TBN = mat3(tangent, bitangent, vert_out.normal);
@@ -159,10 +156,10 @@ void main()
 
 constexpr const auto fragment_framework_code = R"(
 in v2f {
-    vec2 tex_coord;      // Primary texture coordinate
-    vec3 position; // Position (world space)
-    vec3 normal;   // Surface normal (world space)
-    mat3 TBN;      // Tangent space basis matrix
+    vec2 tex_coord; // Primary texture coordinate
+    vec3 position;  // Position (world space)
+    vec3 normal;    // Surface normal (world space)
+    mat3 TBN;       // Tangent space basis matrix
 } _frag_in;
 
 layout (location = 0) out vec4 _frag_out;
