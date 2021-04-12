@@ -21,98 +21,79 @@
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
 
-#include <utility>
+#include <cstddef>
+#include <cstdlib>
+#include <initializer_list>
+#include <new>
 
 namespace Mg {
 
-/** Default deleter for Mg::Array and Mg::ArrayUnknownSize. */
-template<typename T> class DefaultArrayDelete {
-public:
-    void operator()(T* ptr) noexcept
-    {
-        static_assert(sizeof(T) != 0); // Ensure type is complete before deleting.
-        delete[] ptr;
-    }
-};
-
 namespace detail {
 
-// Base type common to Mg::Array and Mg::ArrayUnkownSize
-template<typename T, typename DeleterT = DefaultArrayDelete<T>> class ArrayBase {
-public:
-    using value_type = T;
-    using size_type = size_t;
-    using pointer = T*;
-    using const_pointer = const T*;
-    using reference = T&;
-    using const_reference = const T&;
-    using deleter = DeleterT;
+enum class InitTag { GeneratorInit, DefaultInit, ValueInit };
 
-    ArrayBase() = default;
-
-    explicit ArrayBase(T* raw_ptr) noexcept : m_ptr(raw_ptr) {}
-
-    ~ArrayBase() { reset(); }
-
-    MG_MAKE_NON_COPYABLE(ArrayBase);
-    MG_MAKE_DEFAULT_MOVABLE(ArrayBase);
-
-    T* data() noexcept { return m_ptr; }
-    const T* data() const noexcept { return m_ptr; }
-
-    bool empty() const noexcept { return m_ptr == nullptr; }
-
-protected:
-    void reset() noexcept
-    {
-        if (m_ptr != nullptr) {
-            deleter{}(m_ptr);
-            m_ptr = nullptr;
-        }
-    }
-
-    T* release() noexcept
-    {
-        T* ret = m_ptr;
-        m_ptr = nullptr;
-        return ret;
-    }
-
-    T* m_ptr = nullptr;
-};
-
-template<typename T, typename Generator>
-static T* make_array(const size_t num_elems, Generator&& generator)
+template<typename T, InitTag init = InitTag::GeneratorInit, typename Generator = void>
+static T* make_array(const size_t num_elems, Generator* generator = nullptr)
 {
-    struct alignas(T) block {
-        std::byte storage[sizeof(T)]; // NOLINT(cppcoreguidelines-avoid-c-arrays)
-    };
+    if (num_elems == 0) {
+        return nullptr;
+    }
 
-    block* p_storage = nullptr;
+    void* buffer = nullptr;
+    char* array_begin = nullptr;
     size_t i = 0;
 
     try {
         // Allocate storage.
-        p_storage = new block[num_elems];
+        buffer = std::malloc(num_elems * sizeof(T) + sizeof(size_t)); // NOLINT
+
+        // Write length of array to start of storage.
+        new (buffer) size_t(num_elems);
+
+        // Get address where array contents will go.
+        // Note: to be perfectly portable, we would need to advance the correct amount to reach
+        // an aligned address for alignof(T), but here I assume that sizeof(size_t) corresponds to
+        // maximum alignment.
+        array_begin = static_cast<char*>(buffer) + sizeof(size_t);
 
         // Construct copies in storage.
         for (; i < num_elems; ++i) {
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-            new (&p_storage[i]) T(generator());
+            auto* ptr = array_begin + sizeof(T) * i; // NOLINT
+
+            if constexpr (init == InitTag::DefaultInit) {
+                new (ptr) T;
+            }
+            else if constexpr (init == InitTag::ValueInit) {
+                new (ptr) T();
+            }
+            else {
+                new (ptr) T((*generator)());
+            }
         }
     }
     catch (...) {
         // If an exception was thrown, destroy all the so-far constructed objects in reverse
         // order of construction.
         for (size_t u = 0; u < i; ++u) {
-            const auto index = i - u - 1;
-            reinterpret_cast<T*>(p_storage)[index].~T(); // NOLINT
+            reinterpret_cast<T*>(array_begin)[i - u - 1].~T(); // NOLINT
         }
 
         throw;
     }
 
-    return reinterpret_cast<T*>(p_storage); // NOLINT
+    return reinterpret_cast<T*>(array_begin); // NOLINT
+}
+
+template<typename T> static void destroy_array(T* array_begin)
+{
+    auto* buffer = reinterpret_cast<char*>(array_begin) - sizeof(size_t);
+    const size_t num_elems = *reinterpret_cast<size_t*>(buffer);
+
+    for (size_t i = 0; i < num_elems; ++i) {
+        array_begin[num_elems - i - 1].~T(); // NOLINT
+    }
+
+    std::free(buffer); // NOLINT
 }
 
 template<typename T> class ArrayCopyGenerator {
@@ -145,6 +126,43 @@ private:
     const T& m_value;
 };
 
+// Base type common to Mg::Array and Mg::ArrayUnkownSize
+template<typename T> class ArrayBase {
+public:
+    using value_type = T;
+    using size_type = size_t;
+    using pointer = T*;
+    using const_pointer = const T*;
+    using reference = T&;
+    using const_reference = const T&;
+
+    ArrayBase() = default;
+
+    explicit ArrayBase(T* raw_ptr) noexcept : m_ptr(raw_ptr) {}
+
+    ~ArrayBase() { reset(); }
+
+    MG_MAKE_NON_COPYABLE(ArrayBase);
+    MG_MAKE_DEFAULT_MOVABLE(ArrayBase);
+
+    T* data() noexcept { return m_ptr; }
+    const T* data() const noexcept { return m_ptr; }
+
+    bool empty() const noexcept { return m_ptr == nullptr; }
+
+protected:
+    void reset() noexcept
+    {
+        static_assert(sizeof(T) != 0); // Ensure type is complete before deleting.
+        if (m_ptr != nullptr) {
+            destroy_array(m_ptr);
+            m_ptr = nullptr;
+        }
+    }
+
+    T* m_ptr = nullptr;
+};
+
 } // namespace detail
 
 /** Minimalistic container for heap-allocated arrays. Does not keep track of the array's size --
@@ -155,37 +173,57 @@ template<typename T> class ArrayUnknownSize : public detail::ArrayBase<T> {
     using Base = detail::ArrayBase<T>;
 
 public:
-    static ArrayUnknownSize make(size_t size) { return ArrayUnknownSize(new T[size]()); }
+    static ArrayUnknownSize make(size_t size)
+    {
+        return size == 0
+                   ? ArrayUnknownSize{}
+                   : ArrayUnknownSize(detail::make_array<T, detail::InitTag::ValueInit>(size));
+    }
+
+    static ArrayUnknownSize make_for_overwrite(size_t size)
+    {
+        return size == 0
+                   ? ArrayUnknownSize{}
+                   : ArrayUnknownSize(detail::make_array<T, detail::InitTag::DefaultInit>(size));
+    }
 
     static ArrayUnknownSize make(size_t size, const T& value)
     {
-        return ArrayUnknownSize(detail::make_array<T>(size, detail::ValueCopyGenerator(value)));
+        detail::ValueCopyGenerator gen(value);
+        if (size == 0) {
+            return ArrayUnknownSize{};
+        }
+        return ArrayUnknownSize(detail::make_array<T>(size, &gen));
     }
 
     static ArrayUnknownSize make(std::initializer_list<T> ilist)
     {
         const auto size = narrow<size_t>(ilist.end() - ilist.begin());
-        return ArrayUnknownSize(detail::make_array<T>(size,
-                                                      detail::InitializerListGenerator(ilist)),
-                                size);
+        if (size == 0) {
+            return ArrayUnknownSize{};
+        }
+        detail::InitializerListGenerator gen(ilist);
+        return ArrayUnknownSize(detail::make_array<T>(size, &gen), size);
     }
 
     static ArrayUnknownSize make_copy(span<const T> data)
     {
-        return ArrayUnknownSize<T>(
-            detail::make_array<T>(data.size(), detail::ArrayCopyGenerator(data)));
+        if (data.size() == 0) {
+            return ArrayUnknownSize{};
+        }
+        detail::ArrayCopyGenerator gen(data);
+        return ArrayUnknownSize<T>(detail::make_array<T>(data.size(), &gen));
     }
 
     ArrayUnknownSize() = default;
 
-    /** Takes ownership of the array at ptr. */
-    explicit ArrayUnknownSize(T* ptr) noexcept : Base(ptr) {}
+    ArrayUnknownSize(std::nullptr_t) : Base(nullptr) {}
 
-    ArrayUnknownSize(ArrayUnknownSize&& p) noexcept : Base(p.m_ptr) { p.release(); }
+    ArrayUnknownSize(ArrayUnknownSize&& rhs) noexcept : Base(rhs.m_ptr) { rhs.m_ptr = nullptr; }
 
-    ArrayUnknownSize& operator=(ArrayUnknownSize&& p) noexcept
+    ArrayUnknownSize& operator=(ArrayUnknownSize&& rhs) noexcept
     {
-        ArrayUnknownSize temp(std::move(p));
+        ArrayUnknownSize temp(static_cast<ArrayUnknownSize&&>(rhs));
         this->reset();
         swap(temp);
         return *this;
@@ -197,10 +235,13 @@ public:
 
     void clear() noexcept { this->reset(); }
 
-    void swap(ArrayUnknownSize& p) noexcept { std::swap(this->m_ptr, p.m_ptr); }
+    void swap(ArrayUnknownSize& rhs) noexcept { std::swap(this->m_ptr, rhs.m_ptr); }
 
     T& operator[](size_t i) noexcept { return this->m_ptr[i]; }
     const T& operator[](size_t i) const noexcept { return this->m_ptr[i]; }
+
+private:
+    explicit ArrayUnknownSize(T* ptr) noexcept : Base(ptr) {}
 };
 
 /** Minimalistic container for heap-allocated arrays. Tracks the size of the array and provides
@@ -214,47 +255,76 @@ public:
     using iterator = T*;
     using const_iterator = const T*;
 
-    static Array make(size_t size) { return Array(new T[size](), size); }
+    static Array make(size_t size)
+    {
+        return size == 0 ? Array{}
+                         : Array(detail::make_array<T, detail::InitTag::ValueInit>(size), size);
+    }
+
+    static Array make_for_overwrite(size_t size)
+    {
+        return size == 0 ? Array{}
+                         : Array(detail::make_array<T, detail::InitTag::DefaultInit>(size), size);
+    }
 
     static Array make(size_t size, const T& value)
     {
-        return Array(detail::make_array<T>(size, detail::ValueCopyGenerator(value), size));
+        if (size == 0) {
+            return Array{};
+        }
+        detail::ValueCopyGenerator gen(value);
+        return Array(detail::make_array<T>(size, &gen), size);
     }
 
     static Array make(std::initializer_list<T> ilist)
     {
         const auto size = narrow<size_t>(ilist.end() - ilist.begin());
-        return Array(detail::make_array<T>(size, detail::InitializerListGenerator(ilist)), size);
+        if (size == 0) {
+            return Array{};
+        }
+        detail::InitializerListGenerator gen(ilist);
+        return Array(detail::make_array<T>(size, &gen), size);
     }
 
     static Array make_copy(span<const T> data)
     {
-        return Array<T>(detail::make_array<T>(data.size(), detail::ArrayCopyGenerator(data)),
-                        data.size());
+        if (data.size() == 0) {
+            return Array{};
+        }
+        detail::ArrayCopyGenerator gen(data);
+        return Array<T>(detail::make_array<T>(data.size(), &gen), data.size());
     }
 
+    /** Default constructor creates an empty array. */
     Array() = default;
 
-    /** Takes ownership of the array at ptr. */
-    explicit Array(T* ptr, size_t size) noexcept : Base(ptr), m_size(size) {}
+    Array(std::nullptr_t) : Base(nullptr), m_size(0) {}
 
-    Array(Array&& p) noexcept : Base(p.m_ptr), m_size(p.m_size)
-    {
-        p.release();
-        p.m_size = 0;
-    }
+    Array(const Array& rhs) : Array(make_copy(rhs)) {}
 
-    Array& operator=(Array&& p) noexcept
+    Array& operator=(const Array& rhs)
     {
-        Array temp(std::move(p));
+        Array temp(rhs);
         this->reset();
         swap(temp);
         return *this;
     }
 
-    MG_MAKE_NON_COPYABLE(Array);
+    Array(Array&& rhs) noexcept : Base(rhs.m_ptr), m_size(rhs.m_size)
+    {
+        rhs.m_ptr = nullptr;
+        rhs.m_size = 0;
+    }
 
-    ~Array() = default;
+    Array& operator=(Array&& rhs) noexcept
+    {
+        Array temp(static_cast<Array&&>(rhs));
+        this->reset();
+        swap(temp);
+        return *this;
+    }
+
+    ~Array() { m_size = 0; }
 
     void clear() noexcept
     {
@@ -262,10 +332,10 @@ public:
         m_size = 0;
     }
 
-    void swap(Array& p) noexcept
+    void swap(Array& rhs) noexcept
     {
-        std::swap(this->m_ptr, p.m_ptr);
-        std::swap(m_size, p.m_size);
+        std::swap(this->m_ptr, rhs.m_ptr);
+        std::swap(m_size, rhs.m_size);
     }
 
     iterator begin() noexcept { return this->m_ptr; }
@@ -314,6 +384,8 @@ public:
     typename Base::size_type size() const noexcept { return m_size; }
 
 private:
+    explicit Array(T* ptr, size_t size) noexcept : Base(ptr), m_size(size) {}
+
     typename Base::size_type m_size = 0;
 };
 
