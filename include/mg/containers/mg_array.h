@@ -23,8 +23,10 @@
 
 #include <cstddef>
 #include <cstdlib>
+#include <cstring>
 #include <initializer_list>
 #include <new>
+#include <type_traits>
 
 namespace Mg {
 
@@ -54,7 +56,7 @@ static T* make_array(const size_t num_elems, Generator* generator = nullptr)
         // Note: to be perfectly portable, we would need to advance the correct amount to reach
         // an aligned address for alignof(T), but here I assume that sizeof(size_t) corresponds to
         // maximum alignment.
-        array_begin = static_cast<char*>(buffer) + sizeof(size_t);
+        array_begin = static_cast<char*>(buffer) + sizeof(size_t); // NOLINT
 
         // Construct copies in storage.
         for (; i < num_elems; ++i) {
@@ -86,7 +88,7 @@ static T* make_array(const size_t num_elems, Generator* generator = nullptr)
 
 template<typename T> static void destroy_array(T* array_begin)
 {
-    auto* buffer = reinterpret_cast<char*>(array_begin) - sizeof(size_t);
+    auto* buffer = reinterpret_cast<char*>(array_begin) - sizeof(size_t); // NOLINT
     const size_t num_elems = *reinterpret_cast<size_t*>(buffer);
 
     for (size_t i = 0; i < num_elems; ++i) {
@@ -211,8 +213,15 @@ public:
         if (data.size() == 0) {
             return ArrayUnknownSize{};
         }
-        detail::ArrayCopyGenerator gen(data);
-        return ArrayUnknownSize<T>(detail::make_array<T>(data.size(), &gen));
+        if constexpr (std::is_trivially_copyable_v<T>) {
+            ArrayUnknownSize result = make_for_overwrite(data.size());
+            std::memcpy(result.data(), data.data(), data.size_bytes());
+            return result;
+        }
+        else {
+            detail::ArrayCopyGenerator gen(data);
+            return ArrayUnknownSize<T>(detail::make_array<T>(data.size(), &gen));
+        }
     }
 
     ArrayUnknownSize() = default;
@@ -291,8 +300,16 @@ public:
         if (data.size() == 0) {
             return Array{};
         }
-        detail::ArrayCopyGenerator gen(data);
-        return Array<T>(detail::make_array<T>(data.size(), &gen), data.size());
+
+        if constexpr (std::is_trivially_copyable_v<T>) {
+            Array result = make_for_overwrite(data.size());
+            std::memcpy(result.data(), data.data(), data.size_bytes());
+            return result;
+        }
+        else {
+            detail::ArrayCopyGenerator gen(data);
+            return Array(detail::make_array<T>(data.size(), &gen), data.size());
+        }
     }
 
     /** Default constructor creates an empty array. */
