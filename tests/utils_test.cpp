@@ -144,3 +144,37 @@ TEST_CASE("PointNormalPlane")
     REQUIRE(sgn_dist == Approx(-1.0f / std::sqrt(2.0f)));
     REQUIRE(dist == Approx(1.0f / std::sqrt(2.0f)));
 }
+
+TEST_CASE("min/max/clamp int")
+{
+    REQUIRE(min(0, 1) == 0);
+    REQUIRE(min(1, 0) == 0);
+    REQUIRE(min(0, -1) == -1);
+
+    REQUIRE(max(0, 1) == 1);
+    REQUIRE(max(1, 0) == 1);
+    REQUIRE(max(0, 0) == 0);
+
+    REQUIRE(clamp(0, -1, 1) == 0);
+    REQUIRE(clamp(-1, -1, 1) == -1);
+    REQUIRE(clamp(-2, -1, 1) == -1);
+    REQUIRE(clamp(1, -1, 1) == 1);
+    REQUIRE(clamp(2, -1, 1) == 1);
+}
+
+TEST_CASE("min/max/clamp float")
+{
+    REQUIRE(min(0.0f, 1.0f) == 0.0f);
+    REQUIRE(min(1.0f, -1.0f) == -1.0f);
+    REQUIRE(min(0.0f, 0.0f) == 0.0f);
+
+    REQUIRE(max(0.0f, 1.0f) == 1.0f);
+    REQUIRE(max(1.0f, 0.0f) == 1.0f);
+    REQUIRE(max(-1.0f, 0.0f) == 0.0f);
+
+    REQUIRE(clamp(0.0f, -1.0f, 1.0f) == 0.0f);
+    REQUIRE(clamp(-1.0f, -1.0f, 1.0f) == -1.0f);
+    REQUIRE(clamp(-2.0f, -1.0f, 1.0f) == -1.0f);
+    REQUIRE(clamp(1.0f, -1.0f, 1.0f) == 1.0f);
+    REQUIRE(clamp(2.0f, -1.0f, 1.0f) == 1.0f);
+}

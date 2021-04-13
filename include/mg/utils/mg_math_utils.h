@@ -50,7 +50,7 @@ template<typename IntT, typename FloatT> constexpr IntT round(FloatT value)
 /** Integral constexpr power. */
 template<typename T> constexpr T intpow(const T base, unsigned const exponent)
 {
-    return (exponent == 0) ? 1 : base * pow(base, exponent - 1);
+    return (exponent == 0) ? 1 : base * std::pow(base, exponent - 1);
 }
 
 /** Absolute value. */
@@ -73,6 +73,14 @@ template<typename T> constexpr const T& max(const T& l, const T& r) noexcept
 template<typename T> constexpr const T& min(const T& l, const T& r) noexcept
 {
     return l > r ? r : l;
+}
+
+/** Equivalent to std::clamp. Re-implemented here because std::clamp resides in the very heavy
+ * <algorithm> header, which is too much to include for such a small function.
+ */
+template<typename T> constexpr const T& clamp(const T& x, const T& low, const T& high) noexcept
+{
+    return x < low ? low : x > high ? high : x;
 }
 
 } // namespace Mg
