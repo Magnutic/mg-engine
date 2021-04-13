@@ -17,6 +17,7 @@ if [[ $# -eq 0 ]]; then
     echo "    --use-sanitisers Enable runtime debug sanitisers"
     echo "    --use-gfx-debug-groups Enable debug groups (for use with e.g. apitrace)"
     echo "    --clang-tidy-command <command> Run clang-tidy when building using the given command."
+    echo "    --generator <generator> Which generator to use (corresponds to CMake option -G)."
     echo "Example: $0 clang-deb clang-8 clang++-8 --debug --use-sanitisers --use-gfx-debug-groups"
     echo "Note: this script can be invoked multiple times to set up different configurations, as long as the configuration-names differ."
     exit
@@ -31,6 +32,7 @@ BUILD_TYPE=Release
 USE_SANITISERS=0
 USE_GFX_DEBUG_GROUPS=0
 CLANG_TIDY_COMMAND=""
+GENERATOR=""
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -47,6 +49,11 @@ do
         ;;
         --use-gfx-debug-groups)
         USE_GFX_DEBUG_GROUPS=1
+        shift
+        ;;
+        --generator)
+        GENERATOR="$2"
+        shift
         shift
         ;;
         --clang-tidy-command)
@@ -122,6 +129,12 @@ if [[ $CLANG_TIDY_COMMAND != "" ]]; then
     echo "Clang-tidy enabled with command: $CLANG_TIDY_COMMAND"
 fi
 
+GENERATOR_PART=""
+if [[ $GENERATOR != "" ]]; then
+    echo "Using generator: $GENERATOR"
+    GENERATOR_PART="-G $GENERATOR"
+fi
+
 rm -r "$BUILD_ROOT/$CONFNAME"
 mkdir "$BUILD_ROOT/$CONFNAME" || exit 1
 
@@ -129,4 +142,5 @@ mkdir "$BUILD_ROOT/$CONFNAME" || exit 1
 cmake "$SRC_ROOT" -DCMAKE_BUILD_TYPE="$BUILD_TYPE" -DCMAKE_PREFIX_PATH="$DEPENDENCY_INSTALL_DIR" \
     -DCMAKE_C_COMPILER="$C_COMPILER" -DCMAKE_CXX_COMPILER="$CXX_COMPILER" -DMG_DEBUG_SANITISERS=$USE_SANITISERS \
     -DMG_ENABLE_GFX_DEBUG_GROUPS=$USE_GFX_DEBUG_GROUPS \
-    -DCMAKE_CXX_CLANG_TIDY="$CLANG_TIDY_COMMAND")
+    -DCMAKE_CXX_CLANG_TIDY="$CLANG_TIDY_COMMAND" \
+    $GENERATOR_PART)
