@@ -10,11 +10,11 @@
 
 #pragma once
 
-#include <unordered_map>
 #include <vector>
 
 #include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_simple_pimpl.h"
 
 namespace Mg::input {
 
@@ -62,9 +62,17 @@ protected:
 
 //--------------------------------------------------------------------------------------------------
 
+struct InputMapData;
+
 /** InputMap provides a mapping from a set of Identifiers to InputSources. */
-class InputMap {
+class InputMap : PImplMixin<InputMapData> {
 public:
+    explicit InputMap();
+    ~InputMap();
+
+    MG_MAKE_NON_COPYABLE(InputMap);
+    MG_MAKE_DEFAULT_MOVABLE(InputMap);
+
     /** Bind command to the given input source. */
     void bind(Identifier command, InputSource input_id);
 
@@ -99,15 +107,6 @@ public:
 
     /** Returns whether button assigned to identifier was just released. */
     bool was_released(Identifier command) const;
-
-private:
-    struct State {
-        float current_state = 0.0f;
-        float prev_state = 0.0f;
-    };
-
-    std::unordered_map<Identifier, InputSource> m_commands;
-    std::unordered_map<Identifier, State> m_command_states;
 };
 
 } // namespace Mg::input
