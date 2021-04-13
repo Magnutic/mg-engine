@@ -49,11 +49,10 @@ void ResourceCache::refresh()
         const bool has_changed = file.time_stamp > old_time_stamp;
 
         if (has_changed) {
-            log.message(
-                "Detected that {} has changed (old time-stamp: {}, new time-stamp: {}).",
-                file.filename.str_view(),
-                format_time(old_time_stamp),
-                format_time(file.time_stamp));
+            log.message("Detected that {} has changed (old time-stamp: {}, new time-stamp: {}).",
+                        file.filename.str_view(),
+                        format_time(old_time_stamp),
+                        format_time(file.time_stamp));
         }
 
         return has_changed;
@@ -114,10 +113,11 @@ void ResourceCache::refresh()
     }
 
     // Notify callbacks of file changes.
-    for (const auto& [entry, resource_type, new_time_stamp] : entries_to_reload) {
-        if (m_resource_reload_callback) {
+    if (m_resource_reload_callback) {
+        for (const auto& [entry, resource_type, new_time_stamp] : entries_to_reload) {
             const BaseResourceHandle handle(entry.resource_id(), entry);
-            m_resource_reload_callback(FileChangedEvent{ handle, resource_type, new_time_stamp });
+            m_resource_reload_callback(m_resource_reload_callback_user_data,
+                                       { handle, resource_type, new_time_stamp });
         }
     }
 }

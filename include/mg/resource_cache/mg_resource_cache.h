@@ -18,7 +18,6 @@
 #include "mg/resources/mg_file_changed_event.h"
 #include "mg/utils/mg_macros.h"
 
-#include <functional>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
@@ -162,16 +161,15 @@ public:
         return m_file_loaders;
     }
 
-    using FileChangeCallbackT = std::function<void(const FileChangedEvent&)>;
+    using FileChangeCallbackT = void (*)(void* user_data, const FileChangedEvent&);
 
-    void set_resource_reload_callback(FileChangeCallbackT callback) noexcept
+    void set_resource_reload_callback(FileChangeCallbackT callback, void* user_data) noexcept
     {
-        m_resource_reload_callback = std::move(callback);
+        m_resource_reload_callback = callback;
+        m_resource_reload_callback_user_data = user_data;
     }
 
 private:
-    FileChangeCallbackT m_resource_reload_callback;
-
     struct FileInfo {
         Identifier filename;
         std::time_t time_stamp;
@@ -223,6 +221,10 @@ private:
     void log_error(Identifier resource, std::string_view message) const;
 
     // --------------------------------------- Data members ----------------------------------------
+
+    // Callback invoked when a resource has changed on the file system.
+    FileChangeCallbackT m_resource_reload_callback = nullptr;
+    void* m_resource_reload_callback_user_data = nullptr;
 
     // Loaders for loading resource file data into memory.
     std::vector<std::unique_ptr<IFileLoader>> m_file_loaders;

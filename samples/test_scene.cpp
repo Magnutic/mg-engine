@@ -105,7 +105,10 @@ void Scene::init()
     }
 
     resource_cache.set_resource_reload_callback(
-        [this](const Mg::FileChangedEvent& event) { on_resource_reload(event); });
+        [](void* scene, const Mg::FileChangedEvent& event) {
+            static_cast<Scene*>(scene)->on_resource_reload(event);
+        },
+        this);
 
     make_hdr_target(app.window().settings().video_mode);
     make_blur_targets(app.window().settings().video_mode);
