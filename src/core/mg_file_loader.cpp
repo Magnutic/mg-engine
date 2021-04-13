@@ -38,8 +38,6 @@
 
 #include <zip.h>
 
-#include <fmt/core.h>
-
 #include <filesystem>
 
 namespace Mg {
@@ -219,8 +217,7 @@ struct zip_stat zip_stat_helper(zip_t* archive, Identifier file_path)
         return sb;
     }
 
-    log.error(
-        fmt::format("ZipFileLoader::file_size(): Could not find file '{}'", file_path.c_str()));
+    log.error("ZipFileLoader::file_size(): Could not find file '{}'", file_path.c_str());
     throw RuntimeError();
 }
 
@@ -233,10 +230,10 @@ uintmax_t ZipFileLoader::file_size(Identifier file)
 
     if ((sb.valid & ZIP_STAT_SIZE) == 0) {
         log.error(
-            fmt::format("ZipFileLoader::file_size(): "
-                        "Could not read size of file '{}' in zip archive '{}'",
-                        file.c_str(),
-                        m_archive_name));
+            "ZipFileLoader::file_size(): "
+            "Could not read size of file '{}' in zip archive '{}'",
+            file.c_str(),
+            m_archive_name);
         throw RuntimeError();
     }
 
@@ -251,10 +248,10 @@ std::time_t ZipFileLoader::file_time_stamp(Identifier file)
     const auto sb = zip_stat_helper(m_archive_file, file);
     if ((sb.valid & ZIP_STAT_MTIME) == 0) {
         log.error(
-            fmt::format("ZipFileLoader::file_time_stamp(): "
-                        "Could not read time stamp of file '{}' in zip archive '{}'",
-                        file.c_str(),
-                        m_archive_name));
+            "ZipFileLoader::file_time_stamp(): "
+            "Could not read time stamp of file '{}' in zip archive '{}'",
+            file.c_str(),
+            m_archive_name);
 
         throw RuntimeError();
     }

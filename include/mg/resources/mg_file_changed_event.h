@@ -12,11 +12,9 @@
 
 #include "mg/resource_cache/mg_resource_handle.h"
 
-#include <chrono>
+#include <ctime>
 
 namespace Mg {
-
-using time_point = std::chrono::system_clock::time_point;
 
 /** Event sent by ResourceCache to notify whether a resource file has changed.
  * @see ResourceCache::set_file_change_callback
