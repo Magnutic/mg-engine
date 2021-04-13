@@ -1,4 +1,5 @@
 ﻿#include "test_scene.h"
+#include "mg/gfx/mg_animation.h"
 #include "mg/gfx/mg_render_command_list.h"
 
 #include <mg/core/mg_config.h>
@@ -329,6 +330,19 @@ void Scene::render_scene(const double lerp_factor)
     }
 
     Model& fox = scene_models["meshes/Fox.mgm"];
+    {
+        Mg::gfx::Mesh::JointId joint_id = 0;
+        for (Mg::gfx::JointPose& joint : fox.pose->joint_poses) {
+            Mg::gfx::evaluate_joint_pose(fox.clip->channels[joint_id],
+                                         std::fmod(time * 325.0, 725.0),
+                                         joint);
+            ++joint_id;
+        }
+
+        fox.pose->joint_poses[0].rotation.pitch(90_degrees);
+    }
+
+#if 0
     const Mg::gfx::Mesh::JointId head_joint_id = fox.skeleton->find_joint("b_Head_05").value();
     const Mg::gfx::Mesh::JointId neck_joint_id = fox.skeleton->find_joint("b_Neck_04").value();
     const Mg::gfx::Mesh::JointId tail_2_joint_id = fox.skeleton->find_joint("b_Tail02_013").value();
@@ -340,6 +354,7 @@ void Scene::render_scene(const double lerp_factor)
     head_pose.rotation.roll(-15_degrees + shake_angle - head_pose.rotation.roll());
     neck_pose.rotation.yaw(nod_angle - neck_pose.rotation.yaw());
     tail_2_pose.rotation.roll(30_degrees + nod_angle * 0.5f - tail_2_pose.rotation.roll());
+#endif
 
     // Debug geometry
     if (draw_debug) {
@@ -380,6 +395,16 @@ Mg::Opt<Mg::gfx::Skeleton> Scene::load_skeleton(Mg::Identifier file)
         skeleton.joints()[i] = access->joints()[i];
     }
     return skeleton;
+}
+
+Mg::Opt<Mg::gfx::Mesh::AnimationClip> Scene::load_clip(Mg::Identifier file)
+{
+    const Mg::ResourceAccessGuard access = resource_cache.access_resource<Mg::MeshResource>(file);
+    if (access->animation_clips().empty()) {
+        return Mg::nullopt;
+    }
+
+    return access->animation_clips()[1];
 }
 
 Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file)
@@ -464,6 +489,8 @@ Model& Scene::load_model(Mg::Identifier mesh_file,
     if (model.skeleton) {
         model.pose = model.skeleton->get_bind_pose();
     }
+
+    model.clip = load_clip(mesh_file);
 
     return model;
 }

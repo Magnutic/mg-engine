@@ -29,6 +29,7 @@ struct MeshResource::Data {
     Array<Submesh> submeshes;
     Array<Influences> influences;
     Array<Joint> joints;
+    Array<AnimationClip> animation_clips;
 
     BoundingSphere bounding_sphere;
 };
@@ -228,12 +229,37 @@ LoadResult load_version_2(ResourceLoadingInput& input, [[maybe_unused]] std::str
         joint.name = Identifier::from_runtime_string(get_string(record.name));
     }
 
+    auto clip_records = read_range<MeshResourceData::AnimationClip>(bytestream, header.animations);
+    result.data->animation_clips = Array<AnimationClip>::make_for_overwrite(clip_records.size());
+
+    for (size_t i = 0; i < clip_records.size(); ++i) {
+        const MeshResourceData::AnimationClip& clip_record = clip_records[i];
+        AnimationClip& clip = result.data->animation_clips[i];
+        clip.name = Identifier::from_runtime_string(get_string(clip_record.name));
+
+        auto channel_records = read_range<MeshResourceData::AnimationChannel>(bytestream,
+                                                                              clip_record.channels);
+
+        clip.channels = Array<AnimationChannel>::make_for_overwrite(channel_records.size());
+
+        for (size_t u = 0; u < channel_records.size(); ++u) {
+            AnimationChannel& channel = clip.channels[u];
+            MeshResourceData::AnimationChannel& channel_record = channel_records[u];
+            channel.position_keys = read_range<PositionKey>(bytestream,
+                                                            channel_record.position_keys);
+            channel.rotation_keys = read_range<RotationKey>(bytestream,
+                                                            channel_record.rotation_keys);
+            channel.scale_keys = read_range<ScaleKey>(bytestream, channel_record.scale_keys);
+        }
+    }
+
     return result;
 }
 
 } // namespace
 
 MeshResource::MeshResource(Identifier id) : BaseResource(id) {}
+
 MeshResource::~MeshResource() = default;
 
 MeshDataView MeshResource::data_view() const noexcept
@@ -260,6 +286,10 @@ span<const Influences> MeshResource::influences() const noexcept
 span<const Joint> MeshResource::joints() const noexcept
 {
     return m_data ? m_data->joints : span<const Joint>{};
+}
+span<const AnimationClip> MeshResource::animation_clips() const noexcept
+{
+    return m_data ? m_data->animation_clips : span<const AnimationClip>{};
 }
 
 BoundingSphere MeshResource::bounding_sphere() const noexcept
@@ -360,6 +390,10 @@ bool MeshResource::validate() const
     for (JointId ji = 0; ji < n_joints; ++ji) {
         const Joint& joint = joints()[ji];
 
+        if (joint.name.str_view().empty()) {
+            mesh_error("Joint {} has no name.", ji);
+        }
+
         for (const JointId child_id : joint.children) {
             if (child_id != joint_id_none && child_id >= joints().size()) {
                 mesh_error(
@@ -390,6 +424,24 @@ bool MeshResource::validate() const
                                id,
                                n_joints);
                 }
+            }
+        }
+    }
+
+    // Check animation clips
+    {
+        for (const AnimationClip& clip : animation_clips()) {
+            if (clip.name.str_view().empty()) {
+                mesh_error("Animation clip has no name.");
+            }
+
+            if (clip.channels.size() != n_joints) {
+                mesh_error(
+                    "Animation clip '{}' does not contain one channel per joint; "
+                    "had {} channels, expected {}.",
+                    clip.name.str_view(),
+                    clip.channels.size(),
+                    n_joints);
             }
         }
     }

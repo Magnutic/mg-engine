@@ -7,21 +7,18 @@
 #include <string>
 #include <string_view>
 
-namespace Mg
-{
+namespace Mg {
 
 template<typename F> void for_each_child(const aiNode& node, F&& function)
 {
-    for (uint32_t i = 0; i < node.mNumChildren; ++i)
-    {
+    for (uint32_t i = 0; i < node.mNumChildren; ++i) {
         function(*node.mChildren[i]);
     }
 }
 
 template<typename F> void for_each_mesh(const aiScene& scene, const aiNode& node, F&& function)
 {
-    for (uint32_t i = 0; i < node.mNumMeshes; ++i)
-    {
+    for (uint32_t i = 0; i < node.mNumMeshes; ++i) {
         const auto meshIndex = node.mMeshes[i];
         assert(meshIndex < scene.mNumMeshes);
         function(*scene.mMeshes[meshIndex]);
@@ -30,26 +27,60 @@ template<typename F> void for_each_mesh(const aiScene& scene, const aiNode& node
 
 template<typename F> void for_each_bone(const aiMesh& mesh, F&& function)
 {
-    for (uint32_t i = 0; i < mesh.mNumBones; ++i)
-    {
+    for (uint32_t i = 0; i < mesh.mNumBones; ++i) {
         function(*mesh.mBones[i]);
     }
 }
 
 template<typename F> void for_each_face(const aiMesh& mesh, F&& function)
 {
-    for (uint32_t i = 0; i < mesh.mNumFaces; ++i)
-    {
+    for (uint32_t i = 0; i < mesh.mNumFaces; ++i) {
         function(mesh.mFaces[i]);
     }
 }
 
 template<typename F> void for_each_index(const aiFace& face, F&& function)
 {
-    for (uint32_t i = 0; i < face.mNumIndices; ++i)
-    {
+    for (uint32_t i = 0; i < face.mNumIndices; ++i) {
         function(face.mIndices[i]);
     }
+}
+
+template<typename F> void for_each_animation(const aiScene& scene, F&& function)
+{
+    for (uint32_t i = 0; i < scene.mNumAnimations; ++i) {
+        function(*scene.mAnimations[i]);
+    }
+}
+
+template<typename F> void for_each_channel(const aiAnimation& animation, F&& function)
+{
+    for (uint32_t i = 0; i < animation.mNumChannels; ++i) {
+        function(*animation.mChannels[i]);
+    }
+}
+
+template<typename F, typename KeyT>
+void for_each_key(const uint32_t num_keys, const KeyT* key_array, F&& function)
+{
+    for (uint32_t i = 0; i < num_keys; ++i) {
+        function(key_array[i]);
+    }
+}
+
+template<typename F> void for_each_position_key(const aiNodeAnim& channel, F&& function)
+{
+    for_each_key(channel.mNumPositionKeys, channel.mPositionKeys, function);
+}
+
+template<typename F> void for_each_rotation_key(const aiNodeAnim& channel, F&& function)
+{
+    for_each_key(channel.mNumRotationKeys, channel.mRotationKeys, function);
+}
+
+template<typename F> void for_each_scaling_key(const aiNodeAnim& channel, F&& function)
+{
+    for_each_key(channel.mNumScalingKeys, channel.mScalingKeys, function);
 }
 
 inline std::string to_string(const aiString& str)

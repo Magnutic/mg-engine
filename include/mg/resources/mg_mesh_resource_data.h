@@ -10,10 +10,12 @@
 
 #pragma once
 
+#include "mg/gfx/mg_animation.h"
 #include "mg/gfx/mg_joint.h"
 #include "mg/gfx/mg_mesh_data.h"
 #include "mg/mg_file_data_range.h"
 
+#include <glm/gtc/quaternion.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 
@@ -40,6 +42,26 @@ using gfx::Mesh::JointWeights;
 using gfx::Mesh::SubmeshRange;
 using gfx::Mesh::Vertex;
 
+using gfx::Mesh::PositionKey;
+using gfx::Mesh::RotationKey;
+using gfx::Mesh::ScaleKey;
+
+struct Header {
+    uint32_t four_cc;
+    uint32_t version;
+    glm::vec3 centre;
+    float radius;
+    glm::vec3 abb_min;
+    glm::vec3 abb_max;
+    FileDataRange vertices;
+    FileDataRange indices;
+    FileDataRange submeshes;
+    FileDataRange joints;
+    FileDataRange influences;
+    FileDataRange animations;
+    FileDataRange strings;
+};
+
 /** At the end of each mesh file there is a buffer of zero-terminated strings. This struct points
  * out a string within said buffer.
  */
@@ -61,19 +83,15 @@ struct Joint {
     gfx::Mesh::JointChildren children = {};
 };
 
-struct Header {
-    uint32_t four_cc;
-    uint32_t version;
-    glm::vec3 centre;
-    float radius;
-    glm::vec3 abb_min;
-    glm::vec3 abb_max;
-    FileDataRange vertices;
-    FileDataRange indices;
-    FileDataRange submeshes;
-    FileDataRange joints;
-    FileDataRange influences;
-    FileDataRange strings;
+struct AnimationClip {
+    StringRange name;
+    FileDataRange channels;
+};
+
+struct AnimationChannel {
+    FileDataRange position_keys;
+    FileDataRange rotation_keys;
+    FileDataRange scale_keys;
 };
 
 } // namespace Mg::MeshResourceData

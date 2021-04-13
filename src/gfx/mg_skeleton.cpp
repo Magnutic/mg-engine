@@ -8,6 +8,7 @@
 
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_transform.h"
+#include "mg/gfx/mg_animation.h"
 
 #include <glm/mat3x3.hpp>
 #include <glm/mat4x4.hpp>
@@ -202,6 +203,45 @@ bool calculate_pose_transformations(const Skeleton& skeleton,
                                         pose.joint_poses,
                                         matrices_out);
     return true;
+}
+
+void evaluate_joint_pose(const Mesh::AnimationChannel& animation_channel,
+                         double time,
+                         JointPose& joint_pose_out)
+{
+    auto get_key_index = [time](const auto& keys) -> std::pair<size_t, size_t> {
+        for (size_t i = 0; i < keys.size(); ++i) {
+            if (keys[i].time >= time) {
+                return { (i == 0 ? keys.size() - 1 : i - 1), i };
+            }
+        }
+
+        return { 0, 0 };
+    };
+
+    if (!animation_channel.position_keys.empty()) {
+        const auto [a, b] = get_key_index(animation_channel.position_keys);
+        joint_pose_out.translation = animation_channel.position_keys[a].value;
+    }
+    else {
+        joint_pose_out.translation = glm::vec3(0.0f);
+    }
+
+    if (!animation_channel.rotation_keys.empty()) {
+        const auto [a, b] = get_key_index(animation_channel.rotation_keys);
+        joint_pose_out.rotation = Rotation(animation_channel.rotation_keys[a].value);
+    }
+    else {
+        joint_pose_out.rotation = Rotation();
+    }
+
+    if (!animation_channel.scale_keys.empty()) {
+        const auto [a, b] = get_key_index(animation_channel.scale_keys);
+        joint_pose_out.scale = animation_channel.scale_keys[a].value;
+    }
+    else {
+        joint_pose_out.scale = 1.0f;
+    }
 }
 
 } // namespace Mg::gfx

@@ -29,10 +29,10 @@ public:
     /** Enqueue a vector of data for writing.
      * @return A FileDataRange describing where in the file the data will be.
      */
-    template<typename T> FileDataRange enqueue(const std::vector<T>& items)
+    template<typename T> FileDataRange enqueue_array(const span<T> items)
     {
         static_assert(std::is_trivially_copyable_v<T>);
-        return enqueue(reinterpret_cast<const char*>(items.data()), items.size() * sizeof(T));
+        return enqueue(reinterpret_cast<const char*>(items.data()), items.size_bytes());
     }
 
     /** Enqueue a struct for writing.
@@ -47,7 +47,7 @@ public:
     /** Enqueue a string for writing.
      * @return A FileDataRange describing where in the file the data will be.
      */
-    FileDataRange enqueue(const std::string& string)
+    FileDataRange enqueue_string(const std::string& string)
     {
         return enqueue(string.c_str(), narrow<uint32_t>(string.size()));
     }

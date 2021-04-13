@@ -11,6 +11,7 @@
 #pragma once
 
 #include "mg/containers/mg_array.h"
+#include "mg/gfx/mg_animation.h"
 #include "mg/mg_bounding_volumes.h"
 #include "mg/resource_cache/mg_base_resource.h"
 #include "mg/utils/mg_gsl.h"
@@ -47,6 +48,7 @@ public:
     span<const gfx::Mesh::Submesh> submeshes() const noexcept;
     span<const gfx::Mesh::Influences> influences() const noexcept;
     span<const gfx::Mesh::Joint> joints() const noexcept;
+    span<const gfx::Mesh::AnimationClip> animation_clips() const noexcept;
 
     bool has_joints() const noexcept { return !joints().empty(); }
 

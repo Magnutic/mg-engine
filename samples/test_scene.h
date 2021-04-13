@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "mg/gfx/mg_animation.h"
 #include <mg/containers/mg_flat_map.h>
 #include <mg/core/mg_config.h>
 #include <mg/core/mg_window.h>
@@ -70,6 +71,7 @@ struct Model {
     Mg::small_vector<Mg::gfx::MaterialAssignment, 10> material_assignments;
     Mg::Opt<Mg::gfx::Skeleton> skeleton;
     Mg::Opt<Mg::gfx::SkeletonPose> pose;
+    Mg::Opt<Mg::gfx::Mesh::AnimationClip> clip;
 };
 
 struct MaterialFileAssignment {
@@ -153,6 +155,7 @@ private:
 
     Mg::gfx::MeshHandle load_mesh(Mg::Identifier file);
     Mg::Opt<Mg::gfx::Skeleton> load_skeleton(Mg::Identifier file);
+    Mg::Opt<Mg::gfx::Mesh::AnimationClip> load_clip(Mg::Identifier file);
 
     Mg::gfx::Texture2D* load_texture(Mg::Identifier file);
 

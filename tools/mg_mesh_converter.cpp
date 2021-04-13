@@ -4,9 +4,14 @@
 #include "mg_file_writer.h"
 
 #include <mg/resources/mg_mesh_resource_data.h>
+#include <mg/utils/mg_assert.h>
 
-#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/transform.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 
 #include <assimp/DefaultLogger.hpp>
 #include <assimp/Importer.hpp>
@@ -26,11 +31,12 @@ namespace {
 using namespace Mg::gfx;
 using namespace Mg::MeshResourceData;
 using namespace std::literals;
-using glm::vec1, glm::vec2, glm::vec3, glm::vec4, glm::mat4;
+using glm::vec1, glm::vec2, glm::vec3, glm::vec4, glm::mat4, glm::quat;
 
 constexpr float k_scaling_factor = 0.01f; // TODO configurable or deduced somehow?
 
-// Converts from AssImp's Y-up coordinate system to Mg's Z-up coordinate system.
+// Converts from AssImp's Y-up coordinate system to Mg's Z-up coordinate system and applies scaling
+// factor.
 constexpr glm::mat4 to_mg_space({ -k_scaling_factor, 0, 0, 0 },
                                 { 0, 0, k_scaling_factor, 0 },
                                 { 0, k_scaling_factor, 0, 0 },
@@ -38,7 +44,7 @@ constexpr glm::mat4 to_mg_space({ -k_scaling_factor, 0, 0, 0 },
 
 const glm::mat4& from_mg_space = glm::inverse(to_mg_space);
 
-mat4 to_glm_matrix(const aiMatrix4x4& aiMat)
+mat4 convert_matrix(const aiMatrix4x4& aiMat)
 {
     mat4 result;
     for (uint32_t i = 0; i < 4; ++i) {
@@ -46,7 +52,20 @@ mat4 to_glm_matrix(const aiMatrix4x4& aiMat)
             result[narrow_cast<int>(i)][narrow_cast<int>(u)] = aiMat[u][i];
         }
     }
-    return result;
+    return to_mg_space * result * from_mg_space;
+}
+
+vec3 convert_vector(const aiVector3D& ai_vector)
+{
+    return vec3(-ai_vector.x * k_scaling_factor,
+                ai_vector.z * k_scaling_factor,
+                ai_vector.y * k_scaling_factor);
+}
+
+// TODO verify, very unsure about this
+quat convert_quaternion(const aiQuaternion& quaternion)
+{
+    return quat(quaternion.w, -quaternion.x, quaternion.z, quaternion.y);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -118,8 +137,21 @@ public:
     // Get the joint given by id.
     const Joint& get_joint(JointId id) const { return m_joints.at(id); }
 
+    // Find JointId given joint name. If no such joint exists, returns joint_id_none.
+    JointId find_joint(const std::string_view name) const
+    {
+        JointId id = 0;
+        for (const Joint& joint : m_joints) {
+            if (m_string_data->get(joint.name) == name) {
+                return id;
+            }
+            ++id;
+        }
+        return joint_id_none;
+    }
+
     // Get all joints.
-    const std::vector<Joint>& joints() const { return m_joints; }
+    span<const Joint> joints() const { return m_joints; }
 
 private:
     // Add a joint that is directly connected to vertices in the mesh.
@@ -147,7 +179,7 @@ JointId JointData::add_joint(const aiBone& bone)
     // Create the joint, using bone data if available.
     Joint& joint = m_joints.emplace_back();
     joint.name = m_string_data->store(to_string_view(bone.mName));
-    joint.inverse_bind_matrix = to_mg_space * to_glm_matrix(bone.mOffsetMatrix) * from_mg_space;
+    joint.inverse_bind_matrix = convert_matrix(bone.mOffsetMatrix);
     joint.children.fill(joint_id_none);
 
     return joint_id;
@@ -279,8 +311,96 @@ JointData::JointData(const aiScene& scene, StringData& string_data) : m_string_d
     };
 
     const auto root_joint_id = create_joint_hierarchy(*scene.mRootNode, create_joint_hierarchy);
-    assert(root_joint_id == 0);
+    MG_ASSERT(root_joint_id == 0);
 }
+
+//--------------------------------------------------------------------------------------------------
+
+class AnimationData {
+public:
+    using PositionChannel = std::vector<PositionKey>;
+    using RotationChannel = std::vector<RotationKey>;
+    using ScaleChannel = std::vector<ScaleKey>;
+
+    struct Clip {
+        StringRange name;
+
+        // The channels are indexed by JointId.
+        std::vector<PositionChannel> position_channels;
+        std::vector<RotationChannel> rotation_channels;
+        std::vector<ScaleChannel> scale_channels;
+    };
+
+    explicit AnimationData(const aiScene& scene,
+                           const JointData& joint_data,
+                           StringData& string_data)
+    {
+        m_clips.reserve(scene.mNumAnimations);
+
+        for_each_animation(scene, [&](const aiAnimation& ai_animation) {
+            const std::string_view animation_name = to_string_view(ai_animation.mName);
+
+            Clip& clip = m_clips.emplace_back();
+            clip.name = string_data.store(animation_name);
+            clip.position_channels.resize(joint_data.joints().size());
+            clip.rotation_channels.resize(joint_data.joints().size());
+            clip.scale_channels.resize(joint_data.joints().size());
+
+            std::cout << "Found animation clip: " << animation_name << "\n";
+
+            if (ai_animation.mNumMeshChannels > 0) {
+                std::cerr << "Animation clip " << animation_name
+                          << " contains mesh channels, which are currently unsupported.\n";
+            }
+
+            if (ai_animation.mNumMorphMeshChannels > 0) {
+                std::cerr << "Animation clip " << animation_name
+                          << " contains morph channels, which are currently unsupported.\n";
+            }
+
+            for_each_channel(ai_animation, [&](const aiNodeAnim& channel) {
+                const JointId joint_id = joint_data.find_joint(to_string_view(channel.mNodeName));
+
+                if (joint_id == joint_id_none) {
+                    std::cerr << "Animation clip " << animation_name << " refers to joint "
+                              << to_string_view(channel.mNodeName)
+                              << ", which was not found in the file.\n";
+
+                    return;
+                }
+
+                PositionChannel& position_channel = clip.position_channels[joint_id];
+                RotationChannel& rotation_channel = clip.rotation_channels[joint_id];
+                ScaleChannel& scale_channel = clip.scale_channels[joint_id];
+
+                for_each_rotation_key(channel, [&](const aiQuatKey& ai_key) {
+                    RotationKey& key = rotation_channel.emplace_back();
+                    key.time = ai_key.mTime;
+                    key.value = convert_quaternion(ai_key.mValue);
+                });
+
+                for_each_position_key(channel, [&](const aiVectorKey& ai_key) {
+                    PositionKey& key = position_channel.emplace_back();
+                    key.time = ai_key.mTime;
+                    key.value = convert_vector(ai_key.mValue);
+                });
+
+                for_each_scaling_key(channel, [&](const aiVectorKey& ai_key) {
+                    ScaleKey& key = scale_channel.emplace_back();
+                    key.time = ai_key.mTime;
+                    key.value = (ai_key.mValue.x + ai_key.mValue.y + ai_key.mValue.z) / 3.0f;
+                    // TODO or maybe max of scale components? Or warn if not all equal? Or just
+                    // implement support for vector scales?
+                });
+            });
+        });
+    }
+
+    span<const Clip> clips() const { return m_clips; }
+
+private:
+    std::vector<Clip> m_clips;
+};
 
 //--------------------------------------------------------------------------------------------------
 
@@ -294,10 +414,10 @@ public:
     }
 
 
-    const std::vector<Submesh>& submeshes() const { return m_submeshes; }
-    const std::vector<Vertex>& vertices() const { return m_vertices; }
-    const std::vector<Index>& indices() const { return m_indices; }
-    const std::vector<Influences>& influences() const { return m_influences; }
+    span<const Submesh> submeshes() const { return m_submeshes; }
+    span<const Vertex> vertices() const { return m_vertices; }
+    span<const Index> indices() const { return m_indices; }
+    span<const Influences> influences() const { return m_influences; }
 
 private:
     void visit(const aiMesh& mesh, const aiMatrix4x4& accumulate_transform);
@@ -364,7 +484,7 @@ void MeshData::visit(const aiMesh& mesh, const aiMatrix4x4& accumulate_transform
     m_indices.reserve(m_indices.size() + 3 * mesh.mNumFaces);
 
     for_each_face(mesh, [&](const aiFace& face) {
-        assert(face.mNumIndices == 3);
+        MG_ASSERT(face.mNumIndices == 3);
         for_each_index(face, [&](const uint32_t index) {
             const auto max_index = std::numeric_limits<Index>::max();
             if (index > max_index) {
@@ -437,17 +557,10 @@ void MeshData::add_vertex(const aiMesh& mesh,
     position *= transform4x4;
 
     Vertex& vertex = m_vertices.emplace_back();
-    vertex.position.x = -position.x * k_scaling_factor;
-    vertex.position.y = position.z * k_scaling_factor;
-    vertex.position.z = position.y * k_scaling_factor;
+    vertex.position = convert_vector(position);
 
     vertex.tex_coord.x = mesh.mTextureCoords[0][index].x;
     vertex.tex_coord.y = 1.0f - mesh.mTextureCoords[0][index].y;
-
-    const bool hasUv1 = mesh.GetNumUVChannels() > 1;
-    if (hasUv1) {
-        vec2 uv1{ mesh.mTextureCoords[1][index].x, mesh.mTextureCoords[1][index].y };
-    }
 
     auto normal = mesh.mNormals[index];
     auto tangent = mesh.mTangents[index];
@@ -456,9 +569,9 @@ void MeshData::add_vertex(const aiMesh& mesh,
     tangent *= transform3x3;
     bitangent *= transform3x3;
 
-    vertex.normal = vec3{ -normal.x, normal.z, normal.y };
-    vertex.tangent = vec3{ -tangent.x, tangent.z, tangent.y };
-    vertex.bitangent = vec3{ bitangent.x, -bitangent.z, -bitangent.y };
+    vertex.normal = convert_vector(normal);
+    vertex.tangent = convert_vector(tangent);
+    vertex.bitangent = -convert_vector(bitangent); // Note: inverted bitangent.
 }
 
 void MeshData::visit(const aiNode& node, const aiMatrix4x4& accumulate_transform)
@@ -604,6 +717,7 @@ const aiScene* load_file(Assimp::Importer& importer, const std::filesystem::path
 bool write_file(const std::filesystem::path& file_path,
                 const MeshData& mesh_data,
                 const JointData& joint_data,
+                const AnimationData& animation_data,
                 const StringData& string_data)
 {
     FileWriter writer;
@@ -619,12 +733,51 @@ bool write_file(const std::filesystem::path& file_path,
     }
 
     writer.enqueue(header);
-    header.submeshes = writer.enqueue(mesh_data.submeshes());
-    header.vertices = writer.enqueue(mesh_data.vertices());
-    header.indices = writer.enqueue(mesh_data.indices());
-    header.influences = writer.enqueue(mesh_data.influences());
-    header.joints = writer.enqueue(joint_data.joints());
-    header.strings = writer.enqueue(string_data.all_strings());
+    header.submeshes = writer.enqueue_array(mesh_data.submeshes());
+    header.vertices = writer.enqueue_array(mesh_data.vertices());
+    header.indices = writer.enqueue_array(mesh_data.indices());
+    header.influences = writer.enqueue_array(mesh_data.influences());
+    header.joints = writer.enqueue_array(joint_data.joints());
+
+    std::vector<AnimationClip> animation_clips;
+    animation_clips.resize(animation_data.clips().size());
+
+    header.animations = writer.enqueue_array<AnimationClip>(animation_clips);
+
+    std::vector<std::vector<AnimationChannel>> channels_per_clip;
+    channels_per_clip.resize(animation_data.clips().size());
+
+    for (size_t clip_index = 0; clip_index < animation_data.clips().size(); ++clip_index) {
+        const size_t num_channels = joint_data.joints().size();
+        const auto& position_channels = animation_data.clips()[clip_index].position_channels;
+        const auto& rotation_channels = animation_data.clips()[clip_index].rotation_channels;
+        const auto& scale_channels = animation_data.clips()[clip_index].scale_channels;
+
+        MG_ASSERT(position_channels.size() == num_channels);
+        MG_ASSERT(rotation_channels.size() == num_channels);
+        MG_ASSERT(scale_channels.size() == num_channels);
+
+        channels_per_clip[clip_index].resize(num_channels);
+        const span<AnimationChannel> channels = channels_per_clip[clip_index];
+
+        AnimationClip& animation_clip = animation_clips[clip_index];
+        animation_clip.name = animation_data.clips()[clip_index].name;
+        animation_clip.channels = writer.enqueue_array(channels);
+
+        for (size_t i = 0; i < position_channels.size(); ++i) {
+            channels[i].position_keys = writer.enqueue_array(span{ position_channels[i] });
+        }
+
+        for (size_t i = 0; i < rotation_channels.size(); ++i) {
+            channels[i].rotation_keys = writer.enqueue_array(span{ rotation_channels[i] });
+        }
+
+        for (size_t i = 0; i < scale_channels.size(); ++i) {
+            channels[i].scale_keys = writer.enqueue_array(span{ scale_channels[i] });
+        }
+    }
+
+    header.strings = writer.enqueue_string(string_data.all_strings());
 
     const bool success = writer.write(file_path);
     if (success) {
@@ -649,15 +802,19 @@ bool convert_mesh(const std::filesystem::path& path_in, const std::filesystem::p
 
         // Process imported data.
         StringData string_data;
+
         JointData joint_data(*scene, string_data);
         logging::dump_joints(joint_data);
+
+        AnimationData animation_data(*scene, joint_data, string_data);
+
         MeshData mesh_data(*scene, joint_data, string_data);
 
         // Release imported data now.
         importer.reset();
 
         // Write processed data.
-        return write_file(path_out, mesh_data, joint_data, string_data);
+        return write_file(path_out, mesh_data, joint_data, animation_data, string_data);
     }
     catch (const std::exception& e) {
         std::cerr << "Failed to process mesh '" << path_in.u8string() << "': " << e.what() << "\n";

@@ -22,6 +22,10 @@ namespace Mg {
 class Transform;
 }
 
+namespace Mg::gfx::Mesh {
+struct AnimationChannel;
+}
+
 namespace Mg::gfx {
 
 struct SkeletonPose;
@@ -99,5 +103,9 @@ bool calculate_skinning_matrices(const Transform& transform,
 bool calculate_pose_transformations(const Skeleton& skeleton,
                                     const SkeletonPose& pose,
                                     span<glm::mat4> matrices_out);
+
+void evaluate_joint_pose(const Mesh::AnimationChannel& animation_channel,
+                         double time,
+                         JointPose& joint_pose_out);
 
 } // namespace Mg::gfx
