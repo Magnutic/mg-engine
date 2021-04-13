@@ -90,7 +90,7 @@ std::string get_token(std::istream& stream, std::string_view delims)
         return {};
     }
 
-    const auto is_delim = [&](const char c) { return find(delims, c) != delims.end(); };
+    const auto is_delim = [&](const char c) { return delims.find(c) != std::string_view::npos; };
 
     std::string token;
 
