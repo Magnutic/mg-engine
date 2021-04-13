@@ -42,7 +42,7 @@ UniformBuffer::~UniformBuffer()
 {
     MG_GFX_DEBUG_GROUP("UniformBuffer::~UniformBuffer")
 
-    const auto ubo_id = narrow<GLuint>(m_handle.get());
+    const auto ubo_id = m_handle.as_gl_id();
     glDeleteBuffers(1, &ubo_id);
 }
 
@@ -50,7 +50,7 @@ void UniformBuffer::set_data(span<const std::byte> data, size_t dest_offset)
 {
     MG_GFX_DEBUG_GROUP("UniformBuffer::set_data")
 
-    const auto ubo_id = narrow<GLuint>(m_handle.get());
+    const auto ubo_id = m_handle.as_gl_id();
 
     if (ubo_id == 0) {
         log.warning("Attempting to write to uninitialised UBO");

@@ -94,11 +94,6 @@ private:
     Opt<GLuint> _shader{};
 };
 
-GLuint gl_program_id(ShaderProgramHandle program) noexcept
-{
-    return static_cast<GLuint>(program.get());
-}
-
 Opt<GLuint> uniform_block_index(GLuint ubo_id, std::string_view block_name) noexcept
 {
     auto block_index = glGetUniformBlockIndex(ubo_id, std::string(block_name).c_str());
@@ -117,10 +112,10 @@ Opt<ShaderProgramHandle> link_shader_program(VertexShaderHandle vertex_shader,
 {
     MG_GFX_DEBUG_GROUP("link_shader_program");
 
-    auto get_and_narrow = [](const auto handle) { return narrow<GLuint>(handle.get()); };
+    auto get_and_narrow = [](const auto handle) { return handle.as_gl_id(); };
 
     const GLuint program_id = glCreateProgram();
-    ShaderAttachGuard guard_vs(program_id, narrow<GLuint>(vertex_shader.get()));
+    ShaderAttachGuard guard_vs(program_id, vertex_shader.as_gl_id());
     ShaderAttachGuard guard_gs(program_id, geometry_shader.map(get_and_narrow));
     ShaderAttachGuard guard_fs(program_id, fragment_shader.map(get_and_narrow));
 
@@ -133,19 +128,19 @@ Opt<ShaderProgramHandle> link_shader_program(VertexShaderHandle vertex_shader,
 
 void destroy_shader_program(ShaderProgramHandle handle) noexcept
 {
-    glDeleteProgram(narrow<GLuint>(handle.get()));
+    glDeleteProgram(handle.as_gl_id());
 }
 
 void use_program(ShaderProgramHandle program) noexcept
 {
-    MG_ASSERT(gl_program_id(program) != 0);
-    glUseProgram(gl_program_id(program));
+    MG_ASSERT(program.as_gl_id() != 0);
+    glUseProgram(program.as_gl_id());
 }
 
 Opt<UniformLocation> uniform_location(ShaderProgramHandle program,
                                       std::string_view uniform_name) noexcept
 {
-    auto location = glGetUniformLocation(gl_program_id(program), std::string(uniform_name).c_str());
+    auto location = glGetUniformLocation(program.as_gl_id(), std::string(uniform_name).c_str());
     return location == -1 ? nullopt : make_opt(UniformLocation{ location });
 }
 
@@ -153,11 +148,11 @@ bool set_uniform_block_binding(ShaderProgramHandle program,
                                std::string_view block_name,
                                UniformBufferSlot slot) noexcept
 {
-    const Opt<GLuint> opt_block_index = uniform_block_index(gl_program_id(program), block_name);
+    const Opt<GLuint> opt_block_index = uniform_block_index(program.as_gl_id(), block_name);
     const auto slot_index = static_cast<GLuint>(slot);
 
     if (opt_block_index) {
-        glUniformBlockBinding(gl_program_id(program), *opt_block_index, slot_index);
+        glUniformBlockBinding(program.as_gl_id(), *opt_block_index, slot_index);
         return true;
     }
 

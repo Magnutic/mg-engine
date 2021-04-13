@@ -457,7 +457,7 @@ Texture2D Texture2D::from_rgba8_buffer(Identifier id,
 // Unload texture from OpenGL context
 void Texture2D::unload() noexcept
 {
-    const auto tex_id = narrow<GLuint>(m_handle.get());
+    const auto tex_id = m_handle.as_gl_id();
 
     if (tex_id != 0) {
         glDeleteTextures(1, &tex_id);

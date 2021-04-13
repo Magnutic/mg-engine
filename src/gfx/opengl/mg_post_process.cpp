@@ -165,8 +165,8 @@ PostProcessRenderer::PostProcessRenderer() : PImplMixin()
 PostProcessRenderer::~PostProcessRenderer()
 {
     MG_GFX_DEBUG_GROUP("~PostProcessRenderer")
-    const auto vbo_id = narrow<GLuint>(impl().vbo.get());
-    const auto vao_id = narrow<GLuint>(impl().vao.get());
+    const auto vbo_id = impl().vbo.as_gl_id();
+    const auto vao_id = impl().vao.as_gl_id();
 
     glDeleteBuffers(1, &vbo_id);
     glDeleteVertexArrays(1, &vao_id);
@@ -196,7 +196,7 @@ void PostProcessRenderer::post_process(const Context& context,
 
     Pipeline::bind_shared_inputs(shared_input_bindings);
 
-    const auto vao_id = narrow<GLuint>(impl().vao.get());
+    const auto vao_id = impl().vao.as_gl_id();
 
     glBindVertexArray(vao_id);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -228,7 +228,7 @@ void PostProcessRenderer::post_process(const Context& context,
 
     Pipeline::bind_shared_inputs(shared_input_bindings);
 
-    const auto vao_id = narrow<GLuint>(impl().vao.get());
+    const auto vao_id = impl().vao.as_gl_id();
 
     glBindVertexArray(vao_id);
     glDrawArrays(GL_TRIANGLES, 0, 6);

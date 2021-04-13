@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
 
 #include <cstdint>
@@ -60,6 +61,9 @@ public:
 
     Value get() const { return m_value; }
     void set(Value value) { m_value = value; }
+
+    /** Get as GLuint id for convenient use with OpenGL APIs. */
+    uint32_t as_gl_id() const { return narrow<uint32_t>(m_value); }
 
     void free()
     {

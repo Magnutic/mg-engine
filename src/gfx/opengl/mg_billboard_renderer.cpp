@@ -197,7 +197,7 @@ namespace {
 // Update vertex buffer to match the new set of billboards
 void update_buffer(BillboardRendererData& data, span<const Billboard> billboards)
 {
-    glBindBuffer(GL_ARRAY_BUFFER, narrow<GLuint>(data.vbo.get()));
+    glBindBuffer(GL_ARRAY_BUFFER, data.vbo.as_gl_id());
 
     // According to the following source, this should help reduce synchronisation overhead.
     // TODO: investigate further.
@@ -256,8 +256,8 @@ BillboardRenderer::~BillboardRenderer()
 {
     MG_GFX_DEBUG_GROUP("destroy BillboardRenderer")
 
-    const auto vao_id = narrow<GLuint>(impl().vao.get());
-    const auto vbo_id = narrow<GLuint>(impl().vbo.get());
+    const auto vao_id = impl().vao.as_gl_id();
+    const auto vbo_id = impl().vbo.as_gl_id();
     glDeleteVertexArrays(1, &vao_id);
     glDeleteBuffers(1, &vbo_id);
 }
@@ -293,7 +293,7 @@ void BillboardRenderer::render(const ICamera& camera,
                                                       pipeline_settings(),
                                                       binding_context);
 
-    glBindVertexArray(narrow<GLuint>(impl().vao.get()));
+    glBindVertexArray(impl().vao.as_gl_id());
     glDrawArrays(GL_POINTS, 0, narrow<GLint>(billboards.size()));
 }
 

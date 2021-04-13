@@ -310,7 +310,7 @@ void MeshRenderer::render(const ICamera& cam,
         MG_ASSERT_DEBUG(command.material != nullptr);
 
         // Set up mesh state.
-        const auto vao_id = static_cast<GLuint>(command.vertex_array.get());
+        const auto vao_id = command.vertex_array.as_gl_id();
         if (current_vao != vao_id) {
             current_vao = vao_id;
             glBindVertexArray(current_vao);

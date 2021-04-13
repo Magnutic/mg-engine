@@ -209,8 +209,8 @@ BufferTexture::~BufferTexture()
 {
     MG_GFX_DEBUG_GROUP("BufferTexture::~BufferTexture");
 
-    const auto buf_id = narrow<GLuint>(m_buf_id.get());
-    const auto tex_id = narrow<GLuint>(m_tex_id.get());
+    const auto buf_id = m_buf_id.as_gl_id();
+    const auto tex_id = m_tex_id.as_gl_id();
     glDeleteTextures(1, &tex_id);
     glDeleteBuffers(1, &buf_id);
 }
@@ -220,7 +220,7 @@ void BufferTexture::set_data(span<const std::byte> data) noexcept
     MG_GFX_DEBUG_GROUP("BufferTexture::set_data");
 
     // Update data buffer contents
-    const auto buf_id = narrow<GLuint>(m_buf_id.get());
+    const auto buf_id = m_buf_id.as_gl_id();
     glBindBuffer(GL_TEXTURE_BUFFER, buf_id);
     glBufferSubData(GL_TEXTURE_BUFFER, 0, narrow<GLsizeiptr>(data.size_bytes()), data.data());
 }

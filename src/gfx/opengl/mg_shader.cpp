@@ -75,15 +75,15 @@ Opt<FragmentShaderHandle> compile_fragment_shader(const std::string& code)
 
 void destroy_shader(VertexShaderHandle handle) noexcept
 {
-    glDeleteShader(narrow<GLuint>(handle.get()));
+    glDeleteShader(handle.as_gl_id());
 }
 void destroy_shader(FragmentShaderHandle handle) noexcept
 {
-    glDeleteShader(narrow<GLuint>(handle.get()));
+    glDeleteShader(handle.as_gl_id());
 }
 void destroy_shader(GeometryShaderHandle handle) noexcept
 {
-    glDeleteShader(narrow<GLuint>(handle.get()));
+    glDeleteShader(handle.as_gl_id());
 }
 
 } // namespace Mg::gfx

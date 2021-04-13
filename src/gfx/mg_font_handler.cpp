@@ -287,8 +287,8 @@ private:
 
 PreparedText::~PreparedText()
 {
-    const auto vbo_id = narrow<GLuint>(m_gpu_data.vertex_buffer.get());
-    const auto vao_id = narrow<GLuint>(m_gpu_data.vertex_array.get());
+    const auto vbo_id = m_gpu_data.vertex_buffer.as_gl_id();
+    const auto vao_id = m_gpu_data.vertex_array.as_gl_id();
     glDeleteBuffers(1, &vbo_id);
     glDeleteVertexArrays(1, &vao_id);
 }

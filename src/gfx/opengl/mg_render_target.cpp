@@ -144,7 +144,7 @@ TextureRenderTarget::with_colour_target(Texture2D* colour_target,
     glBindFramebuffer(GL_FRAMEBUFFER, data.fbo_id);
 
     // Attach texture to FBO
-    const auto gl_tex_id = narrow<GLuint>(colour_target->handle().get());
+    const auto gl_tex_id = colour_target->handle().as_gl_id();
     glFramebufferTexture2D(GL_FRAMEBUFFER,
                            GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D,
@@ -207,7 +207,7 @@ TextureRenderTarget::with_colour_and_depth_targets(Texture2D* colour_target,
     glBindFramebuffer(GL_FRAMEBUFFER, data.fbo_id);
 
     // Attach texture to FBO
-    const auto colour_id = narrow<GLuint>(colour_target->handle().get());
+    const auto colour_id = colour_target->handle().as_gl_id();
     glFramebufferTexture2D(GL_FRAMEBUFFER,
                            GL_COLOR_ATTACHMENT0,
                            GL_TEXTURE_2D,
@@ -215,7 +215,7 @@ TextureRenderTarget::with_colour_and_depth_targets(Texture2D* colour_target,
                            mip_level);
 
     // Attach depth/stencil renderbuffer to FBO
-    const auto depth_id = narrow<GLuint>(depth_target->handle().get());
+    const auto depth_id = depth_target->handle().as_gl_id();
     glFramebufferTexture2D(GL_FRAMEBUFFER,
                            GL_DEPTH_STENCIL_ATTACHMENT,
                            GL_TEXTURE_2D,

@@ -262,8 +262,8 @@ UIRenderer::UIRenderer(const ivec2 resolution, const float scaling_factor)
 UIRenderer::~UIRenderer()
 {
     MG_GFX_DEBUG_GROUP("~UIRenderer")
-    const auto quad_vbo_id = narrow<GLuint>(impl().quad_vbo.get());
-    const auto quad_vao_id = narrow<GLuint>(impl().quad_vao.get());
+    const auto quad_vbo_id = impl().quad_vbo.as_gl_id();
+    const auto quad_vao_id = impl().quad_vao.as_gl_id();
 
     glDeleteBuffers(1, &quad_vbo_id);
     glDeleteVertexArrays(1, &quad_vao_id);
@@ -318,7 +318,7 @@ void UIRenderer::draw_rectangle(const UIPlacement& placement,
     const mat4 M = make_transform_matrix(placement, size, impl().resolution, impl().scaling_factor);
     setup_material_pipeline(impl(), M, material, blend_mode);
 
-    const auto quad_vao_id = narrow<GLuint>(impl().quad_vao.get());
+    const auto quad_vao_id = impl().quad_vao.as_gl_id();
 
     glBindVertexArray(quad_vao_id);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -373,7 +373,7 @@ void UIRenderer::draw_text(const UIPlacement& placement,
 
     setup_text_pipeline(impl(), text.gpu_data().texture, M, blend_mode);
 
-    glBindVertexArray(narrow<GLuint>(text.gpu_data().vertex_array.get()));
+    glBindVertexArray(text.gpu_data().vertex_array.as_gl_id());
     glDrawArrays(GL_TRIANGLES, 0, narrow<GLsizei>(verts_per_char * text.num_glyphs()));
 }
 

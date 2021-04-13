@@ -298,7 +298,7 @@ void MeshPoolImpl::_make_mesh_at(MeshInternal& mesh, Identifier name, const Make
         ++mesh.vertex_buffer->num_users;
 
         const auto vertex_data = params.mesh_data.vertices.as_bytes();
-        const auto vertex_buffer_id = narrow<GLuint>(mesh.vertex_buffer->handle.get());
+        const auto vertex_buffer_id = mesh.vertex_buffer->handle.as_gl_id();
 
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
         glBufferSubData(GL_ARRAY_BUFFER,
@@ -314,7 +314,7 @@ void MeshPoolImpl::_make_mesh_at(MeshInternal& mesh, Identifier name, const Make
         ++mesh.index_buffer->num_users;
 
         const auto index_buffer_data = params.mesh_data.indices.as_bytes();
-        const auto index_buffer_id = narrow<GLuint>(mesh.index_buffer->handle.get());
+        const auto index_buffer_id = mesh.index_buffer->handle.as_gl_id();
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER,
@@ -330,7 +330,7 @@ void MeshPoolImpl::_make_mesh_at(MeshInternal& mesh, Identifier name, const Make
         ++mesh.influences_buffer->num_users;
 
         const auto influences_data = params.mesh_data.influences.as_bytes();
-        const auto influences_buffer_id = narrow<GLuint>(mesh.influences_buffer->handle.get());
+        const auto influences_buffer_id = mesh.influences_buffer->handle.as_gl_id();
 
         glBindBuffer(GL_ARRAY_BUFFER, influences_buffer_id);
         glBufferSubData(GL_ARRAY_BUFFER,
@@ -348,7 +348,7 @@ void MeshPoolImpl::_clear_mesh(MeshInternal& mesh)
 {
     MG_GFX_DEBUG_GROUP("MeshPoolImpl::_clear_mesh");
 
-    const auto vertex_array_id = narrow<GLuint>(mesh.vertex_array.get());
+    const auto vertex_array_id = mesh.vertex_array.as_gl_id();
     mesh.vertex_array.set(0);
 
     if (vertex_array_id == 0) {
@@ -363,7 +363,7 @@ void MeshPoolImpl::_clear_mesh(MeshInternal& mesh)
     // Un-reference shared buffer and delete, if this was the only referer.
     auto unref_buffer = [](SharedBuffer* buffer, auto& buffer_container) {
         if (buffer && --buffer->num_users == 0) {
-            const auto buffer_id = narrow<GLuint>(buffer->handle.get());
+            const auto buffer_id = buffer->handle.as_gl_id();
             glDeleteBuffers(1, &buffer_id);
             const auto it = buffer_container.get_iterator_from_pointer(buffer);
             buffer_container.erase(it);

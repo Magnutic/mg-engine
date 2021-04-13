@@ -56,23 +56,11 @@ const char* fs_code = R"(
 // RAII owner for OpenGL mesh buffers
 class DebugMesh {
 public:
-    GLuint vao_id = 0;
-    GLuint vbo_id = 0;
-    GLuint ibo_id = 0;
+    VertexArrayHandle::Owner vao;
+    BufferHandle::Owner vbo;
+    BufferHandle::Owner ibo;
 
     GLsizei num_indices = 0;
-
-    DebugMesh() = default;
-
-    MG_MAKE_NON_COPYABLE(DebugMesh);
-    MG_MAKE_NON_MOVABLE(DebugMesh);
-
-    ~DebugMesh()
-    {
-        glDeleteVertexArrays(1, &vao_id);
-        glDeleteBuffers(1, &vbo_id);
-        glDeleteBuffers(1, &ibo_id);
-    }
 };
 
 DebugMesh generate_mesh(span<const glm::vec3> positions, span<const uint16_t> indices)
@@ -109,17 +97,20 @@ DebugMesh generate_mesh(span<const glm::vec3> positions, span<const uint16_t> in
 
     MG_CHECK_GL_ERROR();
 
-    return { vao_id, vbo_id, ibo_id, narrow<GLsizei>(indices.size()) };
+    return { VertexArrayHandle::Owner{ vao_id },
+             BufferHandle::Owner{ vbo_id },
+             BufferHandle::Owner{ ibo_id },
+             narrow<GLsizei>(indices.size()) };
 }
 
 void update_mesh(DebugMesh& debug_mesh,
                  span<const glm::vec3> positions,
                  span<const uint16_t> indices)
 {
-    glBindVertexArray(debug_mesh.vao_id);
+    glBindVertexArray(debug_mesh.vao.handle.as_gl_id());
 
-    glBindBuffer(GL_ARRAY_BUFFER, debug_mesh.vbo_id);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, debug_mesh.ibo_id);
+    glBindBuffer(GL_ARRAY_BUFFER, debug_mesh.vbo.handle.as_gl_id());
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, debug_mesh.ibo.handle.as_gl_id());
 
     glBufferData(GL_ARRAY_BUFFER,
                  narrow<GLsizeiptr>(positions.size_bytes()),
@@ -336,7 +327,7 @@ void draw(opengl::ShaderProgramHandle program,
     opengl::set_uniform(opengl::uniform_location(program, "colour").value(), colour);
     opengl::set_uniform(opengl::uniform_location(program, "MVP").value(), MVP);
 
-    glBindVertexArray(mesh.vao_id);
+    glBindVertexArray(mesh.vao.handle.as_gl_id());
 
     std::array<GLint, 2> old_poly_mode = { 0, 0 };
     GLboolean old_culling = 0;
