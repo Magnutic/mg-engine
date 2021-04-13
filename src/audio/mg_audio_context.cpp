@@ -10,6 +10,7 @@
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_math_utils.h"
 #include "mg/utils/mg_optional.h"
 
 #include <AL/al.h>
@@ -21,7 +22,6 @@
 
 #include <plf_colony.h>
 
-#include <algorithm>
 #include <atomic>
 #include <memory>
 #include <mutex>
@@ -65,8 +65,7 @@ void init_OpenAL()
         device_name = alcGetString(device, ALC_DEVICE_SPECIFIER);
     }
 
-    log.message(
-        fmt::format("Successfully initialised OpenAL audio context [device: {}].", device_name));
+    log.message("Successfully initialised OpenAL audio context [device: {}].", device_name);
 }
 
 // Destroy OpenAL context and close its device.
@@ -101,7 +100,7 @@ sf_count_t read(void* ptr, sf_count_t count, void* user_data)
 {
     auto* state = static_cast<State*>(user_data);
     const auto file_size = narrow<sf_count_t>(state->data.size_bytes());
-    const sf_count_t real_count = std::min(file_size - state->pos, count);
+    const sf_count_t real_count = min(file_size - state->pos, count);
     if (real_count <= 0) {
         return 0;
     }
@@ -136,7 +135,7 @@ sf_count_t seek(sf_count_t offset, int whence, void* user_data)
         MG_ASSERT(false && "Unexpected libsndfile seek mode");
     }
 
-    state->pos = std::clamp<sf_count_t>(state->pos, 0, file_size);
+    state->pos = clamp<sf_count_t>(state->pos, 0, file_size);
     return state->pos;
 }
 
@@ -161,7 +160,7 @@ public:
     UniqueSndFile sndfile = { nullptr, &sf_close };
     std::string error_reason;
 
-    SndFileReader(span<const std::byte> data)
+    explicit SndFileReader(span<const std::byte> data)
     {
         state.data = data;
 
@@ -311,9 +310,8 @@ AudioContext::generate_sound_buffer(span<const std::byte> sound_file_data)
 
     std::scoped_lock sound_buffers_lock{ impl().sound_buffers_mutex };
 
-    const auto it = impl().sound_buffers.emplace(al_buffer_id);
-    SoundBuffer* ptr = std::addressof(*it);
-    return { SoundBufferHandle{ ptr }, {} };
+    SoundBuffer& buffer = *impl().sound_buffers.emplace(al_buffer_id);
+    return { SoundBufferHandle{ &buffer }, {} };
 }
 
 namespace {

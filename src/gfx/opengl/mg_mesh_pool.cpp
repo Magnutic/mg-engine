@@ -23,7 +23,6 @@
 #include <plf_colony.h>
 
 #include <cstddef>
-#include <numeric>
 
 using namespace std::literals;
 

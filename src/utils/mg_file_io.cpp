@@ -6,8 +6,6 @@
 
 #include "mg/utils/mg_file_io.h"
 
-#include "mg/utils/mg_stl_helpers.h"
-
 #include <filesystem>
 
 namespace Mg::io {

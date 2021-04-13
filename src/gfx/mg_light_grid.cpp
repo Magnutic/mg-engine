@@ -11,6 +11,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
 
+#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_math_utils.h"
 
 #include <iostream>

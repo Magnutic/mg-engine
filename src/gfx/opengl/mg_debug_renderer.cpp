@@ -16,16 +16,13 @@
 #include "mg_opengl_shader.h"
 #include "mg_glad.h"
 
-#include <glm/common.hpp>
 #include <glm/gtc/constants.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/mat4x4.hpp>
-#include <glm/trigonometric.hpp>
 
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <map>
-#include <numeric>
 #include <vector>
 
 namespace Mg::gfx {
@@ -165,6 +162,16 @@ const std::array<uint16_t, 36> box_indices = { {
 } };
 // clang-format on
 
+std::vector<uint16_t> generate_line_vertex_indices(const size_t num_vertices)
+{
+    std::vector<uint16_t> indices(num_vertices);
+    uint16_t i = 0;
+    for (uint16_t& index : indices) {
+        index = i++;
+    }
+    return indices;
+}
+
 struct EllipsoidData {
     std::vector<glm::vec3> verts;
     std::vector<uint16_t> indices;
@@ -187,14 +194,14 @@ EllipsoidData generate_ellipsoid_verts(size_t steps)
                                    narrow_cast<float>(v_steps + 1) -
                                glm::half_pi<float>();
 
-        const float z = glm::sin(z_offset);
-        const float r = glm::cos(z_offset);
+        const float z = std::sin(z_offset);
+        const float r = std::cos(z_offset);
 
         // Horizontal step (flat circle)
         for (size_t u = 0; u < h_steps; ++u) {
             const float h_offset = float(u) * (2.0f * glm::pi<float>() / float(h_steps));
-            const float x = glm::cos(h_offset) * r;
-            const float y = glm::sin(h_offset) * r;
+            const float x = std::cos(h_offset) * r;
+            const float y = std::sin(h_offset) * r;
             data.verts.emplace_back(x, y, z);
         }
     }
@@ -366,9 +373,14 @@ void draw_primitive(opengl::ShaderProgramHandle program,
                     const DebugMesh& mesh,
                     const DebugRenderer::PrimitiveDrawParams& params)
 {
-    const glm::mat4 MVP = camera.view_proj_matrix() *
-                          glm::translate(glm::mat4{ 1.0f }, params.centre) *
-                          params.orientation.to_matrix() * glm::scale(params.dimensions);
+    const glm::mat4 translation = [&] {
+        glm::mat4 t(1.0f);
+        t[3] = glm::vec4(params.centre, 1.0f);
+        return t;
+    }();
+
+    const glm::mat4 MVP = camera.view_proj_matrix() * translation * params.orientation.to_matrix() *
+                          glm::scale(params.dimensions);
 
     draw(program, MVP, mesh, params.colour, params.wireframe, false);
 }
@@ -399,8 +411,7 @@ void DebugRenderer::draw_line(const ICamera& camera,
                               const glm::vec4 colour,
                               const float width)
 {
-    std::vector<uint16_t> indices(points.size());
-    std::iota(indices.begin(), indices.end(), uint16_t(0));
+    const auto indices = generate_line_vertex_indices(points.size());
     update_mesh(impl().line, points, indices);
     draw(impl().program.handle, camera.view_proj_matrix(), impl().line, colour, false, true, width);
 }

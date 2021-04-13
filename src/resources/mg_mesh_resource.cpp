@@ -11,19 +11,17 @@
 #include "mg/resource_cache/mg_resource_loading_input.h"
 #include "mg/resources/mg_mesh_resource_data.h"
 
-#include <cstdlib>
-#include <glm/common.hpp>
-#include <glm/geometric.hpp>
-
 #include <fmt/core.h>
 
+#include <cstdlib>
 #include <cstring>
-#include <numeric>
 #include <type_traits>
 
 namespace Mg {
 
 using namespace gfx::Mesh;
+
+// TODO allocate all mesh data with one joint allocation
 
 struct MeshResource::Data {
     Array<Vertex> vertices;

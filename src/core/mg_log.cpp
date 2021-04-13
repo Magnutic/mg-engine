@@ -8,16 +8,14 @@
 
 #include "mg/mg_defs.h"
 #include "mg/utils/mg_assert.h"
-#include "mg/utils/mg_file_io.h"
-#include "mg/utils/mg_optional.h"
 
 #include <fmt/chrono.h>
-#include <fmt/format.h>
 
 #include <condition_variable>
 #include <ctime>
 #include <deque>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <mutex>
 #include <thread>
@@ -79,7 +77,7 @@ public:
         : console_verbosity(console_verbosity_)
         , log_file_verbosity(log_file_verbosity_)
         , file_path(file_path_)
-        , m_writer(io::make_output_filestream(file_path, true, io::Mode::text))
+        , m_writer(fs::u8path(file_path_), std::ios::trunc)
     {
         if (!m_writer) {
             std::cerr << "[ERROR]: "
@@ -90,7 +88,7 @@ public:
         const time_t log_open_time = time(nullptr);
         const tm& t = *localtime(&log_open_time);
 
-        m_writer.value() << fmt::format("Log started at {0:%F}, {0:%T}\n", t);
+        m_writer << fmt::format("Log started at {0:%F}, {0:%T}\n", t);
 
         m_log_thread = std::thread([this] { run_loop(); });
     }
@@ -120,8 +118,8 @@ public:
     void flush()
     {
         std::scoped_lock lock{ m_write_mutex };
-        if (m_writer.has_value()) {
-            m_writer->flush();
+        if (m_writer) {
+            m_writer.flush();
         }
     }
 
@@ -166,11 +164,11 @@ private:
         std::cout << formatted_message << '\n';
 
         if (item.prio <= log_file_verbosity && m_writer) {
-            m_writer.value() << formatted_message << '\n';
+            m_writer << formatted_message << '\n';
         }
     }
 
-    Opt<std::ofstream> m_writer;
+    std::ofstream m_writer;
     std::thread m_log_thread;
     std::mutex m_queue_mutex;
     std::mutex m_write_mutex;
