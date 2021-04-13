@@ -12,8 +12,6 @@
 #include "mg/resource_cache/mg_resource_access_guard.h"
 #include "mg/utils/mg_stl_helpers.h"
 
-#include <fmt/core.h>
-
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
 
@@ -162,14 +160,11 @@ void wrong_type_error(Identifier material_id,
                       shader::ParameterType expected,
                       shader::ParameterType actual)
 {
-    auto error_msg =
-        fmt::format("Material '{}': set_parameter(\"{}\", ...): wrong type, expected {}, got {}.",
-                    material_id.c_str(),
-                    param_id.c_str(),
-                    shader::parameter_type_to_string(expected),
-                    shader::parameter_type_to_string(actual));
-
-    log.error(error_msg);
+    log.error("Material '{}': set_parameter(\"{}\", ...): wrong type, expected {}, got {}.",
+              material_id.c_str(),
+              param_id.c_str(),
+              shader::parameter_type_to_string(expected),
+              shader::parameter_type_to_string(actual));
 }
 
 } // namespace
@@ -194,9 +189,9 @@ void Material::_set_parameter_impl(Identifier name,
     }
 
     if (p_param == nullptr) {
-        log.warning(fmt::format("Material '{}': set_parameter(\"{}\", ...): no such parameter.",
-                                id().c_str(),
-                                name.c_str()));
+        log.warning("Material '{}': set_parameter(\"{}\", ...): no such parameter.",
+                    id().str_view(),
+                    name.str_view());
         return;
     }
 
@@ -222,12 +217,12 @@ std::string Material::debug_print() const
     std::ostringstream oss;
     oss << "Material '" << id().c_str() << "': {";
 
-    oss << "\n\tShaderResource: '" << m_shader.resource_id().c_str() << "'\n";
+    oss << "\n\tShaderResource: '" << m_shader.resource_id().str_view() << "'\n";
 
     oss << "\n\tOptions: {";
 
     for (const Option& o : options()) {
-        oss << "\n\t\t" << o.c_str() << " = " << get_option(o);
+        oss << "\n\t\t" << o.str_view() << " = " << get_option(o);
     };
 
     oss << (options().empty() ? "}" : "\n\t}");
@@ -235,7 +230,7 @@ std::string Material::debug_print() const
     oss << "\n\tSamplers: {";
 
     for (const Sampler& s : samplers()) {
-        oss << "\n\t\t'" << s.name.c_str() << "' : " << shader::sampler_type_to_string(s.type);
+        oss << "\n\t\t'" << s.name.str_view() << "' : " << shader::sampler_type_to_string(s.type);
     }
 
     oss << (samplers().empty() ? "}" : "\n\t}");
@@ -243,7 +238,7 @@ std::string Material::debug_print() const
     oss << "\n\tParameters: {";
 
     for (const Parameter& p : parameters()) {
-        oss << "\n\t\t'" << p.name.c_str() << "' : " << shader::parameter_type_to_string(p.type)
+        oss << "\n\t\t'" << p.name.str_view() << "' : " << shader::parameter_type_to_string(p.type)
             << " = ";
         // TODO: fix
     }

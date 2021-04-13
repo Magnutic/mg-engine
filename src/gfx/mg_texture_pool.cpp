@@ -19,8 +19,6 @@
 
 #include <fmt/core.h>
 
-#include <vector>
-
 namespace Mg::gfx {
 
 struct TexturePoolData {
@@ -103,7 +101,7 @@ void TexturePool::update(const TextureResource& resource)
 
     std::swap(old_texture, new_texture);
 
-    log.verbose(fmt::format("TexturePool::update(): Updated {}", resource_id.str_view()));
+    log.verbose("TexturePool::update(): Updated {}", resource_id.str_view());
 }
 
 void TexturePool::destroy(Texture2D* texture)
@@ -163,7 +161,7 @@ constexpr std::array<std::array<uint8_t, 16>, num_default_textures> default_text
 
 Texture2D* TexturePool::get_default_texture(DefaultTexture type)
 {
-    const size_t index = static_cast<size_t>(type);
+    const auto index = static_cast<size_t>(type);
     const Identifier& id = default_texture_identifiers.at(index);
 
     if (Texture2D* texture = get(id)) {

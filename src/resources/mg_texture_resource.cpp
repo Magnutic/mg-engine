@@ -11,8 +11,6 @@
 #include "mg/resource_cache/mg_resource_loading_input.h"
 #include "mg/utils/mg_math_utils.h"
 
-#include <fmt/core.h>
-
 #include <cstring> // memcpy
 
 namespace Mg {
@@ -225,9 +223,9 @@ LoadResourceResult TextureResource::load_resource_impl(ResourceLoadingInput& inp
     if (size > sane_size) {
         const auto fname = resource_id().c_str();
         log.warning(
-            fmt::format("TextureResource '{}': file has different length than "
-                        "specified by format and is possibly corrupt.",
-                        fname));
+            "TextureResource '{}': file has different length than "
+            "specified by format and is possibly corrupt.",
+            fname);
     }
 
     // Set up texture format info struct

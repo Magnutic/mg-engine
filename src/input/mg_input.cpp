@@ -38,9 +38,9 @@ void InputMap::unbind(Identifier command)
     }
 
     log.warning(
-        fmt::format("InputMap::unbind(): "
-                    "Attempting to clear binding for non-existing command '{}'",
-                    command.c_str()));
+        "InputMap::unbind(): "
+        "Attempting to clear binding for non-existing command '{}'",
+        command.str_view());
 }
 
 InputSource InputMap::binding(Identifier command) const

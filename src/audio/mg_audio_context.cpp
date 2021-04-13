@@ -247,7 +247,7 @@ public:
     explicit SoundBuffer(ALuint al_buffer_id_) : al_buffer_id(al_buffer_id_) {}
     ~SoundBuffer()
     {
-        MG_LOG_DEBUG(fmt::format("Deleting OpenAL buffer {}.", al_buffer_id));
+        MG_LOG_DEBUG("Deleting OpenAL buffer {}.", al_buffer_id);
         alDeleteBuffers(1, &al_buffer_id);
     }
 

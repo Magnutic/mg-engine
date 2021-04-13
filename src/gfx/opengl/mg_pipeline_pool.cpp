@@ -133,8 +133,8 @@ void log_shader_link_error(std::string_view shader_name, const ShaderCode& shade
 {
     log.error("Error linking shaders for program {}.", shader_name);
     log.verbose("Vertex code:\n{}", error_dump_code(shader_code.vertex.code));
-    log.verbose(fmt::format("Geometry code:\n{}", error_dump_code(shader_code.geometry.code)));
-    log.verbose(fmt::format("Fragment code:\n{}", error_dump_code(shader_code.fragment.code)));
+    log.verbose("Geometry code:\n{}", error_dump_code(shader_code.geometry.code));
+    log.verbose("Fragment code:\n{}", error_dump_code(shader_code.fragment.code));
 }
 
 ShaderCompileResult compile_shader(const ShaderCode& code)

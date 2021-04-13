@@ -61,8 +61,7 @@ public:
 
     void parse_error(std::string_view reason, const Token& t)
     {
-        log.error(
-            fmt::format("Parse error at line {}: {} [parsing '{}']", t.line, reason, t.lexeme));
+        log.error("Parse error at line {}: {} [parsing '{}']", t.line, reason, t.lexeme);
         throw RuntimeError();
     }
 

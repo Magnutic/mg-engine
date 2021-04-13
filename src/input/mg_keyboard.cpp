@@ -12,8 +12,6 @@
 
 #include <GLFW/glfw3.h>
 
-#include <fmt/core.h>
-
 #include <array>
 
 namespace Mg::input {
@@ -305,7 +303,7 @@ std::string Keyboard::description(InputSource::Id id) const
     }
 
     // If glfwGetKeyName does not return localised name, fall back to these.
-    log.warning(fmt::format("Input: could not get localised name of key {}.", glfw_key_code(key)));
+    log.warning("Input: could not get localised name of key {}.", glfw_key_code(key));
 
     name = default_key_name(key);
     return name;
