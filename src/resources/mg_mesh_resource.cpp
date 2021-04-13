@@ -109,7 +109,7 @@ template<typename T> Array<T> read_range(span<const std::byte> bytestream, FileD
     }
 
     const size_t num_elems = range_length_bytes / elem_size;
-    auto result = Array<T>::make(num_elems);
+    auto result = Array<T>::make_for_overwrite(num_elems);
 
     size_t read_offset = range.begin;
     for (T& elem : result) {
@@ -155,9 +155,9 @@ LoadResult load_version_1(ResourceLoadingInput& input)
     result.data = std::make_unique<MeshResource::Data>();
 
     // Allocate memory for mesh data
-    result.data->submeshes = Array<Submesh>::make(header.n_submeshes);
-    result.data->vertices = Array<Vertex>::make(header.n_vertices);
-    result.data->indices = Array<Index>::make(header.n_indices);
+    result.data->submeshes = Array<Submesh>::make_for_overwrite(header.n_submeshes);
+    result.data->vertices = Array<Vertex>::make_for_overwrite(header.n_vertices);
+    result.data->indices = Array<Index>::make_for_overwrite(header.n_indices);
 
     result.data->bounding_sphere.centre = header.centre;
     result.data->bounding_sphere.radius = header.radius;
@@ -205,7 +205,7 @@ LoadResult load_version_2(ResourceLoadingInput& input, [[maybe_unused]] std::str
     result.data->bounding_sphere.radius = header.radius;
 
     auto submesh_records = read_range<MeshResourceData::Submesh>(bytestream, header.submeshes);
-    result.data->submeshes = Array<Submesh>::make(submesh_records.size());
+    result.data->submeshes = Array<Submesh>::make_for_overwrite(submesh_records.size());
 
     for (size_t i = 0; i < submesh_records.size(); ++i) {
         const MeshResourceData::Submesh& record = submesh_records[i];
@@ -219,7 +219,7 @@ LoadResult load_version_2(ResourceLoadingInput& input, [[maybe_unused]] std::str
     }
 
     auto joint_records = read_range<MeshResourceData::Joint>(bytestream, header.joints);
-    result.data->joints = Array<Joint>::make(joint_records.size());
+    result.data->joints = Array<Joint>::make_for_overwrite(joint_records.size());
 
     for (size_t i = 0; i < joint_records.size(); ++i) {
         const MeshResourceData::Joint record = joint_records[i];

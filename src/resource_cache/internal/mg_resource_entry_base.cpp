@@ -27,7 +27,7 @@ void ResourceEntryBase::load_resource()
 
     // Load raw data.
     const auto file_size = loader().file_size(resource_id());
-    auto file_data = Array<std::byte>::make(file_size);
+    auto file_data = Array<std::byte>::make_for_overwrite(file_size);
     loader().load_file(resource_id(), file_data);
 
     // Structure providing interface needed for resources to load data.

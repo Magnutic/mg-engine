@@ -211,7 +211,8 @@ GenerateOpenALBufferResult generate_OpenAL_buffer(SNDFILE* sndfile, SF_INFO& sf_
     ALuint al_buffer_id = 0;
 
     { // Use libsndfile to decode the audio file to an OpenAL buffer.
-        auto buffer = Array<short>::make(narrow<size_t>(sf_info.frames * sf_info.channels));
+        auto buffer =
+            Array<short>::make_for_overwrite(narrow<size_t>(sf_info.frames * sf_info.channels));
         short* dst = buffer.data();
 
         const sf_count_t num_frames = sf_readf_short(sndfile, dst, sf_info.frames);

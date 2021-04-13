@@ -177,8 +177,8 @@ private:
                    BitmapFontData& font)
     {
         {
-            auto texture_data =
-                Array<uint8_t>::make(narrow<size_t>(m_texture_width * m_texture_height));
+            auto texture_data = Array<uint8_t>::make_for_overwrite(
+                narrow<size_t>(m_texture_width * m_texture_height));
             stbtt_pack_context pack_context;
 
             std::copy(unicode_ranges.begin(),
@@ -191,7 +191,7 @@ private:
                                 size_t(0),
                                 [](size_t acc, UnicodeRange range) { return acc + range.length; });
 
-            font.packed_chars = Array<stbtt_packedchar>::make(num_packed_chars);
+            font.packed_chars = Array<stbtt_packedchar>::make_for_overwrite(num_packed_chars);
 
             const int stride_in_bytes = 0;
             const int padding = 1;
@@ -455,7 +455,7 @@ PreparedText BitmapFont::prepare_text(std::string_view text_utf8,
     MG_ASSERT(impl().texture.handle != TextureHandle::null_handle());
 
     // Get quads for each codepoint in the string.
-    auto char_quads = Array<stbtt_aligned_quad>::make(text_codepoints.size());
+    auto char_quads = Array<stbtt_aligned_quad>::make_for_overwrite(text_codepoints.size());
     {
         float x = 0.0f;
         float y = line_height;
@@ -502,7 +502,7 @@ PreparedText BitmapFont::prepare_text(std::string_view text_utf8,
     static_assert(sizeof(Vertex) == 2u * sizeof(glm::vec2)); // Assert no packing.
 
     static constexpr size_t verts_per_char = 6u;
-    auto vertices = Array<Vertex>::make(text_codepoints.size() * verts_per_char);
+    auto vertices = Array<Vertex>::make_for_overwrite(text_codepoints.size() * verts_per_char);
 
     for (size_t i = 0; i < char_quads.size(); ++i) {
         const stbtt_aligned_quad& q = char_quads[i];

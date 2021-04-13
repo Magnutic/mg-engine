@@ -126,7 +126,7 @@ SkeletonPose Skeleton::get_bind_pose() const
 {
     SkeletonPose result;
     result.skeleton_id = id();
-    result.joint_poses = Array<JointPose>::make(m_joints.size());
+    result.joint_poses = Array<JointPose>::make_for_overwrite(m_joints.size());
     get_bind_pose_impl(glm::mat4(1.0f), 0, joints(), result.joint_poses);
     return result;
 }

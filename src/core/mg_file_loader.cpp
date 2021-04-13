@@ -178,7 +178,7 @@ Array<FileRecord> ZipFileLoader::available_files()
     open_zip_archive();
     const auto num_files = zip_get_num_entries(m_archive_file, 0);
 
-    auto index = Array<FileRecord>::make(narrow<size_t>(num_files));
+    auto index = Array<FileRecord>::make_for_overwrite(narrow<size_t>(num_files));
 
     for (uint32_t i = 0; i < num_files; ++i) {
         const char* filename = zip_get_name(m_archive_file, i, 0);
