@@ -34,9 +34,10 @@ struct DebugRendererData;
 class DebugRenderer : PImplMixin<DebugRendererData> {
 public:
     DebugRenderer();
+    ~DebugRenderer();
+
     MG_MAKE_NON_COPYABLE(DebugRenderer);
     MG_MAKE_NON_MOVABLE(DebugRenderer);
-    ~DebugRenderer();
 
     struct PrimitiveDrawParams {
         glm::vec3 centre{ 0.0f };

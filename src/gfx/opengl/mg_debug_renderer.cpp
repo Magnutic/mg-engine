@@ -6,6 +6,7 @@
 
 #include "mg/gfx/mg_debug_renderer.h"
 
+#include "mg/containers/mg_flat_map.h"
 #include "mg/core/mg_rotation.h"
 #include "mg/gfx/mg_joint.h"
 #include "mg/gfx/mg_skeleton.h"
@@ -22,7 +23,6 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
-#include <map>
 #include <vector>
 
 namespace Mg::gfx {
@@ -306,7 +306,7 @@ struct DebugRendererData {
     }();
 
     DebugMesh box = generate_mesh(box_vertices, box_indices);
-    std::map<size_t, Sphere> spheres;
+    FlatMap<size_t, Sphere> spheres;
     DebugMesh line = generate_mesh({}, {});
 };
 
@@ -389,7 +389,7 @@ void DebugRenderer::draw_ellipsoid(const ICamera& camera, EllipsoidDrawParams pa
 
     // If no sphere mesh with the required amount of steps was found, create it.
     if (it == impl().spheres.end()) {
-        auto p = impl().spheres.emplace(params.steps, generate_ellipsoid_verts(params.steps));
+        auto p = impl().spheres.insert({ params.steps, generate_ellipsoid_verts(params.steps) });
         it = p.first;
     }
 
