@@ -27,6 +27,8 @@
 
 namespace Mg::gfx {
 
+using glm::vec2, glm::vec3, glm::vec4, glm::mat4;
+
 namespace {
 
 const char* vs_code = R"(
@@ -63,7 +65,7 @@ public:
     GLsizei num_indices = 0;
 };
 
-DebugMesh generate_mesh(span<const glm::vec3> positions, span<const uint16_t> indices)
+DebugMesh generate_mesh(span<const vec3> positions, span<const uint16_t> indices)
 {
     GLuint vao_id = 0;
     GLuint vbo_id = 0;
@@ -90,7 +92,7 @@ DebugMesh generate_mesh(span<const glm::vec3> positions, span<const uint16_t> in
                      GL_STATIC_DRAW);
     }
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), nullptr);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), nullptr);
     glEnableVertexAttribArray(0);
 
     glBindVertexArray(0);
@@ -103,9 +105,7 @@ DebugMesh generate_mesh(span<const glm::vec3> positions, span<const uint16_t> in
              narrow<GLsizei>(indices.size()) };
 }
 
-void update_mesh(DebugMesh& debug_mesh,
-                 span<const glm::vec3> positions,
-                 span<const uint16_t> indices)
+void update_mesh(DebugMesh& debug_mesh, span<const vec3> positions, span<const uint16_t> indices)
 {
     glBindVertexArray(debug_mesh.vao.handle.as_gl_id());
 
@@ -121,7 +121,7 @@ void update_mesh(DebugMesh& debug_mesh,
                  indices.data(),
                  GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), nullptr);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), nullptr);
     glEnableVertexAttribArray(0);
 
     glBindVertexArray(0);
@@ -131,7 +131,7 @@ void update_mesh(DebugMesh& debug_mesh,
     MG_CHECK_GL_ERROR();
 }
 
-const std::array<glm::vec3, 8> box_vertices = { {
+const std::array<vec3, 8> box_vertices = { {
     { -0.5, -0.5, 0.5 },
     { 0.5, -0.5, 0.5 },
     { 0.5, 0.5, 0.5 },
@@ -164,7 +164,7 @@ std::vector<uint16_t> generate_line_vertex_indices(const size_t num_vertices)
 }
 
 struct EllipsoidData {
-    std::vector<glm::vec3> verts;
+    std::vector<vec3> verts;
     std::vector<uint16_t> indices;
 };
 
@@ -316,9 +316,9 @@ DebugRenderer::~DebugRenderer() = default;
 namespace {
 
 void draw(opengl::ShaderProgramHandle program,
-          const glm::mat4& MVP,
+          const mat4& MVP,
           const DebugMesh& mesh,
-          const glm::vec4& colour,
+          const vec4& colour,
           const bool wireframe,
           const bool line_mode,
           const float line_width = 1.0f)
@@ -364,14 +364,14 @@ void draw_primitive(opengl::ShaderProgramHandle program,
                     const DebugMesh& mesh,
                     const DebugRenderer::PrimitiveDrawParams& params)
 {
-    const glm::mat4 translation = [&] {
-        glm::mat4 t(1.0f);
-        t[3] = glm::vec4(params.centre, 1.0f);
+    const mat4 translation = [&] {
+        mat4 t(1.0f);
+        t[3] = vec4(params.centre, 1.0f);
         return t;
     }();
 
-    const glm::mat4 MVP = camera.view_proj_matrix() * translation * params.orientation.to_matrix() *
-                          glm::scale(params.dimensions);
+    const mat4 MVP = camera.view_proj_matrix() * translation * params.orientation.to_matrix() *
+                     scale(params.dimensions);
 
     draw(program, MVP, mesh, params.colour, params.wireframe, false);
 }
@@ -398,8 +398,8 @@ void DebugRenderer::draw_ellipsoid(const ICamera& camera, EllipsoidDrawParams pa
 }
 
 void DebugRenderer::draw_line(const ICamera& camera,
-                              span<const glm::vec3> points,
-                              const glm::vec4 colour,
+                              span<const vec3> points,
+                              const vec4 colour,
                               const float width)
 {
     const auto indices = generate_line_vertex_indices(points.size());
@@ -408,11 +408,11 @@ void DebugRenderer::draw_line(const ICamera& camera,
 }
 
 void DebugRenderer::draw_bones(const ICamera& camera,
-                               const glm::mat4 M,
+                               const mat4 M,
                                const Skeleton& skeleton,
                                const SkeletonPose& pose)
 {
-    std::vector<glm::mat4> joint_poses;
+    std::vector<mat4> joint_poses;
     {
         joint_poses.resize(skeleton.joints().size());
         const bool success = calculate_pose_transformations(skeleton, pose, joint_poses);
@@ -426,31 +426,35 @@ void DebugRenderer::draw_bones(const ICamera& camera,
     const float bone_line_width = 10.0f;
     const float joint_axis_length = 0.1f;
 
-    const glm::vec4 bone_colour(0.5f, 0.5f, 1.0f, 0.5f);
+    const vec4 bone_colour(0.5f, 0.5f, 1.0f, 0.5f);
 
-    const glm::vec4 origo(0.0f, 0.0f, 0.0f, 1.0f);
+    const vec4 origo(0.0f, 0.0f, 0.0f, 1.0f);
 
-    auto draw_joint_axes = [&](const glm::mat4 matrix) {
-        const glm::vec4 centre = matrix * origo;
-        const glm::vec4 x_axis_point = matrix * glm::vec4(joint_axis_length, 0.0f, 0.0f, 1.0f);
-        const glm::vec4 y_axis_point = matrix * glm::vec4(0.0f, joint_axis_length, 0.0f, 1.0f);
-        const glm::vec4 z_axis_point = matrix * glm::vec4(0.0f, 0.0f, joint_axis_length, 1.0f);
+    auto draw_joint_axes = [&](const mat4 matrix) {
+        const vec4 centre = matrix * origo;
 
-        draw_line(camera, centre, x_axis_point, { 1.0f, 0.0f, 0.0f, 1.0f }, 2.0f);
-        draw_line(camera, centre, y_axis_point, { 0.0f, 1.0f, 0.0f, 1.0f }, 2.0f);
-        draw_line(camera, centre, z_axis_point, { 0.0f, 0.0f, 1.0f, 1.0f }, 2.0f);
+        // Draw the axis and use the vector also as colour, so x is red, y is green, z is blue.
+        // It is easy to memorise which axis has which color if you think xyz=rgb.
+        auto draw_axis = [&](const vec4 axis) {
+            const vec4 axis_point = centre + joint_axis_length * normalize(matrix * axis - centre);
+            draw_line(camera, centre, axis_point, axis, 2.0f);
+        };
+
+        draw_axis({1.0f, 0.0f, 0.0f, 1.0f});
+        draw_axis({0.0f, 1.0f, 0.0f, 1.0f});
+        draw_axis({0.0f, 0.0f, 1.0f, 1.0f});
     };
 
-    auto draw_bones_impl = [&](const glm::vec4& parent_position,
+    auto draw_bones_impl = [&](const vec4& parent_position,
                                const Mesh::JointId parent_joint_id,
                                const Mesh::JointId joint_id,
                                auto&& recurse) -> void {
         const bool is_root_joint = parent_joint_id == Mesh::joint_id_none;
 
-        const glm::mat4 matrix = M * joint_poses.at(joint_id);
+        const mat4 matrix = M * joint_poses.at(joint_id);
         draw_joint_axes(matrix);
 
-        const glm::vec4 position = matrix * origo;
+        const vec4 position = matrix * origo;
         if (!is_root_joint) {
             draw_line(camera, parent_position, position, bone_colour, bone_line_width);
         }
