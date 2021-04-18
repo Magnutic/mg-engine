@@ -11,6 +11,7 @@
 
 #include <fmt/chrono.h>
 
+#include <atomic>
 #include <condition_variable>
 #include <ctime>
 #include <deque>
@@ -151,7 +152,7 @@ private:
             }
 
             std::unique_lock queue_lock{ m_queue_mutex };
-            if (m_queued_messages.empty()) {
+            if (m_queued_messages.empty() && !m_is_exiting) {
                 m_queue_condvar.wait(queue_lock);
             }
         }
@@ -174,7 +175,7 @@ private:
     std::mutex m_write_mutex;
     std::condition_variable m_queue_condvar;
     std::deque<LogItem> m_queued_messages;
-    bool m_is_exiting = false;
+    std::atomic_bool m_is_exiting = false;
 };
 
 Log::Log(std::string_view file_path, Prio console_verbosity, Prio log_file_verbosity)
