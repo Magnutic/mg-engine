@@ -53,6 +53,7 @@ struct Header {
     float radius;
     glm::vec3 abb_min;
     glm::vec3 abb_max;
+    glm::mat4 skeleton_root_transform;
     FileDataRange vertices;
     FileDataRange indices;
     FileDataRange submeshes;
@@ -86,6 +87,7 @@ struct Joint {
 struct AnimationClip {
     StringRange name;
     FileDataRange channels;
+    double duration = 0.0;
 };
 
 struct AnimationChannel {

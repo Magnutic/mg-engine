@@ -50,6 +50,8 @@ public:
     span<const gfx::Mesh::Joint> joints() const noexcept;
     span<const gfx::Mesh::AnimationClip> animation_clips() const noexcept;
 
+    const glm::mat4& skeleton_root_transform() const noexcept;
+
     bool has_joints() const noexcept { return !joints().empty(); }
 
     /** Get model-space bounding sphere. */

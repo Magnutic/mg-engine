@@ -16,6 +16,7 @@
 #include "mg/gfx/mg_joint.h"
 #include "mg/utils/mg_optional.h"
 
+#include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 
 namespace Mg {
@@ -24,7 +25,8 @@ class Transform;
 
 namespace Mg::gfx::Mesh {
 struct AnimationChannel;
-}
+struct AnimationClip;
+} // namespace Mg::gfx::Mesh
 
 namespace Mg::gfx {
 
@@ -37,8 +39,8 @@ class Skeleton {
 public:
     Skeleton() = default;
 
-    explicit Skeleton(const Identifier id, const size_t num_joints)
-        : m_id(id), m_joints(Array<Mesh::Joint>::make(num_joints))
+    explicit Skeleton(const Identifier id, const glm::mat4& root_transform, const size_t num_joints)
+        : m_id(id), m_joints(Array<Mesh::Joint>::make(num_joints)), m_root_transform(root_transform)
     {}
 
     Identifier id() const { return m_id; }
@@ -48,6 +50,8 @@ public:
 
     Opt<Mesh::JointId> find_joint(Identifier joint_name) const;
 
+    const glm::mat4& root_transform() const { return m_root_transform; }
+
     SkeletonPose make_new_pose() const;
 
     SkeletonPose get_bind_pose() const;
@@ -55,6 +59,7 @@ public:
 private:
     Identifier m_id;
     Array<Mesh::Joint> m_joints;
+    glm::mat4 m_root_transform = glm::mat4(1.0f);
 };
 
 /** A pose for a given joint, relative to its bind pose. */
@@ -104,8 +109,10 @@ bool calculate_pose_transformations(const Skeleton& skeleton,
                                     const SkeletonPose& pose,
                                     span<glm::mat4> matrices_out);
 
-void evaluate_joint_pose(const Mesh::AnimationChannel& animation_channel,
-                         double time,
-                         JointPose& joint_pose_out);
+void animate_joint(const Mesh::AnimationChannel& animation_channel,
+                   double time_seconds,
+                   JointPose& joint_pose_out);
+
+void animate_skeleton(const Mesh::AnimationClip& clip, SkeletonPose& pose, double time_seconds);
 
 } // namespace Mg::gfx

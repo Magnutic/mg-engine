@@ -31,6 +31,8 @@ struct MeshResource::Data {
     Array<Joint> joints;
     Array<AnimationClip> animation_clips;
 
+    glm::mat4 skeleton_root_transform = glm::mat4(1.0f);
+
     BoundingSphere bounding_sphere;
 };
 
@@ -202,6 +204,7 @@ LoadResult load_version_2(ResourceLoadingInput& input, [[maybe_unused]] std::str
     result.data->influences = read_range<Influences>(bytestream, header.influences);
     result.data->bounding_sphere.centre = header.centre;
     result.data->bounding_sphere.radius = header.radius;
+    result.data->skeleton_root_transform = header.skeleton_root_transform;
 
     auto submesh_records = read_range<MeshResourceData::Submesh>(bytestream, header.submeshes);
     result.data->submeshes = Array<Submesh>::make_for_overwrite(submesh_records.size());
@@ -236,6 +239,7 @@ LoadResult load_version_2(ResourceLoadingInput& input, [[maybe_unused]] std::str
         const MeshResourceData::AnimationClip& clip_record = clip_records[i];
         AnimationClip& clip = result.data->animation_clips[i];
         clip.name = Identifier::from_runtime_string(get_string(clip_record.name));
+        clip.duration_seconds = clip_record.duration;
 
         auto channel_records = read_range<MeshResourceData::AnimationChannel>(bytestream,
                                                                               clip_record.channels);
@@ -290,6 +294,12 @@ span<const Joint> MeshResource::joints() const noexcept
 span<const AnimationClip> MeshResource::animation_clips() const noexcept
 {
     return m_data ? m_data->animation_clips : span<const AnimationClip>{};
+}
+
+const glm::mat4& MeshResource::skeleton_root_transform() const noexcept
+{
+    static const auto identity = glm::mat4(1.0f);
+    return m_data ? m_data->skeleton_root_transform : identity;
 }
 
 BoundingSphere MeshResource::bounding_sphere() const noexcept

@@ -37,8 +37,8 @@ using Index = uint16_t;
 constexpr auto max_vertices_per_mesh = std::numeric_limits<Index>::max();
 
 struct Vertex {
-    glm::vec3 position;
-    glm::vec2 tex_coord;
+    glm::vec3 position = glm::vec3(0.0f);
+    glm::vec2 tex_coord = glm::vec2(0.0f);
 
     uint32_t padding; // TODO temp for compatibility.
 

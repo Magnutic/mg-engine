@@ -308,7 +308,8 @@ void Scene::render_scene(const double lerp_factor)
     ui_renderer.resolution(
         { app.window().frame_buffer_size().width, app.window().frame_buffer_size().height });
 
-    /*{
+#if 0
+    {
         Mg::gfx::UIPlacement placement = {};
         placement.position = Mg::gfx::UIPlacement::centre;
         placement.anchor = Mg::gfx::UIPlacement::centre;
@@ -318,7 +319,8 @@ void Scene::render_scene(const double lerp_factor)
                                    { 100.0f, 100.0f },
                                    *ui_material,
                                    Mg::gfx::blend_mode_constants::bm_add);
-    }*/
+    }
+#endif
     {
         Mg::gfx::UIPlacement placement = {};
         placement.position = Mg::gfx::UIPlacement::top_left;
@@ -334,30 +336,8 @@ void Scene::render_scene(const double lerp_factor)
 
     Model& fox = scene_models["meshes/Fox.mgm"];
     {
-        Mg::gfx::Mesh::JointId joint_id = 0;
-        for (Mg::gfx::JointPose& joint : fox.pose->joint_poses) {
-            Mg::gfx::evaluate_joint_pose(fox.clip->channels[joint_id],
-                                         std::fmod(time * 325.0, 725.0),
-                                         joint);
-            ++joint_id;
-        }
-
-        fox.pose->joint_poses[0].rotation.pitch(90_degrees);
+        Mg::gfx::animate_skeleton(fox.clips[1], fox.pose.value(), time);
     }
-
-#if 0
-    const Mg::gfx::Mesh::JointId head_joint_id = fox.skeleton->find_joint("b_Head_05").value();
-    const Mg::gfx::Mesh::JointId neck_joint_id = fox.skeleton->find_joint("b_Neck_04").value();
-    const Mg::gfx::Mesh::JointId tail_2_joint_id = fox.skeleton->find_joint("b_Tail02_013").value();
-    const Mg::Angle nod_angle = 25.0_degrees * std::sin(float(5.0 * time));
-    const Mg::Angle shake_angle = 15.0_degrees * std::sin(float(10.0 * time));
-    auto& head_pose = fox.pose.value().joint_poses[head_joint_id];
-    auto& neck_pose = fox.pose.value().joint_poses[neck_joint_id];
-    auto& tail_2_pose = fox.pose.value().joint_poses[tail_2_joint_id];
-    head_pose.rotation.roll(-15_degrees + shake_angle - head_pose.rotation.roll());
-    neck_pose.rotation.yaw(nod_angle - neck_pose.rotation.yaw());
-    tail_2_pose.rotation.roll(30_degrees + nod_angle * 0.5f - tail_2_pose.rotation.roll());
-#endif
 
     // Debug geometry
     if (draw_debug) {
@@ -393,21 +373,21 @@ Mg::Opt<Mg::gfx::Skeleton> Scene::load_skeleton(Mg::Identifier file)
         return Mg::nullopt;
     }
 
-    Mg::gfx::Skeleton skeleton(file, access->joints().size());
+    Mg::gfx::Skeleton skeleton(file, access->skeleton_root_transform(), access->joints().size());
     for (size_t i = 0; i < skeleton.joints().size(); ++i) {
         skeleton.joints()[i] = access->joints()[i];
     }
     return skeleton;
 }
 
-Mg::Opt<Mg::gfx::Mesh::AnimationClip> Scene::load_clip(Mg::Identifier file)
+Model::AnimationClips Scene::load_clips(Mg::Identifier file)
 {
     const Mg::ResourceAccessGuard access = resource_cache.access_resource<Mg::MeshResource>(file);
-    if (access->animation_clips().empty()) {
-        return Mg::nullopt;
+    Model::AnimationClips result;
+    for (const auto& clip : access->animation_clips()) {
+        result.push_back(clip);
     }
-
-    return access->animation_clips()[1];
+    return result;
 }
 
 Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file)
@@ -493,7 +473,7 @@ Model& Scene::load_model(Mg::Identifier mesh_file,
         model.pose = model.skeleton->get_bind_pose();
     }
 
-    model.clip = load_clip(mesh_file);
+    model.clips = load_clips(mesh_file);
 
     return model;
 }
@@ -682,8 +662,8 @@ void Scene::load_models()
         fox_mat_options[0] = "RIM_LIGHT";
 
         Model& fox_model = load_model("meshes/Fox.mgm", fox_mats, fox_mat_options);
-
         fox_model.transform.position.x += 2.0f;
+        fox_model.transform.scale = glm::vec3(0.01f);
     }
 }
 

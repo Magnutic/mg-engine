@@ -16,12 +16,12 @@ namespace fs = std::filesystem;
 namespace Mg {
 
 namespace {
-bool convert(const fs::path& filename)
+bool convert(const fs::path& filename, const bool debug_logging)
 {
     fs::path out_filename = filename;
     out_filename.replace_extension(".mgm");
 
-    if (!convert_mesh(filename, out_filename)) {
+    if (!convert_mesh(filename, out_filename, debug_logging)) {
         std::cerr << "Failed to convert file '" << filename.u8string() << "'." << std::endl;
         return true;
     }
@@ -53,10 +53,19 @@ int64_t compare_file_modified_times(const fs::path& file1, const fs::path& file2
     return diff_in_seconds.count();
 }
 
+struct AutoConverterSettings {
+    milliseconds poll_time;
+    bool print_found_files = false;
+    bool ignore_timestamps = false;
+    bool repeat_forever = false;
+    bool debug_logging = false;
+};
+
 // Converts meshes if they have been modified more
 // recently than the .fbx with the same filename
 void convert_modified_files(const std::vector<fs::path>& input_files,
-                            const std::vector<fs::path>& existing_files)
+                            const std::vector<fs::path>& existing_files,
+                            const AutoConverterSettings& settings)
 {
     // Construct a map of files, keyed without extension, so we can
     // compare input and FBX files
@@ -76,7 +85,7 @@ void convert_modified_files(const std::vector<fs::path>& input_files,
         // If we already added a file with same name but different extension
         if (input_map.count(key) > 0) {
             // Replace if new file is more recently modified
-            if (compare_file_modified_times(input_map[key], s) < 0) {
+            if (settings.ignore_timestamps || compare_file_modified_times(input_map[key], s) < 0) {
                 input_map[key] = s;
             }
         }
@@ -87,12 +96,13 @@ void convert_modified_files(const std::vector<fs::path>& input_files,
 
     for (auto& [key, in_file] : input_map) {
         if (output_map.count(key) > 0) {
-            if (compare_file_modified_times(output_map[key], in_file) > 0) {
+            if (!settings.ignore_timestamps &&
+                compare_file_modified_times(output_map[key], in_file) > 0) {
                 continue;
             }
         }
 
-        convert(in_file);
+        convert(in_file, settings.debug_logging);
     }
 }
 
@@ -114,9 +124,7 @@ void add_files_to_list(const fs::path& extension,
     }
 }
 
-void auto_mesh_converter(const fs::path& directory,
-                         const milliseconds poll_time,
-                         const bool print_found_files)
+void auto_mesh_converter(const fs::path& directory, const AutoConverterSettings& settings)
 {
     std::cout << "Scanning directory " << directory << " for mesh files to convert.\n";
 
@@ -130,7 +138,7 @@ void auto_mesh_converter(const fs::path& directory,
         add_files_to_list(".glb", directory, source_files);
         add_files_to_list(".mgm", directory, mgm_files);
 
-        if (print_found_files) {
+        if (settings.print_found_files) {
             std::cout << "\nSource files: \n";
             for (fs::path& s : source_files) {
                 std::cout << s << '\n';
@@ -141,8 +149,13 @@ void auto_mesh_converter(const fs::path& directory,
             }
         }
 
-        convert_modified_files(source_files, mgm_files);
-        std::this_thread::sleep_for(poll_time);
+        convert_modified_files(source_files, mgm_files, settings);
+
+        if (!settings.repeat_forever) {
+            break;
+        }
+
+        std::this_thread::sleep_for(settings.poll_time);
     }
 }
 } // namespace
@@ -151,12 +164,78 @@ void auto_mesh_converter(const fs::path& directory,
 
 int main(int argc, char* argv[])
 {
-    std::cout << "mg_mesh_converter: converts fbx, dae, and glb meshes to Mg mesh format.\n";
+    std::cout << "mesh_converter: converts fbx, dae, and glb meshes to Mg mesh format.\n";
 
-    if (argc == 2) {
-        return Mg::convert(argv[1]) ? 0 : 1;
+    std::vector<std::string_view> args;
+    args.reserve(size_t(argc));
+    for (int i = 0; i < argc - 1; ++i) {
+        args.emplace_back(argv[argc - i - 1]);
     }
 
-    const auto poll_time = 500ms;
-    Mg::auto_mesh_converter(fs::current_path(), poll_time, false);
+    Mg::AutoConverterSettings settings = {};
+    settings.poll_time = 1000ms;
+    bool error = false;
+    bool run_auto_converter = false;
+    std::string_view file;
+
+    std::vector<std::string_view> unrecognised_args;
+
+    while (!args.empty()) {
+        const auto arg = args.back();
+        args.pop_back();
+
+        if (arg == "--run-auto-converter") {
+            run_auto_converter = true;
+        }
+        else if (arg == "--ignore-timestamps") {
+            settings.ignore_timestamps = true;
+        }
+        else if (arg == "--repeat-forever") {
+            settings.repeat_forever = true;
+        }
+        else if (arg == "--debug-logging") {
+            settings.repeat_forever = true;
+        }
+        else if (arg == "--file") {
+            if (args.empty()) {
+                std::cerr << "Expected file name after --file\n";
+                error = true;
+            }
+            file = args.back();
+            args.pop_back();
+        }
+        else {
+            unrecognised_args.push_back(arg);
+            error = true;
+        }
+    }
+
+    for (const auto arg : unrecognised_args) {
+        std::cerr << "Unrecognised argument: " << arg << '\n';
+    }
+
+    if (error || (file.empty() && !run_auto_converter)) {
+        std::cerr << "Usage: mesh_converter <args>\nArguments:\n";
+
+        std::cerr << "\t--file <filename> Convert the specified file\n";
+
+        std::cerr << "\t--run-auto-converter Convert all model files for which there is not a "
+                     "corresponding Mg mesh file with newer time stamp\n";
+
+        std::cerr << "\t--ignore-timestamps When used in conjunction with --run-auto-converter, "
+                     "will convert model files even if there is a corresponding Mg mesh file with "
+                     "newer time stamp.\n";
+
+        std::cerr << "\t--repeat-forever When used in conjunction with --run-auto-converter, "
+                     "will repeat checking for model files to convert every second until the "
+                     "application is cancelled.\n";
+
+        return error ? 1 : 0;
+    }
+
+    if (!file.empty()) {
+        return Mg::convert(file, settings.debug_logging) ? 0 : 1;
+    }
+
+    Mg::auto_mesh_converter(fs::current_path(), settings);
 }

@@ -47,6 +47,7 @@ struct AnimationChannel {
 struct AnimationClip {
     Identifier name;
     Array<AnimationChannel> channels;
+    float duration_seconds = 0.0;
 };
 
 } // namespace Mg::gfx::Mesh

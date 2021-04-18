@@ -6,9 +6,10 @@
 
 #include <filesystem>
 
-namespace Mg
-{
+namespace Mg {
 
-bool convert_mesh(const std::filesystem::path& path_in, const std::filesystem::path& path_out);
+bool convert_mesh(const std::filesystem::path& path_in,
+                  const std::filesystem::path& path_out,
+                  const bool debug_logging);
 
 } // namespace Mg

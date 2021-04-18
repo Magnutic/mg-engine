@@ -197,7 +197,7 @@ bool calculate_pose_transformations(const Skeleton& skeleton,
         return false;
     }
 
-    calculate_pose_transformations_impl(glm::mat4(1.0f),
+    calculate_pose_transformations_impl(skeleton.root_transform(),
                                         0,
                                         skeleton.joints(),
                                         pose.joint_poses,
@@ -205,42 +205,68 @@ bool calculate_pose_transformations(const Skeleton& skeleton,
     return true;
 }
 
-void evaluate_joint_pose(const Mesh::AnimationChannel& animation_channel,
-                         double time,
-                         JointPose& joint_pose_out)
+void animate_joint(const Mesh::AnimationChannel& animation_channel,
+                   double time_seconds,
+                   JointPose& joint_pose_out)
+
 {
-    auto get_key_index = [time](const auto& keys) -> std::pair<size_t, size_t> {
+    auto get_keys = [time_seconds](const auto& keys) {
+        const bool last_key_index = keys.size() - 1;
+
         for (size_t i = 0; i < keys.size(); ++i) {
-            if (keys[i].time >= time) {
-                return { (i == 0 ? keys.size() - 1 : i - 1), i };
+            if (keys[i].time >= time_seconds) {
+                const size_t index_a = (i == 0 ? last_key_index : i - 1);
+                const size_t index_b = i;
+
+                return std::make_pair(keys[index_a], keys[index_b]);
             }
         }
 
-        return { 0, 0 };
+        return std::make_pair(keys[0], keys[0]);
+    };
+
+    auto interpolation_factor = [time_seconds](const auto& key_a, const auto& key_b) {
+        return key_a.time == key_b.time
+                   ? 0.0f
+                   : narrow_cast<float>((time_seconds - key_a.time) / (key_b.time - key_a.time));
     };
 
     if (!animation_channel.position_keys.empty()) {
-        const auto [a, b] = get_key_index(animation_channel.position_keys);
-        joint_pose_out.translation = animation_channel.position_keys[a].value;
+        const auto [key_a, key_b] = get_keys(animation_channel.position_keys);
+        joint_pose_out.translation =
+            glm::mix(key_a.value, key_b.value, interpolation_factor(key_a, key_b));
     }
     else {
         joint_pose_out.translation = glm::vec3(0.0f);
     }
 
     if (!animation_channel.rotation_keys.empty()) {
-        const auto [a, b] = get_key_index(animation_channel.rotation_keys);
-        joint_pose_out.rotation = Rotation(animation_channel.rotation_keys[a].value);
+        const auto [key_a, key_b] = get_keys(animation_channel.rotation_keys);
+        joint_pose_out.rotation = Rotation::mix(Rotation(key_a.value),
+                                                Rotation(key_b.value),
+                                                interpolation_factor(key_a, key_b));
     }
     else {
         joint_pose_out.rotation = Rotation();
     }
 
-    if (!animation_channel.scale_keys.empty()) {
-        const auto [a, b] = get_key_index(animation_channel.scale_keys);
-        joint_pose_out.scale = animation_channel.scale_keys[a].value;
+    if (false && !animation_channel.scale_keys.empty()) {
+        const auto [key_a, key_b] = get_keys(animation_channel.scale_keys);
+        joint_pose_out.scale =
+            glm::mix(key_a.value, key_b.value, interpolation_factor(key_a, key_b));
     }
     else {
         joint_pose_out.scale = 1.0f;
+    }
+}
+
+void animate_skeleton(const Mesh::AnimationClip& clip, SkeletonPose& pose, double time_seconds)
+{
+    MG_ASSERT(clip.channels.size() == pose.joint_poses.size());
+    time_seconds = std::fmod(time_seconds, clip.duration_seconds);
+
+    for (size_t i = 0; i < pose.joint_poses.size(); ++i) {
+        animate_joint(clip.channels[i], time_seconds, pose.joint_poses[i]);
     }
 }
 
