@@ -8,8 +8,8 @@
 #include <mg/core/mg_window.h>
 #include <mg/gfx/mg_animation.h>
 #include <mg/gfx/mg_billboard_renderer.h>
+#include <mg/gfx/mg_bitmap_font.h>
 #include <mg/gfx/mg_debug_renderer.h>
-#include <mg/gfx/mg_font_handler.h>
 #include <mg/gfx/mg_gfx_device.h>
 #include <mg/gfx/mg_light.h>
 #include <mg/gfx/mg_material.h>

@@ -4,7 +4,7 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-#include "mg/gfx/mg_font_handler.h"
+#include "mg/gfx/mg_bitmap_font.h"
 
 #include "mg/containers/mg_array.h"
 #include "mg/containers/mg_flat_map.h"

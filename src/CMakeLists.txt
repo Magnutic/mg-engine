@@ -15,7 +15,7 @@ add_library(mg_engine
     core/mg_window.cpp
     core/mg_window_settings.cpp
     ecs/mg_entity.cpp
-    gfx/mg_font_handler.cpp
+    gfx/mg_bitmap_font.cpp
     gfx/mg_gfx_object_handles.cpp
     gfx/mg_light_buffers.cpp
     gfx/mg_light_grid.cpp

@@ -4,7 +4,7 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-/** @file mg_font_handler.h
+/** @file mg_bitmap_font.h
  * Loads and rasterises fonts, and prepares texts using the rasterised font that can be drawn using
  * Mg::gfx::UIRenderer.
  */

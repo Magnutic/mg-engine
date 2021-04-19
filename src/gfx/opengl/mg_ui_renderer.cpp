@@ -10,7 +10,7 @@
 
 #include "mg/containers/mg_array.h"
 #include "mg/gfx/mg_blend_modes.h"
-#include "mg/gfx/mg_font_handler.h"
+#include "mg/gfx/mg_bitmap_font.h"
 #include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_pipeline_pool.h"
