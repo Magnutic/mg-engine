@@ -136,6 +136,7 @@ void auto_mesh_converter(const fs::path& directory, const AutoConverterSettings&
         add_files_to_list(".fbx", directory, source_files);
         add_files_to_list(".dae", directory, source_files);
         add_files_to_list(".glb", directory, source_files);
+        add_files_to_list(".gltf", directory, source_files);
         add_files_to_list(".mgm", directory, mgm_files);
 
         if (settings.print_found_files) {
