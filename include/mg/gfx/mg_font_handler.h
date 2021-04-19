@@ -5,26 +5,26 @@
 //**************************************************************************************************
 
 /** @file mg_font_handler.h
- * Loads and rasterises fonts and prepares texts that can be draw using Mg::gfx::UIRenderer.
+ * Loads and rasterises fonts, and prepares texts using the rasterised font that can be drawn using
+ * Mg::gfx::UIRenderer.
  */
 
 #pragma once
 
 #include "mg/core/mg_identifier.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
-#include "mg/mg_unicode.h"
 #include "mg/resource_cache/mg_resource_handle.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_simple_pimpl.h"
 
-#include <string>
 #include <string_view>
 
 namespace Mg {
 class FontResource;
-}
+struct UnicodeRange;
+} // namespace Mg
 
 namespace Mg::gfx {
 

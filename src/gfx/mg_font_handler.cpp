@@ -11,6 +11,7 @@
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
+#include "mg/mg_unicode.h"
 #include "mg/resource_cache/mg_resource_access_guard.h"
 #include "mg/resources/mg_font_resource.h"
 #include "mg/utils/mg_file_io.h"
