@@ -30,8 +30,6 @@ namespace Mg::gfx {
 
 /** Parameters controlling the typesetting of text. */
 struct TypeSetting {
-    enum class Align { Top, Bottom, Centre };
-
     /** Vertical space between lines of text as factor of line height. */
     float line_spacing_factor = 1.5f;
 
