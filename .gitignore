@@ -3,6 +3,9 @@
 /.idea
 /tool_config
 /external/mg_dependencies/*
+/external/mg_dependencies_src/*
+/external/build/*
+/external/mg_dependencies.zip
 
 *.pl
 *.dot

@@ -6,26 +6,6 @@ include(CMakePackageConfigHelpers)
 message("-- Mg-Engine is looking for its dependencies:")
 message("-- CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
 
-# If the prefix path points to a dependency installation made using build_dependencies.cmake, then
-# make sure it is up to date.
-set(INSTALLED_DEPENDENCIES_HASH_FILE "${CMAKE_PREFIX_PATH}/.mg_dependencies_zip_hash")
-if(EXISTS "${INSTALLED_DEPENDENCIES_HASH_FILE}")
-    message("-- mg-dependencies installation found at ${CMAKE_PREFIX_PATH}")
-
-    # Compare hash saved in mg_dependencies installation directory with that of mg_dependencies.zip
-    file(READ "${INSTALLED_DEPENDENCIES_HASH_FILE}" MG_INSTALLED_DEPENDENCIES_HASH)
-    file(SHA1 "${MG_DEPENDENCIES_ARCHIVE}" MG_DEPENDENCIES_ZIP_HASH)
-
-    # Cut off at HASH_LENGTH, othterwise MG_INSTALLED_DEPENDENCIES_HASH may contain ending newline.
-    string(LENGTH "${MG_DEPENDENCIES_ZIP_HASH}" HASH_LENGTH)
-    string(SUBSTRING "${MG_INSTALLED_DEPENDENCIES_HASH}" 0 ${HASH_LENGTH} MG_INSTALLED_DEPENDENCIES_HASH)
-
-    if(NOT MG_INSTALLED_DEPENDENCIES_HASH STREQUAL "${MG_DEPENDENCIES_ZIP_HASH}")
-        message(FATAL_ERROR "Dependencies found at:\n\t${CMAKE_PREFIX_PATH}\nare not up-to-date with\n\t${MG_DEPENDENCIES_ARCHIVE}\n"
-            "Note: If you used \"build/configure.sh\", re-run it to re-build dependencies.")
-    endif()
-endif()
-
 # Prefer CMake config files to find modules in find_package. This is for example needed to prefer
 # conan-generated config files to system packages found via CMake's bundled find modules.
 set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
@@ -34,6 +14,7 @@ set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
 # Params: LIBRARY: name of target to generate
 # INCLUDE_DIR: include directory for target
 function(add_private_header_only_library LIBRARY INCLUDE_DIR)
+    message("-- Using ${LIBRARY} at ${INCLUDE_DIR}")
     add_library(${LIBRARY} INTERFACE)
     # CMake will shout at us if we do not set up an install for this target, since mg_engine links
     # to this. So we have to set up an empty installation just to be allowed to build.
@@ -49,6 +30,7 @@ endfunction()
 # INCLUDE_DIR: include directory for target
 # SUB_DIR_TO_INSTALL: subdirectory under INCLUDE_DIR to be installed. May be empty.
 function(add_public_header_only_library LIBRARY INCLUDE_DIR SUB_DIR_TO_INSTALL)
+    message("-- Using ${LIBRARY} at ${INCLUDE_DIR}")
     add_library(${LIBRARY} INTERFACE)
     target_include_directories(${LIBRARY} SYSTEM INTERFACE
         $<BUILD_INTERFACE:${INCLUDE_DIR}>
@@ -105,19 +87,19 @@ endif()
 # Implementation of std::optional with additional features.
 find_package(tl-optional QUIET)
 if (NOT tl-optional_FOUND)
-    add_public_header_only_library(tl-optional "${MG_DEPENDENCIES_SOURCE_DIR}/optional/include" "tl")
+    add_public_header_only_library(tl-optional "${MG_HEADER_ONLY_DEPENDENCIES_DIR}/optional/include" "tl")
     add_library(tl::optional ALIAS tl-optional)
 endif()
 
 # plf_colony
 # Implementation of the colony data structure.
-add_private_header_only_library(plf_colony "${MG_DEPENDENCIES_SOURCE_DIR}/plf_colony" "")
+add_private_header_only_library(plf_colony "${MG_HEADER_ONLY_DEPENDENCIES_DIR}/plf_colony" "")
 
 # function2
 # Improved alternative to std::function.
 # This dependency may be removed if equivalents of unique_function and function_view land in the
 # standard library.
-add_private_header_only_library(function2 "${MG_DEPENDENCIES_SOURCE_DIR}/function2/include" "")
+add_private_header_only_library(function2 "${MG_HEADER_ONLY_DEPENDENCIES_DIR}/function2/include" "")
 
 # OpenAL-soft
 # Sound library
@@ -131,7 +113,7 @@ endif()
 
 # stb
 # Sean Barrett's single-file libraries
-add_private_header_only_library(stb "${MG_DEPENDENCIES_SOURCE_DIR}/stb" "")
+add_private_header_only_library(stb "${MG_HEADER_ONLY_DEPENDENCIES_DIR}/stb" "")
 
 #---------------------------------------------------------------------------------------------------
 # Dependencies for tools

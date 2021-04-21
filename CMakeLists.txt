@@ -2,18 +2,12 @@ cmake_minimum_required(VERSION 3.11)
 
 project(mg_engine VERSION 0.1 LANGUAGES C CXX)
 
-include(GNUInstallDirs)
-include(CMakePackageConfigHelpers)
-
-# Add bundled CMake modules.
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-
 set(MG_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(MG_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 
-set(MG_HEADER_INSTALL_PATH "${CMAKE_INSTALL_INCLUDEDIR}/mg_engine-${mg_engine_VERSION_MAJOR}")
-set(MG_LIB_INSTALL_PATH "${CMAKE_INSTALL_LIBDIR}/mg_engine-${mg_engine_VERSION_MAJOR}")
-set(MG_CONFIG_INSTALL_PATH "${CMAKE_INSTALL_LIBDIR}/cmake/mg_engine-${mg_engine_VERSION_MAJOR}")
+#---------------------------------------------------------------------------------------------------
+# Configurable options
+#---------------------------------------------------------------------------------------------------
 
 option(MG_BUILD_TESTS "Build Mg Engine's test suite." ON)
 option(MG_BUILD_SAMPLES "Build Mg Engine sample applications." ON)
@@ -22,8 +16,32 @@ option(MG_BUILD_TOOLS "Build Mg Engine tools." ON)
 # Sanitisers disabled by default to avoid compiler compatibility issues.
 # (e.g. building the library with GCC then linking to an application built with Clang).
 option(MG_DEBUG_SANITISERS "Enable sanitisers (ASan, UBSan) for debug builds." OFF)
-
 option(MG_ENABLE_GFX_DEBUG_GROUPS "Enable the use of OpenGL debug groups to ease understanding of API traces" OFF)
+
+# Dependency-handling options.
+option(MG_USE_VENDORED_DEPENDENCIES "Use dependencies vendored with Mg Engine" ON)
+option(MG_USE_VENDORED_HEADER_ONLY_DEPENDENCIES "Use header-only dependencies vendored with Mg Engine" ON)
+option(MG_USE_DEPENDENCY_ARCHIVE "")
+set(MG_DEPENDENCIES_DIR "${MG_SOURCE_DIR}/external/mg_dependencies" CACHE PATH "Where Mg Engine should search for its dependencies.")
+set(MG_HEADER_ONLY_DEPENDENCIES_DIR "${MG_DEPENDENCIES_DIR}" CACHE PATH "Where to find header-only dependencies needed by Mg Engine")
+
+#---------------------------------------------------------------------------------------------------
+# Misc. definitions
+#---------------------------------------------------------------------------------------------------
+
+# The mg_dependencies_src.zip archive holds zipped source code of all dependencies. The idea is that one
+# can bundle the archive to avoid relying on git submodules.
+set(MG_DEPENDENCIES_ARCHIVE "${MG_SOURCE_DIR}/external/mg_dependencies_src.zip")
+
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+# Add bundled CMake modules.
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
+set(MG_HEADER_INSTALL_PATH "${CMAKE_INSTALL_INCLUDEDIR}/mg_engine-${mg_engine_VERSION_MAJOR}")
+set(MG_LIB_INSTALL_PATH "${CMAKE_INSTALL_LIBDIR}/mg_engine-${mg_engine_VERSION_MAJOR}")
+set(MG_CONFIG_INSTALL_PATH "${CMAKE_INSTALL_LIBDIR}/cmake/mg_engine-${mg_engine_VERSION_MAJOR}")
 
 # We want all executables in one, predictable location,
 # since they use relative paths to find resources.
@@ -38,33 +56,16 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIRECTORY}../libs/")
 # Dependency management
 #---------------------------------------------------------------------------------------------------
 
-option(MG_BUILD_DEPENDENCIES "Build and (locally) install Mg Engine's dependencies." OFF)
-set(MG_BUILD_DEPENDENCIES_INSTALL_DIR "${MG_BUILD_DIR}/external" CACHE STRING "Where to install dependencies built when MG_BUILD_DEPENDENCIES is enabled.")
+if(MG_USE_VENDORED_DEPENDENCIES)
+    if(NOT EXISTS "${MG_DEPENDENCIES_DIR}")
+        message(FATAL_ERROR "${MG_DEPENDENCIES_DIR} does not exist. Please run `cmake -P ${MG_SOURCE_DIR}/cmake/build_dependencies.cmake`.")
+    endif()
 
-set(MG_DEPENDENCIES_ARCHIVE "${MG_SOURCE_DIR}/external/mg_dependencies.zip")
-set(MG_DEPENDENCIES_SOURCE_DIR "${MG_SOURCE_DIR}/external/mg_dependencies")
+    # Add to prefix path, so that find_package() calls will find the dependencies.
+    list(APPEND CMAKE_PREFIX_PATH ${MG_DEPENDENCIES_DIR})
 
-# Trigger reconfiguration when dependencies archive changes.
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${MG_DEPENDENCIES_ARCHIVE}")
-
-# Extract dependency archive. Even if we do not build the bundled dependencies, there are some
-# header-only libraries within that we need.
-file(REMOVE_RECURSE "${MG_DEPENDENCIES_SOURCE_DIR}")
-file(MAKE_DIRECTORY "${MG_DEPENDENCIES_SOURCE_DIR}")
-execute_process(
-    COMMAND ${CMAKE_COMMAND} -E tar xf "${MG_DEPENDENCIES_ARCHIVE}" --format=zip
-    WORKING_DIRECTORY "${MG_DEPENDENCIES_SOURCE_DIR}"
-    RESULT_VARIABLE EXTRACT_RESULT
-)
-
-if(NOT ${EXTRACT_RESULT} EQUAL 0)
-    message(FATAL_ERROR "Failed to extract ${MG_DEPENDENCIES_ARCHIVE} to ${MG_DEPENDENCIES_SOURCE_DIR}")
-endif()
-
-# Build and install dependencies if requested (off by default).
-if(MG_BUILD_DEPENDENCIES)
-    # Perform the build.
-    include(cmake/build_dependencies.cmake)
+elseif(MG_USE_VENDORED_HEADER_ONLY_DEPENDENCIES)
+    include(cmake/prepare_header_only_dependencies.cmake)
 endif()
 
 # Set up all needed targets for dependencies.
