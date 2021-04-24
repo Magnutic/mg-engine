@@ -132,7 +132,7 @@ SkeletonPose Skeleton::get_bind_pose() const
     return result;
 }
 
-bool calculate_skinning_matrices(const Transform& transform,
+bool calculate_skinning_matrices(const glm::mat4& transform,
                                  const Skeleton& skeleton,
                                  const SkeletonPose& pose,
                                  const span<glm::mat4> skinning_matrices_out)
@@ -144,7 +144,6 @@ bool calculate_skinning_matrices(const Transform& transform,
     }
 
     const span<const Mesh::Joint> joints = skeleton.joints();
-    const glm::mat4 transform_matrix = transform.matrix();
 
     // At this point, skinning_matrices_out contains the accumulated pose (joint space to
     // model space) transformation, not the skinning (model space to model space) transformation.
@@ -152,7 +151,7 @@ bool calculate_skinning_matrices(const Transform& transform,
     // each joint. Then we also bake in the transform (model space to world space) to reduce the
     // number of matrix multiplications needed in the shader.
     for (size_t i = 0; i < joints.size(); ++i) {
-        skinning_matrices_out[i] = transform_matrix * skinning_matrices_out[i] *
+        skinning_matrices_out[i] = transform * skinning_matrices_out[i] *
                                    joints[i].inverse_bind_matrix;
     }
 

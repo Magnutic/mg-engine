@@ -93,7 +93,7 @@ endfunction()
 
 # The list of dependencies. This corresponds to submodules in external/submodules.
 # (They have to be explicitly listed since order matters due to dependencies between them.)
-list(APPEND MG_DEPENDENCIES_TO_BUILD zlib libzip fmt glfw glm openal-soft assimp)
+list(APPEND MG_DEPENDENCIES_TO_BUILD zlib libzip fmt glfw glm openal-soft assimp bullet3)
 
 # Only build bundled libsndfile if system libsndfile is not available -- prefer system version since
 # it otherwise causes conflicts with system-provided library.
@@ -118,6 +118,9 @@ set(assimp_EXTRA_BUILD_PARAMS "-DASSIMP_BUILD_ASSIMP_TOOLS=0" "-DASSIMP_BUILD_TE
     "-DASSIMP_BUILD_FBX_IMPORTER=1"
     "-DASSIMP_BUILD_GLTF_IMPORTER=1")
 set(openal-soft_EXTRA_BUILD_PARAMS "-DALSOFT_UTILS=0" "-DALSOFT_EXAMPLES=0")
+set(bullet3_EXTRA_BUILD_PARAMS "-DBUILD_CPU_DEMOS=0" "-DUSE_GLUT=0" "-DBUILD_ENET=0"
+    "-DBUILD_CLSOCKET=0" "-DBUILD_OPENGL3_DEMOS=0" "-DBUILD_BULLET2_DEMOS=0" "-DBUILD_EXTRAS=0"
+    "-DBUILD_UNIT_TESTS=0")
 
 # Build each dependency.
 foreach(DEPENDENCY ${MG_DEPENDENCIES_TO_BUILD})

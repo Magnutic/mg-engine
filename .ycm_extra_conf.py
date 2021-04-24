@@ -10,6 +10,7 @@ flags = [
     '-std=c++17',
     '-x', 'c++',
     '-I', './external/mg_dependencies/include',
+    '-I', './external/mg_dependencies/include/bullet',
     '-I', './external/mg_dependencies/function2/include',
     '-I', './external/mg_dependencies/optional/include',
     '-I', './external/mg_dependencies/plf_colony',

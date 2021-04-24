@@ -139,14 +139,14 @@ public:
      * assignments.
      */
     void add_mesh(MeshHandle mesh,
-                  const Transform& transform,
+                  const glm::mat4& transform,
                   span<const MaterialAssignment> material_assignment);
 
     /** Add a skinned (animated) mesh to be rendered, with the given transformation and material
      * assignments.
      */
     void add_skinned_mesh(MeshHandle mesh,
-                          const Transform& transform,
+                          const glm::mat4& transform,
                           span<const MaterialAssignment> material_assignment,
                           const SkinningMatrixPalette& skinning_matrix_palette);
 

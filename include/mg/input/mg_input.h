@@ -86,6 +86,13 @@ public:
     std::vector<Identifier> commands() const;
 
     /** Checks input devices and updates state. Call this once per time step. */
+    void update();
+
+    /** Checks input devices but does not update state. This can be used to poll input more often
+     * than state is updated. The typical use case is to ensure mouse motion is polled every render
+     * frame to minimise input latency, when rendering framerate is disconnected from the logical
+     * time step.
+     */
     void refresh();
 
     /** Get current state of input command.
@@ -95,7 +102,7 @@ public:
     float state(Identifier command) const;
 
     /** Get previous state of input command as float. Previous state refers to the state before the
-     * last `InputSystem::refresh()` call.
+     * last `InputSystem::update()` call.
      * @return Previous state of command as float. Keys and buttons return 1.0f if pressed, 0.0f
      * otherwise. Joystick axes return in the range [-1.0f, 1.0f].
      */

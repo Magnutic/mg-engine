@@ -23,6 +23,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <mutex>
 #include <vector>
 
 namespace Mg::gfx {
@@ -83,13 +84,13 @@ DebugMesh generate_mesh(span<const vec3> positions, span<const uint16_t> indices
         glBufferData(GL_ARRAY_BUFFER,
                      narrow<GLsizeiptr>(positions.size_bytes()),
                      positions.data(),
-                     GL_STATIC_DRAW);
+                     GL_DYNAMIC_DRAW);
     }
     if (!indices.empty()) {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER,
                      narrow<GLsizeiptr>(indices.size_bytes()),
                      indices.data(),
-                     GL_STATIC_DRAW);
+                     GL_DYNAMIC_DRAW);
     }
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), nullptr);
@@ -115,11 +116,11 @@ void update_mesh(DebugMesh& debug_mesh, span<const vec3> positions, span<const u
     glBufferData(GL_ARRAY_BUFFER,
                  narrow<GLsizeiptr>(positions.size_bytes()),
                  positions.data(),
-                 GL_STATIC_DRAW);
+                 GL_DYNAMIC_DRAW);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER,
                  narrow<GLsizeiptr>(indices.size_bytes()),
                  indices.data(),
-                 GL_STATIC_DRAW);
+                 GL_DYNAMIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), nullptr);
     glEnableVertexAttribArray(0);
@@ -280,15 +281,19 @@ public:
 
 class ShaderProgramOwner {
 public:
-    explicit ShaderProgramOwner(opengl::ShaderProgramHandle handle_) noexcept
-        : handle(std::move(handle_))
-    {}
+    explicit ShaderProgramOwner(opengl::ShaderProgramHandle handle_) : handle(std::move(handle_))
+    {
+        uniform_location_colour = opengl::uniform_location(handle, "colour").value();
+        uniform_location_MVP = opengl::uniform_location(handle, "MVP").value();
+    }
     ~ShaderProgramOwner() { opengl::destroy_shader_program(handle); }
 
     MG_MAKE_DEFAULT_MOVABLE(ShaderProgramOwner);
     MG_MAKE_NON_COPYABLE(ShaderProgramOwner);
 
     opengl::ShaderProgramHandle handle;
+    opengl::UniformLocation uniform_location_colour;
+    opengl::UniformLocation uniform_location_MVP;
 };
 
 } // namespace
@@ -315,7 +320,7 @@ DebugRenderer::~DebugRenderer() = default;
 
 namespace {
 
-void draw(opengl::ShaderProgramHandle program,
+void draw(const ShaderProgramOwner& program,
           const mat4& MVP,
           const DebugMesh& mesh,
           const vec4& colour,
@@ -323,9 +328,9 @@ void draw(opengl::ShaderProgramHandle program,
           const bool line_mode,
           const float line_width = 1.0f)
 {
-    opengl::use_program(program);
-    opengl::set_uniform(opengl::uniform_location(program, "colour").value(), colour);
-    opengl::set_uniform(opengl::uniform_location(program, "MVP").value(), MVP);
+    opengl::use_program(program.handle);
+    opengl::set_uniform(program.uniform_location_colour, colour);
+    opengl::set_uniform(program.uniform_location_MVP, MVP);
 
     glBindVertexArray(mesh.vao.handle.as_gl_id());
 
@@ -359,8 +364,8 @@ void draw(opengl::ShaderProgramHandle program,
     glBindVertexArray(0);
 }
 
-void draw_primitive(opengl::ShaderProgramHandle program,
-                    const ICamera& camera,
+void draw_primitive(const ShaderProgramOwner& program,
+                    const mat4& view_proj,
                     const DebugMesh& mesh,
                     const DebugRenderer::PrimitiveDrawParams& params)
 {
@@ -370,7 +375,7 @@ void draw_primitive(opengl::ShaderProgramHandle program,
         return t;
     }();
 
-    const mat4 MVP = camera.view_proj_matrix() * translation * params.orientation.to_matrix() *
+    const mat4 MVP = view_proj * translation * params.orientation.to_matrix() *
                      scale(params.dimensions);
 
     draw(program, MVP, mesh, params.colour, params.wireframe, false);
@@ -378,12 +383,12 @@ void draw_primitive(opengl::ShaderProgramHandle program,
 
 } // namespace
 
-void DebugRenderer::draw_box(const ICamera& camera, BoxDrawParams params)
+void DebugRenderer::draw_box(const mat4& view_proj, BoxDrawParams params)
 {
-    draw_primitive(impl().program.handle, camera, impl().box, params);
+    draw_primitive(impl().program, view_proj, impl().box, params);
 }
 
-void DebugRenderer::draw_ellipsoid(const ICamera& camera, EllipsoidDrawParams params)
+void DebugRenderer::draw_ellipsoid(const mat4& view_proj, EllipsoidDrawParams params)
 {
     auto it = impl().spheres.find(params.steps);
 
@@ -394,20 +399,20 @@ void DebugRenderer::draw_ellipsoid(const ICamera& camera, EllipsoidDrawParams pa
     }
 
     const Sphere& sphere = it->second;
-    draw_primitive(impl().program.handle, camera, sphere.mesh, params);
+    draw_primitive(impl().program, view_proj, sphere.mesh, params);
 }
 
-void DebugRenderer::draw_line(const ICamera& camera,
+void DebugRenderer::draw_line(const mat4& view_proj,
                               span<const vec3> points,
                               const vec4& colour,
                               const float width)
 {
     const auto indices = generate_line_vertex_indices(points.size());
     update_mesh(impl().line, points, indices);
-    draw(impl().program.handle, camera.view_proj_matrix(), impl().line, colour, false, true, width);
+    draw(impl().program, view_proj, impl().line, colour, false, true, width);
 }
 
-void DebugRenderer::draw_bones(const ICamera& camera,
+void DebugRenderer::draw_bones(const mat4& view_proj,
                                const mat4& M,
                                const Skeleton& skeleton,
                                const SkeletonPose& pose)
@@ -437,7 +442,7 @@ void DebugRenderer::draw_bones(const ICamera& camera,
         // It is easy to memorise which axis has which color if you think xyz=rgb.
         auto draw_axis = [&](const vec4 axis) {
             const vec4 axis_point = centre + joint_axis_length * normalize(matrix * axis - centre);
-            draw_line(camera, centre, axis_point, axis, 2.0f);
+            draw_line(view_proj, centre, axis_point, axis, 2.0f);
         };
 
         draw_axis({ 1.0f, 0.0f, 0.0f, 1.0f });
@@ -456,7 +461,7 @@ void DebugRenderer::draw_bones(const ICamera& camera,
 
         const vec4 position = matrix * origo;
         if (!is_root_joint) {
-            draw_line(camera, parent_position, position, bone_colour, bone_line_width);
+            draw_line(view_proj, parent_position, position, bone_colour, bone_line_width);
         }
 
         for (const Mesh::JointId child_id : skeleton.joints()[joint_id].children) {
@@ -467,6 +472,64 @@ void DebugRenderer::draw_bones(const ICamera& camera,
     };
 
     draw_bones_impl({}, Mesh::joint_id_none, 0, draw_bones_impl);
+}
+
+//--------------------------------------------------------------------------------------------------
+// DebugRenderQueue implementation
+//--------------------------------------------------------------------------------------------------
+
+using Job = std::function<void(DebugRenderer& renderer, const glm::mat4& view_proj)>;
+
+struct DebugRenderQueueData {
+    std::mutex mutex;
+    std::vector<Job> jobs;
+};
+
+DebugRenderQueue::DebugRenderQueue() = default;
+DebugRenderQueue::~DebugRenderQueue() = default;
+
+void DebugRenderQueue::draw_box(DebugRenderer::BoxDrawParams params)
+{
+    std::lock_guard g{ impl().mutex };
+
+    impl().jobs.emplace_back([params](DebugRenderer& renderer, const glm::mat4& view_proj) {
+        renderer.draw_box(view_proj, params);
+    });
+}
+
+void DebugRenderQueue::draw_ellipsoid(DebugRenderer::EllipsoidDrawParams params)
+{
+    std::lock_guard g{ impl().mutex };
+
+    impl().jobs.emplace_back([params](DebugRenderer& renderer, const glm::mat4& view_proj) {
+        renderer.draw_ellipsoid(view_proj, params);
+    });
+}
+
+void DebugRenderQueue::draw_line(span<const glm::vec3> points, const glm::vec4& colour, float width)
+{
+    std::lock_guard g{ impl().mutex };
+
+    impl().jobs.emplace_back([points = Array<glm::vec3>::make_copy(points),
+                              colour,
+                              width](DebugRenderer& renderer, const glm::mat4& view_proj) {
+        renderer.draw_line(view_proj, points, colour, width);
+    });
+}
+
+void DebugRenderQueue::dispatch(DebugRenderer& renderer, const glm::mat4& view_proj_matrix)
+{
+    std::lock_guard g{ impl().mutex };
+
+    for (Job& job : impl().jobs) {
+        job(renderer, view_proj_matrix);
+    }
+}
+
+void DebugRenderQueue::clear()
+{
+    std::lock_guard g{ impl().mutex };
+    impl().jobs.clear();
 }
 
 } // namespace Mg::gfx

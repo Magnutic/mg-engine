@@ -57,6 +57,9 @@ public:
     /** Get model-space bounding sphere. */
     BoundingSphere bounding_sphere() const noexcept;
 
+    /** Get model-space axis-aligned bounding box. */
+    AxisAlignedBoundingBox axis_aligned_bounding_box() const noexcept;
+
     /** Returns whether mesh data is valid. Useful for debug mode asserts. */
     bool validate() const;
 

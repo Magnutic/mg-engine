@@ -34,6 +34,7 @@ struct MeshResource::Data {
     glm::mat4 skeleton_root_transform = glm::mat4(1.0f);
 
     BoundingSphere bounding_sphere;
+    AxisAlignedBoundingBox axis_aligned_bounding_box;
 };
 
 namespace {
@@ -306,6 +307,10 @@ BoundingSphere MeshResource::bounding_sphere() const noexcept
 {
     return m_data ? m_data->bounding_sphere : BoundingSphere{};
 }
+AxisAlignedBoundingBox MeshResource::axis_aligned_bounding_box() const noexcept
+{
+    return m_data ? m_data->axis_aligned_bounding_box : AxisAlignedBoundingBox{};
+}
 
 LoadResourceResult MeshResource::load_resource_impl(ResourceLoadingInput& input)
 {
@@ -340,6 +345,9 @@ LoadResourceResult MeshResource::load_resource_impl(ResourceLoadingInput& input)
     }
 
     m_data = std::move(load_result.data);
+
+    // TODO: store bounding box in mesh file.
+    m_data->axis_aligned_bounding_box = calculate_mesh_bounding_box(m_data->vertices);
 
     if (!validate()) {
         return LoadResourceResult::data_error("Mesh validation failed.");

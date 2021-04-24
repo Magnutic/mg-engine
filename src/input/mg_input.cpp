@@ -16,6 +16,7 @@ namespace Mg::input {
 namespace {
 
 struct State {
+    float largest_diff = 0.0f;
     float current_state = 0.0f;
     float prev_state = 0.0f;
 };
@@ -77,11 +78,32 @@ std::vector<Identifier> InputMap::commands() const
     return ret_val;
 }
 
-void InputMap::refresh()
+void InputMap::update()
 {
+    refresh();
     for (auto& [id, state] : impl().command_states) {
         state.prev_state = state.current_state;
         state.current_state = impl().commands.at(id).state();
+
+        // Check for missed states B when going from A -> B -> A in one update.
+        // (This can only happen if `refresh` was called between `update`s).
+        const bool missed_state_change = state.prev_state == state.current_state &&
+                                         state.largest_diff != 0.0f;
+        if (missed_state_change) {
+            state.current_state = state.largest_diff;
+        }
+
+        state.largest_diff = 0.0f;
+    }
+}
+
+void InputMap::refresh()
+{
+    for (auto& [id, state] : impl().command_states) {
+        const float new_state = impl().commands.at(id).state();
+        if (std::abs(new_state - state.current_state) > state.largest_diff) {
+            state.largest_diff = new_state;
+        }
     }
 }
 

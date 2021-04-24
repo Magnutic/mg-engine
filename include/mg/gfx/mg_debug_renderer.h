@@ -10,16 +10,14 @@
 
 #pragma once
 
-#include "mg/gfx/mg_camera.h"
+#include "mg/core/mg_rotation.h"
+#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_simple_pimpl.h"
 
+#include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
-
-namespace Mg {
-class Rotation;
-} // namespace Mg
 
 namespace Mg::gfx {
 
@@ -29,7 +27,7 @@ struct SkeletonPose;
 struct DebugRendererData;
 
 /** Renderer for drawing debug geometry.
- * N.B. this renderer is relatively inefficient and is intended for debugging visualisation.
+ * This renderer is relatively inefficient and is intended for debugging visualisation.
  */
 class DebugRenderer : PImplMixin<DebugRendererData> {
 public:
@@ -53,29 +51,69 @@ public:
         size_t steps = 24;
     };
 
-    void draw_box(const ICamera& camera, BoxDrawParams params);
+    void draw_box(const glm::mat4& view_proj, BoxDrawParams params);
 
-    void draw_ellipsoid(const ICamera& camera, EllipsoidDrawParams params);
+    void draw_ellipsoid(const glm::mat4& view_proj, EllipsoidDrawParams params);
 
-    void draw_line(const ICamera& camera,
+    void draw_line(const glm::mat4& view_proj,
                    span<const glm::vec3> points,
                    const glm::vec4& colour,
                    float width = 1.0f);
 
-    void draw_line(const ICamera& camera,
+    void draw_line(const glm::mat4& view_proj,
                    const glm::vec3& start,
                    const glm::vec3& end,
                    const glm::vec4& colour,
                    const float width = 1.0f)
     {
         std::array<glm::vec3, 2> points = { start, end };
-        draw_line(camera, points, colour, width);
+        draw_line(view_proj, points, colour, width);
     }
 
-    void draw_bones(const ICamera& camera,
+    void draw_bones(const glm::mat4& view_proj,
                     const glm::mat4& M,
                     const Skeleton& skeleton,
                     const SkeletonPose& pose);
 };
+
+struct DebugRenderQueueData;
+
+/** A utility for queuing up debug render commands to dispatch later at a convenient point in the
+ * rendering pipeline. This makes it easier to set up debug rendering from different points in the
+ * codebase.
+ */
+class DebugRenderQueue : PImplMixin<DebugRenderQueueData> {
+public:
+    DebugRenderQueue();
+    ~DebugRenderQueue();
+
+    MG_MAKE_NON_COPYABLE(DebugRenderQueue);
+    MG_MAKE_NON_MOVABLE(DebugRenderQueue);
+
+    void draw_box(DebugRenderer::BoxDrawParams params);
+
+    void draw_ellipsoid(DebugRenderer::EllipsoidDrawParams params);
+
+    void draw_line(span<const glm::vec3> points, const glm::vec4& colour, float width = 1.0f);
+
+    void draw_line(const glm::vec3& start,
+                   const glm::vec3& end,
+                   const glm::vec4& colour,
+                   const float width = 1.0f)
+    {
+        std::array<glm::vec3, 2> points = { start, end };
+        draw_line(points, colour, width);
+    }
+
+    void dispatch(DebugRenderer& renderer, const glm::mat4& view_proj_matrix);
+
+    void clear();
+};
+
+inline DebugRenderQueue& get_debug_render_queue()
+{
+    static DebugRenderQueue queue;
+    return queue;
+}
 
 } // namespace Mg::gfx

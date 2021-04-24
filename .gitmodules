@@ -40,3 +40,6 @@
 [submodule "external/submodules/assimp"]
 	path = external/submodules/assimp
 	url = https://github.com/assimp/assimp
+[submodule "external/submodules/bullet3"]
+	path = external/submodules/bullet3
+	url = https://github.com/bulletphysics/bullet3

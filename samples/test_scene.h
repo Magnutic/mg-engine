@@ -24,12 +24,15 @@
 #include <mg/gfx/mg_ui_renderer.h>
 #include <mg/input/mg_input.h>
 #include <mg/input/mg_keyboard.h>
+#include <mg/physics/mg_character_controller.h>
+#include <mg/physics/mg_physics.h>
 #include <mg/resource_cache/mg_resource_cache.h>
 #include <mg/utils/mg_optional.h>
 
 #include <chrono>
 
 using Clock = std::chrono::high_resolution_clock;
+using namespace std::literals;
 
 static constexpr auto config_file = "mg_engine.cfg";
 
@@ -65,14 +68,29 @@ private:
     std::chrono::time_point<Clock> m_start_time;
 };
 
+class PhysicsBody;
+
 struct Model {
+    Model();
+    ~Model();
+    MG_MAKE_DEFAULT_MOVABLE(Model);
+    MG_MAKE_NON_COPYABLE(Model);
+
+    void update();
+
     using AnimationClips = Mg::small_vector<Mg::gfx::Mesh::AnimationClip, 5>;
-    Mg::Transform transform;
-    Mg::gfx::MeshHandle mesh;
+
+    glm::mat4 transform = glm::mat4(1.0f);
+    glm::mat4 vis_transform = glm::mat4(1.0f);
+    Mg::gfx::MeshHandle mesh = {};
     Mg::small_vector<Mg::gfx::MaterialAssignment, 10> material_assignments;
     Mg::Opt<Mg::gfx::Skeleton> skeleton;
     Mg::Opt<Mg::gfx::SkeletonPose> pose;
     AnimationClips clips;
+    Mg::Identifier id;
+    glm::vec3 centre = glm::vec3(0.0f);
+
+    Mg::Opt<Mg::physics::PhysicsBodyHandle> physics_body;
 };
 
 struct MaterialFileAssignment {
@@ -95,9 +113,41 @@ struct BlurTargets {
     Mg::gfx::Texture2D* vert_pass_target_texture;
 };
 
+class Actor {
+public:
+    constexpr static float radius = 0.5f;
+    constexpr static float height = 1.8f;
+    constexpr static float step_height = 0.6f;
+
+    explicit Actor(Mg::physics::World& physics_world, const glm::vec3& position, const float mass)
+
+    {
+        character_controller =
+            physics_world.create_character_controller("Actor", radius, height, step_height);
+        character_controller->position({ 0.0f, 0.0f, height * 0.5f });
+    }
+
+    void update(glm::vec3 acceleration, float jump_impulse);
+
+    glm::vec3 position(const float interpolate = 1.0f) const
+    {
+        return character_controller->position(interpolate) - glm::vec3(0.0f, 0.0f, height * 0.5f);
+    }
+
+    Mg::physics::CharacterController* character_controller = nullptr;
+    float max_horizontal_speed = 10.0f;
+    float friction = 0.6f;
+};
+
 class Scene {
 public:
     ApplicationContext app;
+
+    Scene();
+    ~Scene();
+
+    MG_MAKE_NON_MOVABLE(Scene);
+    MG_MAKE_NON_COPYABLE(Scene);
 
     Mg::ResourceCache resource_cache = setup_resource_cache();
 
@@ -123,23 +173,17 @@ public:
 
     Mg::input::InputMap input_map;
 
-    struct State {
-        glm::vec3 cam_position{};
-        Mg::Rotation cam_rotation{};
-        glm::vec3 cam_velocity{};
-    };
+    std::unique_ptr<Mg::physics::World> physics_world;
+    std::unique_ptr<Actor> actor;
 
-    State prev_state{};
-    State current_state{};
-
-    using SceneModels = Mg::FlatMap<Mg::Identifier, Model, Mg::Identifier::HashCompare>;
-    SceneModels scene_models;
     std::vector<Mg::gfx::Light> scene_lights;
 
-    Mg::gfx::Material* blur_material;
-    Mg::gfx::Material* bloom_material;
-    Mg::gfx::Material* billboard_material;
-    Mg::gfx::Material* ui_material;
+    Mg::gfx::Material* blur_material = nullptr;
+    Mg::gfx::Material* bloom_material = nullptr;
+    Mg::gfx::Material* billboard_material = nullptr;
+    Mg::gfx::Material* ui_material = nullptr;
+
+    bool camera_locked = false;
 
     double time = 0.0;
     bool exit = false;
@@ -149,22 +193,34 @@ public:
     void main_loop();
 
 private:
+    Mg::input::Mouse::CursorPosition last_cursor_position;
+
     void time_step();
     void render_scene(double lerp_factor);
 
     void setup_config();
 
-    Mg::gfx::MeshHandle load_mesh(Mg::Identifier file);
-    Mg::Opt<Mg::gfx::Skeleton> load_skeleton(Mg::Identifier file);
-    Model::AnimationClips load_clips(Mg::Identifier file);
+    bool load_mesh(Mg::Identifier file, Model& model);
 
     Mg::gfx::Texture2D* load_texture(Mg::Identifier file);
 
     Mg::gfx::Material* load_material(Mg::Identifier file, Mg::span<const Mg::Identifier> options);
 
-    Model& load_model(Mg::Identifier mesh_file,
-                      Mg::span<const MaterialFileAssignment> material_files,
-                      Mg::span<const Mg::Identifier> options);
+    Model load_model(Mg::Identifier mesh_file,
+                     Mg::span<const MaterialFileAssignment> material_files,
+                     Mg::span<const Mg::Identifier> options);
+
+    Model& add_scene_model(Mg::Identifier mesh_file,
+                           Mg::span<const MaterialFileAssignment> material_files,
+                           Mg::span<const Mg::Identifier> options);
+
+    Model& add_dynamic_model(Mg::Identifier mesh_file,
+                             Mg::span<const MaterialFileAssignment> material_files,
+                             Mg::span<const Mg::Identifier> options,
+                             glm::vec3 position,
+                             Mg::Rotation rotation,
+                             glm::vec3 scale,
+                             bool enable_physics);
 
     void make_input_map();
 
@@ -181,4 +237,11 @@ private:
     void render_light_debug_geometry();
     void render_skeleton_debug_geometry();
     void render_bloom();
+
+    using SceneModels = Mg::FlatMap<Mg::Identifier, Model, Mg::Identifier::HashCompare>;
+
+    using DynamicModels = Mg::FlatMap<Mg::Identifier, Model, Mg::Identifier::HashCompare>;
+
+    SceneModels scene_models;
+    DynamicModels dynamic_models;
 };

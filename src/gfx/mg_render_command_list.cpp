@@ -65,7 +65,7 @@ RenderCommandProducer::RenderCommandProducer() = default;
 RenderCommandProducer::~RenderCommandProducer() = default;
 
 void RenderCommandProducer::add_mesh(MeshHandle mesh_handle,
-                                     const Transform& transform,
+                                     const glm::mat4& transform,
                                      span<const MaterialAssignment> material_assignment)
 {
     const MeshInternal& mesh = get_mesh(mesh_handle);
@@ -82,7 +82,7 @@ void RenderCommandProducer::add_mesh(MeshHandle mesh_handle,
 
         // Write render command to command list
         {
-            impl().m_transforms_unsorted.emplace_back(transform.matrix());
+            impl().m_transforms_unsorted.emplace_back(transform);
             RenderCommand& command = impl().render_commands_unsorted.emplace_back();
 
             command.vertex_array = mesh.vertex_array;
@@ -95,7 +95,7 @@ void RenderCommandProducer::add_mesh(MeshHandle mesh_handle,
 }
 
 void RenderCommandProducer::add_skinned_mesh(MeshHandle mesh,
-                                             const Transform& transform,
+                                             const glm::mat4& transform,
                                              span<const MaterialAssignment> material_assignment,
                                              const SkinningMatrixPalette& skinning_matrix_palette)
 {

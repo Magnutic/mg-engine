@@ -49,6 +49,9 @@ add_library(mg_engine
     input/mg_mouse.cpp
     mg_unicode.cpp
     mg_bounding_volumes.cpp
+    physics/mg_character_controller.cpp
+    physics/mg_physics.cpp
+    physics/mg_physics_debug_renderer.cpp
     resource_cache/internal/mg_resource_entry_base.cpp
     resource_cache/mg_base_resource.cpp
     resource_cache/mg_resource_cache.cpp
@@ -142,6 +145,7 @@ target_link_libraries(mg_engine
         glm::glm
         tl::optional
         fmt::fmt
+        bullet::bullet # Temporarily public
     PRIVATE
         function2
         plf_colony

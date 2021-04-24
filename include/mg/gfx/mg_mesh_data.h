@@ -100,7 +100,7 @@ struct MeshDataView {
     /** Submeshes as defined by a range of `indices`. */
     span<const Submesh> submeshes;
 
-    /** Per-vertex influences of skeleton joints for animation. Shoutl either be empty (for
+    /** Per-vertex influences of skeleton joints for animation. Should either be empty (for
      * non-animated meshes), or the same size as `MeshDataView::vertices`.
      */
     span<const Influences> influences;

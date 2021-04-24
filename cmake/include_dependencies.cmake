@@ -115,6 +115,13 @@ endif()
 # Sean Barrett's single-file libraries
 add_private_header_only_library(stb "${MG_HEADER_ONLY_DEPENDENCIES_DIR}/stb" "")
 
+# Bullet physics
+# Physics and collision detection engine
+find_package(Bullet MODULE REQUIRED)
+add_library(bullet::bullet INTERFACE IMPORTED)
+target_include_directories(bullet::bullet INTERFACE "${BULLET_INCLUDE_DIRS}")
+target_link_libraries(bullet::bullet INTERFACE "${BULLET_LIBRARIES}")
+
 #---------------------------------------------------------------------------------------------------
 # Dependencies for tools
 #---------------------------------------------------------------------------------------------------

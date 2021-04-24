@@ -1,6 +1,11 @@
 ﻿#include "test_scene.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg/gfx/mg_animation.h"
+#include "mg/gfx/mg_debug_renderer.h"
 #include "mg/gfx/mg_render_command_list.h"
+#include "mg/mg_bounding_volumes.h"
+#include "mg/physics/mg_physics.h"
+#include "glm/ext/matrix_transform.hpp"
 
 #include <mg/core/mg_config.h>
 #include <mg/core/mg_identifier.h>
@@ -27,6 +32,8 @@
 
 #include <fmt/core.h>
 
+#include <btBulletDynamicsCommon.h>
+
 #include <numeric>
 
 namespace {
@@ -37,52 +44,71 @@ constexpr double k_time_step = 1.0 / 60.0;
 constexpr double k_accumulator_max_steps = 10;
 constexpr size_t k_num_lights = 128;
 constexpr float k_light_radius = 3.0f;
+constexpr float actor_acceleration = 1.2f;
 
-constexpr auto camera_max_vel = 0.2f;
-constexpr auto camera_acc = 0.01f;
-constexpr auto camera_friction = 0.005f;
-
-std::array<float, 3> camera_acceleration(Mg::input::InputMap& input_map)
+std::array<float, 3> get_actor_acceleration(Mg::input::InputMap& input_map)
 {
     auto is_held_value = [&input_map](Mg::Identifier mapping) -> float {
         return static_cast<float>(input_map.is_held(mapping));
     };
-    auto forward_acc = camera_acc * (is_held_value("forward") - is_held_value("backward"));
-    auto right_acc = camera_acc * (is_held_value("right") - is_held_value("left"));
-    auto up_acc = camera_acc * (is_held_value("up") - is_held_value("down"));
+    auto forward_acc = actor_acceleration * (is_held_value("forward") - is_held_value("backward"));
+    auto right_acc = actor_acceleration * (is_held_value("right") - is_held_value("left"));
+    auto up_acc = 0.0f; // actor_acceleration * (is_held_value("jump") - is_held_value("crouch"));
 
     return { forward_acc, right_acc, up_acc };
 }
 
 void add_to_render_list(const Model& model, Mg::gfx::RenderCommandProducer& renderlist)
 {
+    const glm::mat4 transform = model.transform * model.vis_transform;
+
     if (model.skeleton && model.pose) {
         const auto num_joints = Mg::narrow<uint16_t>(model.skeleton->joints().size());
         auto palette = renderlist.allocate_skinning_matrix_palette(num_joints);
-        Mg::gfx::calculate_skinning_matrices(model.transform,
+        Mg::gfx::calculate_skinning_matrices(transform,
                                              *model.skeleton,
                                              *model.pose,
                                              palette.skinning_matrices());
-        renderlist.add_skinned_mesh(model.mesh,
-                                    model.transform,
-                                    model.material_assignments,
-                                    palette);
+        renderlist.add_skinned_mesh(model.mesh, transform, model.material_assignments, palette);
     }
     else {
-        renderlist.add_mesh(model.mesh, model.transform, model.material_assignments);
+        renderlist.add_mesh(model.mesh, transform, model.material_assignments);
     }
-}
-
-Scene::State lerp(const Scene::State& fst, const Scene::State& snd, double x)
-{
-    Scene::State output;
-    output.cam_position = glm::mix(fst.cam_position, snd.cam_position, x);
-    output.cam_rotation = Mg::Rotation::mix(fst.cam_rotation, snd.cam_rotation, float(x));
-
-    return output;
 }
 
 } // namespace
+
+void Actor::update(glm::vec3 acceleration, float jump_impulse)
+{
+    auto horizontal_velocity = character_controller->velocity(float(k_time_step));
+    horizontal_velocity.x += acceleration.x;
+    horizontal_velocity.y += acceleration.y;
+    horizontal_velocity.z = 0.0f;
+
+    const float horizontal_speed = glm::length(horizontal_velocity);
+    if (horizontal_speed > max_horizontal_speed) {
+        horizontal_velocity.x *= max_horizontal_speed / horizontal_speed;
+        horizontal_velocity.y *= max_horizontal_speed / horizontal_speed;
+    }
+
+    const float current_friction = character_controller->is_on_ground() ? friction : 0.0f;
+
+    if (glm::length2(horizontal_velocity) >= 0.0f) {
+        if (glm::length2(horizontal_velocity) <= current_friction * current_friction) {
+            horizontal_velocity = glm::vec3(0.0f);
+        }
+        else {
+            horizontal_velocity -= glm::normalize(horizontal_velocity) * current_friction;
+        }
+    }
+
+    character_controller->move(horizontal_velocity);
+    character_controller->jump(jump_impulse);
+}
+
+Scene::Scene() = default;
+
+Scene::~Scene() = default;
 
 void Scene::init()
 {
@@ -116,17 +142,18 @@ void Scene::init()
 
     camera.set_aspect_ratio(app.window().aspect_ratio());
     camera.field_of_view = 80_degrees;
-    current_state.cam_position.z = 1.0f;
-    prev_state = current_state;
 
     make_input_map();
+
+    physics_world = std::make_unique<Mg::physics::World>();
+    actor = std::make_unique<Actor>(*physics_world, glm::vec3(0.0f, 0.0f, 5.0f), 70.0f);
 
     load_models();
     load_materials();
     generate_lights();
 
     const auto font_resource =
-        resource_cache.resource_handle<Mg::FontResource>("fonts/LiberationSerif-Regular.ttf");
+        resource_cache.resource_handle<Mg::FontResource>("fonts/LiberationMono-Regular.ttf");
     std::vector<Mg::UnicodeRange> unicode_ranges = { Mg::get_unicode_range(
         Mg::UnicodeBlock::Basic_Latin) };
     font = std::make_unique<Mg::gfx::BitmapFont>(font_resource, 24, unicode_ranges);
@@ -167,64 +194,35 @@ void Scene::main_loop()
 
         render_scene(accumulator / k_time_step);
     }
+
+    app.config().write_to_file(config_file);
 }
 
 void Scene::time_step()
 {
     using namespace Mg::literals;
 
+    Mg::gfx::get_debug_render_queue().clear();
+
     app.window().poll_input_events();
-    input_map.refresh();
+    input_map.update();
 
     if (input_map.was_pressed("exit") || app.window().should_close_flag()) {
         exit = true;
     }
 
-    prev_state = current_state;
+    // Actor movement
+    const bool is_jumping = input_map.was_pressed("jump") &&
+                            actor->character_controller->is_on_ground();
 
-    // Mouselook
-    float mouse_delta_x = input_map.state("look_x");
-    float mouse_delta_y = input_map.state("look_y");
-    mouse_delta_x *= app.config().as<float>("mouse_sensitivity_x");
-    mouse_delta_y *= app.config().as<float>("mouse_sensitivity_y");
+    const auto [forward_acc, right_acc, up_acc] = get_actor_acceleration(input_map);
+    const Mg::Rotation rotation_horizontal(glm::vec3(0.0f, 0.0f, camera.rotation.euler_angles().z));
+    const glm::vec3 vec_forward = rotation_horizontal.forward();
+    const glm::vec3 vec_right = rotation_horizontal.right();
 
-    if (!app.window().is_cursor_locked_to_window()) {
-        mouse_delta_x = 0.0f;
-        mouse_delta_y = 0.0f;
-    }
-
-    Mg::Angle cam_pitch = current_state.cam_rotation.pitch() -
-                          Mg::Angle::from_radians(mouse_delta_y);
-    Mg::Angle cam_yaw = current_state.cam_rotation.yaw() - Mg::Angle::from_radians(mouse_delta_x);
-
-    cam_pitch = Mg::Angle::clamp(cam_pitch, -90_degrees, 90_degrees);
-
-    // Set rotation from euler angles, clamping pitch between straight down & straight up.
-    current_state.cam_rotation = Mg::Rotation{ { cam_pitch.radians(), 0.0f, cam_yaw.radians() } };
-
-    // Camera movement
-    auto const [forward_acc, right_acc, up_acc] = camera_acceleration(input_map);
-
-    if (glm::distance(current_state.cam_velocity, {}) > camera_friction) {
-        current_state.cam_velocity -= glm::normalize(current_state.cam_velocity) * camera_friction;
-    }
-    else {
-        current_state.cam_velocity = {};
-    }
-
-    const glm::vec3 vec_forward = camera.rotation.forward();
-    const glm::vec3 vec_right = camera.rotation.right();
-    const glm::vec3 vec_up = camera.rotation.up();
-
-    current_state.cam_velocity += vec_forward * forward_acc;
-    current_state.cam_velocity += vec_right * right_acc;
-    current_state.cam_velocity += vec_up * up_acc;
-
-    if (auto vel = glm::distance(current_state.cam_velocity, {}); vel > camera_max_vel) {
-        current_state.cam_velocity = glm::normalize(current_state.cam_velocity) * camera_max_vel;
-    }
-
-    current_state.cam_position += current_state.cam_velocity;
+    const float factor = actor->character_controller->is_on_ground() ? 1.0f : 0.3f;
+    actor->update((vec_forward * forward_acc + vec_right * right_acc) * factor,
+                  (is_jumping ? 5.0f : 0.0f));
 
     // Fullscreen switching
     if (input_map.was_pressed("fullscreen")) {
@@ -251,25 +249,69 @@ void Scene::time_step()
     if (input_map.was_pressed("toggle_debug_vis")) {
         draw_debug = !draw_debug;
     }
+    if (input_map.was_pressed("lock_camera")) {
+        camera_locked = !camera_locked;
+    }
+    if (input_map.was_pressed("reset")) {
+        actor->character_controller->position({ 0.0f, 0.0f, 2.0f });
+        actor->character_controller->reset();
+    }
+
+    physics_world->update(static_cast<float>(k_time_step));
 }
 
 void Scene::render_scene(const double lerp_factor)
 {
     MG_GFX_DEBUG_GROUP("Scene::render_scene")
 
-    Scene::State render_state = lerp(prev_state, current_state, lerp_factor);
-    camera.position = render_state.cam_position;
-    camera.rotation = render_state.cam_rotation;
+    physics_world->interpolate(static_cast<float>(lerp_factor));
 
-    scene_lights.back() = Mg::gfx::make_point_light(current_state.cam_position,
-                                                    glm::vec3(25.0f),
-                                                    0.25f * k_light_radius);
+    // Mouselook
+    {
+        app.window().poll_input_events();
+        input_map.refresh();
+
+        const auto cursor_position = app.window().mouse.get_cursor_position();
+        float mouse_delta_x = cursor_position.x - last_cursor_position.x;
+        float mouse_delta_y = cursor_position.y - last_cursor_position.y;
+        mouse_delta_x *= app.config().as<float>("mouse_sensitivity_x");
+        mouse_delta_y *= app.config().as<float>("mouse_sensitivity_y");
+        if (!app.window().is_cursor_locked_to_window()) {
+            mouse_delta_x = 0.0f;
+            mouse_delta_y = 0.0f;
+        }
+
+        Mg::Angle cam_pitch = camera.rotation.pitch() - Mg::Angle::from_radians(mouse_delta_y);
+        Mg::Angle cam_yaw = camera.rotation.yaw() - Mg::Angle::from_radians(mouse_delta_x);
+
+        cam_pitch = Mg::Angle::clamp(cam_pitch, -90_degrees, 90_degrees);
+
+        // Set rotation from euler angles, clamping pitch between straight down & straight up.
+        camera.rotation = Mg::Rotation{ { cam_pitch.radians(), 0.0f, cam_yaw.radians() } };
+
+        last_cursor_position = cursor_position;
+    }
+
+    if (!camera_locked) {
+        camera.position = actor->position(float(lerp_factor)) + glm::vec3(0.0f, 0.0f, 1.7f);
+    }
+
+    for (auto& [id, model] : dynamic_models) {
+        model.update();
+    }
+
+    scene_lights.back() =
+        Mg::gfx::make_point_light(camera.position, glm::vec3(25.0f), 2.0f * k_light_radius);
 
     // Draw meshes and billboards
     {
         render_command_producer.clear();
 
         for (auto&& [model_id, model] : scene_models) {
+            add_to_render_list(model, render_command_producer);
+        }
+
+        for (auto&& [model_id, model] : dynamic_models) {
             add_to_render_list(model, render_command_producer);
         }
 
@@ -281,7 +323,7 @@ void Scene::render_scene(const double lerp_factor)
 
         Mg::gfx::RenderParameters params = {};
         params.current_time = Mg::narrow_cast<float>(time);
-        params.camera_exposure = -6.0;
+        params.camera_exposure = -5.0;
 
         mesh_renderer.render(camera, commands, scene_lights, params);
 
@@ -329,11 +371,31 @@ void Scene::render_scene(const double lerp_factor)
         typesetting.line_spacing_factor = 1.25f;
         typesetting.max_width_pixels = ui_renderer.resolution().x;
 
+        const glm::vec3 v = actor->character_controller->velocity(float(k_time_step));
+        const glm::vec3 p = actor->position();
+
         std::string text = fmt::format("FPS: {:.2f}", frame_rate);
+        text += fmt::format("\nVelocity: {{{:.2f}, {:.2f}, {:.2f}}}", v.x, v.y, v.z);
+        text += fmt::format("\nPosition: {{{:.2f}, {:.2f}, {:.2f}}}", p.x, p.y, p.z);
+        text += fmt::format("\nGrounded: {:b}", actor->character_controller->is_on_ground());
+
         ui_renderer.draw_text(placement, font->prepare_text(text, typesetting));
+
+#if 0
+        for (const auto& collision : physics_world->get_collisions()) {
+            Mg::gfx::DebugRenderer::EllipsoidDrawParams params;
+            params.dimensions = glm::vec3(0.05f);
+            params.centre = glm::vec3(collision.contact_point_on_a);
+            params.colour = glm::vec4(1.0f, 0.0f, 1.0f, 0.5f);
+            debug_renderer.draw_ellipsoid(camera.view_proj_matrix(), params);
+            params.centre = glm::vec3(collision.contact_point_on_b);
+            params.colour = glm::vec4(0.0f, 1.0f, 0.0f, 0.5f);
+            debug_renderer.draw_ellipsoid(camera.view_proj_matrix(), params);
+        }
+#endif
     }
 
-    Model& fox = scene_models["meshes/Fox.mgm"];
+    Model& fox = dynamic_models["meshes/Fox.mgm"];
     {
         Mg::gfx::animate_skeleton(fox.clips[1], fox.pose.value(), time);
     }
@@ -341,8 +403,29 @@ void Scene::render_scene(const double lerp_factor)
     // Debug geometry
     if (draw_debug) {
         // render_light_debug_geometry();
-        render_skeleton_debug_geometry();
+        // render_skeleton_debug_geometry();
+        physics_world->draw_debug(debug_renderer, camera.view_proj_matrix());
+        Mg::gfx::get_debug_render_queue().dispatch(debug_renderer, camera.view_proj_matrix());
     }
+
+#if 0 // Raycast from camera test.
+        std::vector<Mg::physics::RayHit> results;
+        physics_world->raycast(camera.position,
+                               camera.position + camera.rotation.forward() * 1000.0f,
+                               results);
+        for (auto& rayhit : results) {
+            Mg::gfx::DebugRenderer::EllipsoidDrawParams params;
+            params.dimensions = glm::vec3(0.05f);
+            params.centre = glm::vec3(rayhit.hit_point_worldspace);
+            params.colour = glm::vec4(1.0f, 0.0f, 1.0f, 0.5f);
+            debug_renderer.draw_ellipsoid(camera.view_proj_matrix(), params);
+            debug_renderer.draw_line(camera.view_proj_matrix(),
+                                     rayhit.hit_point_worldspace,
+                                     rayhit.hit_point_worldspace +
+                                         rayhit.hit_normal_worldspace * 0.2f,
+                                     { 0.0f, 0.0f, 1.0f, 1.0f });
+        }
+#endif
 
     app.window().refresh();
 }
@@ -352,41 +435,6 @@ void Scene::setup_config()
     auto& cfg = app.config();
     cfg.set_default_value("mouse_sensitivity_x", 0.002f);
     cfg.set_default_value("mouse_sensitivity_y", 0.002f);
-}
-
-Mg::gfx::MeshHandle Scene::load_mesh(Mg::Identifier file)
-{
-    const Mg::Opt<Mg::gfx::MeshHandle> mesh_handle = mesh_pool.get(file);
-    if (mesh_handle.has_value()) {
-        return mesh_handle.value();
-    }
-
-    const Mg::ResourceAccessGuard access = resource_cache.access_resource<Mg::MeshResource>(file);
-    return mesh_pool.create(*access);
-}
-
-Mg::Opt<Mg::gfx::Skeleton> Scene::load_skeleton(Mg::Identifier file)
-{
-    const Mg::ResourceAccessGuard access = resource_cache.access_resource<Mg::MeshResource>(file);
-    if (access->joints().empty()) {
-        return Mg::nullopt;
-    }
-
-    Mg::gfx::Skeleton skeleton(file, access->skeleton_root_transform(), access->joints().size());
-    for (size_t i = 0; i < skeleton.joints().size(); ++i) {
-        skeleton.joints()[i] = access->joints()[i];
-    }
-    return skeleton;
-}
-
-Model::AnimationClips Scene::load_clips(Mg::Identifier file)
-{
-    const Mg::ResourceAccessGuard access = resource_cache.access_resource<Mg::MeshResource>(file);
-    Model::AnimationClips result;
-    for (const auto& clip : access->animation_clips()) {
-        result.push_back(clip);
-    }
-    return result;
 }
 
 Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file)
@@ -454,25 +502,119 @@ Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::
     return m;
 }
 
-Model& Scene::load_model(Mg::Identifier mesh_file,
-                         Mg::span<const MaterialFileAssignment> material_files,
-                         Mg::span<const Mg::Identifier> options)
-{
-    const auto [it, inserted] = scene_models.insert({ mesh_file, Model{} });
-    Model& model = it->second;
-    model.mesh = load_mesh(mesh_file);
+Model::Model() = default;
+Model::~Model() = default;
 
+void Model::update()
+{
+    if (physics_body) {
+        transform = physics_body->get_transform();
+    }
+}
+
+Model Scene::load_model(Mg::Identifier mesh_file,
+                        Mg::span<const MaterialFileAssignment> material_files,
+                        Mg::span<const Mg::Identifier> options)
+{
+    Model model = {};
+    model.id = mesh_file;
+
+    const Mg::ResourceAccessGuard access =
+        resource_cache.access_resource<Mg::MeshResource>(mesh_file);
+
+    const Mg::Opt<Mg::gfx::MeshHandle> mesh_handle = mesh_pool.get(mesh_file);
+    if (mesh_handle.has_value()) {
+        model.mesh = mesh_handle.value();
+    }
+    else {
+        model.mesh = mesh_pool.create(*access);
+    }
+
+    model.centre = access->bounding_sphere().centre;
+
+    // Load skeleton, if any.
+    if (!access->joints().empty()) {
+        model.skeleton.emplace(mesh_file,
+                               access->skeleton_root_transform(),
+                               access->joints().size());
+
+        for (size_t i = 0; i < model.skeleton->joints().size(); ++i) {
+            model.skeleton->joints()[i] = access->joints()[i];
+        }
+    }
+
+    // Load animation clips, if any.
+    for (const auto& clip : access->animation_clips()) {
+        model.clips.push_back(clip);
+    }
+
+    // Assign materials to submeshes.
     for (auto&& [submesh_index, material_fname] : material_files) {
         model.material_assignments.push_back(
             { submesh_index, load_material(material_fname, options) });
     }
 
-    model.skeleton = load_skeleton(mesh_file);
     if (model.skeleton) {
         model.pose = model.skeleton->get_bind_pose();
     }
 
-    model.clips = load_clips(mesh_file);
+    return model;
+}
+
+Model& Scene::add_scene_model(Mg::Identifier mesh_file,
+                              Mg::span<const MaterialFileAssignment> material_files,
+                              Mg::span<const Mg::Identifier> options)
+{
+    const auto [it, inserted] =
+        scene_models.insert({ mesh_file, load_model(mesh_file, material_files, options) });
+    Model& model = it->second;
+
+    const Mg::ResourceAccessGuard access =
+        resource_cache.access_resource<Mg::MeshResource>(mesh_file);
+
+    Mg::physics::Shape* shape = physics_world->create_mesh_shape(access->data_view());
+    model.physics_body = physics_world->create_static_body(mesh_file, *shape, glm::mat4{ 1.0f });
+
+    return model;
+}
+
+Model& Scene::add_dynamic_model(Mg::Identifier mesh_file,
+                                Mg::span<const MaterialFileAssignment> material_files,
+                                Mg::span<const Mg::Identifier> options,
+                                glm::vec3 position,
+                                Mg::Rotation rotation,
+                                glm::vec3 scale,
+                                bool enable_physics)
+{
+    const auto [it, inserted] =
+        dynamic_models.insert({ mesh_file, load_model(mesh_file, material_files, options) });
+    Model& model = it->second;
+
+    if (enable_physics) {
+        const Mg::ResourceAccessGuard access =
+            resource_cache.access_resource<Mg::MeshResource>(mesh_file);
+
+        Mg::physics::DynamicBodyParameters body_params = {};
+        body_params.type = Mg::physics::DynamicBodyType::Dynamic;
+        body_params.mass = 250.0f;
+
+        Mg::physics::Shape* shape =
+            physics_world->create_convex_hull(access->vertices(), model.centre, scale);
+        model.physics_body =
+            physics_world->create_dynamic_body(mesh_file,
+                                               *shape,
+                                               body_params,
+                                               glm::translate(position) * rotation.to_matrix());
+
+        // Add visualisation translation relative to centre of mass.
+        // Note unusual order: for once we translate before the scale, since the translation is in
+        // model space, not world space.
+        model.vis_transform = glm::scale(scale) * glm::translate(-model.centre);
+    }
+    else {
+        model.transform = glm::translate(position) * rotation.to_matrix();
+        model.vis_transform = glm::scale(scale);
+    }
 
     return model;
 }
@@ -482,22 +624,19 @@ void Scene::make_input_map()
     using namespace Mg::input;
 
     const auto& kb = app.window().keyboard;
-    const auto& mouse = app.window().mouse;
 
     // clang-format off
     input_map.bind("forward",          kb.key(Keyboard::Key::W));
     input_map.bind("backward",         kb.key(Keyboard::Key::S));
     input_map.bind("left",             kb.key(Keyboard::Key::A));
     input_map.bind("right",            kb.key(Keyboard::Key::D));
-    input_map.bind("up",               kb.key(Keyboard::Key::Space));
-    input_map.bind("down",             kb.key(Keyboard::Key::LeftControl));
+    input_map.bind("jump",             kb.key(Keyboard::Key::Space));
+    input_map.bind("crouch",           kb.key(Keyboard::Key::LeftControl));
+    input_map.bind("lock_camera",      kb.key(Keyboard::Key::E));
     input_map.bind("fullscreen",       kb.key(Keyboard::Key::F4));
     input_map.bind("exit",             kb.key(Keyboard::Key::Esc));
     input_map.bind("toggle_debug_vis", kb.key(Keyboard::Key::F));
-    input_map.bind("toggle_glflush", mouse.button(Mouse::Button::right));
-
-    input_map.bind("look_x", mouse.axis(Mouse::Axis::delta_x));
-    input_map.bind("look_y", mouse.axis(Mouse::Axis::delta_y));
+    input_map.bind("reset",            kb.key(Keyboard::Key::R));
     // clang-format on
 }
 
@@ -619,7 +758,7 @@ void Scene::render_light_debug_geometry()
         params.colour = glm::vec4(normalize(light.colour), 0.05f);
         params.dimensions = glm::vec3(std::sqrt(light.range_sqr));
         params.wireframe = true;
-        debug_renderer.draw_ellipsoid(camera, params);
+        debug_renderer.draw_ellipsoid(camera.view_proj_matrix(), params);
     }
 }
 
@@ -629,8 +768,8 @@ void Scene::render_skeleton_debug_geometry()
 
     for (const auto& [model_id, model] : scene_models) {
         if (model.skeleton.has_value() && model.pose.has_value()) {
-            debug_renderer.draw_bones(camera,
-                                      model.transform.matrix(),
+            debug_renderer.draw_bones(camera.view_proj_matrix(),
+                                      model.transform,
                                       *model.skeleton,
                                       *model.pose);
         }
@@ -650,7 +789,7 @@ void Scene::load_models()
 
         std::array<Mg::Identifier, 1> scene_mat_options;
         scene_mat_options[0] = "PARALLAX";
-        load_model("meshes/misc/test_scene_2.mgm", scene_mats, scene_mat_options);
+        add_scene_model("meshes/misc/test_scene_2.mgm", scene_mats, scene_mat_options);
     }
 
     {
@@ -660,9 +799,29 @@ void Scene::load_models()
         std::array<Mg::Identifier, 1> fox_mat_options;
         fox_mat_options[0] = "RIM_LIGHT";
 
-        Model& fox_model = load_model("meshes/Fox.mgm", fox_mats, fox_mat_options);
-        fox_model.transform.position.x += 2.0f;
-        fox_model.transform.scale = glm::vec3(0.01f);
+        add_dynamic_model("meshes/Fox.mgm",
+                          fox_mats,
+                          fox_mat_options,
+                          { 2.0f, 0.0f, 0.0f },
+                          Mg::Rotation(),
+                          { 0.01f, 0.01f, 0.01f },
+                          false);
+    }
+
+    {
+        std::array<MaterialFileAssignment, 1> hest_mats;
+        hest_mats[0] = { 0, "actors/HestDraugr" };
+
+        std::array<Mg::Identifier, 1> hest_mat_options;
+        hest_mat_options[0] = "RIM_LIGHT";
+
+        add_dynamic_model("meshes/misc/hestdraugr.mgm",
+                          hest_mats,
+                          hest_mat_options,
+                          { -2.0f, 2.0f, 1.0f },
+                          Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
+                          { 1.0f, 1.0f, 1.0f },
+                          true);
     }
 }
 
