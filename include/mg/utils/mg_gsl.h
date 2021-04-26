@@ -15,6 +15,7 @@
 
 #include <cstddef>
 #include <type_traits>
+#include <utility>
 
 #ifndef MG_CHECK_SPAN_ACCESS
 /** Whether to do bounds check when accessing span elements. */
@@ -289,6 +290,46 @@ template<typename T> span<const std::byte> byte_representation(const T& obj) noe
 }
 
 //--------------------------------------------------------------------------------------------------
+// final_action and finally,
+//--------------------------------------------------------------------------------------------------
+
+/** final_action: RAII utility that runs the callable with which it was constructed at the end of
+ * the its scope.
+ */
+template<typename F> class final_action {
+public:
+    static_assert(!std::is_reference_v<F> && !std::is_const_v<F> && !std::is_volatile_v<F>);
+
+    [[nodiscard]] explicit final_action(F f) noexcept : m_action(std::move(f)) {}
+
+    [[nodiscard]] final_action(final_action&& other) noexcept
+        : m_action(std::move(other.m_action))
+        , m_should_invoke(std::exchange(other.m_should_invoke, false))
+    {}
+
+    final_action(const final_action&) = delete;
+
+    final_action& operator=(const final_action&) = delete;
+    final_action& operator=(final_action&&) = delete;
+
+    ~final_action() noexcept
+    {
+        if (m_should_invoke) {
+            m_action();
+        }
+    }
+
+private:
+    F m_action;
+    bool m_should_invoke = true;
+};
+
+/** Helper function to construct a final_action. */
+template<typename F, typename ActionT = final_action<std::remove_cv_t<std::remove_reference_t<F>>>>
+[[nodiscard]] ActionT finally(F&& f) noexcept
+{
+    return ActionT(std::forward<F>(f));
+}
 
 } // namespace Mg::gsl
 
@@ -300,6 +341,8 @@ using ::Mg::gsl::byte_representation;
 using ::Mg::gsl::narrow;
 using ::Mg::gsl::narrow_cast;
 using ::Mg::gsl::span;
+using ::Mg::gsl::final_action;
+using ::Mg::gsl::finally;
 } // namespace Mg
 
 #undef MG_SPAN_NOEXCEPT
