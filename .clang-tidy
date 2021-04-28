@@ -216,7 +216,7 @@ CheckOptions:
   - key:             cppcoreguidelines-special-member-functions.AllowMissingMoveFunctions
     value:           '0'
   - key:             cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor
-    value:           '0'
+    value:           '1'
   - key:             misc-definitions-in-headers.HeaderFileExtensions
     value:           ',h,hh,hpp,hxx'
   - key:             misc-definitions-in-headers.UseHeaderFileExtension
