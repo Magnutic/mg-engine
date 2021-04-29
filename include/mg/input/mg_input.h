@@ -36,7 +36,9 @@ public:
      */
     using Id = uint32_t;
 
-    InputSource(const IInputDevice& dev, InputSource::Id id) noexcept : m_device(&dev), m_id(id) {}
+    explicit InputSource(const IInputDevice& dev, InputSource::Id id) noexcept
+        : m_device(&dev), m_id(id)
+    {}
 
     std::string description() const;
     float state() const;

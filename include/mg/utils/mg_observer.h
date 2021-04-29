@@ -25,7 +25,7 @@ template<typename EventT> class Observer {
     friend class Subject<EventT>;
 
 public:
-    explicit Observer() {}
+    explicit Observer() = default;
 
     virtual ~Observer() { detach(); }
 

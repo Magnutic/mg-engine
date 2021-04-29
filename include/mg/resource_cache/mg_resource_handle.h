@@ -26,7 +26,7 @@ template<typename ResT> class ResourceHandle;
 class BaseResourceHandle {
 public:
     BaseResourceHandle() = default;
-    BaseResourceHandle(Identifier id, ResourceEntryBase& entry) noexcept
+    explicit BaseResourceHandle(Identifier id, ResourceEntryBase& entry) noexcept
         : m_id(id), m_p_entry(&entry)
     {}
 

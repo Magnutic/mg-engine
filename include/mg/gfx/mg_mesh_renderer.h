@@ -61,8 +61,8 @@ public:
      * (skinned) meshes.
      */
     void prepare_shader(const Material& material,
-                        const bool prepare_for_static_mesh,
-                        const bool prepare_for_animated_mesh);
+                        bool prepare_for_static_mesh,
+                        bool prepare_for_animated_mesh);
 
     /** Drop all shaders generated for this renderer. This means that each shader will be recompiled
      * from source on the next use. This is useful for hot-reloading of shader assets.

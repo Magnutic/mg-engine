@@ -115,7 +115,8 @@ public:
 private:
     friend class RenderCommandProducer;
 
-    SkinningMatrixPalette(const span<glm::mat4> skinning_matrices, const uint16_t start_index)
+    explicit SkinningMatrixPalette(const span<glm::mat4> skinning_matrices,
+                                   const uint16_t start_index)
         : m_skinning_matrices(skinning_matrices), m_start_index(start_index)
     {}
 

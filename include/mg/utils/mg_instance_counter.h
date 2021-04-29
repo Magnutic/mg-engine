@@ -66,7 +66,7 @@ public:
         ++detail::CounterValues<T>::s_counter_move;
     }
 
-    InstanceCounter(InstanceCounter&& rhs) noexcept
+    InstanceCounter(InstanceCounter&& rhs) noexcept // NOLINT(bugprone-exception-escape)
     {
         check_rhs("Move constructing", rhs);
 
@@ -106,7 +106,7 @@ public:
         return *this;
     }
 
-    InstanceCounter& operator=(InstanceCounter&& rhs) noexcept
+    InstanceCounter& operator=(InstanceCounter&& rhs) noexcept // NOLINT(bugprone-exception-escape)
     {
         check_rhs("Move assigning", rhs);
 

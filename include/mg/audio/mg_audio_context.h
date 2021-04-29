@@ -43,7 +43,7 @@ class AudioContext : PImplMixin<AudioContextData> {
     struct ConstructKey {};
 
 public:
-    AudioContext(ConstructKey);
+    explicit AudioContext(ConstructKey);
     ~AudioContext();
 
     MG_MAKE_NON_COPYABLE(AudioContext);

@@ -59,13 +59,13 @@ public:
 
     void draw_line(const ICamera& camera,
                    span<const glm::vec3> points,
-                   const glm::vec4 colour,
-                   const float width = 1.0f);
+                   const glm::vec4& colour,
+                   float width = 1.0f);
 
     void draw_line(const ICamera& camera,
-                   const glm::vec3 start,
-                   const glm::vec3 end,
-                   const glm::vec4 colour,
+                   const glm::vec3& start,
+                   const glm::vec3& end,
+                   const glm::vec4& colour,
                    const float width = 1.0f)
     {
         std::array<glm::vec3, 2> points = { start, end };
@@ -73,7 +73,7 @@ public:
     }
 
     void draw_bones(const ICamera& camera,
-                    const glm::mat4 M,
+                    const glm::mat4& M,
                     const Skeleton& skeleton,
                     const SkeletonPose& pose);
 };

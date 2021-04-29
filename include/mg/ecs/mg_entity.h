@@ -25,10 +25,8 @@
 #include <memory>
 #include <type_traits>
 
-namespace Mg {
-
 /** Entity-Component-System. */
-namespace ecs {
+namespace Mg::ecs {
 
 /** In the Entity-Component-System pattern, an Entity is a handle to a set of associated components.
  */
@@ -289,5 +287,4 @@ template<typename C> ComponentCollection<C>& EntityCollection::component_collect
     return static_cast<ComponentCollection<C>&>(collection);
 }
 
-} // namespace ecs
 } // namespace Mg

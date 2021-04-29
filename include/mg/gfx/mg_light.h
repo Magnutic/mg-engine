@@ -16,9 +16,9 @@
 namespace Mg::gfx {
 
 struct Light {
-    glm::vec4 vector;
-    glm::vec3 colour;
-    float range_sqr;
+    glm::vec4 vector = glm::vec4(0.0f);
+    glm::vec3 colour = glm::vec3(0.0f);
+    float range_sqr = 0.0f;
 };
 
 inline Light make_point_light(glm::vec3 position, glm::vec3 colour, float range)

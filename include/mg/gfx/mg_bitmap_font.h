@@ -62,7 +62,7 @@ public:
 private:
     friend class BitmapFont;
 
-    PreparedText(GpuData gpu_data, float width, float height, size_t num_glyphs)
+    explicit PreparedText(GpuData gpu_data, float width, float height, size_t num_glyphs)
         : m_gpu_data(std::move(gpu_data))
         , m_width(width)
         , m_height(height)

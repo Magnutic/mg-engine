@@ -23,8 +23,7 @@
 #define MG_DEFINE_COMPONENT(COMPONENT_TYPE_NAME) \
     struct COMPONENT_TYPE_NAME : ::Mg::ecs::BaseComponent<COMPONENT_TYPE_NAME>
 
-namespace Mg {
-namespace ecs {
+namespace Mg::ecs {
 
 /** Maximum number of component types that may be declared.
  * Larger value means larger internal storage per entity, so keep reasonably
@@ -108,5 +107,5 @@ public:
 private:
     Slot_map<C> m_data;
 };
-} // namespace ecs
+
 } // namespace Mg

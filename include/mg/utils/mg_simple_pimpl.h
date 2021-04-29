@@ -34,9 +34,11 @@ protected:
     PImplMixin(Args&&... args) : m_impl(std::make_unique<ImplT>(std::forward<Args>(args)...))
     {}
 
+    ~PImplMixin() = default;
+
     PImplMixin(const PImplMixin& rhs) : m_impl(std::make_unique<ImplT>(*rhs.m_impl)) {}
 
-    PImplMixin(PImplMixin&& rhs) = default;
+    PImplMixin(PImplMixin&& rhs) noexcept = default;
 
     PImplMixin& operator=(const PImplMixin& rhs)
     {

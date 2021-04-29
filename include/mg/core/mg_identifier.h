@@ -65,8 +65,8 @@ class Identifier {
 public:
     /** Construct an Identifier from a string literal. */
     template<unsigned int N>
-    MG_INLINE constexpr Identifier(const char (&str)[N])
-        : Identifier(str, hash_fnv1a({ str, N - 1 }))
+    MG_INLINE constexpr Identifier(const char (&str)[N]) // NOLINT(cppcoreguidelines-avoid-c-arrays)
+        : Identifier(&str[0], hash_fnv1a({ &str[0], N - 1 }))
     {}
 
     /** Constructs an Identifier from a dynamic string: this is slower as it requires run-time
@@ -77,9 +77,15 @@ public:
     /** Default constructor, empty string. */
     Identifier() : Identifier("") {}
 
-    Identifier(const Identifier& rhs) noexcept = default;
+    ~Identifier() = default;
 
-    Identifier& operator=(const Identifier& rhs) noexcept = default;
+    Identifier(const Identifier&) noexcept = default;
+
+    Identifier& operator=(const Identifier&) noexcept = default;
+
+    Identifier(Identifier&&) noexcept = default;
+
+    Identifier& operator=(Identifier&&) noexcept = default;
 
     /** Returns the calculated hash value. */
     constexpr uint32_t hash() const noexcept { return m_hash; }
@@ -120,8 +126,8 @@ private:
 
     void set_full_string(std::string_view str);
 
-    const char* m_str;
-    uint32_t m_hash;
+    const char* m_str{};
+    uint32_t m_hash{};
 };
 
 namespace literals {

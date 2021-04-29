@@ -106,8 +106,11 @@ public:
                                   int32_t mip_level = 0);
 
     // Private default constructor using pass-key idiom to allow usage via make_unique.
-    TextureRenderTarget(PrivateCtorKey);
-    ~TextureRenderTarget();
+    explicit TextureRenderTarget(PrivateCtorKey);
+    ~TextureRenderTarget() override;
+
+    MG_MAKE_NON_COPYABLE(TextureRenderTarget);
+    MG_MAKE_NON_MOVABLE(TextureRenderTarget);
 
     void bind() final;
 

@@ -12,51 +12,51 @@ namespace Mg {
 template<typename F> void for_each_child(const aiNode& node, F&& function)
 {
     for (uint32_t i = 0; i < node.mNumChildren; ++i) {
-        function(*node.mChildren[i]);
-    }
+        function(*node.mChildren[i]); // NOLINT
+    }                                 // NOLINT
 }
 
 template<typename F> void for_each_mesh(const aiScene& scene, const aiNode& node, F&& function)
 {
     for (uint32_t i = 0; i < node.mNumMeshes; ++i) {
-        const auto meshIndex = node.mMeshes[i];
+        const auto meshIndex = node.mMeshes[i]; // NOLINT
         assert(meshIndex < scene.mNumMeshes);
-        function(*scene.mMeshes[meshIndex]);
+        function(*scene.mMeshes[meshIndex]); // NOLINT
     }
 }
 
 template<typename F> void for_each_bone(const aiMesh& mesh, F&& function)
 {
     for (uint32_t i = 0; i < mesh.mNumBones; ++i) {
-        function(*mesh.mBones[i]);
+        function(*mesh.mBones[i]); // NOLINT
     }
 }
 
 template<typename F> void for_each_face(const aiMesh& mesh, F&& function)
 {
     for (uint32_t i = 0; i < mesh.mNumFaces; ++i) {
-        function(mesh.mFaces[i]);
+        function(mesh.mFaces[i]); // NOLINT
     }
 }
 
 template<typename F> void for_each_index(const aiFace& face, F&& function)
 {
     for (uint32_t i = 0; i < face.mNumIndices; ++i) {
-        function(face.mIndices[i]);
+        function(face.mIndices[i]); // NOLINT
     }
 }
 
 template<typename F> void for_each_animation(const aiScene& scene, F&& function)
 {
     for (uint32_t i = 0; i < scene.mNumAnimations; ++i) {
-        function(*scene.mAnimations[i]);
+        function(*scene.mAnimations[i]); // NOLINT
     }
 }
 
 template<typename F> void for_each_channel(const aiAnimation& animation, F&& function)
 {
     for (uint32_t i = 0; i < animation.mNumChannels; ++i) {
-        function(*animation.mChannels[i]);
+        function(*animation.mChannels[i]); // NOLINT
     }
 }
 
@@ -64,7 +64,7 @@ template<typename F, typename KeyT>
 void for_each_key(const uint32_t num_keys, const KeyT* key_array, F&& function)
 {
     for (uint32_t i = 0; i < num_keys; ++i) {
-        function(key_array[i]);
+        function(key_array[i]); // NOLINT
     }
 }
 

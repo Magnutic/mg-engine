@@ -72,9 +72,10 @@ struct BillboardRendererData;
 class BillboardRenderer : PImplMixin<BillboardRendererData> {
 public:
     BillboardRenderer();
+    ~BillboardRenderer();
+
     MG_MAKE_NON_COPYABLE(BillboardRenderer);
     MG_MAKE_NON_MOVABLE(BillboardRenderer);
-    ~BillboardRenderer();
 
     void
     render(const ICamera& camera, const BillboardRenderList& render_list, const Material& material);

@@ -37,10 +37,10 @@ class ResourceCache;
  */
 class ResourceEntryBase {
 public:
-    ResourceEntryBase(Identifier resource_id,
-                      IFileLoader& loader,
-                      std::time_t time_stamp,
-                      ResourceCache& owning_cache) noexcept
+    explicit ResourceEntryBase(Identifier resource_id,
+                               IFileLoader& loader,
+                               std::time_t time_stamp,
+                               ResourceCache& owning_cache) noexcept
         : m_p_loader(&loader)
         , m_p_owning_cache(&owning_cache)
         , m_resource_id(resource_id)

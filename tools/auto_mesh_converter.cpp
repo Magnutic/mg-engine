@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
     std::vector<std::string_view> args;
     args.reserve(size_t(argc));
     for (int i = 0; i < argc - 1; ++i) {
-        args.emplace_back(argv[argc - i - 1]);
+        args.emplace_back(argv[argc - i - 1]); // NOLINT
     }
 
     Mg::AutoConverterSettings settings = {};
@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
             settings.repeat_forever = true;
         }
         else if (arg == "--debug-logging") {
-            settings.repeat_forever = true;
+            settings.debug_logging = true;
         }
         else if (arg == "--file") {
             if (args.empty()) {

@@ -95,7 +95,8 @@ public:
 
     struct MipLevelData {
         span<const std::byte> data;
-        DimT width, height;
+        DimT width = 0;
+        DimT height = 0;
     };
 
     using BaseResource::BaseResource;

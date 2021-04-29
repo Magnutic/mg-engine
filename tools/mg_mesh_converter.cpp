@@ -26,6 +26,10 @@
 #include <sstream>
 #include <type_traits>
 
+// Note: there are a lot of 'NOLINT' in this file, to suppress warnings about using pointer
+// arithmetic. It is very difficult to use AssImp without pointer arithmetic, so I chose to suppress
+// those warnings.
+
 // TODO: There is still something wrong about transformations for skinned models, I know it.
 // With input GLTF files that are supposed to all face +Z, I get some facing -Y and some facing +X.
 // I would expect them to face +Y, so I must be missing some transform I am supposed to apply.
@@ -65,7 +69,7 @@ inline mat4 convert_matrix(const aiMatrix4x4& aiMat)
     mat4 result;
     for (uint32_t i = 0; i < 4; ++i) {
         for (uint32_t u = 0; u < 4; ++u) {
-            result[narrow_cast<int>(i)][narrow_cast<int>(u)] = aiMat[u][i];
+            result[narrow_cast<int>(i)][narrow_cast<int>(u)] = aiMat[u][i]; // NOLINT
         }
     }
     return to_mg_space * result * from_mg_space;
@@ -86,21 +90,21 @@ inline quat convert_quaternion(const aiQuaternion& quaternion)
 
 template<typename... Ts> void notify(const Ts&... what)
 {
-    (std::cout << ... << what);
+    (std::cout << ... << what); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
     std::cout << '\n';
 }
 
 template<typename... Ts> void warn(const Ts&... what)
 {
     std::cerr << "Warning: ";
-    (std::cerr << ... << what);
+    (std::cerr << ... << what); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
     std::cerr << '\n';
 }
 
 template<typename... Ts> void error(const Ts&... what)
 {
     std::cerr << "Error: ";
-    (std::cerr << ... << what);
+    (std::cerr << ... << what); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
     std::cerr << '\n';
 }
 
@@ -360,7 +364,7 @@ public:
 
     struct Clip {
         StringRange name;
-        double duration_seconds;
+        double duration_seconds{};
 
         // The channels are indexed by JointId.
         std::vector<PositionChannel> position_channels;
@@ -573,14 +577,15 @@ void MeshData::visit(const aiMesh& mesh)
 
         for_each_bone(mesh, [&](const aiBone& bone) {
             for (uint32_t wi = 0; wi < bone.mNumWeights; ++wi) {
-                const uint32_t vertex_index = vertices_begin + bone.mWeights[wi].mVertexId;
+                const uint32_t vertex_index = vertices_begin +
+                                              bone.mWeights[wi].mVertexId; // NOLINT
                 if (vertex_index >= m_vertices.size()) {
                     log_error("Joint weight vertex id out of range in joint: ",
                               to_string(bone.mName));
                     continue;
                 }
 
-                const float weight = bone.mWeights[wi].mWeight;
+                const float weight = bone.mWeights[wi].mWeight; // NOLINT
                 Influences& influences = m_influences[vertex_index];
 
                 if (std::optional<size_t> index = get_influence_index_to_use(influences, weight);
@@ -609,7 +614,8 @@ void MeshData::visit(const aiMesh& mesh)
 
     Submesh& submesh = m_submeshes.emplace_back();
     submesh.name = m_string_data->store(mesh.mName);
-    submesh.material = m_string_data->store(m_scene->mMaterials[mesh.mMaterialIndex]->GetName());
+    submesh.material =
+        m_string_data->store(m_scene->mMaterials[mesh.mMaterialIndex]->GetName()); // NOLINT
     submesh.begin = uint16_t(submesh_begin);
     submesh.num_indices = uint32_t(3 * mesh.mNumFaces);
 }
@@ -618,19 +624,19 @@ void MeshData::visit(const aiMesh& mesh)
 void MeshData::add_vertex(const aiMesh& mesh, const uint32_t index)
 {
     Vertex& vertex = m_vertices.emplace_back();
-    vertex.position = convert_vector(mesh.mVertices[index]);
+    vertex.position = convert_vector(mesh.mVertices[index]); // NOLINT
 
     if (mesh.HasTextureCoords(0)) {
-        vertex.tex_coord.x = mesh.mTextureCoords[0][index].x;
-        vertex.tex_coord.y = 1.0f - mesh.mTextureCoords[0][index].y;
+        vertex.tex_coord.x = mesh.mTextureCoords[0][index].x;        // NOLINT
+        vertex.tex_coord.y = 1.0f - mesh.mTextureCoords[0][index].y; // NOLINT
     }
 
     if (mesh.HasNormals()) {
-        vertex.normal = convert_vector(mesh.mNormals[index]);
+        vertex.normal = convert_vector(mesh.mNormals[index]); // NOLINT
 
         if (mesh.HasTangentsAndBitangents()) {
-            vertex.tangent = convert_vector(mesh.mTangents[index]);
-            vertex.bitangent = -convert_vector(mesh.mBitangents[index]); // Note: inverted.
+            vertex.tangent = convert_vector(mesh.mTangents[index]);      // NOLINT
+            vertex.bitangent = -convert_vector(mesh.mBitangents[index]); // Note: inverted. //NOLINT
         }
     }
 }

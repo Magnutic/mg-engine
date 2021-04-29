@@ -399,7 +399,7 @@ void DebugRenderer::draw_ellipsoid(const ICamera& camera, EllipsoidDrawParams pa
 
 void DebugRenderer::draw_line(const ICamera& camera,
                               span<const vec3> points,
-                              const vec4 colour,
+                              const vec4& colour,
                               const float width)
 {
     const auto indices = generate_line_vertex_indices(points.size());
@@ -408,7 +408,7 @@ void DebugRenderer::draw_line(const ICamera& camera,
 }
 
 void DebugRenderer::draw_bones(const ICamera& camera,
-                               const mat4 M,
+                               const mat4& M,
                                const Skeleton& skeleton,
                                const SkeletonPose& pose)
 {
@@ -440,9 +440,9 @@ void DebugRenderer::draw_bones(const ICamera& camera,
             draw_line(camera, centre, axis_point, axis, 2.0f);
         };
 
-        draw_axis({1.0f, 0.0f, 0.0f, 1.0f});
-        draw_axis({0.0f, 1.0f, 0.0f, 1.0f});
-        draw_axis({0.0f, 0.0f, 1.0f, 1.0f});
+        draw_axis({ 1.0f, 0.0f, 0.0f, 1.0f });
+        draw_axis({ 0.0f, 1.0f, 0.0f, 1.0f });
+        draw_axis({ 0.0f, 0.0f, 1.0f, 1.0f });
     };
 
     auto draw_bones_impl = [&](const vec4& parent_position,

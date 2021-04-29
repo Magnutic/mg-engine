@@ -31,9 +31,12 @@ public:
         double numeric = 0.0;
     };
 
-    ConfigVariable(std::string_view key, double value) : ConfigVariable(key) { set(value); }
+    explicit ConfigVariable(std::string_view key, double value) : ConfigVariable(key)
+    {
+        set(value);
+    }
 
-    ConfigVariable(std::string_view key, std::string_view value) : ConfigVariable(key)
+    explicit ConfigVariable(std::string_view key, std::string_view value) : ConfigVariable(key)
     {
         set(value);
     }
@@ -65,7 +68,7 @@ class Config {
 public:
     Config() = default;
 
-    Config(std::string_view filepath) { read_from_file(filepath); }
+    explicit Config(std::string_view filepath) { read_from_file(filepath); }
 
     ~Config() = default;
 

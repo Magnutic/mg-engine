@@ -326,6 +326,8 @@ void MeshPoolImpl::_make_mesh_at(MeshInternal& mesh, Identifier name, const Make
 
     // For meshes with skeletal animation, we must also upload the joint influences for each vertex.
     if (has_skeletal_animation_data) {
+        MG_ASSERT(params.influences_buffer != nullptr);
+
         mesh.influences_buffer = params.influences_buffer;
         ++mesh.influences_buffer->num_users;
 

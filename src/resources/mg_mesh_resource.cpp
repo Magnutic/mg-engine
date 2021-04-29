@@ -239,7 +239,7 @@ LoadResult load_version_2(ResourceLoadingInput& input, [[maybe_unused]] std::str
         const MeshResourceData::AnimationClip& clip_record = clip_records[i];
         AnimationClip& clip = result.data->animation_clips[i];
         clip.name = Identifier::from_runtime_string(get_string(clip_record.name));
-        clip.duration_seconds = clip_record.duration;
+        clip.duration_seconds = narrow<float>(clip_record.duration);
 
         auto channel_records = read_range<MeshResourceData::AnimationChannel>(bytestream,
                                                                               clip_record.channels);

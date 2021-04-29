@@ -250,7 +250,7 @@ void animate_joint(const Mesh::AnimationChannel& animation_channel,
         joint_pose_out.rotation = Rotation();
     }
 
-    if (false && !animation_channel.scale_keys.empty()) {
+    if (!animation_channel.scale_keys.empty()) {
         const auto [key_a, key_b] = get_keys(animation_channel.scale_keys);
         joint_pose_out.scale =
             glm::mix(key_a.value, key_b.value, interpolation_factor(key_a, key_b));

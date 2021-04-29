@@ -25,7 +25,7 @@ namespace Mg::gfx {
 
 class DepthRange {
 public:
-    DepthRange(float near, float far) noexcept : m_near(near), m_far(far)
+    explicit DepthRange(float near, float far) noexcept : m_near(near), m_far(far)
     {
         MG_ASSERT(near > 0.0f && near < far);
     }
@@ -62,9 +62,9 @@ public:
     /** Construct a camera.
      * @param fov Field Of View angle, in degrees.
      * @param z_range Depth clipping range. */
-    Camera(Angle fov = 75_degrees,
-           float aspect_ratio = 4.0f / 3.0f,
-           DepthRange z_range = { 0.1f, 2000.0f }) noexcept
+    explicit Camera(Angle fov = 75_degrees,
+                    float aspect_ratio = 4.0f / 3.0f,
+                    DepthRange z_range = DepthRange{ 0.1f, 2000.0f }) noexcept
         : field_of_view(fov), m_depth_range{ z_range }
     {
         set_aspect_ratio(aspect_ratio);
@@ -139,7 +139,7 @@ public:
 
     glm::mat4 view_proj_matrix() const noexcept override { return proj_matrix(); }
 
-    DepthRange depth_range() const noexcept override { return { min.z, max.z }; }
+    DepthRange depth_range() const noexcept override { return DepthRange{ min.z, max.z }; }
 
     float aspect_ratio() const noexcept override { return (max.x - min.x) / (max.y - min.y); }
 

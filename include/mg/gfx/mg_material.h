@@ -22,6 +22,7 @@
 
 #include <glm/fwd.hpp>
 
+#include <array>
 #include <bitset>
 #include <cstdint>
 #include <string>
@@ -117,7 +118,7 @@ public:
 
 private:
     struct ParamsBuffer {
-        uint8_t buffer[defs::k_material_parameters_buffer_size];
+        std::array<uint8_t, defs::k_material_parameters_buffer_size> buffer;
 
         const uint8_t* data() const noexcept { return &buffer[0]; }
         size_t size() const noexcept { return defs::k_material_parameters_buffer_size; }

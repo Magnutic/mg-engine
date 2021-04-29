@@ -54,7 +54,7 @@ public:
     TextureHandle handle() const noexcept { return m_handle; }
 
 private:
-    Texture2D(TextureHandle&& handle) noexcept : m_handle(std::move(handle)) {}
+    explicit Texture2D(TextureHandle&& handle) noexcept : m_handle(std::move(handle)) {}
 
     void unload() noexcept;
 

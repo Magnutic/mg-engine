@@ -15,7 +15,7 @@ namespace Mg::gfx::detail {
 
 class GfxDebugGroupGuard {
 public:
-    GfxDebugGroupGuard(const char* message);
+    explicit GfxDebugGroupGuard(const char* message);
     ~GfxDebugGroupGuard();
 
     MG_MAKE_NON_MOVABLE(GfxDebugGroupGuard);

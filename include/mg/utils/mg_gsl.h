@@ -78,7 +78,8 @@ template<typename To, typename From> constexpr To narrow(From value)
 
 // gsl::at(): Bounds checking subscript
 
-template<typename T, size_t N> auto& at(T (&array)[N], size_t index)
+template<typename T, size_t N>
+auto& at(T (&array)[N], size_t index) // NOLINT(cppcoreguidelines-avoid-c-arrays)
 {
     MG_ASSERT(index < N);
     return array[index];
@@ -149,7 +150,7 @@ public:
 
     template<typename U>
     constexpr span(U* p, size_type len) MG_SPAN_NOEXCEPT
-        : span((len > 0) ? p : nullptr, (len > 0) ? p + len : nullptr)
+        : span((len > 0) ? p : nullptr, (len > 0) ? p + len : nullptr) // NOLINT
     {
         MG_ASSERT(p || len == 0);
     }
@@ -164,7 +165,8 @@ public:
     {}
 
     template<typename U, size_t N>
-    constexpr span(U (&array)[N]) MG_SPAN_NOEXCEPT : span(&array[0], &array[0] + N)
+    constexpr span(U (&array)[N]) MG_SPAN_NOEXCEPT // NOLINT(cppcoreguidelines-avoid-c-arrays)
+        : span(&array[0], &array[0] + N)
     {}
 
     template<typename U> constexpr span& operator=(const span<U>& rhs) noexcept
@@ -262,7 +264,7 @@ static_assert(std::is_trivially_copyable_v<span<int>>);
 #if MG_HAVE_CLASS_TEMPLATE_DEDUCTION
 template<typename U          > span(U*, U*)     -> span<U>;
 template<typename U          > span(U*, size_t) -> span<U>;
-template<typename U, size_t N> span(U (&)[N])   -> span<U>;
+template<typename U, size_t N> span(U (&)[N])   -> span<U>; // NOLINT(cppcoreguidelines-avoid-c-arrays)
 
 // Deduce to the pointee type of the result of calling data() on a variable of the container type.
 template<typename ContainerT> // requires ContiguousContainer<ContainerT>
@@ -338,11 +340,11 @@ namespace Mg {
 using ::Mg::gsl::as_bytes;
 using ::Mg::gsl::at;
 using ::Mg::gsl::byte_representation;
+using ::Mg::gsl::final_action;
+using ::Mg::gsl::finally;
 using ::Mg::gsl::narrow;
 using ::Mg::gsl::narrow_cast;
 using ::Mg::gsl::span;
-using ::Mg::gsl::final_action;
-using ::Mg::gsl::finally;
 } // namespace Mg
 
 #undef MG_SPAN_NOEXCEPT

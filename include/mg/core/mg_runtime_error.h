@@ -10,13 +10,12 @@
 
 #pragma once
 
-#include <exception>
-
 namespace Mg {
 
-class RuntimeError : public std::exception {
+class RuntimeError {
 public:
-    const char* what() const noexcept override { return m_message; }
+    virtual ~RuntimeError() = default;
+    virtual const char* what() const noexcept { return m_message; }
 
 private:
     const char* m_message = "An unexpected error occurred; see log for details.";

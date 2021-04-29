@@ -35,7 +35,7 @@ class MeshResource final : public BaseResource {
 public:
     struct Data;
 
-    MeshResource(Identifier id);
+    explicit MeshResource(Identifier id);
     ~MeshResource() override;
 
     MG_MAKE_DEFAULT_MOVABLE(MeshResource);

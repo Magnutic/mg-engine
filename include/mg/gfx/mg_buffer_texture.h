@@ -30,9 +30,9 @@ public:
         BitDepth bit_depth;
     };
 
-    BufferTexture(Type type, size_t buffer_size);
+    explicit BufferTexture(Type type, size_t buffer_size);
 
-    BufferTexture(Type type, span<const std::byte> data) : BufferTexture(type, data.size())
+    explicit BufferTexture(Type type, span<const std::byte> data) : BufferTexture(type, data.size())
     {
         set_data(data);
     }

@@ -24,10 +24,10 @@ public:
     static PointNormalPlane from_point_and_normal(glm::vec3 point, glm::vec3 normal)
     {
         normal = glm::normalize(normal);
-        return { normal.x,
-                 normal.y,
-                 normal.z,
-                 -normal.x * point.x - normal.y * point.y - normal.z * point.z };
+        return PointNormalPlane{ normal.x,
+                                 normal.y,
+                                 normal.z,
+                                 -normal.x * point.x - normal.y * point.y - normal.z * point.z };
     }
 
     // Add more constructors as needed.
@@ -36,7 +36,8 @@ public:
 private:
     PointNormalPlane() = default;
 
-    PointNormalPlane(float a_, float b_, float c_, float d_) noexcept : a(a_), b(b_), c(c_), d(d_)
+    explicit PointNormalPlane(float a_, float b_, float c_, float d_) noexcept
+        : a(a_), b(b_), c(c_), d(d_)
     {}
 
     /** Signed shortest distance (i.e. negative if on the side of the plane facing away from the

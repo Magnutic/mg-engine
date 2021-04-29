@@ -40,8 +40,9 @@ struct BlendMode {
 inline bool operator==(BlendMode l, BlendMode r)
 {
     return l.colour_blend_op == r.colour_blend_op && l.alpha_blend_op == r.alpha_blend_op &&
-           l.src_alpha_factor == r.src_alpha_factor && l.dst_colour_factor == r.dst_colour_factor &&
-           l.src_alpha_factor == r.src_alpha_factor && l.dst_alpha_factor == r.dst_alpha_factor;
+           l.src_colour_factor == r.src_colour_factor &&
+           l.dst_colour_factor == r.dst_colour_factor && l.src_alpha_factor == r.src_alpha_factor &&
+           l.dst_alpha_factor == r.dst_alpha_factor;
 }
 
 inline bool operator!=(BlendMode l, BlendMode r)
