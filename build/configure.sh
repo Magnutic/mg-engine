@@ -10,7 +10,8 @@ echo "---- $SCRIPT_NAME ----"
 if [[ $# -eq 0 ]]; then
     echo "Usage: $0 configuration-name c-compiler cxx-compiler [args]"
     echo "Arguments:"
-    echo "    --debug Debug build (default is release)"
+    echo "    --debug Debug build (default is release with debug info)"
+    echo "    --release Release build without debug info (default is release with debug info)"
     echo "    --use-sanitisers Enable runtime debug sanitisers"
     echo "    --use-gfx-debug-groups Enable debug groups (for use with e.g. apitrace)"
     echo "    --clang-tidy-command <command> Run clang-tidy when building using the given command."
@@ -25,7 +26,7 @@ C_COMPILER=$2
 CXX_COMPILER=$3
 shift 3
 
-BUILD_TYPE=Release
+BUILD_TYPE=RelWithDebInfo
 USE_SANITISERS=0
 USE_GFX_DEBUG_GROUPS=0
 CLANG_TIDY_COMMAND=""
@@ -38,6 +39,10 @@ do
     case $key in
         --debug)
         BUILD_TYPE=Debug
+        shift
+        ;;
+        --release)
+        BUILD_TYPE=Release
         shift
         ;;
         --use-sanitisers|--use-sanitizers)
