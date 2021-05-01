@@ -41,6 +41,13 @@ public:
     InputSource button(Button button) const;
     InputSource axis(Axis axis) const;
 
+    struct CursorPosition {
+        float x = 0.0f;
+        float y = 0.0f;
+    };
+
+    CursorPosition get_cursor_position() const;
+
     void refresh();
 
 protected:

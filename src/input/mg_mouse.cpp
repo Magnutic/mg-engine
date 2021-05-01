@@ -133,6 +133,19 @@ float Mouse::state(InputSource::Id id) const
     }
 }
 
+Mouse::CursorPosition Mouse::get_cursor_position() const
+{
+    GLFWwindow* window_handle = m_window.glfw_window();
+    double x{};
+    double y{};
+    glfwGetCursorPos(window_handle, &x, &y);
+
+    CursorPosition result;
+    result.x = narrow_cast<float>(x);
+    result.y = narrow_cast<float>(y);
+    return result;
+}
+
 void Mouse::refresh()
 {
     GLFWwindow* window_handle = m_window.glfw_window();
