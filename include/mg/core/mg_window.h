@@ -82,7 +82,7 @@ public:
     /** Set callback function to invoke when window focus is gained or lost.
      * @see Mg::Window::FocusCallbackT
      */
-    void set_focus_callback(FocusCallbackT func) noexcept { m_focus_callback = func; }
+    void set_focus_callback(FocusCallbackT func) noexcept { m_focus_callback = std::move(func); }
 
     /** Get the callback function which is invoked when window focus is gained or lost.
      * @see Mg::Window::FocusCallbackT
