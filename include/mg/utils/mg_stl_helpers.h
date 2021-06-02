@@ -13,6 +13,7 @@
 #pragma once
 
 #include <algorithm>
+#include <type_traits>
 
 namespace Mg {
 
@@ -173,8 +174,16 @@ bool find_and_erase_if(ContT&& container, F&& predicate)
     return false;
 }
 
-/** Find and erase elements matching predicate in container by iterating over elements. */
-template<typename ContT, typename F, typename = typename std::decay_t<ContT>::mapped_type>
+/** Find and erase elements matching predicate in container by iterating over elements.
+ * Implementation for std::map-like types.
+ */
+template<typename ContT,
+         typename F,
+         typename ElemT = typename std::decay_t<ContT>::value_type,
+         // Requires value_type not move-assignable
+         typename std::enable_if_t<!std::is_move_assignable_v<ElemT>, int> = 1,
+         // Requires has typedef mapped_type
+         typename = typename std::decay_t<ContT>::mapped_type>
 bool find_and_erase_if(ContT&& container, F&& predicate)
 {
     int num_removed = 0;
