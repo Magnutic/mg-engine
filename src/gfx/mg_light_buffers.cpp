@@ -70,14 +70,18 @@ static_assert(std::is_trivially_copyable_v<ClusterArray>);
 static_assert(std::is_trivially_copyable_v<LightIndexArray>);
 static_assert(std::is_trivially_copyable_v<LightGridData>);
 
-void add_light_to_cluster(size_t light_index, glm::uvec3 cluster, ClusterArray& clusters) noexcept
+void add_light_to_cluster(size_t light_index,
+                          glm::uvec3 cluster,
+                          ClusterArray& clusters,
+                          bool& has_warned) noexcept
 {
     auto cluster_index =
         defs::light_grid_width * (defs::light_grid_height * cluster.z + cluster.y) + cluster.x;
     const auto light_offset = clusters[cluster_index].num_lights;
 
-    if (light_offset >= defs::max_lights_per_cluster) {
+    if (light_offset >= defs::max_lights_per_cluster && !has_warned) {
         log.warning("Too many light sources in cluster.");
+        has_warned = true;
         return;
     }
 
@@ -139,10 +143,11 @@ void update_light_data(LightBuffers& light_data_out,
         const auto [min_z, max_z] = LightGrid::depth_extents(-light_pos_view.z,
                                                              glm::fastSqrt(l.range_sqr));
 
+        bool has_warned = false;
         for (auto z = min_z; z < max_z; ++z) {
             for (auto y = min_y; y < max_y; ++y) {
                 for (auto x = min_x; x < max_x; ++x) {
-                    add_light_to_cluster(light_index, glm::uvec3(x, y, z), *clusters);
+                    add_light_to_cluster(light_index, glm::uvec3(x, y, z), *clusters, has_warned);
                 }
             }
         }
