@@ -472,7 +472,10 @@ PreparedText BitmapFont::prepare_text(std::string_view text_utf8,
             // Get index of packedchar corresponding to codepoint, or that of '?' if not present.
             const auto packedchar_index = get_packedchar_index(impl(), codepoint)
                                               .value_or(get_packedchar_index(impl(), '?').value());
-            constexpr int align_to_integer = 1;
+
+            // TODO: had to disable due to interfering with my line breaking logic (caused tremors 
+            // in next line's text). Fix instead, somehow.
+            constexpr int align_to_integer = 0;
             stbtt_GetPackedQuad(impl().packed_chars.data(),
                                 impl().texture_width,
                                 impl().texture_height,
