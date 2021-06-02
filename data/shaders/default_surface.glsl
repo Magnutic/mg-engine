@@ -10,7 +10,7 @@ void final_colour(const SurfaceInput s_in, const SurfaceParams s, inout vec4 col
     const float fog_density = 0.025;
     float depth = distance(WORLD_POSITION, CAMERA_POSITION);
     float fog_factor = 1.0 - exp2(-fog_density * depth);
-    colour = mix(colour, vec4(2.7, 2.4, 5.5, 1.0), fog_factor);
+    colour = mix(colour, vec4(0.5, 0.4, 1.0, 1.0), fog_factor);
 }
 
 const float parallax_range = 15.0;
