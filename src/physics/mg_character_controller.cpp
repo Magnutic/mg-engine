@@ -1,18 +1,48 @@
+//**************************************************************************************************
+// This file is part of Mg Engine. Copyright (c) 2021, Magnus Bergsten.
+// Mg Engine is made available under the terms of the 3-Clause BSD License.
+// See LICENSE.txt in the project's root directory.
+//**************************************************************************************************
+
+// This character controller was initially based on the character controller code bundled with the
+// Bullet physics library. It has since been heavily modified.
+//
+// Original license:
+//
+//    Bullet Continuous Collision Detection and Physics Library Copyright (c) 2003-2008 Erwin
+//    Coumans http://bulletphysics.com
+//
+//    This software is provided 'as-is', without any express or implied warranty.  In no event will
+//    the authors be held liable for any damages arising from the use of this software.  Permission
+//    is granted to anyone to use this software for any purpose, including commercial applications,
+//    and to alter it and redistribute it freely, subject to the following restrictions:
+//
+//    1. The origin of this software must not be misrepresented; you must not claim that you wrote
+//    the original software. If you use this software in a product, an acknowledgment in the product
+//    documentation would be appreciated but is not required.
+//    2. Altered source versions must be plainly marked as such, and must not be misrepresented as
+//    being the original software.
+//    3. This notice may not be removed or altered from any source distribution.
+
 #include "mg/physics/mg_character_controller.h"
 
-#include "mg/gfx/mg_debug_renderer.h" // TODO temp?
 #include "mg/utils/mg_math_utils.h"
 #include "mg/utils/mg_stl_helpers.h"
 
-#include "mg/core/mg_log.h" // TODO temp
+// Uncomment to enable debug visualisation.
+//#define MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION 1
+
+#if MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION
+#    include "mg/gfx/mg_debug_renderer.h"
+#endif
+
+#include <string>
 
 using glm::mat3;
 using glm::mat4;
 using glm::vec3;
 using glm::vec4;
 using namespace std::literals;
-
-//#define MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION 1
 
 namespace Mg::physics {
 
