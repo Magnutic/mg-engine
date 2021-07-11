@@ -124,15 +124,18 @@ public:
     {
         character_controller =
             physics_world.create_character_controller("Actor", radius, height, step_height);
-        character_controller->position({ 0.0f, 0.0f, height * 0.5f });
+        character_controller->position(position);
     }
 
     void update(glm::vec3 acceleration, float jump_impulse);
 
     glm::vec3 position(const float interpolate = 1.0f) const
     {
-        return character_controller->position(interpolate) - glm::vec3(0.0f, 0.0f, height * 0.5f);
+        return character_controller->position(interpolate) -
+               glm::vec3(0.0f, 0.0f, character_controller->current_height() * 0.5f);
     }
+
+    float current_height() const { return character_controller->current_height(); }
 
     Mg::physics::CharacterController* character_controller = nullptr;
     float max_horizontal_speed = 10.0f;

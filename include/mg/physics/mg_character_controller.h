@@ -66,6 +66,12 @@ public:
      */
     void jump(float velocity);
 
+    void is_standing(bool v);
+    bool is_standing() const;
+
+    /** Current height, taking into account whether the character is standing or crouching. */
+    float current_height() const;
+
     glm::vec3 velocity(float time_step) const;
 
     void linear_damping(float d);

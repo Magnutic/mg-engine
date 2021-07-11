@@ -89,7 +89,7 @@ vec3 new_position_based_on_collision(const vec3& current_position,
 
 class CharacterControllerData {
 public:
-    void init_body(float radius, float height);
+    void init_body(float radius, float height, float crouch_height_factor);
 
     Opt<RayHit> character_sweep_test(const vec3& start,
                                      const vec3& end,
@@ -104,14 +104,44 @@ public:
 
     World* world = nullptr;
 
-    GhostObjectHandle ghost_object;
-    Shape* shape;
+    GhostObjectHandle standing_ghost;
+    GhostObjectHandle crouching_ghost;
+    Shape* standing_shape;
+    Shape* crouching_shape;
+
+    void set_is_standing(bool v)
+    {
+        const bool value_changed = std::exchange(is_standing, v) != v;
+        if (value_changed) {
+            ghost_object().set_position(current_position);
+        }
+    }
+
+    bool is_standing = true;
+
+    Shape* shape() const { return is_standing ? standing_shape : crouching_shape; }
+
+    GhostObjectHandle& ghost_object() { return is_standing ? standing_ghost : crouching_ghost; }
+    const GhostObjectHandle& ghost_object() const
+    {
+        return is_standing ? standing_ghost : crouching_ghost;
+    }
 
     float vertical_velocity;
     float vertical_step;
 
     float gravity;
-    float step_height;
+
+    float standing_height;
+    float crouching_height;
+    float height() const { return is_standing ? standing_height : crouching_height; }
+
+    float standing_step_height;
+    float step_height() const
+    {
+        return is_standing ? standing_step_height : 0.5f * standing_step_height;
+    }
+
     float max_fall_speed;
     float max_slope_radians; // Slope angle that is set (used for returning the exact value)
     float max_slope_cosine;  // Cosine equivalent of max_slope_radians (calculated once when set)
@@ -127,7 +157,7 @@ public:
 
     // Array of collisions. Used in recover_from_penetration but declared here to allow the
     // heap buffer to be re-used between invocations.
-    mutable std::vector<Collision> collisions;
+    std::vector<Collision> collisions;
 
     // Declared here to re-use heap buffer.
     mutable std::vector<RayHit> ray_hits;
@@ -154,12 +184,37 @@ static void debug_vis_ray_hit(const RayHit& ray_hit, vec4 colour)
 }
 #endif
 
-void CharacterControllerData::init_body(const float radius, const float height)
+void CharacterControllerData::init_body(const float radius,
+                                        const float height,
+                                        const float crouch_height_factor = 0.5f)
 {
-    const float capsule_height = height - 2.0f * radius - step_height;
-    const auto ghost_id = Identifier::from_runtime_string(std::string(id.str_view()) + "_ghost"s);
-    shape = world->create_capsule_shape(radius, capsule_height);
-    ghost_object = world->create_ghost_object(ghost_id, *shape, glm::mat4(1.0f));
+    // Standing body
+    {
+        standing_height = height;
+        const float capsule_height = standing_height - 2.0f * radius - standing_step_height;
+        standing_shape = world->create_capsule_shape(radius, capsule_height);
+        standing_ghost = world->create_ghost_object(id, *standing_shape, glm::mat4(1.0f));
+
+        // TODO formalise filter groups
+        standing_ghost.set_filter_group(1);
+        standing_ghost.set_filter_mask(~1);
+    }
+
+    // Crouching body
+    {
+        crouching_height = height * crouch_height_factor;
+        const float capsule_height =
+            max(0.0f,
+                crouching_height - 2.0f * radius - (standing_step_height * crouch_height_factor));
+        const auto ghost_id =
+            Identifier::from_runtime_string(std::string(id.str_view()) + "_crouching"s);
+        crouching_shape = world->create_capsule_shape(radius, capsule_height);
+        crouching_ghost = world->create_ghost_object(ghost_id, *crouching_shape, glm::mat4(1.0f));
+
+        // TODO formalise filter groups
+        crouching_ghost.set_filter_group(1);
+        crouching_ghost.set_filter_mask(~1);
+    }
 }
 
 Opt<RayHit>
@@ -169,10 +224,10 @@ CharacterControllerData::character_sweep_test(const vec3& start,
                                               const float max_surface_angle_cosine) const
 {
     ray_hits.clear();
-    world->convex_sweep(*shape, start, end, ray_hits);
+    world->convex_sweep(*shape(), start, end, ray_hits);
 
     auto reject_condition = [&](const RayHit& hit) {
-        return hit.body == ghost_object ||
+        return hit.body == ghost_object() ||
                dot(up, hit.hit_normal_worldspace) < max_surface_angle_cosine;
     };
 
@@ -182,7 +237,7 @@ CharacterControllerData::character_sweep_test(const vec3& start,
         const vec4 approve_colour = { 0.0f, 1.0f, 0.0f, 0.5f };
         const vec4 colour = reject_condition(hit) ? reject_colour : approve_colour;
 
-        if (hit.body != ghost_object) {
+        if (hit.body != ghost_object()) {
             debug_vis_ray_hit(hit, colour);
         }
     }
@@ -216,7 +271,7 @@ CharacterController::CharacterController(Identifier id,
     m.vertical_step = 0.0f;
     m.gravity = 9.8f;
     m.max_fall_speed = 55.0f; // Terminal velocity of a sky diver in m/s.
-    m.step_height = step_height;
+    m.standing_step_height = step_height;
     m.was_on_ground = false;
     m.was_jumping = false;
     m.current_step_offset = 0.0f;
@@ -224,7 +279,7 @@ CharacterController::CharacterController(Identifier id,
 
     m.init_body(radius, height);
 
-    m.current_position = m.ghost_object.get_position();
+    m.current_position = m.ghost_object().get_position();
     m.last_position = m.current_position;
 
     this->max_slope(65_degrees);
@@ -235,15 +290,15 @@ CharacterController::~CharacterController() = default;
 bool CharacterControllerData::recover_from_penetration()
 {
     bool penetration = false;
-    current_position = ghost_object.get_position();
+    current_position = ghost_object().get_position();
 
     // Here, we must refresh the set of collisions as the penetrating movement itself or previous
     // iterations of this recovery may have moved the character.
     collisions.clear();
-    world->calculate_collisions_for(ghost_object, collisions);
+    world->calculate_collisions_for(ghost_object(), collisions);
 
     for (const Collision& collision : collisions) {
-        const float direction_sign = (collision.object_a == ghost_object) ? -1.0f : 1.0f;
+        const float direction_sign = (collision.object_a == ghost_object()) ? -1.0f : 1.0f;
 
         if (collision.distance < 0.0f) {
             const vec3 offset = collision.normal_on_b * direction_sign * collision.distance *
@@ -253,7 +308,7 @@ bool CharacterControllerData::recover_from_penetration()
         }
     }
 
-    ghost_object.set_position(current_position);
+    ghost_object().set_position(current_position);
     return penetration;
 }
 
@@ -271,7 +326,7 @@ void CharacterControllerData::step_up()
             current_step_offset = 0.0f;
             current_position = target_position;
 
-            ghost_object.set_position(current_position);
+            ghost_object().set_position(current_position);
 
             // Fix penetration if we hit a ceiling, for example.
             {
@@ -286,7 +341,7 @@ void CharacterControllerData::step_up()
                 current_step_offset = 0.0f;
             }
 
-            target_position = ghost_object.get_position();
+            target_position = ghost_object().get_position();
             current_position = target_position;
             return;
         }
@@ -354,7 +409,7 @@ void CharacterControllerData::step_down(float time_step)
 
     const vec3 original_position = target_position;
 
-    float drop_height = -min(0.0f, vertical_velocity) * time_step + step_height;
+    float drop_height = -min(0.0f, vertical_velocity) * time_step + step_height();
     vec3 step_drop = -world_up * drop_height;
     target_position += step_drop;
 
@@ -389,7 +444,7 @@ void CharacterControllerData::step_down(float time_step)
 
         // Double step_height to compensate for the character controller floating step_height in the
         // air.
-        const float step_down_height = (vertical_velocity < 0.0f) ? 2.0f * step_height : 0.0f;
+        const float step_down_height = (vertical_velocity < 0.0f) ? 2.0f * step_height() : 0.0f;
 
         // Redo the velocity calculation when falling a small amount, for fast stairs motion.
         // For larger falls, use the smoother/slower interpolated movement by not touching the
@@ -412,17 +467,17 @@ void CharacterControllerData::step_down(float time_step)
     if (drop_sweep_result || has_clamped_to_floor) {
         const float mix_factor = drop_sweep_result ? drop_sweep_result->hit_fraction : 0.0f;
         current_position = mix(current_position, target_position, mix_factor) +
-                           vec3(0.0f, 0.0f, step_height);
+                           vec3(0.0f, 0.0f, step_height());
         vertical_velocity = 0.0f;
         vertical_step = 0.0f;
         was_jumping = false;
     }
     else {
         // we dropped the full height
-        current_position = target_position + vec3(0.0f, 0.0f, step_height);
+        current_position = target_position + vec3(0.0f, 0.0f, step_height());
     }
 
-    ghost_object.set_position(current_position);
+    ghost_object().set_position(current_position);
 }
 
 Identifier CharacterController::id() const
@@ -467,6 +522,21 @@ void CharacterController::jump(const float velocity)
     }
 }
 
+void CharacterController::is_standing(const bool v)
+{
+    impl().set_is_standing(v);
+}
+
+bool CharacterController::is_standing() const
+{
+    return impl().is_standing;
+}
+
+float CharacterController::current_height() const
+{
+    return impl().height();
+}
+
 void CharacterController::gravity(const float gravity)
 {
     impl().gravity = gravity;
@@ -498,12 +568,12 @@ bool CharacterController::is_on_ground() const
 vec3 CharacterController::position(const float interpolate) const
 {
     return mix(impl().last_position, impl().current_position, interpolate) +
-           vec3(0.0f, 0.0f, -0.5f * impl().step_height);
+           vec3(0.0f, 0.0f, -0.5f * impl().step_height());
 }
 
 void CharacterController::position(const vec3& position)
 {
-    impl().ghost_object.set_position(position);
+    impl().ghost_object().set_position(position);
 
     // Prevent interpolation between last position and this one.
     impl().current_position = position;
@@ -535,7 +605,7 @@ void CharacterController::pre_step()
 {
     auto& m = impl();
     m.last_position = m.current_position;
-    m.current_position = m.ghost_object.get_position();
+    m.current_position = m.ghost_object().get_position();
     m.target_position = m.current_position;
 }
 

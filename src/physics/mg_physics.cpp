@@ -336,6 +336,14 @@ public:
         ++shape->ref_count;
     }
 
+    virtual ~PhysicsBody() = default;
+
+    MG_MAKE_NON_COPYABLE(PhysicsBody);
+    MG_MAKE_NON_MOVABLE(PhysicsBody);
+
+    virtual btCollisionObject& get_bt_body() = 0;
+    virtual const btCollisionObject& get_bt_body() const = 0;
+
     PhysicsBodyType type;
     Identifier id;
     mat4 transform;
@@ -391,6 +399,26 @@ PhysicsBodyType PhysicsBodyHandle::type() const
 mat4 PhysicsBodyHandle::get_transform() const
 {
     return m_data->transform;
+}
+
+void PhysicsBodyHandle::set_filter_group(const int group)
+{
+    m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterGroup = group;
+}
+
+int PhysicsBodyHandle::get_filter_group() const
+{
+    return m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterGroup;
+}
+
+void PhysicsBodyHandle::set_filter_mask(const int mask)
+{
+    m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterMask = mask;
+}
+
+int PhysicsBodyHandle::get_filter_mask() const
+{
+    return m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterMask;
 }
 
 Shape& PhysicsBodyHandle::shape()
@@ -471,6 +499,9 @@ public:
 
         body.setAngularFactor(convert_vector(parameters.angular_factor));
     }
+
+    btCollisionObject& get_bt_body() override { return body; }
+    const btCollisionObject& get_bt_body() const override { return body; }
 
     // The bullet rigid body object.
     btRigidBody body;
@@ -615,6 +646,9 @@ public:
         body.setCollisionFlags(body.getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
     }
 
+    btCollisionObject& get_bt_body() override { return body; }
+    const btCollisionObject& get_bt_body() const override { return body; }
+
     // The bullet collision object.
     btCollisionObject body;
 };
@@ -645,6 +679,9 @@ public:
         object.setCollisionShape(&(shape_base_cast(shape_).bullet_shape()));
         object.setActivationState(DISABLE_DEACTIVATION);
     }
+
+    btCollisionObject& get_bt_body() override { return object; }
+    const btCollisionObject& get_bt_body() const override { return object; }
 
     btPairCachingGhostObject object;
 

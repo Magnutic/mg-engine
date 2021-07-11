@@ -256,6 +256,12 @@ void Scene::time_step()
         actor->character_controller->position({ 0.0f, 0.0f, 2.0f });
         actor->character_controller->reset();
     }
+    if (input_map.is_held("crouch")) {
+        actor->character_controller->is_standing(false);
+    }
+    else {
+        actor->character_controller->is_standing(true);
+    }
 
     physics_world->update(static_cast<float>(k_time_step));
 }
@@ -293,7 +299,8 @@ void Scene::render_scene(const double lerp_factor)
     }
 
     if (!camera_locked) {
-        camera.position = actor->position(float(lerp_factor)) + glm::vec3(0.0f, 0.0f, 1.7f);
+        camera.position = actor->position(float(lerp_factor)) +
+                          glm::vec3(0.0f, 0.0f, actor->current_height() - 0.1f);
     }
 
     for (auto& [id, model] : dynamic_models) {
@@ -820,7 +827,7 @@ void Scene::load_models()
                           hest_mat_options,
                           { -2.0f, 2.0f, 1.0f },
                           Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
-                          { 1.0f, 1.0f, 1.0f },
+                          { 3.0f, 3.0f, 3.0f },
                           true);
     }
 }
