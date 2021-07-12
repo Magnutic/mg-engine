@@ -128,11 +128,11 @@ public:
 
     glm::vec3 get_position() const { return get_transform() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f); }
 
-    void set_filter_group(const int group);
-    int get_filter_group() const;
+    void set_filter_group(const uint32_t group);
+    uint32_t get_filter_group() const;
 
-    void set_filter_mask(const int mask);
-    int get_filter_mask() const;
+    void set_filter_mask(const uint32_t mask);
+    uint32_t get_filter_mask() const;
 
     Shape& shape();
     const Shape& shape() const;

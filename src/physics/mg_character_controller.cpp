@@ -113,7 +113,9 @@ public:
     {
         const bool value_changed = std::exchange(is_standing, v) != v;
         if (value_changed) {
-            ghost_object().set_position(current_position);
+            const float vertical_offset = (standing_height - crouching_height) / 2.0f;
+            const vec3 direction = vec3(0.0f, 0.0f, v ? 1.0f : -1.0f);
+            ghost_object().set_position(current_position + direction * vertical_offset);
         }
     }
 
@@ -196,8 +198,8 @@ void CharacterControllerData::init_body(const float radius,
         standing_ghost = world->create_ghost_object(id, *standing_shape, glm::mat4(1.0f));
 
         // TODO formalise filter groups
-        standing_ghost.set_filter_group(1);
-        standing_ghost.set_filter_mask(~1);
+        standing_ghost.set_filter_group(1u);
+        standing_ghost.set_filter_mask(~1u);
     }
 
     // Crouching body
@@ -212,8 +214,8 @@ void CharacterControllerData::init_body(const float radius,
         crouching_ghost = world->create_ghost_object(ghost_id, *crouching_shape, glm::mat4(1.0f));
 
         // TODO formalise filter groups
-        crouching_ghost.set_filter_group(1);
-        crouching_ghost.set_filter_mask(~1);
+        crouching_ghost.set_filter_group(1u);
+        crouching_ghost.set_filter_mask(~1u);
     }
 }
 
@@ -506,6 +508,7 @@ void CharacterController::reset()
     m.was_on_ground = false;
     m.was_jumping = false;
     m.desired_velocity = vec3(0.0f, 0.0f, 0.0f);
+    m.set_is_standing(true);
 }
 
 void CharacterController::max_fall_speed(float speed)
@@ -567,17 +570,21 @@ bool CharacterController::is_on_ground() const
 
 vec3 CharacterController::position(const float interpolate) const
 {
-    return mix(impl().last_position, impl().current_position, interpolate) +
-           vec3(0.0f, 0.0f, -0.5f * impl().step_height());
+    const vec3 body_centre = mix(impl().last_position, impl().current_position, interpolate);
+    const float feet_offset = (impl().step_height() + current_height()) * 0.5f;
+    return body_centre + vec3(0.0f, 0.0f, -1.0f) * feet_offset;
 }
 
 void CharacterController::position(const vec3& position)
 {
-    impl().ghost_object().set_position(position);
+    const float feet_offset = (impl().step_height() + current_height()) * 0.5f;
+    const vec3 body_centre = position + vec3(0.0f, 0.0f, 1.0f) * feet_offset;
+
+    impl().ghost_object().set_position(body_centre);
 
     // Prevent interpolation between last position and this one.
-    impl().current_position = position;
-    impl().last_position = position;
+    impl().current_position = body_centre;
+    impl().last_position = body_centre;
 }
 
 void CharacterController::linear_damping(float d)

@@ -43,7 +43,7 @@ public:
 
     Identifier id() const;
 
-    /** Get the current position of the character controller's centre of mass.
+    /** Get the current position of the character controller's "feet".
      * @param interpolate Factor for interpolating between last update's position and the most
      * recent position. When using a fixed update time step but variable framerate, this can be used
      * to prevent choppy motion. The default value of 1.0f will always return the most recent

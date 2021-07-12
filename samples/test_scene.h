@@ -131,8 +131,7 @@ public:
 
     glm::vec3 position(const float interpolate = 1.0f) const
     {
-        return character_controller->position(interpolate) -
-               glm::vec3(0.0f, 0.0f, character_controller->current_height() * 0.5f);
+        return character_controller->position(interpolate);
     }
 
     float current_height() const { return character_controller->current_height(); }

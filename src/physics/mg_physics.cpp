@@ -401,24 +401,36 @@ mat4 PhysicsBodyHandle::get_transform() const
     return m_data->transform;
 }
 
-void PhysicsBodyHandle::set_filter_group(const int group)
+void PhysicsBodyHandle::set_filter_group(const uint32_t group)
 {
-    m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterGroup = group;
+    std::memcpy(&m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterGroup,
+                &group,
+                sizeof(group));
 }
 
-int PhysicsBodyHandle::get_filter_group() const
+uint32_t PhysicsBodyHandle::get_filter_group() const
 {
-    return m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterGroup;
+    uint32_t result = 0;
+    std::memcpy(&result,
+                &m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterGroup,
+                sizeof(result));
+    return result;
 }
 
-void PhysicsBodyHandle::set_filter_mask(const int mask)
+void PhysicsBodyHandle::set_filter_mask(const uint32_t mask)
 {
-    m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterMask = mask;
+    std::memcpy(&m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterMask,
+                &mask,
+                sizeof(mask));
 }
 
-int PhysicsBodyHandle::get_filter_mask() const
+uint32_t PhysicsBodyHandle::get_filter_mask() const
 {
-    return m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterMask;
+    uint32_t result = 0;
+    std::memcpy(&result,
+                &m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterMask,
+                sizeof(result));
+    return result;
 }
 
 Shape& PhysicsBodyHandle::shape()
