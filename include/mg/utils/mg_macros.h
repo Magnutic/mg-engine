@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 /** 'Force' (more like strongly suggest) compiler to inline function.
  * Useful in some relatively obscure cases (particularly compile time string hashing, see
  * mg_identifier.h).
@@ -52,8 +54,8 @@
     class_name& operator=(const class_name&) = delete;
 
 /** Generate default move constructors and move assignment operators. */
-#define MG_MAKE_DEFAULT_MOVABLE(class_name) \
-    class_name(class_name&&) noexcept = default;     \
+#define MG_MAKE_DEFAULT_MOVABLE(class_name)      \
+    class_name(class_name&&) noexcept = default; \
     class_name& operator=(class_name&&) noexcept = default;
 
 /** Generate default copy constructors and copy assignment operators. */
@@ -69,3 +71,41 @@
     class_name(class_name&&) = delete;                 \
     class_name& operator=(class_name&&) = delete;      \
     virtual ~class_name() {}
+
+/** Generate the operators needed to use a scoped enum as a set of bit flags. */
+#define MG_DEFINE_BITMASK_OPERATORS(x)       \
+    inline x operator&(x l, x r)             \
+    {                                        \
+        using T = std::underlying_type_t<x>; \
+        return static_cast<x>(T(l) & T(r));  \
+    }                                        \
+    inline x operator|(x l, x r)             \
+    {                                        \
+        using T = std::underlying_type_t<x>; \
+        return static_cast<x>(T(l) | T(r));  \
+    }                                        \
+    inline x operator^(x l, x r)             \
+    {                                        \
+        using T = std::underlying_type_t<x>; \
+        return static_cast<x>(T(l) ^ T(r));  \
+    }                                        \
+    inline x operator~(x v)                  \
+    {                                        \
+        using T = std::underlying_type_t<x>; \
+        return static_cast<x>(~T(v));        \
+    }                                        \
+    inline x& operator&=(x& l, x r)          \
+    {                                        \
+        l = l & r;                           \
+        return l;                            \
+    }                                        \
+    inline x& operator|=(x& l, x r)          \
+    {                                        \
+        l = l | r;                           \
+        return l;                            \
+    }                                        \
+    inline x& operator^=(x& l, x r)          \
+    {                                        \
+        l = l ^ r;                           \
+        return l;                            \
+    }
