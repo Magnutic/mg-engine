@@ -66,7 +66,12 @@ public:
      */
     void jump(float velocity);
 
-    void is_standing(bool v);
+    /** Set whether the character is standing or crouching. Returns whether the state changed.
+     * Reasons why it might not change: 1. It was already in the requested state. 2. The character
+     * could not stand because something blocked above.
+     */
+    bool set_is_standing(bool v);
+
     bool is_standing() const;
 
     /** Current height, taking into account whether the character is standing or crouching. */

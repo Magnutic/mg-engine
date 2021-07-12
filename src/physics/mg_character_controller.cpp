@@ -109,14 +109,46 @@ public:
     Shape* standing_shape;
     Shape* crouching_shape;
 
-    void set_is_standing(bool v)
+    bool set_is_standing(bool v)
     {
+        const float vertical_offset = standing_height - crouching_height;
+        const bool is_rising = v && !is_standing;
+
+        // If rising, check if there is a ceiling blocking the character from standing.
+        if (is_rising) {
+            const bool is_blocked =
+                character_sweep_test(current_position,
+                                     current_position + world_up * vertical_offset,
+                                     -world_up,
+                                     0.0f)
+                    .has_value();
+
+            if (is_blocked) {
+                return false;
+            }
+        }
+
+        GhostObjectHandle& old_ghost_object = ghost_object();
+
+        // If we are changing standing state, adjust the controller state and position accordingly.
         const bool value_changed = std::exchange(is_standing, v) != v;
         if (value_changed) {
-            const float vertical_offset = (standing_height - crouching_height) / 2.0f;
-            const vec3 direction = vec3(0.0f, 0.0f, v ? 1.0f : -1.0f);
-            ghost_object().set_position(current_position + direction * vertical_offset);
+            const vec3 direction = world_up * (v ? 1.0f : -1.0f);
+
+            // Disable collisions for old object.
+            old_ghost_object.set_filter_group(CollisionGroup::None);
+            old_ghost_object.set_filter_mask(CollisionGroup::None);
+
+            // And enable for new one.
+            ghost_object().set_filter_group(CollisionGroup::Character);
+            ghost_object().set_filter_mask(~CollisionGroup::Character);
+
+            ghost_object().set_position(current_position + direction * vertical_offset * 0.5f);
+            return true;
         }
+
+        // No change in standing state.
+        return false;
     }
 
     bool is_standing = true;
@@ -197,9 +229,8 @@ void CharacterControllerData::init_body(const float radius,
         standing_shape = world->create_capsule_shape(radius, capsule_height);
         standing_ghost = world->create_ghost_object(id, *standing_shape, glm::mat4(1.0f));
 
-        // TODO formalise filter groups
-        standing_ghost.set_filter_group(1u);
-        standing_ghost.set_filter_mask(~1u);
+        standing_ghost.set_filter_group(CollisionGroup::Character);
+        standing_ghost.set_filter_mask(~CollisionGroup::Character);
     }
 
     // Crouching body
@@ -213,9 +244,9 @@ void CharacterControllerData::init_body(const float radius,
         crouching_shape = world->create_capsule_shape(radius, capsule_height);
         crouching_ghost = world->create_ghost_object(ghost_id, *crouching_shape, glm::mat4(1.0f));
 
-        // TODO formalise filter groups
-        crouching_ghost.set_filter_group(1u);
-        crouching_ghost.set_filter_mask(~1u);
+        // Disable collision for crouching body by default.
+        crouching_ghost.set_filter_group(CollisionGroup::None);
+        crouching_ghost.set_filter_mask(CollisionGroup::None);
     }
 }
 
@@ -226,7 +257,7 @@ CharacterControllerData::character_sweep_test(const vec3& start,
                                               const float max_surface_angle_cosine) const
 {
     ray_hits.clear();
-    world->convex_sweep(*shape(), start, end, ray_hits);
+    world->convex_sweep(*shape(), start, end, CollisionGroup::All, ray_hits);
 
     auto reject_condition = [&](const RayHit& hit) {
         return hit.body == ghost_object() ||
@@ -525,9 +556,9 @@ void CharacterController::jump(const float velocity)
     }
 }
 
-void CharacterController::is_standing(const bool v)
+bool CharacterController::set_is_standing(const bool v)
 {
-    impl().set_is_standing(v);
+    return impl().set_is_standing(v);
 }
 
 bool CharacterController::is_standing() const

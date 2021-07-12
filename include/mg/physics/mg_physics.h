@@ -35,6 +35,21 @@ struct Vertex;
 /** Collision detection and rigid-body physics. */
 namespace Mg::physics {
 
+/** Pre-defined set of collision filter groups. Note: these correspond to the Bullet library's
+ * pre-defined filter groups. Using the same ones in this API reduces risk of collisions.
+ */
+enum CollisionGroup : uint32_t {
+    None = 0u,
+    Default = 1u,
+    Static = 2u,
+    Kinematic = 4u,
+    Debris = 8u,
+    Sensor = 16u,
+    Character = 32u,
+    All = ~0u
+};
+MG_DEFINE_BITMASK_OPERATORS(CollisionGroup);
+
 /** Interface for all collision shapes. Collision shapes are used to give a PhysicsBody objects a
  * shape. A Shape can be used in multiple PhysicsBody objects, and it is recommended to re-use Shape
  * objects whenever possible.
@@ -128,11 +143,11 @@ public:
 
     glm::vec3 get_position() const { return get_transform() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f); }
 
-    void set_filter_group(const uint32_t group);
-    uint32_t get_filter_group() const;
+    void set_filter_group(const CollisionGroup group);
+    CollisionGroup get_filter_group() const;
 
-    void set_filter_mask(const uint32_t mask);
-    uint32_t get_filter_mask() const;
+    void set_filter_mask(const CollisionGroup mask);
+    CollisionGroup get_filter_mask() const;
 
     Shape& shape();
     const Shape& shape() const;
@@ -486,12 +501,14 @@ public:
 
     size_t raycast(const glm::vec3& start,
                    const glm::vec3& end,
-                   std::vector<RayHit>& out); // TODO add filters
+                   CollisionGroup filter_mask,
+                   std::vector<RayHit>& out);
 
     size_t convex_sweep(Shape& shape,
                         const glm::vec3& start,
                         const glm::vec3& end,
-                        std::vector<RayHit>& out); // TODO add filters
+                        CollisionGroup filter_mask,
+                        std::vector<RayHit>& out);
 
     //----------------------------------------------------------------------------------------------
     // Miscellaneous

@@ -44,7 +44,7 @@ constexpr double k_time_step = 1.0 / 60.0;
 constexpr double k_accumulator_max_steps = 10;
 constexpr size_t k_num_lights = 128;
 constexpr float k_light_radius = 3.0f;
-constexpr float actor_acceleration = 1.2f;
+constexpr float actor_acceleration = 0.6f;
 
 std::array<float, 3> get_actor_acceleration(Mg::input::InputMap& input_map)
 {
@@ -80,18 +80,31 @@ void add_to_render_list(const Model& model, Mg::gfx::RenderCommandProducer& rend
 
 void Actor::update(glm::vec3 acceleration, float jump_impulse)
 {
+    // Walk slower when crouching.
+    acceleration *= character_controller->is_standing() ? 1.0f : 0.5f;
+
+    const auto max_speed = max_horizontal_speed * (character_controller->is_standing() ||
+                                                           !character_controller->is_on_ground()
+                                                       ? 1.0f
+                                                       : 0.5f);
+
+    const float current_friction = character_controller->is_on_ground() ? friction : 0.0f;
+
     auto horizontal_velocity = character_controller->velocity(float(k_time_step));
     horizontal_velocity.x += acceleration.x;
     horizontal_velocity.y += acceleration.y;
     horizontal_velocity.z = 0.0f;
 
-    const float horizontal_speed = glm::length(horizontal_velocity);
-    if (horizontal_speed > max_horizontal_speed) {
-        horizontal_velocity.x *= max_horizontal_speed / horizontal_speed;
-        horizontal_velocity.y *= max_horizontal_speed / horizontal_speed;
+    // Compensate for friction.
+    if (glm::length2(acceleration) > 0.0f) {
+        horizontal_velocity += glm::normalize(acceleration) * current_friction;
     }
 
-    const float current_friction = character_controller->is_on_ground() ? friction : 0.0f;
+    const float horizontal_speed = glm::length(horizontal_velocity);
+    if (horizontal_speed > max_speed) {
+        horizontal_velocity.x *= max_speed / horizontal_speed;
+        horizontal_velocity.y *= max_speed / horizontal_speed;
+    }
 
     if (glm::length2(horizontal_velocity) >= 0.0f) {
         if (glm::length2(horizontal_velocity) <= current_friction * current_friction) {
@@ -257,10 +270,10 @@ void Scene::time_step()
         actor->character_controller->reset();
     }
     if (input_map.is_held("crouch")) {
-        actor->character_controller->is_standing(false);
+        actor->character_controller->set_is_standing(false);
     }
     else {
-        actor->character_controller->is_standing(true);
+        actor->character_controller->set_is_standing(true);
     }
 
     physics_world->update(static_cast<float>(k_time_step));
@@ -415,23 +428,23 @@ void Scene::render_scene(const double lerp_factor)
         Mg::gfx::get_debug_render_queue().dispatch(debug_renderer, camera.view_proj_matrix());
     }
 
-#if 0 // Raycast from camera test.
-        std::vector<Mg::physics::RayHit> results;
-        physics_world->raycast(camera.position,
-                               camera.position + camera.rotation.forward() * 1000.0f,
-                               results);
-        for (auto& rayhit : results) {
-            Mg::gfx::DebugRenderer::EllipsoidDrawParams params;
-            params.dimensions = glm::vec3(0.05f);
-            params.centre = glm::vec3(rayhit.hit_point_worldspace);
-            params.colour = glm::vec4(1.0f, 0.0f, 1.0f, 0.5f);
-            debug_renderer.draw_ellipsoid(camera.view_proj_matrix(), params);
-            debug_renderer.draw_line(camera.view_proj_matrix(),
-                                     rayhit.hit_point_worldspace,
-                                     rayhit.hit_point_worldspace +
-                                         rayhit.hit_normal_worldspace * 0.2f,
-                                     { 0.0f, 0.0f, 1.0f, 1.0f });
-        }
+#if 1 // Raycast from camera test.
+    std::vector<Mg::physics::RayHit> results;
+    physics_world->raycast(camera.position,
+                           camera.position + camera.rotation.forward() * 1000.0f,
+                           Mg::physics::CollisionGroup::All,
+                           results);
+    for (auto& rayhit : results) {
+        Mg::gfx::DebugRenderer::EllipsoidDrawParams params;
+        params.dimensions = glm::vec3(0.05f);
+        params.centre = glm::vec3(rayhit.hit_point_worldspace);
+        params.colour = glm::vec4(1.0f, 0.0f, 1.0f, 0.5f);
+        debug_renderer.draw_ellipsoid(camera.view_proj_matrix(), params);
+        debug_renderer.draw_line(camera.view_proj_matrix(),
+                                 rayhit.hit_point_worldspace,
+                                 rayhit.hit_point_worldspace + rayhit.hit_normal_worldspace * 0.2f,
+                                 { 0.0f, 0.0f, 1.0f, 1.0f });
+    }
 #endif
 
     app.window().refresh();

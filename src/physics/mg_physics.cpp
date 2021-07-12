@@ -90,6 +90,22 @@ vec3 convert_vector(const btVector3& vector)
     return vec3(vector.x(), vector.y(), vector.z());
 }
 
+int convert_collision_group(const CollisionGroup group)
+{
+    int result{};
+    static_assert(sizeof(result) == sizeof(group));
+    std::memcpy(&result, &group, sizeof(group));
+    return result;
+}
+
+CollisionGroup convert_collision_group(const int group)
+{
+    CollisionGroup result{};
+    static_assert(sizeof(result) == sizeof(group));
+    std::memcpy(&result, &group, sizeof(group));
+    return result;
+}
+
 //--------------------------------------------------------------------------------------------------
 // Decompose matrices, for interpolation
 
@@ -401,36 +417,28 @@ mat4 PhysicsBodyHandle::get_transform() const
     return m_data->transform;
 }
 
-void PhysicsBodyHandle::set_filter_group(const uint32_t group)
+void PhysicsBodyHandle::set_filter_group(const CollisionGroup group)
 {
-    std::memcpy(&m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterGroup,
-                &group,
-                sizeof(group));
+    m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterGroup =
+        convert_collision_group(group);
 }
 
-uint32_t PhysicsBodyHandle::get_filter_group() const
+CollisionGroup PhysicsBodyHandle::get_filter_group() const
 {
-    uint32_t result = 0;
-    std::memcpy(&result,
-                &m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterGroup,
-                sizeof(result));
-    return result;
+    return convert_collision_group(
+        m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterGroup);
 }
 
-void PhysicsBodyHandle::set_filter_mask(const uint32_t mask)
+void PhysicsBodyHandle::set_filter_mask(const CollisionGroup mask)
 {
-    std::memcpy(&m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterMask,
-                &mask,
-                sizeof(mask));
+    m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterMask =
+        convert_collision_group(mask);
 }
 
-uint32_t PhysicsBodyHandle::get_filter_mask() const
+CollisionGroup PhysicsBodyHandle::get_filter_mask() const
 {
-    uint32_t result = 0;
-    std::memcpy(&result,
-                &m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterMask,
-                sizeof(result));
-    return result;
+    return convert_collision_group(
+        m_data->get_bt_body().getBroadphaseHandle()->m_collisionFilterMask);
 }
 
 Shape& PhysicsBodyHandle::shape()
@@ -1177,9 +1185,15 @@ namespace {
 
 class RayCallback : public btCollisionWorld::RayResultCallback {
 public:
-    explicit RayCallback(const vec3& start, const vec3& end, std::vector<RayHit>& out)
+    explicit RayCallback(const vec3& start,
+                         const vec3& end,
+                         const CollisionGroup filter_mask,
+                         std::vector<RayHit>& out)
         : m_start(start), m_end(end), m_out(out)
-    {}
+    {
+        m_collisionFilterGroup = convert_collision_group(CollisionGroup::All);
+        m_collisionFilterMask = convert_collision_group(filter_mask);
+    }
 
     float addSingleResult(btCollisionWorld::LocalRayResult& result,
                           bool normal_is_in_worldspace) override
@@ -1211,7 +1225,12 @@ private:
 
 class ConvexSweepCallback : public btCollisionWorld::ConvexResultCallback {
 public:
-    explicit ConvexSweepCallback(std::vector<RayHit>& out) : m_out(out) {}
+    explicit ConvexSweepCallback(const CollisionGroup filter_mask, std::vector<RayHit>& out)
+        : m_out(out)
+    {
+        m_collisionFilterGroup = convert_collision_group(CollisionGroup::All);
+        m_collisionFilterMask = convert_collision_group(filter_mask);
+    }
 
     float addSingleResult(btCollisionWorld::LocalConvexResult& result,
                           bool normal_is_in_worldspace) override
@@ -1241,22 +1260,28 @@ private:
 
 } // namespace
 
-size_t World::raycast(const vec3& start, const vec3& end, std::vector<RayHit>& out)
+size_t World::raycast(const vec3& start,
+                      const vec3& end,
+                      CollisionGroup filter_mask,
+                      std::vector<RayHit>& out)
 {
-    RayCallback callback(start, end, out);
+    RayCallback callback(start, end, filter_mask, out);
     impl().dynamics_world->rayTest(convert_vector(start), convert_vector(end), callback);
     return callback.num_hits();
 }
 
-size_t
-World::convex_sweep(Shape& shape, const vec3& start, const vec3& end, std::vector<RayHit>& out)
+size_t World::convex_sweep(Shape& shape,
+                           const vec3& start,
+                           const vec3& end,
+                           CollisionGroup filter_mask,
+                           std::vector<RayHit>& out)
 {
     MG_ASSERT(shape.is_convex());
 
     auto* bt_convex_shape =
         static_cast<const btConvexShape*>(&shape_base_cast(shape).bullet_shape()); // NOLINT
 
-    ConvexSweepCallback callback(out);
+    ConvexSweepCallback callback(filter_mask, out);
     btTransform start_transform;
     btTransform end_transform;
     start_transform.setIdentity();
