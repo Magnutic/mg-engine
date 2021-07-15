@@ -23,7 +23,7 @@ class DebugRenderer;
 
 namespace Mg::physics {
 
-/** This is an implementation of Bullet's btIDebugDraw interface, which acts as a proxy for Mg
+/** This is an implementation of Bullet's btIDebugDraw interface, and acts as a proxy for Mg
  * Engine's DebugRenderer.
  * @note should be short-lived (created and used on function stack), since it keeps raw pointers to
  * the debug renderer and camera.

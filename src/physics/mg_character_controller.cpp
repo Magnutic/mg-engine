@@ -30,9 +30,11 @@
 #include "mg/utils/mg_stl_helpers.h"
 
 // Uncomment to enable debug visualisation.
-//#define MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION 1
+#define MG_DEBUG_VIS_SWEEP_FLAG 1
+#define MG_DEBUG_VIS_FORCES_FLAG 2
+#define MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION (MG_DEBUG_VIS_FORCES_FLAG)
 
-#if MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION
+#ifdef MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION
 #    include "mg/gfx/mg_debug_renderer.h"
 #endif
 
@@ -40,6 +42,7 @@
 
 using glm::mat3;
 using glm::mat4;
+using glm::vec2;
 using glm::vec3;
 using glm::vec4;
 using namespace std::literals;
@@ -48,9 +51,10 @@ namespace Mg::physics {
 
 namespace {
 
+constexpr float crouch_height_factor = 0.5f;
+
 constexpr vec3 world_up(0.0f, 0.0f, 1.0f);
 constexpr int num_penetration_recovery_iterations = 5;
-constexpr float penetration_recovery_per_iteration = 1.0f / num_penetration_recovery_iterations;
 
 vec3 normalise_if_nonzero(const vec3& v)
 {
@@ -89,16 +93,16 @@ vec3 new_position_based_on_collision(const vec3& current_position,
 
 class CharacterControllerData {
 public:
-    void init_body(float radius, float height, float crouch_height_factor);
+    void init_body(float radius, float height);
 
     Opt<RayHit> character_sweep_test(const vec3& start,
                                      const vec3& end,
                                      const vec3& up,
                                      float max_surface_angle_cosine) const;
-    bool recover_from_penetration();
+    void recover_from_penetration();
     void step_up();
     void horizontal_step(const vec3& step);
-    void step_down(float time_step);
+    void step_down();
 
     Identifier id;
 
@@ -136,12 +140,10 @@ public:
             const vec3 direction = world_up * (v ? 1.0f : -1.0f);
 
             // Disable collisions for old object.
-            old_ghost_object.set_filter_group(CollisionGroup::None);
-            old_ghost_object.set_filter_mask(CollisionGroup::None);
+            old_ghost_object.has_contact_response(false);
 
             // And enable for new one.
-            ghost_object().set_filter_group(CollisionGroup::Character);
-            ghost_object().set_filter_mask(~CollisionGroup::Character);
+            old_ghost_object.has_contact_response(false);
 
             ghost_object().set_position(current_position + direction * vertical_offset * 0.5f);
             return true;
@@ -173,7 +175,7 @@ public:
     float standing_step_height;
     float step_height() const
     {
-        return is_standing ? standing_step_height : 0.5f * standing_step_height;
+        return is_standing ? standing_step_height : crouch_height_factor * standing_step_height;
     }
 
     float max_fall_speed;
@@ -184,10 +186,30 @@ public:
     vec3 desired_velocity;
     vec3 desired_direction;
 
+    vec3 velocity_added_by_moving_surface;
+
     vec3 current_position;
     vec3 last_position;
     float current_step_offset;
     vec3 target_position;
+
+    float time_step = 1.0f; // Placeholder value to prevent division by zero before first update.
+
+    // Vertical offset from current_position (capsule centre) to the character's feet.
+    float feet_offset() const
+    {
+        // Capsule hovers step_height over the ground.
+        const float capsule_height = height() - step_height();
+
+        // Offset from capsule_centre to feet.
+        return -(step_height() + capsule_height * 0.5f);
+    }
+
+    vec3 feet_position(const float interpolate) const
+    {
+        const vec3 capsule_centre = mix(last_position, current_position, interpolate);
+        return capsule_centre + world_up * feet_offset();
+    }
 
     // Array of collisions. Used in recover_from_penetration but declared here to allow the
     // heap buffer to be re-used between invocations.
@@ -202,7 +224,7 @@ public:
     bool was_jumping;
 };
 
-#if MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION
+#if (MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION & MG_DEBUG_VIS_SWEEP_FLAG) != 0
 static void debug_vis_ray_hit(const RayHit& ray_hit, vec4 colour)
 {
     gfx::DebugRenderer::EllipsoidDrawParams params;
@@ -218,35 +240,36 @@ static void debug_vis_ray_hit(const RayHit& ray_hit, vec4 colour)
 }
 #endif
 
-void CharacterControllerData::init_body(const float radius,
-                                        const float height,
-                                        const float crouch_height_factor = 0.5f)
+void CharacterControllerData::init_body(const float radius, const float height)
 {
     // Standing body
     {
-        standing_height = height;
-        const float capsule_height = standing_height - 2.0f * radius - standing_step_height;
+        const float capsule_height = height - 2.0f * radius - standing_step_height;
+        standing_height = capsule_height + 2.0f * radius + standing_step_height;
         standing_shape = world->create_capsule_shape(radius, capsule_height);
         standing_ghost = world->create_ghost_object(id, *standing_shape, glm::mat4(1.0f));
 
         standing_ghost.set_filter_group(CollisionGroup::Character);
         standing_ghost.set_filter_mask(~CollisionGroup::Character);
+        standing_ghost.has_contact_response(true);
     }
 
     // Crouching body
     {
-        crouching_height = height * crouch_height_factor;
-        const float capsule_height =
-            max(0.0f,
-                crouching_height - 2.0f * radius - (standing_step_height * crouch_height_factor));
+        const float capsule_height = max(0.0f,
+                                         (height * crouch_height_factor) - 2.0f * radius -
+                                             (standing_step_height * crouch_height_factor));
+        crouching_height = capsule_height + 2.0f * radius +
+                           standing_step_height * crouch_height_factor;
         const auto ghost_id =
             Identifier::from_runtime_string(std::string(id.str_view()) + "_crouching"s);
         crouching_shape = world->create_capsule_shape(radius, capsule_height);
         crouching_ghost = world->create_ghost_object(ghost_id, *crouching_shape, glm::mat4(1.0f));
 
         // Disable collision for crouching body by default.
-        crouching_ghost.set_filter_group(CollisionGroup::None);
-        crouching_ghost.set_filter_mask(CollisionGroup::None);
+        crouching_ghost.set_filter_group(CollisionGroup::Character);
+        crouching_ghost.set_filter_mask(~CollisionGroup::Character);
+        crouching_ghost.has_contact_response(false);
     }
 }
 
@@ -260,11 +283,11 @@ CharacterControllerData::character_sweep_test(const vec3& start,
     world->convex_sweep(*shape(), start, end, CollisionGroup::All, ray_hits);
 
     auto reject_condition = [&](const RayHit& hit) {
-        return hit.body == ghost_object() ||
+        return hit.body == ghost_object() || !hit.body.has_contact_response() ||
                dot(up, hit.hit_normal_worldspace) < max_surface_angle_cosine;
     };
 
-#if MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION
+#if (MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION & MG_DEBUG_VIS_SWEEP_FLAG) != 0
     for (const RayHit& hit : ray_hits) {
         const vec4 reject_colour = { 1.0f, 0.0f, 0.0f, 0.5f };
         const vec4 approve_colour = { 0.0f, 1.0f, 0.0f, 0.5f };
@@ -315,34 +338,87 @@ CharacterController::CharacterController(Identifier id,
     m.current_position = m.ghost_object().get_position();
     m.last_position = m.current_position;
 
-    this->max_slope(65_degrees);
+    this->max_slope(45_degrees);
 }
 
 CharacterController::~CharacterController() = default;
 
-bool CharacterControllerData::recover_from_penetration()
+namespace {
+
+// Helper for recover_from_penetration. Get the offset to move the character to recover from the
+// given collision.
+vec3 penetration_recovery_offset(const Collision& collision, const bool other_is_b)
 {
-    bool penetration = false;
-    current_position = ghost_object().get_position();
+    const float direction_sign = other_is_b ? -1.0f : 1.0f;
 
-    // Here, we must refresh the set of collisions as the penetrating movement itself or previous
-    // iterations of this recovery may have moved the character.
-    collisions.clear();
-    world->calculate_collisions_for(ghost_object(), collisions);
-
-    for (const Collision& collision : collisions) {
-        const float direction_sign = (collision.object_a == ghost_object()) ? -1.0f : 1.0f;
-
-        if (collision.distance < 0.0f) {
-            const vec3 offset = collision.normal_on_b * direction_sign * collision.distance *
-                                penetration_recovery_per_iteration;
-            current_position += offset;
-            penetration = true;
-        }
+    if (collision.distance < 0.0f) {
+        return collision.normal_on_b * direction_sign * collision.distance;
     }
 
-    ghost_object().set_position(current_position);
-    return penetration;
+    return vec3(0.0f);
+}
+
+// Helper for recover_from_penetration.
+// Push back against dynamic objects that are moving toward the character. This prevents penetration
+// recovery against dynamic objects from pushing the character through static geometry. The most
+// likely case where this could happen is if something falls on top of the character. Then, each
+// frame, penetration recovery would result in a solution half-way between recovery from penetration
+// with the static geometry and penetration with dynamic one, which pushes the character slightly
+// through the static geometry. This then gives the dynamic object space to fall down a little bit,
+// and the next frame it resolves halfway between again, pushing the character slightly more through
+// the static geometry, and so on, until the character has fallen through the floor.
+void push_back_against_penetrating_object(const Collision& collision,
+                                          const bool other_is_b,
+                                          const vec3& recovery_offset,
+                                          const float time_step)
+{
+    const auto& other = other_is_b ? collision.object_b : collision.object_a;
+    if (other.type() != PhysicsBodyType::dynamic_body) {
+        return;
+    }
+
+    auto other_dynamic = other.as_dynamic_body().value();
+    const bool other_moves_toward_character = dot(other_dynamic.velocity(), recovery_offset) > 0.0f;
+
+    if (other_moves_toward_character) {
+        const vec3 contact_point_on_other = other_is_b ? collision.contact_point_on_b
+                                                       : collision.contact_point_on_a;
+        const vec3 relative_position = contact_point_on_other - other_dynamic.get_position();
+        other_dynamic.apply_impulse(-recovery_offset / time_step * other_dynamic.mass(),
+                                    relative_position);
+    }
+}
+
+} // namespace
+
+void CharacterControllerData::recover_from_penetration()
+{
+    constexpr float recovery_per_iteration_factor = 1.0f / num_penetration_recovery_iterations;
+
+    for (int i = 0; i < num_penetration_recovery_iterations; ++i) {
+        current_position = ghost_object().get_position();
+
+        // Here, we must refresh the set of collisions as the penetrating movement itself or
+        // previous iterations of this recovery may have moved the character.
+        collisions.clear();
+        world->calculate_collisions_for(ghost_object(), collisions);
+
+        bool still_penetrates = false;
+
+        for (const Collision& collision : collisions) {
+            const bool other_is_b = collision.object_a == ghost_object();
+            const vec3 recovery_offset = penetration_recovery_offset(collision, other_is_b) *
+                                         recovery_per_iteration_factor;
+            push_back_against_penetrating_object(collision, other_is_b, recovery_offset, time_step);
+            current_position += recovery_offset;
+        }
+
+        if (!still_penetrates) {
+            break;
+        }
+
+        ghost_object().set_position(current_position);
+    }
 }
 
 static constexpr bool collision_enabled = true; // TODO: noclip
@@ -362,11 +438,7 @@ void CharacterControllerData::step_up()
             ghost_object().set_position(current_position);
 
             // Fix penetration if we hit a ceiling, for example.
-            {
-                int i = 0;
-                while (recover_from_penetration() && ++i < num_penetration_recovery_iterations) {
-                }
-            }
+            recover_from_penetration();
 
             if (vertical_step > 0.0f) {
                 vertical_step = 0.0f;
@@ -393,6 +465,33 @@ void CharacterControllerData::horizontal_step(const vec3& step)
         return;
     }
 
+
+    // Apply an force to hit objects.
+    {
+        const auto double_step_target = current_position + desired_direction * 0.2f;
+        auto sweep_result =
+            character_sweep_test(current_position, double_step_target, world_up, -1.0f);
+        auto dynamic_body = sweep_result ? sweep_result->body.as_dynamic_body() : nullopt;
+        if (dynamic_body) {
+            const vec3 force = 200.0f * desired_direction; // TODO configurable.
+            const vec3 relative_position = feet_position(1.0f) + vec3(0.0f, 0.0f, height() * 0.8f) -
+                                           dynamic_body->get_position();
+            dynamic_body->apply_force(force, relative_position);
+
+#if MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION
+            gfx::DebugRenderer::EllipsoidDrawParams params;
+            params.dimensions = vec3(0.05f);
+            params.centre = vec3(dynamic_body->get_position() + relative_position);
+            params.colour = { 1.0f, 1.0f, 0.0f, 1.0f };
+            gfx::get_debug_render_queue().draw_ellipsoid(params);
+            gfx::get_debug_render_queue().draw_line(params.centre,
+                                                    params.centre + normalize(force),
+                                                    params.colour,
+                                                    2.0f);
+#endif
+        }
+    }
+
     float fraction = 1.0f;
     constexpr size_t max_iterations = 10;
 
@@ -401,8 +500,8 @@ void CharacterControllerData::horizontal_step(const vec3& step)
 
         Opt<RayHit> sweep_result;
         if (current_position != target_position) {
-            // Sweep test with "up-vector" and "max-slope" such that only surfaces facing against
-            // the character's movement are considered.
+            // Sweep test with "up-vector" and "max-slope" such that only surfaces facing
+            // against the character's movement are considered.
             sweep_result = character_sweep_test(current_position,
                                                 target_position,
                                                 sweep_direction_negative,
@@ -434,7 +533,7 @@ void CharacterControllerData::horizontal_step(const vec3& step)
     current_position = target_position;
 }
 
-void CharacterControllerData::step_down(float time_step)
+void CharacterControllerData::step_down()
 {
     if (!collision_enabled) {
         return;
@@ -456,15 +555,15 @@ void CharacterControllerData::step_down(float time_step)
             character_sweep_test(current_position, target_position, world_up, max_slope_cosine);
 
         if (!drop_sweep_result) {
-            // Test a double fall height, to see if the character should interpolate its fall (full)
-            // or not (partial).
+            // Test a double fall height, to see if the character should interpolate its fall
+            // (full) or not (partial).
             double_drop_sweep_result = character_sweep_test(current_position,
                                                             target_position + step_drop,
                                                             world_up,
                                                             max_slope_cosine);
         }
 
-#if MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION
+#if (MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION & MG_DEBUG_VIS_SWEEP_FLAG) != 0
         if (drop_sweep_result) {
             debug_vis_ray_hit(*drop_sweep_result, { 1.0f, 0.0f, 0.0f, 0.5f });
         }
@@ -475,8 +574,8 @@ void CharacterControllerData::step_down(float time_step)
 
         const bool has_hit = double_drop_sweep_result.has_value();
 
-        // Double step_height to compensate for the character controller floating step_height in the
-        // air.
+        // Double step_height to compensate for the character controller floating step_height in
+        // the air.
         const float step_down_height = (vertical_velocity < 0.0f) ? 2.0f * step_height() : 0.0f;
 
         // Redo the velocity calculation when falling a small amount, for fast stairs motion.
@@ -498,9 +597,67 @@ void CharacterControllerData::step_down(float time_step)
     }
 
     if (drop_sweep_result || has_clamped_to_floor) {
-        const float mix_factor = drop_sweep_result ? drop_sweep_result->hit_fraction : 0.0f;
+        const float mix_factor = drop_sweep_result ? drop_sweep_result->hit_fraction : 1.0f;
         current_position = mix(current_position, target_position, mix_factor) +
                            vec3(0.0f, 0.0f, step_height());
+
+        auto dynamic_body = drop_sweep_result ? drop_sweep_result->body.as_dynamic_body() : nullopt;
+        if (dynamic_body) {
+            // Apply an impulse to the object on which we landed.
+            // TODO real mass
+            const float mass = 70.0f;
+            [[maybe_unused]] const vec3 relative_position = feet_position(1.0f) -
+                                                            dynamic_body->get_position();
+
+            if (was_on_ground) {
+                const vec3 force = { 0.0f, 0.0f, min(0.0f, -mass * gravity) };
+
+#if MG_CHARACTER_APPLY_TORQUE_TO_STOOD_UPON_OBJECT
+                dynamic_body->apply_force(force, relative_position);
+#else
+                // This ought to be a non-central force so that we apply the appropriate torque
+                // as well, but that can cause the object to slowly slide away under our feet. I
+                // am not sure how other games solve this problem. For now, we work around the
+                // problem by ignoring torque.
+                dynamic_body->apply_central_force(force);
+#endif
+
+#if (MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION & MG_DEBUG_VIS_FORCES_FLAG) != 0
+                gfx::DebugRenderer::EllipsoidDrawParams params;
+                params.dimensions = vec3(0.05f);
+                params.centre = vec3(dynamic_body->get_position() + relative_position);
+                params.colour = { 0.0f, 1.0f, 0.0f, 1.0f };
+                gfx::get_debug_render_queue().draw_ellipsoid(params);
+                gfx::get_debug_render_queue().draw_line(params.centre,
+                                                        params.centre + glm::normalize(force),
+                                                        params.colour,
+                                                        2.0f);
+#endif
+            }
+            else {
+                const vec3 impulse = { 0.0f, 0.0f, min(0.0f, vertical_velocity * mass) };
+                dynamic_body->apply_impulse(impulse, relative_position);
+
+#if (MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION & MG_DEBUG_VIS_FORCES_FLAG) != 0
+                gfx::DebugRenderer::EllipsoidDrawParams params;
+                params.dimensions = vec3(0.05f);
+                params.centre = vec3(dynamic_body->get_position() + relative_position);
+                params.colour = { 0.0f, 0.0f, 1.0f, 1.0f };
+                gfx::get_debug_render_queue().draw_ellipsoid(params);
+                gfx::get_debug_render_queue().draw_line(params.centre,
+                                                        params.centre + glm::normalize(impulse),
+                                                        params.colour,
+                                                        2.0f);
+#endif
+            }
+
+            // Move with the object.
+            velocity_added_by_moving_surface = dynamic_body->velocity() +
+                                               glm::cross(dynamic_body->angular_velocity(),
+                                                          relative_position);
+            current_position += time_step * velocity_added_by_moving_surface;
+        }
+
         vertical_velocity = 0.0f;
         vertical_step = 0.0f;
         was_jumping = false;
@@ -525,10 +682,10 @@ void CharacterController::move(const vec3& velocity)
     m.desired_direction = normalise_if_nonzero(velocity);
 }
 
-vec3 CharacterController::velocity(float time_step) const
+vec3 CharacterController::velocity() const
 {
     auto& m = impl();
-    return (m.current_position - m.last_position) / time_step;
+    return (m.current_position - m.last_position) / m.time_step;
 }
 
 void CharacterController::reset()
@@ -554,6 +711,11 @@ void CharacterController::jump(const float velocity)
         m.vertical_velocity = velocity;
         m.was_jumping = true;
     }
+}
+
+glm::vec3 CharacterController::velocity_added_by_moving_surface() const
+{
+    return impl().velocity_added_by_moving_surface;
 }
 
 bool CharacterController::set_is_standing(const bool v)
@@ -601,15 +763,12 @@ bool CharacterController::is_on_ground() const
 
 vec3 CharacterController::position(const float interpolate) const
 {
-    const vec3 body_centre = mix(impl().last_position, impl().current_position, interpolate);
-    const float feet_offset = (impl().step_height() + current_height()) * 0.5f;
-    return body_centre + vec3(0.0f, 0.0f, -1.0f) * feet_offset;
+    return impl().feet_position(interpolate);
 }
 
 void CharacterController::position(const vec3& position)
 {
-    const float feet_offset = (impl().step_height() + current_height()) * 0.5f;
-    const vec3 body_centre = position + vec3(0.0f, 0.0f, 1.0f) * feet_offset;
+    const vec3 body_centre = position - world_up * impl().feet_offset();
 
     impl().ghost_object().set_position(body_centre);
 
@@ -635,19 +794,16 @@ float CharacterController::max_fall_speed() const
 
 void CharacterController::update(float time_step)
 {
-    pre_step();
-    player_step(time_step);
-}
-
-void CharacterController::pre_step()
-{
     auto& m = impl();
+    m.time_step = time_step;
     m.last_position = m.current_position;
     m.current_position = m.ghost_object().get_position();
     m.target_position = m.current_position;
+    m.velocity_added_by_moving_surface = vec3(0.0f);
+    player_step();
 }
 
-void CharacterController::player_step(float time_step)
+void CharacterController::player_step()
 {
     auto& m = impl();
 
@@ -655,27 +811,23 @@ void CharacterController::player_step(float time_step)
 
     // apply damping
     if (length2(m.desired_velocity) > 0.0f) {
-        m.desired_velocity *= std::pow(1.0f - m.linear_damping, time_step);
+        m.desired_velocity *= std::pow(1.0f - m.linear_damping, m.time_step);
     }
 
-    m.vertical_velocity *= std::pow(1.0f - m.linear_damping, time_step);
+    m.vertical_velocity *= std::pow(1.0f - m.linear_damping, m.time_step);
 
     // Update fall velocity.
-    m.vertical_velocity -= m.gravity * time_step;
+    m.vertical_velocity -= m.gravity * m.time_step;
     if (m.vertical_velocity < 0.0f && std::abs(m.vertical_velocity) > m.max_fall_speed) {
         m.vertical_velocity = -m.max_fall_speed;
     }
-    m.vertical_step = m.vertical_velocity * time_step;
+    m.vertical_step = m.vertical_velocity * m.time_step;
 
     m.step_up();
-    m.horizontal_step(m.desired_velocity * time_step);
-    m.step_down(time_step);
+    m.horizontal_step(m.desired_velocity * m.time_step);
+    m.step_down();
 
-    {
-        int i = 0;
-        while (m.recover_from_penetration() && (++i < num_penetration_recovery_iterations)) {
-        }
-    }
+    m.recover_from_penetration();
 }
 
 } // namespace Mg::physics

@@ -90,7 +90,10 @@ void Actor::update(glm::vec3 acceleration, float jump_impulse)
 
     const float current_friction = character_controller->is_on_ground() ? friction : 0.0f;
 
-    auto horizontal_velocity = character_controller->velocity(float(k_time_step));
+    // Keep old velocity for inertia, but discard velocity added by platform movement, as that makes
+    // the actor far too prone to uncontrollably sliding off surfaces.
+    auto horizontal_velocity = character_controller->velocity() -
+                               character_controller->velocity_added_by_moving_surface();
     horizontal_velocity.x += acceleration.x;
     horizontal_velocity.y += acceleration.y;
     horizontal_velocity.z = 0.0f;
@@ -116,7 +119,7 @@ void Actor::update(glm::vec3 acceleration, float jump_impulse)
     }
 
     character_controller->move(horizontal_velocity);
-    character_controller->jump(jump_impulse);
+    character_controller->jump(jump_impulse * (character_controller->is_standing() ? 1.0f : 0.5f));
 }
 
 Scene::Scene() = default;
@@ -277,6 +280,13 @@ void Scene::time_step()
     }
 
     physics_world->update(static_cast<float>(k_time_step));
+
+    // Vertical interpolation for camera to avoid sharp movements when e.g. stepping up stairs.
+    last_camera_z = camera_z;
+    const auto new_camera_z = actor->position(1.0f).z + actor->current_height() - 0.1f;
+    camera_z = std::abs(last_camera_z - new_camera_z) < 1.0f
+                   ? glm::mix(last_camera_z, new_camera_z, 0.35f)
+                   : new_camera_z;
 }
 
 void Scene::render_scene(const double lerp_factor)
@@ -312,8 +322,8 @@ void Scene::render_scene(const double lerp_factor)
     }
 
     if (!camera_locked) {
-        camera.position = actor->position(float(lerp_factor)) +
-                          glm::vec3(0.0f, 0.0f, actor->current_height() - 0.1f);
+        camera.position = actor->position(float(lerp_factor));
+        camera.position.z = glm::mix(last_camera_z, camera_z, lerp_factor);
     }
 
     for (auto& [id, model] : dynamic_models) {
@@ -391,7 +401,7 @@ void Scene::render_scene(const double lerp_factor)
         typesetting.line_spacing_factor = 1.25f;
         typesetting.max_width_pixels = ui_renderer.resolution().x;
 
-        const glm::vec3 v = actor->character_controller->velocity(float(k_time_step));
+        const glm::vec3 v = actor->character_controller->velocity();
         const glm::vec3 p = actor->position();
 
         std::string text = fmt::format("FPS: {:.2f}", frame_rate);
@@ -428,11 +438,11 @@ void Scene::render_scene(const double lerp_factor)
         Mg::gfx::get_debug_render_queue().dispatch(debug_renderer, camera.view_proj_matrix());
     }
 
-#if 1 // Raycast from camera test.
+#if 0 // Raycast from camera test.
     std::vector<Mg::physics::RayHit> results;
     physics_world->raycast(camera.position,
                            camera.position + camera.rotation.forward() * 1000.0f,
-                           Mg::physics::CollisionGroup::All,
+                           ~Mg::physics::CollisionGroup::Character,
                            results);
     for (auto& rayhit : results) {
         Mg::gfx::DebugRenderer::EllipsoidDrawParams params;
@@ -551,6 +561,7 @@ Model Scene::load_model(Mg::Identifier mesh_file,
     }
 
     model.centre = access->bounding_sphere().centre;
+    model.aabb = access->axis_aligned_bounding_box();
 
     // Load skeleton, if any.
     if (!access->joints().empty()) {
@@ -616,15 +627,19 @@ Model& Scene::add_dynamic_model(Mg::Identifier mesh_file,
 
         Mg::physics::DynamicBodyParameters body_params = {};
         body_params.type = Mg::physics::DynamicBodyType::Dynamic;
-        body_params.mass = 250.0f;
+        body_params.mass = 50.0f;
+        body_params.friction = 0.5f;
 
         Mg::physics::Shape* shape =
             physics_world->create_convex_hull(access->vertices(), model.centre, scale);
+        // physics_world->create_box_shape(model.aabb.max_corner - model.aabb.min_corner);
         model.physics_body =
             physics_world->create_dynamic_body(mesh_file,
                                                *shape,
                                                body_params,
                                                glm::translate(position) * rotation.to_matrix());
+        // model.physics_body->as_dynamic_body()->set_filter_mask(
+        //~Mg::physics::CollisionGroup::Character);
 
         // Add visualisation translation relative to centre of mass.
         // Note unusual order: for once we translate before the scale, since the translation is in
@@ -840,7 +855,20 @@ void Scene::load_models()
                           hest_mat_options,
                           { -2.0f, 2.0f, 1.0f },
                           Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
-                          { 3.0f, 3.0f, 3.0f },
+                          { 1.0f, 1.0f, 1.0f },
+                          true);
+    }
+
+    {
+        std::array<MaterialFileAssignment, 1> crate_mats;
+        crate_mats[0] = { 0, "crate" };
+
+        add_dynamic_model("meshes/box.mgm",
+                          crate_mats,
+                          {},
+                          { 0.0f, 0.0f, 10.0f },
+                          Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
+                          { 1.0f, 1.0f, 1.0f },
                           true);
     }
 }

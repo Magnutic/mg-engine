@@ -139,22 +139,25 @@ public:
 
     PhysicsBodyType type() const;
 
+    void has_contact_response(bool enable);
+    bool has_contact_response() const;
+
     glm::mat4 get_transform() const;
 
     glm::vec3 get_position() const { return get_transform() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f); }
 
-    void set_filter_group(const CollisionGroup group);
+    void set_filter_group(CollisionGroup group);
     CollisionGroup get_filter_group() const;
 
-    void set_filter_mask(const CollisionGroup mask);
+    void set_filter_mask(CollisionGroup mask);
     CollisionGroup get_filter_mask() const;
 
     Shape& shape();
     const Shape& shape() const;
 
-    Opt<DynamicBodyHandle> as_dynamic_body();
-    Opt<StaticBodyHandle> as_static_body();
-    Opt<GhostObjectHandle> as_ghost_body();
+    Opt<DynamicBodyHandle> as_dynamic_body() const;
+    Opt<StaticBodyHandle> as_static_body() const;
+    Opt<GhostObjectHandle> as_ghost_body() const;
 
     bool is_null() const { return m_data == nullptr; }
 
@@ -196,6 +199,9 @@ public:
     glm::mat4 interpolated_transform() const;
 
     void set_transform(const glm::mat4& transform);
+
+    void set_gravity(const glm::vec3& gravity);
+    glm::vec3 get_gravity() const;
 
     //----------------------------------------------------------------------------------------------
     // Physical manipulations
@@ -524,18 +530,27 @@ public:
     friend class CharacterController;
 };
 
-inline Opt<DynamicBodyHandle> PhysicsBodyHandle::as_dynamic_body()
+inline Opt<DynamicBodyHandle> PhysicsBodyHandle::as_dynamic_body() const
 {
+    if (type() != PhysicsBodyType::dynamic_body) {
+        return nullopt;
+    }
     return DynamicBodyHandle::downcast(*this);
 }
 
-inline Opt<StaticBodyHandle> PhysicsBodyHandle::as_static_body()
+inline Opt<StaticBodyHandle> PhysicsBodyHandle::as_static_body() const
 {
+    if (type() != PhysicsBodyType::static_body) {
+        return nullopt;
+    }
     return StaticBodyHandle::downcast(*this);
 }
 
-inline Opt<GhostObjectHandle> PhysicsBodyHandle::as_ghost_body()
+inline Opt<GhostObjectHandle> PhysicsBodyHandle::as_ghost_body() const
 {
+    if (type() != PhysicsBodyType::ghost_object) {
+        return nullopt;
+    }
     return GhostObjectHandle::downcast(*this);
 }
 

@@ -56,8 +56,7 @@ public:
      */
     void position(const glm::vec3& position);
 
-    /** Moves the character with the given velocity. This will be reset after each simulation step.
-     */
+    /** Moves the character with the given velocity. */
     void move(const glm::vec3& velocity);
 
     /** Jump by setting the vertical velocity to the given velocity. Note that this will apply the
@@ -77,7 +76,16 @@ public:
     /** Current height, taking into account whether the character is standing or crouching. */
     float current_height() const;
 
-    glm::vec3 velocity(float time_step) const;
+    /** Get the character's velocity (in m/s) from the most recent update. */
+    glm::vec3 velocity() const;
+
+    /** Get the velocity that was added to the character in the most recent update, due to
+     * movement of the surface on which the character stands.
+     * This can be used to remove or reduce the inertia from such movements. Otherwise, the
+     * character is likely to helplessly fall off moving objects when they change direction or
+     * speed.
+     */
+    glm::vec3 velocity_added_by_moving_surface() const;
 
     void linear_damping(float d);
     float linear_damping() const;
@@ -109,9 +117,7 @@ public:
 private:
     friend class World;
     void update(float time_step);
-
-    void pre_step();
-    void player_step(float time_step);
+    void player_step();
 };
 
 } // namespace Mg::physics

@@ -6,7 +6,6 @@
 
 #include "mg/physics/mg_physics.h"
 
-#include "mg/core/mg_log.h"
 #include "mg/physics/mg_character_controller.h"
 #include "mg/utils/mg_math_utils.h"
 #include "mg_physics_debug_renderer.h"
@@ -412,6 +411,21 @@ PhysicsBodyType PhysicsBodyHandle::type() const
     return m_data->type;
 }
 
+void PhysicsBodyHandle::has_contact_response(const bool enable)
+{
+    btCollisionObject& bt_body = m_data->get_bt_body();
+    const auto old_collision_flags = bt_body.getCollisionFlags();
+    const auto new_collision_flags =
+        enable ? (old_collision_flags & ~btCollisionObject::CF_NO_CONTACT_RESPONSE)
+               : (old_collision_flags | btCollisionObject::CF_NO_CONTACT_RESPONSE);
+    bt_body.setCollisionFlags(new_collision_flags);
+}
+
+bool PhysicsBodyHandle::has_contact_response() const
+{
+    return m_data->get_bt_body().hasContactResponse();
+}
+
 mat4 PhysicsBodyHandle::get_transform() const
 {
     return m_data->transform;
@@ -508,6 +522,9 @@ public:
     {
         body.setCollisionFlags(body.getCollisionFlags() | btCollisionObject::CF_DYNAMIC_OBJECT);
 
+        // TODO Bullet seems too eager to deactivate. Figure out real solution.
+        // body.setActivationState(DISABLE_DEACTIVATION);
+
         if (parameters.continuous_collision_detection) {
             btVector3 centre;
             float radius = 0.0f;
@@ -558,6 +575,16 @@ void DynamicBodyHandle::set_transform(const mat4& transform)
     // And set final interpolated transform, so that calls to transform() will immediately see
     // the new value.
     data().interpolated_transform = transform;
+}
+
+void DynamicBodyHandle::set_gravity(const glm::vec3& gravity)
+{
+    data().body.setGravity(convert_vector(gravity));
+}
+
+glm::vec3 DynamicBodyHandle::get_gravity() const
+{
+    return convert_vector(data().body.getGravity());
 }
 
 void DynamicBodyHandle::apply_force(const vec3& force, const vec3& relative_position)
@@ -664,6 +691,9 @@ public:
         body.setWorldTransform(convert_transform(transform_));
         body.setUserPointer(this);
         body.setCollisionFlags(body.getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
+
+        // TODO: configurable friction
+        body.setFriction(0.5f);
     }
 
     btCollisionObject& get_bt_body() override { return body; }

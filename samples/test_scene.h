@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "mg/containers/mg_array.h"
+#include "mg/mg_bounding_volumes.h"
 #include <mg/containers/mg_flat_map.h>
 #include <mg/core/mg_config.h>
 #include <mg/core/mg_window.h>
@@ -89,6 +91,7 @@ struct Model {
     AnimationClips clips;
     Mg::Identifier id;
     glm::vec3 centre = glm::vec3(0.0f);
+    Mg::AxisAlignedBoundingBox aabb;
 
     Mg::Opt<Mg::physics::PhysicsBodyHandle> physics_body;
 };
@@ -172,6 +175,8 @@ public:
     BlurTargets blur_targets;
 
     Mg::gfx::Camera camera;
+    float last_camera_z = 0.0f;
+    float camera_z = 0.0f;
 
     Mg::input::InputMap input_map;
 
