@@ -407,8 +407,6 @@ struct RayHit {
     float hit_fraction = 0.0f;
 };
 
-class CharacterController;
-
 struct WorldData;
 
 class World : PImplMixin<WorldData> {
@@ -460,14 +458,6 @@ public:
 
     GhostObjectHandle
     create_ghost_object(const Identifier& id, Shape& shape, const glm::mat4& transform);
-
-    //----------------------------------------------------------------------------------------------
-    // CharacterController
-
-    CharacterController* create_character_controller(const Identifier& id,
-                                                     float radius,
-                                                     float height,
-                                                     float step_height);
 
     //----------------------------------------------------------------------------------------------
     // World settings
@@ -526,8 +516,6 @@ public:
      * shapes as the physics simulation sees it.
      */
     void draw_debug(gfx::DebugRenderer& debug_renderer, const glm::mat4& view_proj);
-
-    friend class CharacterController;
 };
 
 inline Opt<DynamicBodyHandle> PhysicsBodyHandle::as_dynamic_body() const

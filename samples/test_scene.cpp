@@ -81,19 +81,19 @@ void add_to_render_list(const Model& model, Mg::gfx::RenderCommandProducer& rend
 void Actor::update(glm::vec3 acceleration, float jump_impulse)
 {
     // Walk slower when crouching.
-    acceleration *= character_controller->is_standing() ? 1.0f : 0.5f;
+    acceleration *= character_controller.get_is_standing() ? 1.0f : 0.5f;
 
-    const auto max_speed = max_horizontal_speed * (character_controller->is_standing() ||
-                                                           !character_controller->is_on_ground()
+    const auto max_speed = max_horizontal_speed * (character_controller.get_is_standing() ||
+                                                           !character_controller.is_on_ground()
                                                        ? 1.0f
                                                        : 0.5f);
 
-    const float current_friction = character_controller->is_on_ground() ? friction : 0.0f;
+    const float current_friction = character_controller.is_on_ground() ? friction : 0.0f;
 
     // Keep old velocity for inertia, but discard velocity added by platform movement, as that makes
     // the actor far too prone to uncontrollably sliding off surfaces.
-    auto horizontal_velocity = character_controller->velocity() -
-                               character_controller->velocity_added_by_moving_surface();
+    auto horizontal_velocity = character_controller.velocity() -
+                               character_controller.velocity_added_by_moving_surface();
     horizontal_velocity.x += acceleration.x;
     horizontal_velocity.y += acceleration.y;
     horizontal_velocity.z = 0.0f;
@@ -118,8 +118,9 @@ void Actor::update(glm::vec3 acceleration, float jump_impulse)
         }
     }
 
-    character_controller->move(horizontal_velocity);
-    character_controller->jump(jump_impulse * (character_controller->is_standing() ? 1.0f : 0.5f));
+    character_controller.move(horizontal_velocity);
+    character_controller.jump(jump_impulse *
+                              (character_controller.get_is_standing() ? 1.0f : 0.5f));
 }
 
 Scene::Scene() = default;
@@ -229,14 +230,14 @@ void Scene::time_step()
 
     // Actor movement
     const bool is_jumping = input_map.was_pressed("jump") &&
-                            actor->character_controller->is_on_ground();
+                            actor->character_controller.is_on_ground();
 
     const auto [forward_acc, right_acc, up_acc] = get_actor_acceleration(input_map);
     const Mg::Rotation rotation_horizontal(glm::vec3(0.0f, 0.0f, camera.rotation.euler_angles().z));
     const glm::vec3 vec_forward = rotation_horizontal.forward();
     const glm::vec3 vec_right = rotation_horizontal.right();
 
-    const float factor = actor->character_controller->is_on_ground() ? 1.0f : 0.3f;
+    const float factor = actor->character_controller.is_on_ground() ? 1.0f : 0.3f;
     actor->update((vec_forward * forward_acc + vec_right * right_acc) * factor,
                   (is_jumping ? 5.0f : 0.0f));
 
@@ -269,17 +270,18 @@ void Scene::time_step()
         camera_locked = !camera_locked;
     }
     if (input_map.was_pressed("reset")) {
-        actor->character_controller->position({ 0.0f, 0.0f, 2.0f });
-        actor->character_controller->reset();
+        actor->character_controller.set_position({ 0.0f, 0.0f, 2.0f });
+        actor->character_controller.reset();
     }
     if (input_map.is_held("crouch")) {
-        actor->character_controller->set_is_standing(false);
+        actor->character_controller.set_is_standing(false);
     }
     else {
-        actor->character_controller->set_is_standing(true);
+        actor->character_controller.set_is_standing(true);
     }
 
     physics_world->update(static_cast<float>(k_time_step));
+    actor->character_controller.update(static_cast<float>(k_time_step));
 
     // Vertical interpolation for camera to avoid sharp movements when e.g. stepping up stairs.
     last_camera_z = camera_z;
@@ -401,13 +403,13 @@ void Scene::render_scene(const double lerp_factor)
         typesetting.line_spacing_factor = 1.25f;
         typesetting.max_width_pixels = ui_renderer.resolution().x;
 
-        const glm::vec3 v = actor->character_controller->velocity();
+        const glm::vec3 v = actor->character_controller.velocity();
         const glm::vec3 p = actor->position();
 
         std::string text = fmt::format("FPS: {:.2f}", frame_rate);
         text += fmt::format("\nVelocity: {{{:.2f}, {:.2f}, {:.2f}}}", v.x, v.y, v.z);
         text += fmt::format("\nPosition: {{{:.2f}, {:.2f}, {:.2f}}}", p.x, p.y, p.z);
-        text += fmt::format("\nGrounded: {:b}", actor->character_controller->is_on_ground());
+        text += fmt::format("\nGrounded: {:b}", actor->character_controller.is_on_ground());
 
         ui_renderer.draw_text(placement, font->prepare_text(text, typesetting));
 

@@ -123,23 +123,22 @@ public:
     constexpr static float step_height = 0.6f;
 
     explicit Actor(Mg::physics::World& physics_world, const glm::vec3& position, const float mass)
-
+        : character_controller("Actor", physics_world, {})
     {
-        character_controller =
-            physics_world.create_character_controller("Actor", radius, height, step_height);
-        character_controller->position(position);
+        character_controller.mass = mass;
+        character_controller.set_position(position);
     }
 
     void update(glm::vec3 acceleration, float jump_impulse);
 
     glm::vec3 position(const float interpolate = 1.0f) const
     {
-        return character_controller->position(interpolate);
+        return character_controller.get_position(interpolate);
     }
 
-    float current_height() const { return character_controller->current_height(); }
+    float current_height() const { return character_controller.current_height(); }
 
-    Mg::physics::CharacterController* character_controller = nullptr;
+    Mg::physics::CharacterController character_controller;
     float max_horizontal_speed = 10.0f;
     float friction = 0.6f;
 };

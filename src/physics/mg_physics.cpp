@@ -6,7 +6,6 @@
 
 #include "mg/physics/mg_physics.h"
 
-#include "mg/physics/mg_character_controller.h"
 #include "mg/utils/mg_math_utils.h"
 #include "mg_physics_debug_renderer.h"
 
@@ -807,8 +806,6 @@ struct WorldData {
     // Container storing all ghost objects in the scene.
     plf::colony<GhostObject> ghost_objects;
 
-    plf::colony<CharacterController> characters;
-
     // Storage for collision shapes, separated by type.
     plf::colony<BoxShape> box_shapes;
     plf::colony<CapsuleShape> capsule_shapes;
@@ -964,15 +961,6 @@ World::create_ghost_object(const Identifier& id, Shape& shape, const mat4& trans
     return PhysicsBodyHandle{ &go }.as_ghost_body().value();
 }
 
-CharacterController* World::create_character_controller(const Identifier& id,
-                                                        const float radius,
-                                                        const float height,
-                                                        const float step_height)
-{
-    auto it = impl().characters.emplace(id, *this, radius, height, step_height);
-    return &*it;
-}
-
 namespace {
 void contact_manifold_to_collisions(const btPersistentManifold& contact_manifold,
                                     std::vector<Collision>& out)
@@ -1051,10 +1039,6 @@ void World::update(const float time_step)
 
         // Collect the new collisions.
         find_collisions_for(ghost_object.id, ghost_object.collisions);
-    }
-
-    for (auto& character : data.characters) {
-        character.update(time_step);
     }
 }
 

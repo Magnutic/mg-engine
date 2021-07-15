@@ -28,20 +28,47 @@
  * Collision-handling physical body that can be controlled for example by a player or by an AI.
  */
 
+#include "mg/core/mg_identifier.h"
 #include "mg/physics/mg_physics.h"
 
 namespace Mg::physics {
 
-class CharacterControllerData;
+/** Settings for `CharacterController`. */
+struct CharacterControllerSettings {
+    /** Radius of the character's collision body. */
+    float radius = 0.5f;
 
-class CharacterController : PImplMixin<CharacterControllerData> {
+    /** Total height of the character when standing straight. */
+    float standing_height = 1.8f;
+
+    /** Total height of the character when crouching. */
+    float crouching_height = 0.6f;
+
+    /** The maximum height difference that the character may step over when standing. */
+    float standing_step_height = 0.6f;
+
+    /** The maximum height difference that the character may step over when crouching. */
+    float crouching_step_height = 0.3f;
+
+    /** The maximum slope angle that the character can walk up. */
+    Angle max_walkable_slope = Angle::from_radians(45.0f);
+};
+
+/** CharacterController is a collision-handling physical body that can be controlled for example by
+ * a player or by an AI.
+ */
+class CharacterController {
 public:
+    explicit CharacterController(Identifier id,
+                                 World& world,
+                                 const CharacterControllerSettings& settings);
+
+    ~CharacterController() = default;
+
     MG_MAKE_NON_COPYABLE(CharacterController);
     MG_MAKE_NON_MOVABLE(CharacterController);
 
-    ~CharacterController();
-
-    Identifier id() const;
+    void update(float time_step);
 
     /** Get the current position of the character controller's "feet".
      * @param interpolate Factor for interpolating between last update's position and the most
@@ -49,12 +76,13 @@ public:
      * to prevent choppy motion. The default value of 1.0f will always return the most recent
      * position.
      */
-    glm::vec3 position(float interpolate = 1.0f) const;
+    glm::vec3 get_position(float interpolate = 1.0f) const;
 
-    /** Directly set position of character controller's centre of mass, ignoring collisions. For
+    /** Directly set position of character controller's "feet", ignoring collisions. For
      * regular movement, use `move` instead. To also clear motion state, call `reset`.
      */
-    void position(const glm::vec3& position);
+    void set_position(const glm::vec3& position);
+
 
     /** Moves the character with the given velocity. */
     void move(const glm::vec3& velocity);
@@ -65,16 +93,24 @@ public:
      */
     void jump(float velocity);
 
+    /** Clear all motion state. */
+    void reset();
+
     /** Set whether the character is standing or crouching. Returns whether the state changed.
      * Reasons why it might not change: 1. It was already in the requested state. 2. The character
      * could not stand because something blocked above.
      */
     bool set_is_standing(bool v);
 
-    bool is_standing() const;
+    /** Get whether the character is standing (as opposed to crouching). */
+    bool get_is_standing() const { return m_is_standing; }
 
     /** Current height, taking into account whether the character is standing or crouching. */
-    float current_height() const;
+    float current_height() const
+    {
+        return m_is_standing ? m_settings.standing_height : m_settings.crouching_height;
+    }
+
 
     /** Get the character's velocity (in m/s) from the most recent update. */
     glm::vec3 velocity() const;
@@ -85,39 +121,117 @@ public:
      * character is likely to helplessly fall off moving objects when they change direction or
      * speed.
      */
-    glm::vec3 velocity_added_by_moving_surface() const;
-
-    void linear_damping(float d);
-    float linear_damping() const;
-
-    /** Clear all motion state. */
-    void reset();
-
-    void max_fall_speed(float speed);
-    float max_fall_speed() const;
-
-    void gravity(float gravity);
-    float gravity() const;
-
-    /** The max slope determines the maximum angle that the controller can walk up. */
-    void max_slope(Angle max_slope);
-    float max_slope() const;
+    glm::vec3 velocity_added_by_moving_surface() const
+    {
+        return m_velocity_added_by_moving_surface;
+    }
 
     /** Get whether the character controller is standing on the ground (as opposed to being in air).
      */
-    bool is_on_ground() const;
+    bool is_on_ground() const
+    {
+        return std::fabs(m_vertical_velocity) < FLT_EPSILON &&
+               std::fabs(m_vertical_step) < FLT_EPSILON;
+    }
 
-    // Called by Mg::physics::World
-    explicit CharacterController(Identifier id,
-                                 World& world,
-                                 float radius,
-                                 float height,
-                                 float step_height);
+    /** Get the character controller's identifier. */
+    Identifier id() const { return m_id; }
+
+    /** Get the settings with which this character controller was constructed. */
+    const CharacterControllerSettings& settings() const { return m_settings; }
+
+    /** The gravity acceleration for the character controller. */
+    float gravity = 9.82f;
+
+    /** The force with which the character pushes other objects in its way. */
+    float push_force = 200.0f;
+
+    /** Maximum fall speed, or terminal velocity, for the character. */
+    float max_fall_speed = 55.0f;
+
+    /** Mass of the character. Used for forces when colliding with dynamic objects. */
+    float mass = 70.0f;
 
 private:
-    friend class World;
-    void update(float time_step);
-    void player_step();
+    void init();
+
+    Opt<RayHit> character_sweep_test(const glm::vec3& start,
+                                     const glm::vec3& end,
+                                     const glm::vec3& up,
+                                     float max_surface_angle_cosine) const;
+    void recover_from_penetration();
+    void step_up();
+    void horizontal_step(const glm::vec3& step);
+    void step_down();
+
+    Shape* shape() const { return m_is_standing ? m_standing_shape : m_crouching_shape; }
+
+    GhostObjectHandle& collision_body()
+    {
+        return m_is_standing ? m_standing_collision_body : m_crouching_collision_body;
+    }
+    const GhostObjectHandle& collision_body() const
+    {
+        return m_is_standing ? m_standing_collision_body : m_crouching_collision_body;
+    }
+
+    float step_height() const
+    {
+        return m_is_standing ? m_settings.standing_step_height : m_settings.crouching_step_height;
+    }
+
+    // Vertical offset from current_position (capsule centre) to the character's feet.
+    float feet_offset() const
+    {
+        // Capsule hovers step_height over the ground.
+        const float capsule_height = current_height() - step_height();
+
+        // Offset from capsule_centre to feet.
+        return -(step_height() + capsule_height * 0.5f);
+    }
+
+    // Settings for the character controller.
+    CharacterControllerSettings m_settings;
+
+    Identifier m_id;
+
+    World* m_world = nullptr;
+
+    GhostObjectHandle m_standing_collision_body;
+    GhostObjectHandle m_crouching_collision_body;
+    Shape* m_standing_shape = nullptr;
+    Shape* m_crouching_shape = nullptr;
+    float m_max_slope_radians = 0.0f;
+    float m_max_slope_cosine = 0.0f;
+
+    // TODO refactor the following "ephemeral" data members to be some struct that is passed through
+    // the update functions like a pipeline.
+    bool m_is_standing = true;
+    float m_vertical_velocity = 0.0f;
+    float m_vertical_step = 0.0f;
+
+    /// The desired velocity and its normalised direction, as set by the user.
+    glm::vec3 m_desired_velocity = glm::vec3(0.0f);
+    glm::vec3 m_desired_direction = glm::vec3(0.0f);
+
+    glm::vec3 m_velocity_added_by_moving_surface = glm::vec3(0.0f);
+
+    glm::vec3 m_current_position = glm::vec3(0.0f);
+    glm::vec3 m_last_position = glm::vec3(0.0f);
+    float m_current_step_offset = 0.0f;
+    glm::vec3 m_target_position = glm::vec3(0.0f);
+
+    float m_time_step = 1.0f; // Placeholder value to prevent division by zero before first update.
+
+    bool m_was_on_ground = false;
+    bool m_was_jumping = false;
+
+    // Array of collisions. Used in recover_from_penetration but declared here to allow the
+    // heap buffer to be re-used between invocations.
+    std::vector<Collision> m_collisions;
+
+    // Declared here to re-use heap buffer.
+    mutable std::vector<RayHit> m_ray_hits;
 };
 
 } // namespace Mg::physics
