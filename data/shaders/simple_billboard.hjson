@@ -8,14 +8,18 @@ options: {
 }
 
 parameters: {
-    sampler_diffuse: { type: "sampler2D" }
+    sampler_diffuse: {
+        type: sampler2D
+    }
 }
 
 vertex_code:
     '''
+    #include "random.glsl"
+
     void main() {
         vs_out_colour = v_colour;
-        float radius = v_radius;
+        float radius = v_radius + v_radius * random(gl_VertexID);
         gl_Position = VP * vec4(v_position, 1.0);
 
     #if FADE_WHEN_CLOSE || SHRINK_WHEN_CLOSE
@@ -46,11 +50,13 @@ fragment_code:
     '''
     void main() {
        frag_out = fs_in_colour * texture(sampler_diffuse, tex_coord);
+       frag_out.rgb *= fs_in_colour.a; // Assuming pre-multiplied alpha
 
-    #ifdef A_TEST
+    #if A_TEST
        if (frag_out.a < 0.5) { discard; }
     #else
        if (frag_out.a == 0.0) { discard; }
     #endif
     }
     '''
+

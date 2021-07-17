@@ -100,7 +100,7 @@ public:
     Mg::gfx::SkyboxRenderer skybox_renderer;
 
     Mg::gfx::RenderCommandProducer render_command_producer;
-    Mg::gfx::BillboardRenderList billboard_render_list;
+    std::vector<Mg::gfx::Billboard> billboard_render_list;
 
     std::unique_ptr<Mg::gfx::TextureRenderTarget> hdr_target;
 
@@ -118,8 +118,11 @@ public:
     Mg::gfx::Material* bloom_material = nullptr;
     Mg::gfx::Material* blur_material = nullptr;
     Mg::gfx::Material* billboard_material = nullptr;
+    Mg::gfx::Material* particle_material = nullptr;
     Mg::gfx::Material* ui_material = nullptr;
     const Mg::gfx::Material* sky_material = nullptr;
+
+    Mg::gfx::ParticleSystem particle_system;
 
     bool camera_locked = false;
 

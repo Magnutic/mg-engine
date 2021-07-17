@@ -164,6 +164,16 @@ void Scene::simulation_step()
         animate_skinned_meshes = !animate_skinned_meshes;
     }
 
+    // Particle system
+    particle_system.emit(10);
+    particle_system.position = dynamic_models["meshes/box.mgm"].physics_body->get_position();
+    glm::mat3 rotation = dynamic_models["meshes/box.mgm"].physics_body->get_transform();
+    particle_system.emission_direction =
+        rotation * Mg::Rotation()
+                       .pitch(-25_degrees)
+                       .yaw(Mg::Angle::from_radians(float(app.time_since_init())))
+                       .apply_to({ 0.0f, 0.0f, 1.0f });
+
     // Fullscreen switching
     if (button_states["fullscreen"].was_pressed) {
         Mg::WindowSettings s = app.window().settings();
@@ -269,6 +279,12 @@ void Scene::render(const double lerp_factor)
         mesh_renderer.render(camera, commands, scene_lights, *hdr_target, params);
 
         billboard_renderer.render(*hdr_target, camera, billboard_render_list, *billboard_material);
+
+        particle_system.update(static_cast<float>(app.performance_info().last_frame_time_seconds));
+        billboard_renderer.render(*hdr_target,
+                                  camera,
+                                  particle_system.particles(),
+                                  *particle_material);
     }
 
     blur_renderer->render(post_renderer, *hdr_target, *blur_material);
@@ -321,6 +337,7 @@ void Scene::render(const double lerp_factor)
         text += fmt::format("\nPosition: {{{:.2f}, {:.2f}, {:.2f}}}", p.x, p.y, p.z);
         text += fmt::format("\nGrounded: {:b}",
                             player_controller->character_controller.is_on_ground());
+        text += fmt::format("\nParticles: {}", particle_system.particles().size());
 
         ui_renderer.draw_text(app.window().render_target,
                               placement,
@@ -770,6 +787,16 @@ void Scene::load_materials()
     billboard_material = material_pool->create("billboard_material", billboard_handle);
     billboard_material->set_sampler("sampler_diffuse", load_texture("textures/light_t.dds", true));
 
+    // Create particle material
+    const auto particle_handle =
+        resource_cache->resource_handle<Mg::ShaderResource>("shaders/simple_billboard.hjson");
+
+    particle_material = material_pool->create("particle_material", particle_handle);
+    particle_material->set_sampler("sampler_diffuse",
+                                   load_texture("textures/particle_t.dds", true));
+    particle_material->set_option("A_TEST", false);
+    particle_material->blend_mode = Mg::gfx::blend_mode_constants::bm_add_premultiplied;
+
     // Create UI material
     const auto ui_handle =
         resource_cache->resource_handle<Mg::ShaderResource>("shaders/ui_render_test.hjson");
@@ -803,7 +830,7 @@ void Scene::generate_lights()
 
         // Draw a billboard sprite for each light
         {
-            Mg::gfx::Billboard& billboard = billboard_render_list.add();
+            Mg::gfx::Billboard& billboard = billboard_render_list.emplace_back();
             billboard.pos = pos;
             billboard.colour = light_colour * 10.0f;
             billboard.colour.w = 1.0f;
