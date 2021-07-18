@@ -35,7 +35,7 @@ Rotation Rotation::rotation_between_vectors(glm::vec3 fst, glm::vec3 snd) noexce
         }
 
         rotation_axis = glm::normalize(rotation_axis);
-        return Rotation{ glm::angleAxis(180.0f, rotation_axis) };
+        return Rotation{ glm::angleAxis((180.0_degrees).radians(), rotation_axis) };
     }
 
     rotation_axis = cross(fst, snd);
