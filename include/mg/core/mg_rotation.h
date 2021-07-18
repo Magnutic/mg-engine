@@ -86,6 +86,9 @@ public:
     /** Returns the difference in angle between two rotations. */
     Angle angle_difference(const Rotation& rhs) const noexcept;
 
+    /** Apply this rotation to the given vector. */
+    glm::vec3 apply_to(const glm::vec3& in) const noexcept { return m_quaternion * in; }
+
     /** Returns the rotation created by rotating by fst then snd. */
     static Rotation combine(const Rotation& fst, const Rotation& snd) noexcept;
 
@@ -177,19 +180,19 @@ inline Angle Rotation::roll() const noexcept
 
 inline Rotation& Rotation::yaw(Angle angle) noexcept
 {
-    m_quaternion *= glm::angleAxis(angle.radians(), world_vector::up);
+    m_quaternion = glm::angleAxis(angle.radians(), world_vector::up) * m_quaternion;
     return *this;
 }
 
 inline Rotation& Rotation::pitch(Angle angle) noexcept
 {
-    m_quaternion *= glm::angleAxis(angle.radians(), world_vector::right);
+    m_quaternion = glm::angleAxis(angle.radians(), world_vector::right) * m_quaternion;
     return *this;
 }
 
 inline Rotation& Rotation::roll(Angle angle) noexcept
 {
-    m_quaternion *= glm::angleAxis(angle.radians(), world_vector::forward);
+    m_quaternion = glm::angleAxis(angle.radians(), world_vector::forward) * m_quaternion;
     return *this;
 }
 
