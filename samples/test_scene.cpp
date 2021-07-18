@@ -28,6 +28,7 @@
 #include <mg/resources/mg_texture_resource.h>
 #include <mg/utils/mg_angle.h>
 #include <mg/utils/mg_math_utils.h>
+#include <mg/utils/mg_rand.h>
 #include <mg/utils/mg_string_utils.h>
 
 #include <fmt/core.h>
@@ -905,17 +906,16 @@ void Scene::load_materials()
 // Create a lot of random lights
 void Scene::generate_lights()
 {
-    std::srand(0xdeadbeef);
+    Mg::Random rand(0xdeadbeefbadc0fee);
 
     for (size_t i = 0; i < k_num_lights; ++i) {
-        auto pos = glm::vec3(rand(), rand(), 0.0f);
-        pos /= float(RAND_MAX);
-        pos -= glm::vec3(0.5f, 0.5f, 0.0f);
-        pos *= 15.0f;
-        pos.z += 1.125f;
-
-        glm::vec4 light_colour(rand(), rand(), rand(), float(RAND_MAX));
-        light_colour /= float(RAND_MAX);
+        auto r1 = rand.range(-7.5f, 7.5f);
+        auto r2 = rand.range(-7.5f, 7.5f);
+        auto pos = glm::vec3(r1, r2, 1.125f);
+        auto r3 = rand.f32();
+        auto r4 = rand.f32();
+        auto r5 = rand.f32();
+        glm::vec4 light_colour(r3, r4, r5, 1.0f);
 
         const auto s = Mg::narrow_cast<float>(std::sin(double(i) * 0.2));
 
