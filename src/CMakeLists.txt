@@ -65,6 +65,7 @@ add_library(mg_engine
     resources/shader_parser/mg_shader_parser.cpp
     utils/mg_file_io.cpp
     utils/mg_file_time_helper.cpp
+    utils/mg_rand.cpp
     utils/mg_string_utils.cpp
 )
 
