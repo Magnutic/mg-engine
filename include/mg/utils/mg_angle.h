@@ -88,6 +88,10 @@ public:
     {
         return Angle{ lhs.radians() * f };
     }
+    constexpr friend Angle operator*(float f, Angle rhs) noexcept
+    {
+        return Angle{ rhs.radians() * f };
+    }
     constexpr friend Angle operator/(Angle lhs, float f) noexcept
     {
         return Angle{ lhs.radians() / f };
