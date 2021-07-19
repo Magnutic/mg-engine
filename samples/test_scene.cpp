@@ -33,8 +33,6 @@
 
 #include <fmt/core.h>
 
-#include <btBulletDynamicsCommon.h>
-
 #include <numeric>
 
 namespace {

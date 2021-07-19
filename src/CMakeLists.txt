@@ -146,8 +146,8 @@ target_link_libraries(mg_engine
         glm::glm
         tl::optional
         fmt::fmt
-        bullet::bullet # Temporarily public
     PRIVATE
+        bullet::bullet
         function2
         plf_colony
         glad
