@@ -1,7 +1,7 @@
 #include "mg_mesh_converter.h"
 
 #include "mg_assimp_utils.h"
-#include "mg_file_writer.h"
+#include "../shared/mg_file_writer.h"
 
 #include <mg/resources/mg_mesh_resource_data.h>
 #include <mg/utils/mg_assert.h>
