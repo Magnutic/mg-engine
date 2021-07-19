@@ -16,12 +16,12 @@ set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
 function(add_private_header_only_library LIBRARY INCLUDE_DIR)
     message("-- Using ${LIBRARY} at ${INCLUDE_DIR}")
     add_library(${LIBRARY} INTERFACE)
-    # CMake will shout at us if we do not set up an install for this target, since mg_engine links
-    # to this. So we have to set up an empty installation just to be allowed to build.
     target_include_directories(${LIBRARY} SYSTEM INTERFACE
         $<BUILD_INTERFACE:${INCLUDE_DIR}>
         $<INSTALL_INTERFACE:include>
     )
+    # CMake will shout at us if we do not set up an install for this target, since mg_engine links
+    # to this. So we have to set up an empty installation just to be allowed to build.
     install(TARGETS ${LIBRARY} EXPORT mg_engine_targets DESTINATION "${MG_LIB_INSTALL_PATH}")
 endfunction()
 
@@ -121,6 +121,32 @@ find_package(Bullet MODULE REQUIRED)
 add_library(bullet::bullet INTERFACE IMPORTED)
 target_include_directories(bullet::bullet INTERFACE "${BULLET_INCLUDE_DIRS}")
 target_link_libraries(bullet::bullet INTERFACE "${BULLET_LIBRARIES}")
+
+# Imgui
+# Immediate mode GUI
+# Does not come with any build files, so we have to set up the target ourselves.
+set(MG_IMGUI_DIR "${MG_HEADER_ONLY_DEPENDENCIES_DIR}/imgui")
+message("-- Using imgui at ${MG_IMGUI_DIR}")
+add_library(imgui STATIC 
+    "${MG_IMGUI_DIR}/imgui.cpp"
+    "${MG_IMGUI_DIR}/imgui_demo.cpp"
+    "${MG_IMGUI_DIR}/imgui_draw.cpp"
+    "${MG_IMGUI_DIR}/imgui_tables.cpp"
+    "${MG_IMGUI_DIR}/imgui_widgets.cpp"
+    "${MG_IMGUI_DIR}/backends/imgui_impl_glfw.cpp"
+    "${MG_IMGUI_DIR}/backends/imgui_impl_opengl3.cpp"
+)
+target_include_directories(imgui SYSTEM PUBLIC
+    $<BUILD_INTERFACE:${MG_IMGUI_DIR}>
+    $<INSTALL_INTERFACE:include>
+)
+target_link_libraries(imgui PUBLIC glfw glad)
+target_compile_definitions(imgui PRIVATE "IMGUI_IMPL_OPENGL_LOADER_CUSTOM=\"${MG_SOURCE_DIR}/src/gfx/opengl/mg_glad.h\"")
+install(
+    FILES "${MG_IMGUI_DIR}/imgui.h" "${MG_IMGUI_DIR}/imconfig.h"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+)
+install(TARGETS imgui EXPORT mg_engine_targets DESTINATION "${MG_LIB_INSTALL_PATH}")
 
 #---------------------------------------------------------------------------------------------------
 # Dependencies for tools

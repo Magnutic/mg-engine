@@ -43,3 +43,6 @@
 [submodule "external/submodules/bullet3"]
 	path = external/submodules/bullet3
 	url = https://github.com/bulletphysics/bullet3
+[submodule "external/submodules/imgui"]
+	path = external/submodules/imgui
+	url = https://github.com/ocornut/imgui

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.11)
 
-list(APPEND MG_HEADER_ONLY_DEPENDENCIES function2 plf_colony optional stb)
+list(APPEND MG_HEADER_ONLY_DEPENDENCIES function2 plf_colony optional stb imgui)
 
 get_filename_component(THIS_SCRIPT_DIR "${CMAKE_SCRIPT_MODE_FILE}" DIRECTORY)
 get_filename_component(MG_SOURCE_DIR "${THIS_SCRIPT_DIR}/.." ABSOLUTE)

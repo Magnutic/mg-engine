@@ -147,6 +147,7 @@ target_link_libraries(mg_engine
         glm::glm
         tl::optional
         fmt::fmt
+        imgui
     PRIVATE
         bullet::bullet
         function2

@@ -15,6 +15,7 @@ flags = [
     '-I', './external/mg_dependencies/optional/include',
     '-I', './external/mg_dependencies/plf_colony',
     '-I', './external/mg_dependencies/stb',
+    '-I', './external/mg_dependencies/imgui',
     '-I', './external/glad/include',
     '-I', './include',
     '-I', './src',
