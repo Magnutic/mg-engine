@@ -8,5 +8,6 @@ Alternatively, it can be used to create an archive containing all dependencies (
 To update a third-party library, go to its directory under `submodules` and `git checkout` the
 desired revision.
 
-To create a new dependency archive, run `generator_dependency_archive.sh` to generate
-`mg_dependencies.zip` containing the current revisions of all submodules.
+To create a new dependency archive, run `cmake -P cmake/generator_dependency_archive.cmake` in the
+Mg Engine project root directory to generate `mg_dependencies.zip` containing the current revisions
+of all submodules.
