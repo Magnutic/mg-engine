@@ -12,6 +12,8 @@ set(MG_DEPENDENCIES_BUILD_DIR "${MG_SOURCE_DIR}/external/build")
 set(MG_DEPENDENCIES_INSTALL_DIR "${MG_SOURCE_DIR}/external/mg_dependencies")
 
 if(NOT EXISTS "${MG_DEPENDENCIES_SOURCE_DIR}")
+    file(MAKE_DIRECTORY "${MG_DEPENDENCIES_SOURCE_DIR}")
+
     if(EXISTS "${MG_DEPENDENCIES_ARCHIVE}")
         message("${MG_DEPENDENCIES_ARCHIVE} found. Extracting...")
         execute_process(
