@@ -348,4 +348,13 @@ void Config::write_to_file(std::string_view filepath) const
     }
 }
 
+std::vector<std::pair<std::string, std::string>> Config::get_all_variables() const
+{
+    std::vector<std::pair<std::string, std::string>> result;
+    for (const auto& [key, value] : m_impl->m_values) {
+        result.push_back({ std::string{ key.str_view() }, value.value().string });
+    }
+    return result;
+}
+
 } // namespace Mg

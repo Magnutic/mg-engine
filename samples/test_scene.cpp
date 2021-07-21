@@ -29,7 +29,7 @@
 #include <mg/utils/mg_file_io.h>
 #include <mg/utils/mg_rand.h>
 
-#include <format>
+#include <imgui.h>
 
 namespace {
 constexpr auto config_file = "mg_engine.cfg";
@@ -206,7 +206,100 @@ void TestScene::on_simulation_step(const Mg::ApplicationTimeInfo& /*time_info*/)
     }
 
     if (show_imgui_overlay) {
-        m_editor.update(curve);
+        // TODO: refactor console to a class that uses some callback from log to handle updates
+        // better than the ad-hoc state tracking done here.
+
+        // Track whether we were scrolled to bottom in the last frame. This is to avoid scrolling
+        // down for new messages when the user has manually scrolled up.
+        static bool last_frame_was_scrolled_to_bottom = true;
+
+        // Should we scroll to bottom? This variable exists to defer the scrolling by one frame.
+        // If we try to scroll down in the same frame as we make the decision, it will not work,
+        // because ImGui::GetScrollMaxY seems to reflect the new scroll height only after the window
+        // has finished rendering (i.e. next frame).
+        static bool should_scroll_to_bottom = true;
+
+        // Track the number of lines in the log history so we know when a new message has arrived.
+        static size_t last_num_messages = 0;
+
+        std::vector<std::string> history = Mg::log.get_history();
+        const bool has_new_messages = last_num_messages != history.size();
+        last_num_messages = history.size();
+
+        // ImGui::ShowDemoWindow();
+        // return;
+
+        constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoSavedSettings |
+                                                  ImGuiWindowFlags_NoTitleBar |
+                                                  ImGuiWindowFlags_NoResize |
+                                                  ImGuiWindowFlags_NoCollapse;
+
+        const auto* viewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(viewport->Pos);
+        ImGui::SetNextWindowSize({ viewport->Size.x, viewport->Size.y / 2.0f });
+
+        const auto warning_color = ImVec4(1.0f, 1.0f, 0.25f, 1.0f);
+        const auto error_color = ImVec4(1.0f, 0.5f, 0.5f, 1.0f);
+
+        if (ImGui::Begin("Console", nullptr, window_flags)) {
+            for (auto&& line : history) {
+                const bool is_warning = line.find("[WARNING]") != std::string::npos;
+                const bool is_error = line.find("[ERROR]") != std::string::npos;
+                const bool has_color = is_warning || is_error;
+
+                if (is_warning) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, warning_color);
+                }
+                else if (is_error) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, error_color);
+                }
+
+                ImGui::TextWrapped("%s", line.c_str());
+
+                if (has_color) {
+                    ImGui::PopStyleColor();
+                }
+            }
+        }
+
+        if (should_scroll_to_bottom) {
+            ImGui::SetScrollY(ImGui::GetScrollMaxY());
+        }
+
+        should_scroll_to_bottom = has_new_messages && last_frame_was_scrolled_to_bottom;
+        last_frame_was_scrolled_to_bottom = ImGui::GetScrollY() == ImGui::GetScrollMaxY();
+
+        ImGui::End();
+
+        ImGui::SetNextWindowPos({ viewport->Pos.x, viewport->Pos.y + viewport->Size.y / 2.0f });
+        ImGui::SetNextWindowSizeConstraints({ viewport->Size.x, 0 }, viewport->Size);
+
+        if (ImGui::Begin("ConsoleInput", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar)) {
+            ImGui::SetKeyboardFocusHere();
+            std::array<char, 1024> buffer{};
+            ImGui::SetNextItemWidth(viewport->Size.x);
+            if (ImGui::InputText("ConsoleInputField",
+                                 buffer.data(),
+                                 buffer.size(),
+                                 ImGuiInputTextFlags_EnterReturnsTrue)) {
+                should_scroll_to_bottom = true;
+
+                std::string text = buffer.data();
+                Mg::log.message(text);
+
+                if (text == "list_variables") {
+                    auto variables = config().get_all_variables();
+                    for (const auto& [key, value] : variables) {
+                        Mg::log.message("{} [{}]", key, value);
+                    }
+                }
+                else {
+                    config().evaluate_line(text);
+                }
+            }
+        }
+
+        ImGui::End();
     }
 }
 

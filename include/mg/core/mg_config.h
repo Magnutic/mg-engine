@@ -17,6 +17,7 @@
 
 #include <string_view>
 #include <type_traits>
+#include <vector>
 
 namespace Mg {
 
@@ -92,6 +93,9 @@ public:
 
     /** Writes to the given config file. */
     void write_to_file(std::string_view filepath) const;
+
+    /** Get all variables currently existing in the Config as vector of key-value pairs. */
+    std::vector<std::pair<std::string, std::string>> get_all_variables() const;
 
     struct Impl;
 
