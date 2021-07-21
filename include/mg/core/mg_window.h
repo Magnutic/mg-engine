@@ -102,10 +102,13 @@ public:
 
     bool is_cursor_locked_to_window() const noexcept { return m_is_cursor_locked; }
 
+    /** Locks cursor to window if it was not locked and CursorLockMode is set to LOCKED. */
+    void grab_cursor();
+
     /** Releases cursor if it was locked to this window. */
     void release_cursor();
 
-    void set_cursor_lock_mode(CursorLockMode mode) noexcept { m_cursor_lock_mode = mode; }
+    void set_cursor_lock_mode(CursorLockMode mode) noexcept;
 
     CursorLockMode get_cursor_lock_mode() const noexcept { return m_cursor_lock_mode; }
 
@@ -156,7 +159,6 @@ private:
 
     /** Resets window, applying current window settings. */
     void reset();
-
     void lock_cursor_to_window();
 
 private:

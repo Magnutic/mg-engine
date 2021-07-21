@@ -277,9 +277,9 @@ void Window::apply_settings(WindowSettings s)
 void Window::reset()
 {
     log.message("Setting video mode: {}x{}, {}",
-                                    m_settings.video_mode.width,
-                                    m_settings.video_mode.height,
-                                    m_settings.fullscreen ? "fullscreen" : "windowed");
+                m_settings.video_mode.width,
+                m_settings.video_mode.height,
+                m_settings.fullscreen ? "fullscreen" : "windowed");
 
     GLFWmonitor* monitor = m_settings.fullscreen ? glfwGetPrimaryMonitor() : nullptr;
 
@@ -312,18 +312,40 @@ void Window::set_title(std::string title) noexcept
 
 void Window::lock_cursor_to_window()
 {
-    log.verbose("Window {} caught cursor.", static_cast<void*>(this));
+    if (!m_is_cursor_locked) {
+        log.verbose("Window {} caught cursor.", static_cast<void*>(this));
 
-    glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    m_is_cursor_locked = true;
+        glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        m_is_cursor_locked = true;
+    }
+}
+
+void Window::grab_cursor()
+{
+    if (!is_cursor_locked_to_window() && get_cursor_lock_mode() == CursorLockMode::LOCKED) {
+        lock_cursor_to_window();
+    }
 }
 
 void Window::release_cursor()
 {
-    log.verbose("Window {} let go of cursor.", static_cast<void*>(this));
+    if (m_is_cursor_locked) {
+        log.verbose("Window {} let go of cursor.", static_cast<void*>(this));
 
-    glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    m_is_cursor_locked = false;
+        glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        m_is_cursor_locked = false;
+    }
+}
+
+void Window::set_cursor_lock_mode(CursorLockMode mode) noexcept
+{
+    m_cursor_lock_mode = mode;
+    if (m_cursor_lock_mode == CursorLockMode::LOCKED) {
+        grab_cursor();
+    }
+    else {
+        release_cursor();
+    }
 }
 
 // Mark window as focused when user clicks within window
@@ -333,16 +355,12 @@ void Window::mouse_button_callback(int button, bool pressed)
         return;
     }
 
-    if (!is_cursor_locked_to_window() && get_cursor_lock_mode() == CursorLockMode::LOCKED) {
-        lock_cursor_to_window();
-    }
+    grab_cursor();
 }
 
 void Window::focus_callback(bool focused)
 {
-    log.verbose("Window {} {} focus.",
-                                    static_cast<void*>(this),
-                                    focused ? "received" : "lost");
+    log.verbose("Window {} {} focus.", static_cast<void*>(this), focused ? "received" : "lost");
 
     // Release cursor if it was locked to this window
     if (is_cursor_locked_to_window() && !focused) {
