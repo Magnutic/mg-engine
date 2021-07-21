@@ -74,10 +74,12 @@ class LogImpl {
 public:
     LogImpl(std::string_view file_path_,
             Log::Prio console_verbosity_,
-            Log::Prio log_file_verbosity_)
+            Log::Prio log_file_verbosity_,
+            const size_t num_history_lines_)
         : console_verbosity(console_verbosity_)
         , log_file_verbosity(log_file_verbosity_)
         , file_path(file_path_)
+        , num_history_lines(num_history_lines_)
         , m_writer(fs::u8path(file_path_), std::ios::trunc)
     {
         if (!m_writer) {
@@ -85,6 +87,8 @@ public:
                       << "Failed to open log file '" << file_path << "'.";
             return;
         }
+
+        history.reserve(num_history_lines);
 
         const time_t log_open_time = time(nullptr);
         const tm& t = *localtime(&log_open_time);
@@ -129,6 +133,10 @@ public:
 
     std::string file_path;
 
+    size_t num_history_lines;
+    size_t last_history_index = 0u;
+    std::vector<std::string> history;
+
 private:
     void run_loop()
     {
@@ -162,11 +170,22 @@ private:
     {
         std::string formatted_message = format_message(item, true);
 
+        // Write to terminal.
         std::cout << formatted_message << '\n';
 
+        // Write to file.
         if (item.prio <= log_file_verbosity && m_writer) {
             m_writer << formatted_message << '\n';
         }
+
+        // Keep in history.
+        const auto history_index = history.empty() ? 0
+                                                   : (last_history_index + 1) % num_history_lines;
+        if (history_index == history.size()) {
+            history.emplace_back();
+        }
+        history[history_index] = formatted_message;
+        last_history_index = history_index;
     }
 
     std::ofstream m_writer;
@@ -178,8 +197,11 @@ private:
     std::atomic_bool m_is_exiting = false;
 };
 
-Log::Log(std::string_view file_path, Prio console_verbosity, Prio log_file_verbosity)
-    : PImplMixin(file_path, console_verbosity, log_file_verbosity)
+Log::Log(std::string_view file_path,
+         Prio console_verbosity,
+         Prio log_file_verbosity,
+         const size_t num_history_lines)
+    : PImplMixin(file_path, console_verbosity, log_file_verbosity, num_history_lines)
 {}
 
 Log::~Log() = default;
@@ -209,6 +231,19 @@ void Log::flush()
 std::string_view Log::file_path() const noexcept
 {
     return impl().file_path;
+}
+
+std::vector<std::string> Log::get_history()
+{
+    std::vector<std::string> result;
+    result.resize(impl().history.size());
+
+    for (size_t i = 0; i < impl().history.size(); ++i) {
+        const size_t source_index = (impl().last_history_index + i) % impl().history.size();
+        result[i] = impl().history[source_index];
+    }
+
+    return result;
 }
 
 void Log::write_impl(Prio prio, std::string msg)

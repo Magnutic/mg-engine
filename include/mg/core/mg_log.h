@@ -40,7 +40,8 @@ public:
 
     explicit Log(std::string_view file_path,
                  Prio console_verbosity = Prio::Debug,
-                 Prio log_file_verbosity = Prio::Debug);
+                 Prio log_file_verbosity = Prio::Debug,
+                 size_t num_history_lines = 1000);
     ~Log();
 
     MG_MAKE_NON_COPYABLE(Log);
@@ -111,6 +112,9 @@ public:
 
     /** Get path to log output file. */
     std::string_view file_path() const noexcept;
+
+    /** Get a copy of the log history. */
+    std::vector<std::string> get_history();
 
 private:
     /** Writes message with priority prio. */
