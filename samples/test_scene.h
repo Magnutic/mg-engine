@@ -32,13 +32,6 @@
 #include <mg/resource_cache/mg_resource_cache.h>
 #include <mg/utils/mg_optional.h>
 
-#include <chrono>
-
-using Clock = std::chrono::high_resolution_clock;
-using namespace std::literals;
-
-static constexpr auto config_file = "mg_engine.cfg";
-
 struct Model {
     Model();
     ~Model();

@@ -6,6 +6,7 @@
 /external/mg_dependencies_src/*
 /external/build/*
 /external/mg_dependencies.zip
+/devutils
 
 *.pl
 *.dot
@@ -19,6 +20,7 @@
 
 mg_log.txt
 mg_engine.cfg
+imgui.ini
 
 CMakeCache.txt
 CMakeFiles/
