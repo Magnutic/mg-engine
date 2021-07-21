@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "mg/containers/mg_array.h"
-#include "mg/mg_bounding_volumes.h"
+#include <mg/containers/mg_array.h>
 #include <mg/containers/mg_flat_map.h>
+#include <mg/core/mg_application_context.h>
 #include <mg/core/mg_config.h>
 #include <mg/core/mg_window.h>
 #include <mg/gfx/mg_animation.h>
@@ -26,6 +26,7 @@
 #include <mg/gfx/mg_ui_renderer.h>
 #include <mg/input/mg_input.h>
 #include <mg/input/mg_keyboard.h>
+#include <mg/mg_bounding_volumes.h>
 #include <mg/physics/mg_character_controller.h>
 #include <mg/physics/mg_physics.h>
 #include <mg/resource_cache/mg_resource_cache.h>
@@ -37,40 +38,6 @@ using Clock = std::chrono::high_resolution_clock;
 using namespace std::literals;
 
 static constexpr auto config_file = "mg_engine.cfg";
-
-class ApplicationContext {
-public:
-    ApplicationContext()
-        : m_config(config_file)
-        , m_window(Mg::Window::make(Mg::WindowSettings{}, "Mg Engine Test Scene"))
-        , m_gfx_device(*m_window)
-        , m_start_time(Clock::now())
-    {}
-
-    Mg::Window& window() { return *m_window; }
-    const Mg::Window& window() const { return *m_window; }
-
-    Mg::Config& config() { return m_config; }
-    const Mg::Config& config() const { return m_config; }
-
-    Mg::gfx::GfxDevice& gfx_device() { return m_gfx_device; }
-    const Mg::gfx::GfxDevice& gfx_device() const { return m_gfx_device; }
-
-    double time_since_init() noexcept
-    {
-        using namespace std::chrono;
-        using seconds_double = duration<double, seconds::period>;
-        return seconds_double(high_resolution_clock::now() - m_start_time).count();
-    }
-
-private:
-    Mg::Config m_config;
-    std::unique_ptr<Mg::Window> m_window;
-    Mg::gfx::GfxDevice m_gfx_device;
-    std::chrono::time_point<Clock> m_start_time;
-};
-
-class PhysicsBody;
 
 struct Model {
     Model();
@@ -143,12 +110,12 @@ public:
     float friction = 0.6f;
 };
 
-class Scene {
+class Scene : public Mg::IApplication {
 public:
-    ApplicationContext app;
+    Mg::ApplicationContext app;
 
     Scene();
-    ~Scene();
+    ~Scene() override;
 
     MG_MAKE_NON_MOVABLE(Scene);
     MG_MAKE_NON_COPYABLE(Scene);
@@ -191,18 +158,16 @@ public:
 
     bool camera_locked = false;
 
-    double time = 0.0;
-    bool exit = false;
     bool draw_debug = false;
 
     void init();
-    void main_loop();
+    void simulation_step() override;
+    void render(double lerp_factor) override;
+    bool should_exit() const override { return m_should_exit; }
+    Mg::UpdateTimerSettings update_timer_settings() const override;
 
 private:
     Mg::input::Mouse::CursorPosition last_cursor_position;
-
-    void time_step();
-    void render_scene(double lerp_factor);
 
     void setup_config();
 
@@ -250,4 +215,6 @@ private:
 
     SceneModels scene_models;
     DynamicModels dynamic_models;
+
+    bool m_should_exit = false;
 };

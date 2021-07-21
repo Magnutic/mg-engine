@@ -1,4 +1,5 @@
 ﻿#include "test_scene.h"
+#include "mg/core/mg_application_context.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/gfx/mg_animation.h"
 #include "mg/gfx/mg_debug_renderer.h"
@@ -39,8 +40,7 @@ namespace {
 
 using namespace Mg::literals;
 
-constexpr double k_time_step = 1.0 / 60.0;
-constexpr double k_accumulator_max_steps = 10;
+constexpr int k_steps_per_second = 60.0;
 constexpr size_t k_num_lights = 128;
 constexpr float k_light_radius = 3.0f;
 constexpr float actor_acceleration = 0.6f;
@@ -122,9 +122,12 @@ void Actor::update(glm::vec3 acceleration, float jump_impulse)
                               (character_controller.get_is_standing() ? 1.0f : 0.5f));
 }
 
-Scene::Scene() = default;
+Scene::Scene() : app(config_file) {}
 
-Scene::~Scene() = default;
+Scene::~Scene()
+{
+    app.config().write_to_file(config_file);
+}
 
 void Scene::init()
 {
@@ -174,47 +177,10 @@ void Scene::init()
         Mg::UnicodeBlock::Basic_Latin) };
     font = std::make_unique<Mg::gfx::BitmapFont>(font_resource, 24, unicode_ranges);
 
-    main_loop();
+    // imgui = std::make_unique<Mg::ImguiOverlay>(app.window());
 }
 
-static double frame_rate = 0.0f;
-
-void Scene::main_loop()
-{
-    double accumulator = 0.0;
-
-    std::array<double, 30> frame_time_samples = {};
-    size_t frame_time_sample_index = 0;
-
-    while (!exit) {
-        const double last_time = time;
-        time = app.time_since_init();
-
-        ++frame_time_sample_index;
-        frame_time_sample_index %= frame_time_samples.size();
-
-        frame_rate = 1.0 /
-                     (std::accumulate(frame_time_samples.begin(), frame_time_samples.end(), 0.0) /
-                      frame_time_samples.size());
-
-        const double time_delta = time - last_time;
-        frame_time_samples[frame_time_sample_index] = time_delta;
-
-        accumulator += time_delta;
-        accumulator = std::min(accumulator, k_accumulator_max_steps * k_time_step);
-
-        while (accumulator >= k_time_step) {
-            time_step();
-            accumulator -= k_time_step;
-        }
-
-        render_scene(accumulator / k_time_step);
-    }
-
-    app.config().write_to_file(config_file);
-}
-
-void Scene::time_step()
+void Scene::simulation_step()
 {
     using namespace Mg::literals;
 
@@ -224,7 +190,7 @@ void Scene::time_step()
     input_map.update();
 
     if (input_map.was_pressed("exit") || app.window().should_close_flag()) {
-        exit = true;
+        m_should_exit = true;
     }
 
     // Actor movement
@@ -279,8 +245,8 @@ void Scene::time_step()
         actor->character_controller.set_is_standing(true);
     }
 
-    physics_world->update(static_cast<float>(k_time_step));
-    actor->character_controller.update(static_cast<float>(k_time_step));
+    physics_world->update(1.0f / k_steps_per_second);
+    actor->character_controller.update(1.0f / k_steps_per_second);
 
     // Vertical interpolation for camera to avoid sharp movements when e.g. stepping up stairs.
     last_camera_z = camera_z;
@@ -290,7 +256,7 @@ void Scene::time_step()
                    : new_camera_z;
 }
 
-void Scene::render_scene(const double lerp_factor)
+void Scene::render(const double lerp_factor)
 {
     MG_GFX_DEBUG_GROUP("Scene::render_scene")
 
@@ -353,7 +319,7 @@ void Scene::render_scene(const double lerp_factor)
                                                                 Mg::gfx::SortingMode::near_to_far);
 
         Mg::gfx::RenderParameters params = {};
-        params.current_time = Mg::narrow_cast<float>(time);
+        params.current_time = Mg::narrow_cast<float>(app.time_since_init());
         params.camera_exposure = -5.0;
 
         mesh_renderer.render(camera, commands, scene_lights, params);
@@ -405,7 +371,9 @@ void Scene::render_scene(const double lerp_factor)
         const glm::vec3 v = actor->character_controller.velocity();
         const glm::vec3 p = actor->position();
 
-        std::string text = fmt::format("FPS: {:.2f}", frame_rate);
+        std::string text = fmt::format("FPS: {:.2f}", app.performance_info().frames_per_second);
+        text += fmt::format("\nLast frame time: {:.2f} ms",
+                            app.performance_info().last_frame_time_seconds * 1'000);
         text += fmt::format("\nVelocity: {{{:.2f}, {:.2f}, {:.2f}}}", v.x, v.y, v.z);
         text += fmt::format("\nPosition: {{{:.2f}, {:.2f}, {:.2f}}}", p.x, p.y, p.z);
         text += fmt::format("\nGrounded: {:b}", actor->character_controller.is_on_ground());
@@ -428,7 +396,7 @@ void Scene::render_scene(const double lerp_factor)
 
     Model& fox = dynamic_models["meshes/Fox.mgm"];
     {
-        Mg::gfx::animate_skeleton(fox.clips[1], fox.pose.value(), time);
+        Mg::gfx::animate_skeleton(fox.clips[1], fox.pose.value(), app.time_since_init());
     }
 
     // Debug geometry
@@ -459,6 +427,16 @@ void Scene::render_scene(const double lerp_factor)
 #endif
 
     app.window().refresh();
+}
+
+Mg::UpdateTimerSettings Scene::update_timer_settings() const
+{
+    Mg::UpdateTimerSettings settings;
+    settings.max_frames_per_second = 120;
+    settings.max_time_steps_at_once = 10;
+    settings.unlocked_frame_rate = true;
+    settings.simulation_steps_per_second = k_steps_per_second;
+    return settings;
 }
 
 void Scene::setup_config()
@@ -975,7 +953,7 @@ int main(int /*argc*/, char* /*argv*/[])
     try {
         Scene scene;
         scene.init();
-        scene.main_loop();
+        scene.app.run_main_loop(scene);
     }
     catch (const std::exception& e) {
         Mg::log.error(e.what());

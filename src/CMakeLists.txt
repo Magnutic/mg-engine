@@ -7,6 +7,7 @@ add_library(mg_engine
     audio/mg_audio_context.cpp
     audio/mg_sound_buffer_handle.cpp
     audio/mg_sound_source.cpp
+    core/mg_application_context.cpp
     core/mg_config.cpp
     core/mg_file_loader.cpp
     core/mg_identifier.cpp
