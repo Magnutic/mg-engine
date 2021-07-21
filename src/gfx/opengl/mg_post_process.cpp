@@ -101,7 +101,7 @@ PipelinePool make_post_process_pipeline_pool()
         sampler_colour_descriptor.input_name = "sampler_colour";
         sampler_colour_descriptor.type = PipelineInputType::Sampler2D;
         sampler_colour_descriptor.location = k_sampler_colour_texture_unit;
-        sampler_colour_descriptor.mandatory = true;
+        sampler_colour_descriptor.mandatory = false;
 
         PipelineInputDescriptor& sampler_depth_descriptor = config.shared_input_layout[2];
         sampler_depth_descriptor.input_name = "sampler_depth";
@@ -185,8 +185,8 @@ void PostProcessRenderer::post_process(const Context& context,
     MG_GFX_DEBUG_GROUP("PostProcessRenderer::post_process")
 
     impl().pipeline_pool.bind_material_pipeline(material,
-                                                      pipeline_settings(),
-                                                      impl().binding_context.value());
+                                                pipeline_settings(),
+                                                impl().binding_context.value());
 
     std::array shared_input_bindings = {
         PipelineInputBinding{ k_frame_block_ubo_slot, impl().frame_block_ubo },
@@ -214,8 +214,8 @@ void PostProcessRenderer::post_process(const Context& context,
     MG_GFX_DEBUG_GROUP("PostProcessRenderer::post_process")
 
     impl().pipeline_pool.bind_material_pipeline(material,
-                                                      pipeline_settings(),
-                                                      impl().binding_context.value());
+                                                pipeline_settings(),
+                                                impl().binding_context.value());
 
     FrameBlock frame_block{ z_near, z_far };
     impl().frame_block_ubo.set_data(byte_representation(frame_block));
