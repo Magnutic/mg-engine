@@ -131,11 +131,11 @@ public:
     //----------------------------------------------------------------------------------------------
     // Input devices
 
-    /** Get underlying GLFW window handle. Used by input system. */
+    /** Get underlying GLFW window handle. Used by input system and ImguiOverlay. */
     GLFWwindow* glfw_window() const noexcept
     {
         return m_window;
-    } // TODO: fix abstraction leak somehow
+    }
 
     /** Polls input events for this window, refreshing `keyboard` and `mouse` members. */
     void poll_input_events();

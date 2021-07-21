@@ -50,6 +50,7 @@ add_library(mg_engine
     input/mg_mouse.cpp
     mg_unicode.cpp
     mg_bounding_volumes.cpp
+    mg_imgui_overlay.cpp
     physics/mg_character_controller.cpp
     physics/mg_physics.cpp
     physics/mg_physics_debug_renderer.cpp
