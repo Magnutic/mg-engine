@@ -117,7 +117,7 @@ constexpr int k_initial_font_texture_width = 128;
 constexpr int k_initial_font_texture_height = 128;
 
 // Character to substitute when trying to display an unsupported codepoint.
-constexpr char32_t k_substitution_character = U'?';
+constexpr char32_t k_substitution_character = U'\U0000FFFD';
 
 Opt<int32_t> get_packedchar_index(const BitmapFontData& font, char32_t codepoint)
 {
@@ -469,11 +469,13 @@ PreparedText BitmapFont::prepare_text(std::string_view text_utf8,
             // relationship between char_quads and text_codepoints.
             codepoint = (codepoint == '\n' ? ' ' : codepoint);
 
-            // Get index of packedchar corresponding to codepoint, or that of '?' if not present.
-            const auto packedchar_index = get_packedchar_index(impl(), codepoint)
-                                              .value_or(get_packedchar_index(impl(), '?').value());
+            // Get index of packedchar corresponding to codepoint, or that of the substituition if
+            // not present.
+            const auto packedchar_index =
+                get_packedchar_index(impl(), codepoint)
+                    .value_or(get_packedchar_index(impl(), k_substitution_character).value());
 
-            // TODO: had to disable due to interfering with my line breaking logic (caused tremors 
+            // TODO: had to disable due to interfering with my line breaking logic (caused tremors
             // in next line's text). Fix instead, somehow.
             constexpr int align_to_integer = 0;
             stbtt_GetPackedQuad(impl().packed_chars.data(),
