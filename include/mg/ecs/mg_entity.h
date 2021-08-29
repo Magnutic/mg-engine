@@ -287,4 +287,4 @@ template<typename C> ComponentCollection<C>& EntityCollection::component_collect
     return static_cast<ComponentCollection<C>&>(collection);
 }
 
-} // namespace Mg
+} // namespace Mg::ecs
