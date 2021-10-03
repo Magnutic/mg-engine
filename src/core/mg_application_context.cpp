@@ -186,10 +186,10 @@ void ApplicationContext::run_main_loop(IApplication& application)
         else {
             // If we are limited by framerate cap, let the thread sleep for a while to not saturate
             // the CPU by spinning this loop.
-            const double time_until_next_frame_us = (min_frame_time - render_accumulator) *
-                                                    1'000'000.0;
-            const double time_until_next_step_us = (simulation_time_step - step_accumulator) *
-                                                   1'000'000.0;
+            const double time_until_next_frame_us =
+                max(0.0, (min_frame_time - render_accumulator) * 1'000'000.0);
+            const double time_until_next_step_us =
+                max(0.0, (simulation_time_step - step_accumulator) * 1'000'000.0);
             const auto wait_time = Mg::min(Mg::min(microseconds(uint64_t(time_until_next_frame_us)),
                                                    microseconds(uint64_t(time_until_next_step_us))),
                                            50us);
