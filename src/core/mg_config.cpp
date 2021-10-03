@@ -101,7 +101,7 @@ std::string Config::assignment_line(std::string_view key) const
 bool Config::evaluate_line(std::string_view input)
 {
     const auto error = [&](std::string_view reason) {
-        log.message("Failed to parse config assignment:\n\t'{}'\n\t{}\n\t{}",
+        log.warning("Failed to parse config assignment:\n\t'{}'\n\t{}\n\t{}",
                     input,
                     reason,
                     "Assignments must be of the form 'key = value'");
@@ -120,7 +120,7 @@ bool Config::evaluate_line(std::string_view input)
     key = trim(key);
     rhs = trim(rhs);
 
-    if (find_any_of(key, k_white_space) != std::string::npos) {
+    if (key.empty() || find_any_of(key, k_white_space) != std::string::npos) {
         error("Malformed key.");
         return false;
     }
@@ -144,7 +144,7 @@ bool Config::evaluate_line(std::string_view input)
         }
     }
     else {
-        if (find_any_of(value, " \t\r\n\v\f\"") != std::string::npos) {
+        if (rhs.empty() || find_any_of(value, " \t\r\n\v\f\"") != std::string::npos) {
             error("Malformed value");
             return false;
         }
