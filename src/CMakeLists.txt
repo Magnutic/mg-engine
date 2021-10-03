@@ -9,6 +9,7 @@ add_library(mg_engine
     audio/mg_sound_source.cpp
     core/mg_application_context.cpp
     core/mg_config.cpp
+    core/mg_curve.cpp
     core/mg_file_loader.cpp
     core/mg_identifier.cpp
     core/mg_log.cpp
@@ -16,6 +17,7 @@ add_library(mg_engine
     core/mg_window.cpp
     core/mg_window_settings.cpp
     ecs/mg_entity.cpp
+    editor/mg_curve_editor.cpp
     gfx/mg_bitmap_font.cpp
     gfx/mg_gfx_object_handles.cpp
     gfx/mg_light_buffers.cpp
