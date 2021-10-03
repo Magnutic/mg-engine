@@ -143,6 +143,16 @@ inline bool is_suffix_of(std::string_view suffix, std::string_view string)
     return std::equal(suffix.begin(), suffix.end(), string.end() - suffix.size());
 }
 
+/** Get the substring of str up to the first occurrence of character 'c'. */
+inline std::string_view substring_until(std::string_view str, const char c)
+{
+    const size_t index = str.find(c);
+    if (index == std::string_view::npos || index == 0) {
+        return std::string_view{};
+    }
+    return str.substr(0, index - 1);
+}
+
 /** Parse value from string if possible.
  * @param str std::string to convert
  * @return (bool success, float value), where success is true if conversion
