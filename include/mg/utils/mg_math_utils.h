@@ -83,4 +83,20 @@ template<typename T> constexpr const T& clamp(const T& x, const T& low, const T&
     return x < low ? low : x > high ? high : x;
 }
 
+/** Cubic bezier curve / interpolation. The curve is defined by the four control points p0, p1, p2,
+ * p3. `t` is the length along to curve at which to evaluate, such that `t` is in [0.0f, 1.0f].
+ * @return The position along the curve at `t`.
+ */
+template<typename T>
+inline T cubic_bezier(const T& p0, const T& p1, const T& p2, const T& p3, float t)
+{
+    const float one_minus_t = (1.0f - t);
+    const float one_minus_t_sqr = one_minus_t * one_minus_t;
+    const float one_minus_t_cube = one_minus_t * one_minus_t * one_minus_t;
+    const float t_sqr = t * t;
+    const float t_cube = t * t * t;
+    return (one_minus_t_cube * p0) + (3 * one_minus_t_sqr * t * p1) +
+           (3 * one_minus_t * t_sqr * p2) + (t_cube * p3);
+}
+
 } // namespace Mg
