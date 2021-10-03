@@ -36,6 +36,7 @@ struct UpdateTimerSettings {
      */
     int max_frames_per_second = 0;
 
+    // TODO fix misleading name.
     /** When `unlocked_frame_rate` is true, the `IApplication::render` is called as often as
      * possible (unless limited by `max_frames_per_second`), whereas `IApplication::simulation_step`
      * will only be called `simulation_steps_per_second`. When `unlocked_frame_rate` is false,

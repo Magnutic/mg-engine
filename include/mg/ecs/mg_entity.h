@@ -14,6 +14,25 @@
 
 #pragma once
 
+// TODO looking back at this again a few years later, it strikes me how much pointer-chasing there
+// still is. Not sure it will bring the cache-friendliness promised of ECS. Notably iterating over
+// entities with different sets of components will cause random access in each component list for
+// each iteration.
+//
+// A simple case to fix is iterating with only one component type; in that case, we can iterate
+// directly over the component list.
+//
+// Otherwise solutions get more complex. One could define each component as being part of a group,
+// and allocate each group's components in an AoS. So an "SoAoS". That only helps when iterating
+// over (subsets) of that particular group, though.
+//
+// Also, I should probably use plf::colony instead of Mg::Slot_map for this. Might even remove the
+// latter as I cannot think of any situation where it is better than colony.
+//
+// Finally, I no longer like the compile-time magic involved in this (like component id generation).
+// A little bit of boilerplate is not really that bad, and the lack of flexibility caused by
+// requiring compile-time tricks is not worth it. I am thinking of things like usage across shared
+// library boundaries etc.
 
 #include "mg/utils/mg_gsl.h"
 
