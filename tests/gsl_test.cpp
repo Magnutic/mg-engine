@@ -35,8 +35,6 @@ inline bool is_little_endian()
     return *reinterpret_cast<char*>(&n) == 1;
 }
 
-// TODO add tests for deduction guides
-
 namespace std {
 template<typename T, std::size_t N>
 inline std::ostream& operator<<(std::ostream& os, std::array<T, N> const& a)
