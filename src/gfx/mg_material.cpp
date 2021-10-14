@@ -10,13 +10,16 @@
 #include "mg/core/mg_runtime_error.h"
 #include "mg/mg_defs.h"
 #include "mg/resource_cache/mg_resource_access_guard.h"
+#include "mg/resources/mg_shader_resource.h"
 #include "mg/utils/mg_stl_helpers.h"
+#include "mg/utils/mg_vec_to_string.h"
 
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
 
 #include <cstring> // memcpy
 #include <sstream>
+#include <type_traits>
 
 namespace Mg::gfx {
 
@@ -136,6 +139,32 @@ void Material::set_parameter(Identifier name, const glm::vec4& param)
     _set_parameter_impl(name, byte_representation(param), shader::ParameterType::Vec4);
 }
 
+Opt<int> Material::get_parameter_int(Identifier name) const
+{
+    auto v = _get_parameter_impl(name, shader::ParameterType::Int);
+    return v ? make_opt(narrow_cast<int>(v.value()[0])) : nullopt;
+}
+Opt<float> Material::get_parameter_float(Identifier name) const
+{
+    auto v = _get_parameter_impl(name, shader::ParameterType::Float);
+    return v ? make_opt(v.value()[0]) : nullopt;
+}
+Opt<glm::vec2> Material::get_parameter_vec2(Identifier name) const
+{
+    return glm::vec2(
+        _get_parameter_impl(name, shader::ParameterType::Vec2).value_or(glm::vec4(0.0f)));
+}
+Opt<glm::vec4> Material::get_parameter_vec4(Identifier name) const
+{
+    return _get_parameter_impl(name, shader::ParameterType::Vec4);
+}
+
+Opt<shader::ParameterType> Material::get_parameter_type(Identifier name) const
+{
+    auto it = find_if(m_params, [&](auto p) { return p.name == name; });
+    return it != m_params.end() ? make_opt(it->type) : nullopt;
+}
+
 namespace {
 
 // How far to advance in to parameters buffer for each type.
@@ -154,17 +183,29 @@ size_t offset_for_param_type(shader::ParameterType type) noexcept
     MG_ASSERT(false && "unreachable");
 }
 
-// Print error message when the wrong type is passed into Material::set_parameter
-void wrong_type_error(Identifier material_id,
-                      Identifier param_id,
-                      shader::ParameterType expected,
-                      shader::ParameterType actual)
+struct FindParameterT {
+    const Material::Parameter* parameter;
+    size_t offset;
+};
+
+FindParameterT find_parameter(Identifier name, const Material::Parameters& parameters)
 {
-    log.error("Material '{}': set_parameter(\"{}\", ...): wrong type, expected {}, got {}.",
-              material_id.c_str(),
-              param_id.c_str(),
-              shader::parameter_type_to_string(expected),
-              shader::parameter_type_to_string(actual));
+    const Material::Parameter* parameter = nullptr;
+
+    // Determine where in the buffer the parameter data should go.
+    // N.B. offset calculation assumes that params are sorted in order for optimal packing (i.e.
+    // vec4 -> vec2 -> float). This is done in ShaderResource.
+    size_t offset = 0;
+    for (auto&& p : parameters) {
+        if (p.name == name) {
+            parameter = &p;
+            break;
+        }
+
+        offset += offset_for_param_type(p.type);
+    }
+
+    return { parameter, offset };
 }
 
 } // namespace
@@ -173,20 +214,7 @@ void Material::_set_parameter_impl(Identifier name,
                                    span<const std::byte> param_value,
                                    shader::ParameterType param_type)
 {
-    Parameter* p_param = nullptr;
-
-    // Determine where in the buffer the parameter data should go.
-    // N.B. offset calculation assumes that params are sorted in order for optimal packing (i.e.
-    // vec4 -> vec2 -> float). This is done in ShaderResource.
-    size_t offset = 0;
-    for (auto&& p : m_params) {
-        if (p.name == name) {
-            p_param = &p;
-            break;
-        }
-
-        offset += offset_for_param_type(p.type);
-    }
+    auto [p_param, offset] = find_parameter(name, m_params);
 
     if (p_param == nullptr) {
         log.warning("Material '{}': set_parameter(\"{}\", ...): no such parameter.",
@@ -196,15 +224,76 @@ void Material::_set_parameter_impl(Identifier name,
     }
 
     if (p_param->type != param_type) {
-        wrong_type_error(id(), p_param->name, p_param->type, param_type);
+        log.error(
+            "Material '{}': set_parameter(\"{}\", ...): Wrong type. Parameter is {}, tried to "
+            "assign {}.",
+            id().c_str(),
+            name.c_str(),
+            shader::parameter_type_to_string(p_param->type),
+            shader::parameter_type_to_string(param_type));
         return;
     }
 
-    // Write data into local buffer
+    // Write data into material parameter buffer
     const auto size = 4 * num_elems_for_param_type(param_type);
     MG_ASSERT(offset + size <= m_parameter_data.size());
     MG_ASSERT(param_value.size_bytes() >= size);
     std::memcpy(&m_parameter_data.buffer[offset], param_value.data(), size);
+}
+
+Opt<glm::vec4> Material::_get_parameter_impl(Identifier name,
+                                             shader::ParameterType param_type) const
+{
+    auto [p_param, offset] = find_parameter(name, m_params);
+    glm::vec4 result = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+    if (p_param == nullptr) {
+        log.warning("Material '{}': get_parameter(\"{}\", ...): no such parameter.",
+                    id().str_view(),
+                    name.str_view());
+        return nullopt;
+    }
+
+    if (p_param->type != param_type) {
+        log.error(
+            "Material '{}': get_parameter(\"{}\", ...): Wrong type. Parameter is {}, tried to "
+            "get as {}.",
+            id().c_str(),
+            name.c_str(),
+            shader::parameter_type_to_string(p_param->type),
+            shader::parameter_type_to_string(param_type));
+        return nullopt;
+    }
+
+    // Copy data from material buffer.
+    const auto size = 4 * num_elems_for_param_type(p_param->type);
+    MG_ASSERT(offset + size <= m_parameter_data.size());
+    MG_ASSERT(sizeof(result) >= size);
+    std::memcpy(&result[0], &m_parameter_data.buffer[offset], size);
+    static_assert(std::is_trivially_copyable_v<glm::vec4>);
+
+    return result;
+}
+
+std::string Material::_parameter_value_as_string(Identifier name) const
+{
+    const Opt<shader::ParameterType> parameter_type = get_parameter_type(name).value();
+    if (!parameter_type) {
+        return "<N/A>";
+    }
+
+    switch (parameter_type.value()) {
+    case shader::ParameterType::Int:
+        return std::to_string(get_parameter_int(name).value());
+    case shader::ParameterType::Float:
+        return std::to_string(get_parameter_float(name).value());
+    case shader::ParameterType::Vec2:
+        return to_string(get_parameter_vec2(name).value(), true, false);
+    case shader::ParameterType::Vec4:
+        return to_string(get_parameter_vec4(name).value(), true, false);
+    }
+
+    MG_ASSERT(false && "unreachable");
 }
 
 Material::PipelineId Material::pipeline_identifier() const noexcept
@@ -215,37 +304,33 @@ Material::PipelineId Material::pipeline_identifier() const noexcept
 std::string Material::debug_print() const
 {
     std::ostringstream oss;
-    oss << "Material '" << id().c_str() << "': {";
+    oss << "// Material '" << id().c_str() << "'\n";
+    oss << "// ShaderResource: '" << m_shader.resource_id().str_view() << "'\n";
 
-    oss << "\n\tShaderResource: '" << m_shader.resource_id().str_view() << "'\n";
-
-    oss << "\n\tOptions: {";
+    oss << "\nOPTIONS {";
 
     for (const Option& o : options()) {
-        oss << "\n\t\t" << o.str_view() << " = " << get_option(o);
+        oss << "\n\t" << o.str_view() << " = " << (get_option(o) ? "true" : "false") << ';';
     };
 
-    oss << (options().empty() ? "}" : "\n\t}");
+    oss << (options().empty() ? "}" : "\n}");
 
-    oss << "\n\tSamplers: {";
+    oss << "\nSAMPLERS {";
 
     for (const Sampler& s : samplers()) {
-        oss << "\n\t\t'" << s.name.str_view() << "' : " << shader::sampler_type_to_string(s.type);
+        oss << "\n\t" << shader::sampler_type_to_string(s.type) << ' ' << s.name.str_view() << ';';
     }
 
-    oss << (samplers().empty() ? "}" : "\n\t}");
+    oss << (samplers().empty() ? "}" : "\n}");
 
-    oss << "\n\tParameters: {";
+    oss << "\nPARAMETERS {";
 
     for (const Parameter& p : parameters()) {
-        oss << "\n\t\t'" << p.name.str_view() << "' : " << shader::parameter_type_to_string(p.type)
-            << " = ";
-        // TODO: fix
+        oss << "\n\t" << shader::parameter_type_to_string(p.type) << ' ' << p.name.str_view()
+            << " = " << _parameter_value_as_string(p.name) << ';';
     }
 
-    oss << (parameters().empty() ? "}" : "\n\t}");
-
-    oss << "\n}";
+    oss << (parameters().empty() ? "}" : "\n}");
 
     return oss.str();
 }
