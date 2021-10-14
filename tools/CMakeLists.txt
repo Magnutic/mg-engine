@@ -12,3 +12,4 @@ endfunction()
 add_subdirectory(shared)
 
 add_subdirectory(mesh_converter)
+add_subdirectory(curve_editor)
