@@ -31,7 +31,6 @@ TEST_CASE("ThreadPool: timing test")
     auto diff = duration_cast<milliseconds>(end_time - start_time).count();
 
     // Check that jobs ran in parallel
-    // TODO: quite brittle. Is there a better way?
     CHECK(diff >= 90);
     CHECK(diff <= 110);
 }
