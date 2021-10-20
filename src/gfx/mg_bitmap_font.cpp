@@ -475,8 +475,6 @@ PreparedText BitmapFont::prepare_text(std::string_view text_utf8,
                 get_packedchar_index(impl(), codepoint)
                     .value_or(get_packedchar_index(impl(), k_substitution_character).value());
 
-            // TODO: had to disable due to interfering with my line breaking logic (caused tremors
-            // in next line's text). Fix instead, somehow.
             constexpr int align_to_integer = 0;
             stbtt_GetPackedQuad(impl().packed_chars.data(),
                                 impl().texture_width,
@@ -505,7 +503,7 @@ PreparedText BitmapFont::prepare_text(std::string_view text_utf8,
         glm::vec2 tex_coord;
     };
 
-    static_assert(sizeof(Vertex) == 2u * sizeof(glm::vec2)); // Assert no packing.
+    static_assert(sizeof(Vertex) == 2u * sizeof(glm::vec2)); // Assert no padding.
 
     static constexpr size_t verts_per_char = 6u;
     auto vertices = Array<Vertex>::make_for_overwrite(text_codepoints.size() * verts_per_char);
