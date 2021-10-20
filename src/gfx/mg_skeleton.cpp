@@ -17,7 +17,6 @@ namespace Mg::gfx {
 
 namespace {
 
-// TODO: can probably be optimised
 glm::mat4 pose_to_matrix(const JointPose& pose)
 {
     return glm::translate(pose.translation) * pose.rotation.to_matrix() * glm::mat4(pose.scale);
