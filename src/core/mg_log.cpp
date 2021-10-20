@@ -9,6 +9,7 @@
 #include "mg/mg_defs.h"
 #include "mg/utils/mg_assert.h"
 
+#include <chrono>
 #include <fmt/chrono.h>
 
 #include <atomic>
@@ -122,6 +123,23 @@ public:
 
     void flush()
     {
+        // Try to wait for writer thread to finish writing pending messages.
+        // This may fail, in case other threads keep adding new messages.
+        bool pending_messages_written = false;
+        int remaining_wait_iterations = 10;
+        constexpr auto wait_time_per_iteration = std::chrono::milliseconds(10);
+
+        while (!pending_messages_written && remaining_wait_iterations-- > 0) {
+            {
+                std::scoped_lock lock{ m_queue_mutex };
+                pending_messages_written = m_queued_messages.empty();
+            }
+
+            if (!pending_messages_written) {
+                std::this_thread::sleep_for(wait_time_per_iteration);
+            }
+        }
+
         std::scoped_lock lock{ m_write_mutex };
         if (m_writer) {
             m_writer.flush();
