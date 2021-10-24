@@ -74,6 +74,10 @@ public:
                     const glm::mat4& M,
                     const Skeleton& skeleton,
                     const SkeletonPose& pose);
+
+    void draw_view_frustum(const glm::mat4& view_projection,
+                           const glm::mat4& view_projection_frustum,
+                           float max_distance = 0.0f);
 };
 
 struct DebugRenderQueueData;

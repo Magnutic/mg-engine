@@ -474,6 +474,72 @@ void DebugRenderer::draw_bones(const mat4& view_proj,
     draw_bones_impl({}, Mesh::joint_id_none, 0, draw_bones_impl);
 }
 
+void DebugRenderer::draw_view_frustum(const glm::mat4& view_projection,
+                                      const glm::mat4& view_projection_frustum,
+                                      const float max_distance)
+{
+    // Corners in clip space
+    std::array<glm::vec3, 8> corners = { {
+        { -1, -1, -1 },
+        { 1, -1, -1 },
+        { 1, 1, -1 },
+        { -1, 1, -1 },
+        { -1, -1, 1 },
+        { 1, -1, 1 },
+        { 1, 1, 1 },
+        { -1, 1, 1 },
+    } };
+
+    // Transform from clip to world space
+    const glm::mat4 inverse_frustum = glm::inverse(view_projection_frustum);
+    for (auto& corner : corners) {
+        auto corner_temp = inverse_frustum * glm::vec4(corner, 1.0f);
+        corner = glm::vec3(corner_temp / corner_temp.w);
+    }
+
+    if (max_distance > 0.0f) {
+        for (size_t i = 4; i < corners.size(); ++i) {
+            auto& far_corner = corners[i];
+            const auto& near_corner = corners[i - 4];
+            const float d2 = glm::length2(far_corner - near_corner);
+            if (d2 > max_distance * max_distance) {
+                far_corner = near_corner + glm::normalize(far_corner - near_corner) * max_distance;
+            }
+        }
+    }
+
+    // Corners are now in world space
+    std::array<glm::vec3, 5> corners_near = {
+        { corners[0], corners[1], corners[2], corners[3], corners[0] }
+    };
+
+    std::array<glm::vec3, 5> corners_far = {
+        { corners[4], corners[5], corners[6], corners[7], corners[4] }
+    };
+
+    draw_line(view_projection, corners_near, { 1.0f, 0.0f, 0.0f, 1.0f }, 2.0f);
+    draw_line(view_projection, corners_far, { 0.0f, 0.0f, 1.0f, 1.0f }, 2.0f);
+
+    std::array<glm::vec3, 5> corners_middle;
+
+    const float z_range = glm::length(corners_far[0] - corners_near[0]);
+    for (float d = z_range / 2.0f; d > 1.0f; d /= 2.0f) {
+        for (size_t i = 0; i < corners_middle.size(); ++i) {
+            corners_middle[i] = corners_near[i] +
+                                (corners_far[i] - corners_near[i]) * (d / z_range);
+        }
+        draw_line(view_projection, corners_middle, { 0.5f, 0.5f, 0.5f, 1.0f }, 1.0f);
+    }
+
+    for (size_t i = 0; i < 4; ++i) {
+        draw_line(view_projection,
+                  corners_near[i],
+                  corners_far[i],
+                  { 0.0f, 1.0f, 1.0f, 1.0f },
+                  2.0f);
+    }
+}
+
 //--------------------------------------------------------------------------------------------------
 // DebugRenderQueue implementation
 //--------------------------------------------------------------------------------------------------
