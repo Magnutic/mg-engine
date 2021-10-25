@@ -89,32 +89,34 @@ void add_light_to_cluster(size_t light_index,
     ++clusters[cluster_index].num_lights;
 }
 
-// Reserve memory for the temporary buffers within which update_light_data creates the data to
-// upload to the GPU. These are reserved and re-used between invocations of update_light_data to
-// avoid costly large dynamic memory allocations -- putting them on the stack would not work, as the
-// required memory is too large.
-auto clusters = std::make_unique<ClusterArray>();
-auto light_index_array = std::make_unique<LightIndexArray>();
-auto light_grid_data = std::make_unique<LightGridData>();
-
 } // namespace
 
 //--------------------------------------------------------------------------------------------------
+
+struct LightBuffersData {
+    std::unique_ptr<ClusterArray> clusters;
+    std::unique_ptr<LightIndexArray> light_index_array;
+    std::unique_ptr<LightGridData> light_grid_data;
+};
 
 LightBuffers::LightBuffers() noexcept
     : light_data_buffer{ sizeof(LightBlock) }
     , light_index_texture{ light_index_tex_type(), sizeof(LightIndexArray) }
     , tile_data_texture{ light_grid_tex_type(), sizeof(LightGridData) }
-{}
+{
+    impl().clusters = std::make_unique<ClusterArray>();
+    impl().light_index_array = std::make_unique<LightIndexArray>();
+    impl().light_grid_data = std::make_unique<LightGridData>();
+}
 
-void update_light_data(LightBuffers& light_data_out,
-                       span<const Light> lights,
-                       const ICamera& cam,
-                       LightGrid& grid)
+LightBuffers::~LightBuffers() = default;
+
+void LightBuffers::update(span<const Light> lights, const ICamera& cam, LightGrid& grid)
 {
     MG_GFX_DEBUG_GROUP("update_light_data(LightBuffers&, ...)");
 
-    std::memset(clusters.get(), 0, sizeof(ClusterArray)); // Reset cluster data
+    LightBuffersData& m = impl();
+    std::memset(m.clusters.get(), 0, sizeof(ClusterArray)); // Reset cluster data
 
     grid.calculate_delim_planes(cam.proj_matrix());
 
@@ -147,32 +149,32 @@ void update_light_data(LightBuffers& light_data_out,
         for (auto z = min_z; z < max_z; ++z) {
             for (auto y = min_y; y < max_y; ++y) {
                 for (auto x = min_x; x < max_x; ++x) {
-                    add_light_to_cluster(light_index, glm::uvec3(x, y, z), *clusters, has_warned);
+                    add_light_to_cluster(light_index, glm::uvec3(x, y, z), *m.clusters, has_warned);
                 }
             }
         }
     }
 
-    std::memset(light_index_array.get(), 0, sizeof(LightIndexArray));
-    std::memset(light_grid_data.get(), 0, sizeof(LightGridData));
+    std::memset(m.light_index_array.get(), 0, sizeof(LightIndexArray));
+    std::memset(m.light_grid_data.get(), 0, sizeof(LightGridData));
 
     uint32_t light_index_accumulator = 0;
 
-    for (size_t cluster_index = 0; cluster_index < clusters->size(); ++cluster_index) {
-        const ClusterData& cluster = (*clusters)[cluster_index];
-        (*light_grid_data)[cluster_index * 2u] = light_index_accumulator;
+    for (size_t cluster_index = 0; cluster_index < m.clusters->size(); ++cluster_index) {
+        const ClusterData& cluster = (*m.clusters)[cluster_index];
+        (*m.light_grid_data)[cluster_index * 2u] = light_index_accumulator;
 
         for (uint16_t i = 0; i < cluster.num_lights; ++i) {
             auto light_index = cluster.light_indices[i];
 
-            (*light_index_array)[light_index_accumulator++] = light_index;
-            ++((*light_grid_data)[cluster_index * 2u + 1u]);
+            (*m.light_index_array)[light_index_accumulator++] = light_index;
+            ++((*m.light_grid_data)[cluster_index * 2u + 1u]);
         }
     }
 
-    light_data_out.light_data_buffer.set_data(lights.as_bytes());
-    light_data_out.tile_data_texture.set_data(byte_representation(*light_grid_data));
-    light_data_out.light_index_texture.set_data(byte_representation(*light_index_array));
+    light_data_buffer.set_data(lights.as_bytes());
+    tile_data_texture.set_data(byte_representation(*m.light_grid_data));
+    light_index_texture.set_data(byte_representation(*m.light_index_array));
 }
 
 } // namespace Mg::gfx

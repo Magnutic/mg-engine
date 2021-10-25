@@ -282,7 +282,7 @@ void MeshRenderer::render(const ICamera& cam,
     const Material* current_material = nullptr;
 
     // Upload the data buffers used for lighting.
-    update_light_data(data.light_buffers, lights, cam, data.light_grid);
+    data.light_buffers.update(lights, cam, data.light_grid);
 
     // Set up shared pipeline context and input bindings, to reduce amount of state changes during
     // the render loop.
