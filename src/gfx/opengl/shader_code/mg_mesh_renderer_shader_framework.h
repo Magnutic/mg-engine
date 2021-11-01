@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include "mg/gfx/mg_light_grid_config.h"
 #include "mg/gfx/mg_matrix_uniform_handler.h"
 
 #include <string>
@@ -24,13 +25,8 @@ struct MeshRendererFrameworkShaderParams {
     // Size of array of skinning matrices for animated meshes. If 0, skinning animation is disabled.
     size_t skinning_matrix_array_size;
 
-    // Size of array of light sources.
-    size_t max_num_lights;
-
-    // Parameters controlling the light grid for clustered rendering.
-    size_t light_grid_width;
-    size_t light_grid_height;
-    size_t light_grid_depth;
+    // Configuration relating to the light grid.
+    LightGridConfig light_grid_config;
 };
 
 std::string

@@ -219,6 +219,8 @@ void BufferTexture::set_data(span<const std::byte> data) noexcept
 {
     MG_GFX_DEBUG_GROUP("BufferTexture::set_data");
 
+    MG_ASSERT(data.size_bytes() <= m_buffer_size);
+
     // Update data buffer contents
     const auto buf_id = m_buf_id.as_gl_id();
     glBindBuffer(GL_TEXTURE_BUFFER, buf_id);

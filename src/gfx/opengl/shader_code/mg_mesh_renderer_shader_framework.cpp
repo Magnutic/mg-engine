@@ -225,29 +225,33 @@ vec3 _light_accumulate(const SurfaceParams surface, const vec3 view_direction)
 {
     vec3 result = vec3(0.0);
 
+    // Find in which cluster this fragment is. The view frustum is subdivided into clusters, each of
+    // which has its own list of light sources that can affect fragments within the cluster.
+
+    // First, find which tile -- the screen is subdivided into equally-sized tiles.
     vec2 tile_dims = vec2(float(_frame_block.viewport_size.x) / LIGHT_GRID_WIDTH,
                           float(_frame_block.viewport_size.y) / LIGHT_GRID_HEIGHT);
 
+    // Then, find the depth 'slice'.
     float z = 2.0 * gl_FragCoord.z - 1.0;
-
     int slice = int(log2(z * _frame_block.cluster_grid_params.z_param.x
                          + _frame_block.cluster_grid_params.z_param.y)
                     * _frame_block.cluster_grid_params.scale
                     + _frame_block.cluster_grid_params.bias);
-
     slice = clamp(slice, 0, int(LIGHT_GRID_DEPTH) - 1);
 
+    // Tile location and depth slice together define the cluster.
     ivec3 l = ivec3(ivec2(SCREEN_POSITION.xy / tile_dims), slice);
+    int cluster_index = l.z * int(LIGHT_GRID_WIDTH * LIGHT_GRID_HEIGHT)
+                      + l.y * int(LIGHT_GRID_WIDTH)
+                      + l.x;
 
-    int tile_index = l.z * int(LIGHT_GRID_WIDTH * LIGHT_GRID_HEIGHT)
-                   + l.y * int(LIGHT_GRID_WIDTH)
-                   + l.x;
+    // Where in the lights block will we find the lights for this cluster?
+    uint light_index_array_offset = texelFetch(_sampler_tile_data, cluster_index).r;
+    uint num_lights_in_cluster = texelFetch(_sampler_tile_data, cluster_index).g;
 
-    uint light_offset = texelFetch(_sampler_tile_data, tile_index).r;
-    uint light_amount = texelFetch(_sampler_tile_data, tile_index).g;
-
-    for (uint i = 0u; i < light_amount; ++i) {
-        uint light_index = texelFetch(_sampler_light_index, int(light_offset + i)).r;
+    for (uint i = 0u; i < num_lights_in_cluster; ++i) {
+        uint light_index = texelFetch(_sampler_light_index, int(light_index_array_offset + i)).r;
         Light ls         = _light_block.lights[light_index];
 
         LightInput li;
@@ -326,10 +330,10 @@ mesh_renderer_fragment_shader_framework_code(const MeshRendererFrameworkShaderPa
     result.reserve(fragment_framework_code.size() + 500);
 
     result += "#version 330 core\n";
-    add_define(result, "MAX_NUM_LIGHTS", params.max_num_lights);
-    add_define(result, "LIGHT_GRID_WIDTH", params.light_grid_width);
-    add_define(result, "LIGHT_GRID_HEIGHT", params.light_grid_height);
-    add_define(result, "LIGHT_GRID_DEPTH", params.light_grid_depth);
+    add_define(result, "MAX_NUM_LIGHTS", params.light_grid_config.max_num_lights);
+    add_define(result, "LIGHT_GRID_WIDTH", params.light_grid_config.grid_width);
+    add_define(result, "LIGHT_GRID_HEIGHT", params.light_grid_config.grid_height);
+    add_define(result, "LIGHT_GRID_DEPTH", params.light_grid_config.grid_depth);
 
     result += fragment_framework_code;
 

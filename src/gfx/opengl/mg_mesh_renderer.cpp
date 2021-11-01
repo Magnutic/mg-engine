@@ -91,15 +91,18 @@ void surface(const SurfaceInput s_in, out SurfaceParams s_out) {
 }
 )";
 
-FrameBlock make_frame_block(const ICamera& camera, float current_time, float camera_exposure)
+FrameBlock make_frame_block(const ICamera& camera,
+                            float current_time,
+                            float camera_exposure,
+                            const LightGridConfig& light_grid_config)
 {
     std::array<int, 4> viewport_data{};
     glGetIntegerv(GL_VIEWPORT, &viewport_data[0]);
     const glm::uvec2 viewport_size{ narrow<uint32_t>(viewport_data[2]),
                                     narrow<uint32_t>(viewport_data[3]) };
 
-    static const float scale = defs::light_grid_depth /
-                               std::log2(float(defs::light_grid_far_plane));
+    const float scale = float(light_grid_config.grid_depth) /
+                        std::log2(float(light_grid_config.grid_far_plane));
 
     const auto depth_range = camera.depth_range();
     const auto z_near = depth_range.near();
@@ -112,7 +115,7 @@ FrameBlock make_frame_block(const ICamera& camera, float current_time, float cam
 
     frame_block.cluster_grid_params.z_param = glm::vec2(z_near - z_far, z_near + z_far);
     frame_block.cluster_grid_params.scale = -scale;
-    frame_block.cluster_grid_params.bias = defs::light_grid_depth_bias + c * scale;
+    frame_block.cluster_grid_params.bias = light_grid_config.depth_bias + c * scale;
 
     frame_block.camera_exposure = camera_exposure;
 
@@ -120,17 +123,15 @@ FrameBlock make_frame_block(const ICamera& camera, float current_time, float cam
 }
 
 enum class MeshPipelinePoolKind { Static, Animated };
-PipelinePool make_mesh_pipeline_pool(const MeshPipelinePoolKind kind)
+PipelinePool make_mesh_pipeline_pool(const MeshPipelinePoolKind kind,
+                                     const LightGridConfig& light_grid_config)
 {
     internal::MeshRendererFrameworkShaderParams params = {};
     params.matrix_array_size = k_matrix_ubo_array_size;
-    params.max_num_lights = defs::max_num_lights;
+    params.light_grid_config = light_grid_config;
     params.skinning_matrix_array_size = kind == MeshPipelinePoolKind::Animated
                                             ? k_skinning_matrix_ubo_array_size
                                             : 0;
-    params.light_grid_width = defs::light_grid_width;
-    params.light_grid_height = defs::light_grid_height;
-    params.light_grid_depth = defs::light_grid_depth;
 
     const std::string framework_vertex_code =
         internal::mesh_renderer_vertex_shader_framework_code(params);
@@ -191,9 +192,16 @@ PipelinePool make_mesh_pipeline_pool(const MeshPipelinePoolKind kind)
 
 /** MeshRenderer's state. */
 struct MeshRendererData {
-    PipelinePool static_mesh_pipeline_pool = make_mesh_pipeline_pool(MeshPipelinePoolKind::Static);
-    PipelinePool animated_mesh_pipeline_pool =
-        make_mesh_pipeline_pool(MeshPipelinePoolKind::Animated);
+    MeshRendererData(const LightGridConfig& light_grid_config)
+        : static_mesh_pipeline_pool(
+              make_mesh_pipeline_pool(MeshPipelinePoolKind::Static, light_grid_config))
+        , animated_mesh_pipeline_pool(
+              make_mesh_pipeline_pool(MeshPipelinePoolKind::Animated, light_grid_config))
+        , light_buffers(light_grid_config)
+    {}
+
+    PipelinePool static_mesh_pipeline_pool;
+    PipelinePool animated_mesh_pipeline_pool;
 
     MatrixUniformHandler matrix_uniform_handler{ k_matrix_ubo_array_size, 2 };
     MatrixUniformHandler skinning_matrix_uniform_handler{ k_skinning_matrix_ubo_array_size, 1 };
@@ -202,7 +210,6 @@ struct MeshRendererData {
     UniformBuffer frame_ubo{ sizeof(FrameBlock) };
 
     LightBuffers light_buffers;
-    LightGrid light_grid;
 
     uint32_t num_lights = 0;
 };
@@ -212,7 +219,10 @@ namespace {
 void bind_shared_inputs(MeshRendererData& data, const ICamera& cam, RenderParameters params)
 {
     // Upload frame-global uniforms
-    const auto frame_block = make_frame_block(cam, params.current_time, params.camera_exposure);
+    const auto frame_block = make_frame_block(cam,
+                                              params.current_time,
+                                              params.camera_exposure,
+                                              data.light_buffers.config());
     data.frame_ubo.set_data(byte_representation(frame_block));
 
     const std::array shared_bindings = {
@@ -220,8 +230,8 @@ void bind_shared_inputs(MeshRendererData& data, const ICamera& cam, RenderParame
         PipelineInputBinding{ k_skinning_matrices_ubo_slot,
                               data.skinning_matrix_uniform_handler.ubo() },
         PipelineInputBinding{ k_frame_ubo_slot, data.frame_ubo },
-        PipelineInputBinding{ k_light_ubo_slot, data.light_buffers.light_data_buffer },
-        PipelineInputBinding{ k_sampler_tile_data_index, data.light_buffers.tile_data_texture },
+        PipelineInputBinding{ k_light_ubo_slot, data.light_buffers.light_block_buffer },
+        PipelineInputBinding{ k_sampler_tile_data_index, data.light_buffers.clusters_texture },
         PipelineInputBinding{ k_sampler_light_index_index, data.light_buffers.light_index_texture }
     };
     Pipeline::bind_shared_inputs(shared_bindings);
@@ -266,7 +276,8 @@ size_t upload_next_matrix_batch(MeshRendererData& data,
 // MeshRenderer implementation
 //--------------------------------------------------------------------------------------------------
 
-MeshRenderer::MeshRenderer() = default;
+MeshRenderer::MeshRenderer(const LightGridConfig& light_grid_config) : PImplMixin(light_grid_config)
+{}
 
 MeshRenderer::~MeshRenderer() = default;
 
@@ -282,7 +293,7 @@ void MeshRenderer::render(const ICamera& cam,
     const Material* current_material = nullptr;
 
     // Upload the data buffers used for lighting.
-    data.light_buffers.update(lights, cam, data.light_grid);
+    data.light_buffers.update(lights, cam);
 
     // Set up shared pipeline context and input bindings, to reduce amount of state changes during
     // the render loop.

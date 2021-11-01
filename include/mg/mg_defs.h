@@ -49,34 +49,32 @@ constexpr std::size_t k_max_options_per_material = 30;
 constexpr std::size_t k_material_parameters_buffer_size = 128;
 
 //--------------------------------------------------------------------------------------------------
-// Light cluster grid configuration. The renderer divides the view frustum into a grid, each element
-// of which holds a list of lights that intersect it. This allows faster light calculation.
-// See mg_light_grid.h and mg_light_buffers.h
+// Default settings for light cluster grid configuration. The renderer divides the view frustum into
+// a grid, each element of which holds a list of lights that intersect it. This allows faster light
+// calculation. See mg_light_grid.h and mg_light_buffers.h
 
 /** Maximum number of lights that may simultaneously affect a cluster. If more lights than this
  * number overlap a cluster, there will be artefacts. It is, however, best to keep this number
  * relatively small, to avoid growing data requirements.
  */
-constexpr std::size_t max_lights_per_cluster = 128;
+constexpr std::size_t k_default_max_lights_per_cluster = 128;
 
 /** Maximum number of lights that may be rendered at a time. */
-constexpr std::size_t max_num_lights = 512;
+constexpr std::size_t k_default_max_num_lights = 512;
 
 /** Width of light cluster grid. */
-constexpr std::size_t light_grid_width = 16;
+constexpr std::size_t k_default_light_grid_width = 16;
 
 /** Height of light cluster grid. */
-constexpr std::size_t light_grid_height = 8;
+constexpr std::size_t k_default_light_grid_height = 8;
 
 /** Depth of light cluster grid. */
-constexpr std::size_t light_grid_depth = 24;
+constexpr std::size_t k_default_light_grid_depth = 24;
 
 /** Depth at which the light grid ends. Lights beyond this will be inside the final grid slice. */
-constexpr std::size_t light_grid_far_plane = 500;
+constexpr std::size_t k_default_light_grid_far_plane = 500;
 
 /** Bias in depth slice calculation, used to avoid too many thin slices near the camera. */
-constexpr float light_grid_depth_bias = -3.5f;
-
-constexpr std::size_t light_grid_size = light_grid_width * light_grid_height * light_grid_depth;
+constexpr float k_default_light_grid_depth_bias = -3.5f;
 
 } // namespace Mg::defs

@@ -17,6 +17,7 @@
 namespace Mg::gfx {
 
 struct Light;
+struct LightGridConfig;
 class ICamera;
 class LightGrid;
 
@@ -25,17 +26,19 @@ struct LightBuffersData;
 /* Collection of GPU data structures holding information on lights. Used by renderers. */
 class LightBuffers : PImplMixin<LightBuffersData> {
 public:
-    LightBuffers() noexcept;
+    explicit LightBuffers(const LightGridConfig& grid_config);
     ~LightBuffers();
 
     MG_MAKE_DEFAULT_MOVABLE(LightBuffers);
     MG_MAKE_NON_COPYABLE(LightBuffers);
 
-    void update(span<const Light> lights, const ICamera& cam, LightGrid& grid);
+    void update(span<const Light> lights, const ICamera& cam);
 
-    UniformBuffer light_data_buffer;
+    const LightGridConfig& config() const;
+
+    UniformBuffer light_block_buffer;
     BufferTexture light_index_texture;
-    BufferTexture tile_data_texture;
+    BufferTexture clusters_texture;
 };
 
 

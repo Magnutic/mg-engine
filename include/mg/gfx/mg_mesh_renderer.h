@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "mg/gfx/mg_light_grid_config.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_simple_pimpl.h"
@@ -30,7 +31,7 @@ struct RenderParameters {
 
 class MeshRenderer : PImplMixin<MeshRendererData> {
 public:
-    MeshRenderer();
+    MeshRenderer(const LightGridConfig& light_grid_config);
     ~MeshRenderer();
 
     MG_MAKE_DEFAULT_MOVABLE(MeshRenderer);

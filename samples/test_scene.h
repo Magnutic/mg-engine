@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "mg/gfx/mg_light_grid_config.h"
 #include <mg/containers/mg_array.h>
 #include <mg/containers/mg_flat_map.h>
 #include <mg/core/mg_application_context.h>
@@ -121,7 +122,7 @@ public:
 
     std::unique_ptr<Mg::gfx::BitmapFont> font;
 
-    Mg::gfx::MeshRenderer mesh_renderer;
+    Mg::gfx::MeshRenderer mesh_renderer{ Mg::gfx::LightGridConfig{} };
     Mg::gfx::DebugRenderer debug_renderer;
     Mg::gfx::BillboardRenderer billboard_renderer;
     Mg::gfx::PostProcessRenderer post_renderer;
