@@ -103,7 +103,7 @@ float tangent_from_mouse_position(ImRect bbox,
 
 ImColor to_imcolor(const glm::ivec4& colour)
 {
-    return { colour.r, colour.g, colour.b, colour.a };
+    return { colour.x, colour.y, colour.z, colour.w };
 }
 
 } // namespace

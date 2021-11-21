@@ -20,7 +20,8 @@ flags = [
     '-I', './include',
     '-I', './src',
     '-I', './build/deps/include',
-    '-isystem', '/usr/local/include'
+    '-isystem', '/usr/local/include',
+    '-DGLM_FORCE_XYZW_ONLY=1'
 ]
 
 def DirectoryOfThisScript():

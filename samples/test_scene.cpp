@@ -904,7 +904,7 @@ void Scene::generate_lights()
             Mg::gfx::Billboard& billboard = billboard_render_list.add();
             billboard.pos = pos;
             billboard.colour = light_colour * 10.0f;
-            billboard.colour.a = 1.0f;
+            billboard.colour.w = 1.0f;
             billboard.radius = 0.05f;
         }
 
