@@ -12,6 +12,7 @@
 
 #include <glm/geometric.hpp>
 #include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 
 #include <cmath>
 
@@ -30,15 +31,24 @@ public:
                                  -normal.x * point.x - normal.y * point.y - normal.z * point.z };
     }
 
-    // Add more constructors as needed.
-    // Members are private to maintain a,b,c normal being normalised as an invariant.
+    /** Create a plane given the four coefficients A, B, C, and D. */
+    static PointNormalPlane from_coefficients(const glm::vec4& coefficients)
+    {
+        const float normal_magnitude = glm::length(glm::vec3(coefficients));
+        const glm::vec4 plane = coefficients / normal_magnitude;
+        return PointNormalPlane{ plane.x, plane.y, plane.z, plane.w };
+    }
 
-private:
+
+    /** Same as from_coefficients, but assumes that the coefficients are already normalised (i.e.
+     * length of (a,b,c) == 1.
+     */
+    static PointNormalPlane from_normalised_coefficients(const glm::vec4& coefficients)
+    {
+        return PointNormalPlane{ coefficients.x, coefficients.y, coefficients.z, coefficients.w };
+    }
+
     PointNormalPlane() = default;
-
-    explicit PointNormalPlane(float a_, float b_, float c_, float d_) noexcept
-        : a(a_), b(b_), c(c_), d(d_)
-    {}
 
     /** Signed shortest distance (i.e. negative if on the side of the plane facing away from the
      * plane's normal) from plane to point in 3D space.
@@ -49,10 +59,15 @@ private:
         return plane.a * point.x + plane.b * point.y + plane.c * point.z + plane.d;
     }
 
-    float a;
-    float b;
-    float c;
-    float d;
+private:
+    explicit PointNormalPlane(float a_, float b_, float c_, float d_) noexcept
+        : a(a_), b(b_), c(c_), d(d_)
+    {}
+
+    float a = 0.0f;
+    float b = 0.0f;
+    float c = 0.0f;
+    float d = 0.0f;
 };
 
 

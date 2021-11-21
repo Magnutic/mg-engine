@@ -12,6 +12,7 @@
 #pragma once
 
 #include "mg/gfx/mg_light_grid_config.h"
+#include "mg/utils/mg_point_normal_plane.h"
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
@@ -62,6 +63,12 @@ public:
         glm::ivec2 max;
     };
 
+    /** Gets a transformation matrix from clip space to a space that is similar to the clip space
+     * but that only spans a single tile.
+     */
+    static glm::mat4 clip_space_to_tile_space(const LightGridConfig& config,
+                                              const glm::ivec2& tile);
+
     /** Get extents of view-sphere in delimiter planes, which defines a rectangular region of tiles
      * such that the all tiles intersecting the sphere will be included.
      */
@@ -107,24 +114,8 @@ private:
                         ExtentAxis axis,
                         Extremum extremum) noexcept;
 
-    // View-space tile delimiter plane -- the planes that divide the screen into tiles.
-    // Conventional plane representation (A*x + B*y + C*z -D == 0), but simplified for this
-    // particular case. Since view space tile delimiters are always aligned on one axis, one of A or
-    // B is always zero; and they all converge at camera position, meaning that D is always zero.
-    struct DelimPlane {
-        float A_or_B = 0.0f;
-        float C = 0.0f;
-    };
-
     // The configuration for this light grid.
     LightGridConfig m_config;
-
-    /** Signed square distance between view-space position and tile delimiter plane.
-     * @param plane The delimiter plane.
-     * @param offset View-space offset (x, if delimiter plane is vertical; otherwise y).
-     * @param depth View-space depth (z).
-     */
-    float signed_sqr_distance(const DelimPlane& plane, float offset, float depth) noexcept;
 
     void allocate_delim_planes()
     {
@@ -133,8 +124,8 @@ private:
     }
 
     // View-space tile delimiter plane -- the planes that divide the screen into tiles.
-    std::vector<DelimPlane> m_delim_plane_vert; // Facing negative x
-    std::vector<DelimPlane> m_delim_plane_hor;  // Facing negative y
+    std::vector<PointNormalPlane> m_delim_plane_vert; // Facing negative x
+    std::vector<PointNormalPlane> m_delim_plane_hor;  // Facing negative y
 
     // Cache camera projection matrix, so that we know whether tile-delimiter planes need to be
     // re-calculated or not.

@@ -234,4 +234,9 @@ const LightGridConfig& LightBuffers::config() const
     return impl().light_grid.config();
 }
 
+LightGrid& LightBuffers::grid()
+{
+    return impl().light_grid;
+}
+
 } // namespace Mg::gfx

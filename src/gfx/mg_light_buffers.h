@@ -36,6 +36,8 @@ public:
 
     const LightGridConfig& config() const;
 
+    LightGrid& grid();
+
     UniformBuffer light_block_buffer;
     BufferTexture light_index_texture;
     BufferTexture clusters_texture;
