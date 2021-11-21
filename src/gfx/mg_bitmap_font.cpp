@@ -370,7 +370,6 @@ BreakLinesResult break_lines(const std::u32string_view& text_codepoints,
             start_new_line = false;
             line_start_index = i;
             // Accumulate offset to move the following quads to down and inward.
-            // TODO: consider whether this works for right-to-left languages.
             x_offset = -q.x0;
             y_offset += line_height * line_spacing_factor;
             ++num_lines;

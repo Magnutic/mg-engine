@@ -93,6 +93,12 @@ public:
     MG_MAKE_NON_COPYABLE(BitmapFont);
     MG_MAKE_NON_MOVABLE(BitmapFont);
 
+    /** Prepare a text for rendering, creating GPU buffers containing the visualisation data.
+     *
+     * Limitations: only supports basic type setting for left-to-right languages that do not require
+     * "text shaping". Therefore it works with text in e.g. English, Swedish, Russian, and Korean,
+     * but it does not currently work for e.g. Arabic or Thai.
+     */
     PreparedText prepare_text(std::string_view text_utf8, const TypeSetting& typesetting) const;
 
     span<const UnicodeRange> contained_ranges() const;
