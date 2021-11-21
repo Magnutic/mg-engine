@@ -27,7 +27,7 @@ class DepthRange {
 public:
     explicit DepthRange(float near, float far) noexcept : m_near(near), m_far(far)
     {
-        MG_ASSERT(near > 0.0f && near < far);
+        MG_ASSERT(near < far);
     }
 
     float near() const noexcept { return m_near; }
@@ -135,7 +135,7 @@ public:
         return glm::orthoRH(min.x, max.x, min.y, max.y, min.z, max.z);
     }
 
-    glm::mat4 view_matrix() const noexcept override { return glm::mat4{}; }
+    glm::mat4 view_matrix() const noexcept override { return glm::mat4(1.0f); }
 
     glm::mat4 view_proj_matrix() const noexcept override { return proj_matrix(); }
 
