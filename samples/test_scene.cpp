@@ -436,7 +436,7 @@ Mg::UpdateTimerSettings Scene::update_timer_settings() const
     Mg::UpdateTimerSettings settings;
     settings.max_frames_per_second = 120;
     settings.max_time_steps_at_once = 10;
-    settings.unlocked_frame_rate = true;
+    settings.decouple_rendering_from_time_step = true;
     settings.simulation_steps_per_second = k_steps_per_second;
     return settings;
 }

@@ -36,15 +36,15 @@ struct UpdateTimerSettings {
      */
     int max_frames_per_second = 0;
 
-    // TODO fix misleading name.
-    /** When `unlocked_frame_rate` is true, the `IApplication::render` is called as often as
-     * possible (unless limited by `max_frames_per_second`), whereas `IApplication::simulation_step`
-     * will only be called `simulation_steps_per_second`. When `unlocked_frame_rate` is false,
-     * an invocation to `IApplication::simulation_step` is always immediately followed by an
-     * invocation to `IApplication::render`, meaning that rendering is fully synchronised to
-     * simulation time steps.
+    /** When `decouple_rendering_from_time_step` is true, the `IApplication::render` is called as
+     * often as possible (unless limited by `max_frames_per_second`), whereas
+     * `IApplication::simulation_step` will only be called `simulation_steps_per_second`. When
+     * `decouple_rendering_from_time_step` is false, an invocation to
+     * `IApplication::simulation_step` is always immediately followed by an invocation to
+     * `IApplication::render`, meaning that rendering is fully synchronised to simulation time
+     * steps.
      */
-    bool unlocked_frame_rate = true;
+    bool decouple_rendering_from_time_step = true;
 
     /** Maximum number of invocations to `IApplication::simulation_step` that may be performed at
      * once. If so much time has passed since last update that the simulation should advance by more

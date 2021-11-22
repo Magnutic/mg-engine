@@ -158,9 +158,10 @@ void ApplicationContext::run_main_loop(IApplication& application)
 
         // Render the scene, unless limited by framerate cap.
         const bool should_render = render_accumulator > min_frame_time &&
-                                   (settings.unlocked_frame_rate || should_run_simulation_step);
+                                   (settings.decouple_rendering_from_time_step ||
+                                    should_run_simulation_step);
         if (should_render) {
-            const auto interpolation_factor = settings.unlocked_frame_rate
+            const auto interpolation_factor = settings.decouple_rendering_from_time_step
                                                   ? step_accumulator / simulation_time_step
                                                   : 0.0;
             application.render(interpolation_factor);
