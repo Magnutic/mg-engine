@@ -4,8 +4,10 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-/** @file mg_main_loop.h
- * Main loop for time step and rendering updates.
+/** @file mg_application_context.h
+ * The ApplicationContext is a framework for running an Mg Engine application with its own window,
+ * configuration, and update loops. It handles timing for logical time step updates ("game ticks")
+ * and rendering events (frames).
  */
 
 #pragma once
@@ -59,6 +61,11 @@ struct UpdateTimerSettings {
     int max_time_steps_at_once = 10;
 };
 
+/** Interface for Mg Engine applications. Implementing this interface allows the use of
+ * `ApplicationContext` to run the application, invoking the `simulation_step` and `render` member
+ * functions according to the `update_timer_settings`.
+ * @seealso ApplicationContext
+ */
 class IApplication {
 public:
     MG_INTERFACE_BOILERPLATE(IApplication);
@@ -88,6 +95,11 @@ struct PerformanceInfo {
 
 struct ApplicationContextData;
 
+/* The `ApplicationContext` is a framework for running an Mg Engine application, holding a window,
+ * configuration, and handling the application update loops. It handles timing for logical time step
+ * updates ("game ticks") and rendering events (frames).
+ * @seealso IApplication
+ */
 class ApplicationContext : PImplMixin<ApplicationContextData> {
 public:
     explicit ApplicationContext(std::string_view config_file_path);
