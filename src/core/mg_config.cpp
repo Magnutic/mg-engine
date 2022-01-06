@@ -1,12 +1,14 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
 #include "mg/core/mg_config.h"
 
+#include "mg/core/mg_identifier.h"
 #include "mg/core/mg_log.h"
+#include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_file_io.h"
 #include "mg/utils/mg_math_utils.h"
 #include "mg/utils/mg_optional.h"
@@ -15,55 +17,156 @@
 
 #include <fmt/core.h>
 
-#include <sstream>
+#include <string>
+#include <vector>
 
 namespace Mg {
 
-static double numeric_from_string(std::string_view string)
+//--------------------------------------------------------------------------------------------------
+// ConfigVariable
+//--------------------------------------------------------------------------------------------------
+
+namespace {
+
+double numeric_from_string(std::string_view string)
 {
     const auto [success, value] = string_to<double>(string);
-
     if (success) {
         return value;
     }
+    return (to_lower(string) == "true") ? 1.0 : 0.0;
+}
 
-    auto low_str = to_lower(string);
+/** Internal storage type for configuration values. */
+class ConfigVariable {
+public:
+    struct Value {
+        std::string string;
+        double numeric = 0.0;
+    };
 
-    if (low_str == "true") {
-        return 1.0;
+    explicit ConfigVariable(std::string_view key, double value) : ConfigVariable(key)
+    {
+        set(value);
     }
 
-    return 0.0;
-}
+    explicit ConfigVariable(std::string_view key, std::string_view value) : ConfigVariable(key)
+    {
+        set(value);
+    }
 
-void detail::ConfigVariable::set(std::string_view value)
-{
-    m_value.string = std::string(value);
-    m_value.numeric = numeric_from_string(value);
-}
+    void set(std::string_view value)
+    {
+        m_value.string = std::string(value);
+        m_value.numeric = numeric_from_string(value);
+    }
 
-void detail::ConfigVariable::set(double value)
-{
-    std::stringstream ss;
-    ss << value;
+    void set(double value)
+    {
+        m_value.string = fmt::format("{}", value);
+        m_value.numeric = value;
+    }
 
-    m_value.string = ss.str();
-    m_value.numeric = value;
-}
+    std::string_view key() const noexcept { return m_key; }
+    uint32_t key_hash() const noexcept { return m_key_hash; }
+    const Value& value() const noexcept { return m_value; }
+
+private:
+    ConfigVariable(std::string_view key) : m_key(key), m_key_hash(hash_fnv1a(key)) {}
+
+    std::string m_key;
+    uint32_t m_key_hash;
+    Value m_value;
+};
+
+} // namespace
 
 //--------------------------------------------------------------------------------------------------
+// Config implementation
+//--------------------------------------------------------------------------------------------------
 
-template<typename T> T Config::as(std::string_view key) const
+Config::Config() = default;
+Config::~Config() = default;
+
+Config::Config(std::string_view filepath)
 {
-    const auto& v = at(key);
-    MG_ASSERT(v != nullptr);
+    read_from_file(filepath);
+}
 
-    if constexpr (std::is_integral_v<T>) {
-        return round<T>(v->value().numeric);
+// Shared const and non-const implementation of Config::at.
+template<typename CVarVector>
+auto at_impl(std::string_view key, CVarVector& values) -> decltype(values.data())
+{
+    const auto key_hash = hash_fnv1a(key);
+
+    auto it = find_if(values, [&](const ConfigVariable& cvar) {
+        return cvar.key_hash() == key_hash && cvar.key() == key;
+    });
+
+    if (it == values.end()) {
+        return nullptr;
     }
 
-    if constexpr (std::is_floating_point_v<T>) {
-        return static_cast<T>(v->value().numeric);
+    return std::addressof(*it);
+}
+
+struct ConfigData {
+    ConfigVariable* at(std::string_view key) { return at_impl(key, m_values); }
+    const ConfigVariable* at(std::string_view key) const { return at_impl(key, m_values); }
+
+    std::vector<ConfigVariable> m_values;
+};
+
+// Generic implementation of Config::set_default_value
+template<typename T> void _set_default_value(ConfigData& impl, std::string_view key, const T& value)
+{
+    auto p_cvar = impl.at(key);
+    if (p_cvar == nullptr) impl.m_values.emplace_back(key, value);
+}
+
+void Config::set_default_value(std::string_view key, std::string_view value)
+{
+    _set_default_value(impl(), key, value);
+}
+
+void Config::_set_default_value_numeric(std::string_view key, double value)
+{
+    _set_default_value(impl(), key, value);
+}
+
+// Generic implementation of Config::set_value
+template<typename T> void _set_value(ConfigData& impl, std::string_view key, const T& value)
+{
+    auto p_cvar = impl.at(key);
+    if (p_cvar != nullptr) {
+        p_cvar->set(value);
+    }
+    else {
+        impl.m_values.emplace_back(key, value);
+    }
+}
+
+void Config::set_value(std::string_view key, std::string_view value)
+{
+    _set_value(impl(), key, value);
+}
+
+void Config::_set_value_numeric(std::string_view key, double value)
+{
+    _set_value(impl(), key, value);
+}
+
+template<typename NumT> NumT Config::as(std::string_view key) const
+{
+    const auto& v = impl().at(key);
+    MG_ASSERT(v != nullptr);
+
+    if constexpr (std::is_integral_v<NumT>) {
+        return round<NumT>(v->value().numeric);
+    }
+
+    if constexpr (std::is_floating_point_v<NumT>) {
+        return static_cast<NumT>(v->value().numeric);
     }
 }
 
@@ -80,18 +183,23 @@ template uint64_t Config::as<uint64_t>(std::string_view) const;
 template float Config::as<float>(std::string_view) const;
 template double Config::as<double>(std::string_view) const;
 
+std::string_view Config::as_string(std::string_view key) const
+{
+    auto p_cvar = impl().at(key);
+    MG_ASSERT(p_cvar != nullptr);
+    return p_cvar->value().string;
+}
+
 std::string Config::assignment_line(std::string_view key) const
 {
-    auto p_cvar = at(key);
+    auto p_cvar = impl().at(key);
     MG_ASSERT(p_cvar != nullptr);
 
     std::string value = p_cvar->value().string;
 
     // If value is not numeric, add quotation marks
     if (!string_to<double>(value).first) {
-        std::ostringstream ss;
-        ss << "\"" << value << "\"";
-        value = ss.str();
+        value = "\"" + value + "\"";
     }
 
     // Format output line
@@ -176,7 +284,7 @@ void Config::read_from_file(std::string_view filepath)
 
 namespace {
 
-// Helper class for write_to_file, models a configuration value assignment line.
+// Helper class for write_to_file, models a configuration-value assignment line.
 struct Line {
     static auto init_key(std::string_view line) noexcept
     {
@@ -190,19 +298,13 @@ struct Line {
         key_hash = hash_fnv1a(key);
     }
 
+    friend bool operator==(const Line& l, const Line& r) noexcept { return l.key == r.key; }
+    friend bool operator<(const Line& l, const Line& r) noexcept { return l.text < r.text; }
+
     uint32_t key_hash;
     std::string key;
     std::string text;
 };
-
-bool operator==(const Line& l, const Line& r) noexcept
-{
-    return l.key == r.key;
-}
-bool operator<(const Line& l, const Line& r) noexcept
-{
-    return l.text < r.text;
-}
 
 } // namespace
 
@@ -229,7 +331,7 @@ void Config::write_to_file(std::string_view filepath) const
     std::vector<Line> new_lines;
 
     // Format new config lines
-    for (auto& cvar : m_values) {
+    for (auto& cvar : impl().m_values) {
         new_lines.emplace_back(assignment_line(cvar.key()));
     }
 
@@ -266,33 +368,6 @@ void Config::write_to_file(std::string_view filepath) const
     for (auto& l : lines) {
         io::write_line(*writer, l.text);
     }
-}
-
-// Shared const and non-const implementation of Config::at.
-template<typename CVarVector>
-auto at_impl(std::string_view key, CVarVector& values) -> decltype(values.data())
-{
-    const auto key_hash = hash_fnv1a(key);
-
-    auto it = find_if(values, [&](const detail::ConfigVariable& cvar) {
-        return cvar.key_hash() == key_hash && cvar.key() == key;
-    });
-
-    if (it == values.end()) {
-        return nullptr;
-    }
-
-    return std::addressof(*it);
-}
-
-detail::ConfigVariable* Config::at(std::string_view key)
-{
-    return at_impl(key, m_values);
-}
-
-const detail::ConfigVariable* Config::at(std::string_view key) const
-{
-    return at_impl(key, m_values);
 }
 
 } // namespace Mg
