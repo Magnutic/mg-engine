@@ -4,7 +4,7 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-/** @file mg_animatinos.h
+/** @file mg_animation.h
  * Structures defining animations for animated meshes.
  */
 
