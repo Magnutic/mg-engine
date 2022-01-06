@@ -127,6 +127,7 @@ Scene::Scene() : app(config_file) {}
 
 Scene::~Scene()
 {
+    Mg::write_display_settings(app.config(), app.window().settings());
     app.config().write_to_file(config_file);
 }
 
