@@ -32,6 +32,6 @@ struct WindowSettings {
 WindowSettings read_display_settings(Config& cfg);
 
 /** Write video mode settings to supplied Config. */
-inline void write_display_settings(Config& cfg, WindowSettings& s);
+void write_display_settings(Config& cfg, const WindowSettings& s);
 
 } // namespace Mg
