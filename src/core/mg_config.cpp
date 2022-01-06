@@ -6,6 +6,7 @@
 
 #include "mg/core/mg_config.h"
 
+#include "mg/containers/mg_flat_map.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/core/mg_log.h"
 #include "mg/utils/mg_assert.h"
@@ -45,16 +46,6 @@ public:
         double numeric = 0.0;
     };
 
-    explicit ConfigVariable(std::string_view key, double value) : ConfigVariable(key)
-    {
-        set(value);
-    }
-
-    explicit ConfigVariable(std::string_view key, std::string_view value) : ConfigVariable(key)
-    {
-        set(value);
-    }
-
     void set(std::string_view value)
     {
         m_value.string = std::string(value);
@@ -67,15 +58,9 @@ public:
         m_value.numeric = value;
     }
 
-    std::string_view key() const noexcept { return m_key; }
-    uint32_t key_hash() const noexcept { return m_key_hash; }
     const Value& value() const noexcept { return m_value; }
 
 private:
-    ConfigVariable(std::string_view key) : m_key(key), m_key_hash(hash_fnv1a(key)) {}
-
-    std::string m_key;
-    uint32_t m_key_hash;
     Value m_value;
 };
 
@@ -85,6 +70,8 @@ private:
 // Config implementation
 //--------------------------------------------------------------------------------------------------
 
+using ConfigVariablesMap = FlatMap<Identifier, ConfigVariable, Identifier::HashCompare>;
+
 Config::Config() = default;
 Config::~Config() = default;
 
@@ -93,70 +80,62 @@ Config::Config(std::string_view filepath)
     read_from_file(filepath);
 }
 
-// Shared const and non-const implementation of Config::at.
-template<typename CVarVector>
-auto at_impl(std::string_view key, CVarVector& values) -> decltype(values.data())
-{
-    const auto key_hash = hash_fnv1a(key);
-
-    auto it = find_if(values, [&](const ConfigVariable& cvar) {
-        return cvar.key_hash() == key_hash && cvar.key() == key;
-    });
-
-    if (it == values.end()) {
-        return nullptr;
+struct ConfigData {
+    ConfigVariable* at(Identifier key)
+    {
+        auto it = m_values.find(key);
+        return (it == m_values.end()) ? nullptr : std::addressof(it->second);
     }
 
-    return std::addressof(*it);
-}
+    const ConfigVariable* at(Identifier key) const
+    {
+        auto it = m_values.find(key);
+        return (it == m_values.end()) ? nullptr : std::addressof(it->second);
+    }
 
-struct ConfigData {
-    ConfigVariable* at(std::string_view key) { return at_impl(key, m_values); }
-    const ConfigVariable* at(std::string_view key) const { return at_impl(key, m_values); }
-
-    std::vector<ConfigVariable> m_values;
+    ConfigVariablesMap m_values;
 };
 
 // Generic implementation of Config::set_default_value
-template<typename T> void _set_default_value(ConfigData& impl, std::string_view key, const T& value)
+template<typename T> void _set_default_value(ConfigData& impl, Identifier key, const T& value)
 {
     auto p_cvar = impl.at(key);
-    if (p_cvar == nullptr) impl.m_values.emplace_back(key, value);
+    if (p_cvar == nullptr) impl.m_values[key].set(value);
 }
 
-void Config::set_default_value(std::string_view key, std::string_view value)
+void Config::set_default_value(Identifier key, std::string_view value)
 {
     _set_default_value(impl(), key, value);
 }
 
-void Config::_set_default_value_numeric(std::string_view key, double value)
+void Config::_set_default_value_numeric(Identifier key, double value)
 {
     _set_default_value(impl(), key, value);
 }
 
 // Generic implementation of Config::set_value
-template<typename T> void _set_value(ConfigData& impl, std::string_view key, const T& value)
+template<typename T> void _set_value(ConfigData& impl, Identifier key, const T& value)
 {
     auto p_cvar = impl.at(key);
     if (p_cvar != nullptr) {
         p_cvar->set(value);
     }
     else {
-        impl.m_values.emplace_back(key, value);
+        impl.m_values[key].set(value);
     }
 }
 
-void Config::set_value(std::string_view key, std::string_view value)
+void Config::set_value(Identifier key, std::string_view value)
 {
     _set_value(impl(), key, value);
 }
 
-void Config::_set_value_numeric(std::string_view key, double value)
+void Config::_set_value_numeric(Identifier key, double value)
 {
     _set_value(impl(), key, value);
 }
 
-template<typename NumT> NumT Config::as(std::string_view key) const
+template<typename NumT> NumT Config::as(Identifier key) const
 {
     const auto& v = impl().at(key);
     MG_ASSERT(v != nullptr);
@@ -171,26 +150,26 @@ template<typename NumT> NumT Config::as(std::string_view key) const
 }
 
 // Explicit instantiations for numeric types
-template bool Config::as<bool>(std::string_view) const;
-template int8_t Config::as<int8_t>(std::string_view) const;
-template int16_t Config::as<int16_t>(std::string_view) const;
-template int32_t Config::as<int32_t>(std::string_view) const;
-template int64_t Config::as<int64_t>(std::string_view) const;
-template uint8_t Config::as<uint8_t>(std::string_view) const;
-template uint16_t Config::as<uint16_t>(std::string_view) const;
-template uint32_t Config::as<uint32_t>(std::string_view) const;
-template uint64_t Config::as<uint64_t>(std::string_view) const;
-template float Config::as<float>(std::string_view) const;
-template double Config::as<double>(std::string_view) const;
+template bool Config::as<bool>(Identifier) const;
+template int8_t Config::as<int8_t>(Identifier) const;
+template int16_t Config::as<int16_t>(Identifier) const;
+template int32_t Config::as<int32_t>(Identifier) const;
+template int64_t Config::as<int64_t>(Identifier) const;
+template uint8_t Config::as<uint8_t>(Identifier) const;
+template uint16_t Config::as<uint16_t>(Identifier) const;
+template uint32_t Config::as<uint32_t>(Identifier) const;
+template uint64_t Config::as<uint64_t>(Identifier) const;
+template float Config::as<float>(Identifier) const;
+template double Config::as<double>(Identifier) const;
 
-std::string_view Config::as_string(std::string_view key) const
+std::string_view Config::as_string(Identifier key) const
 {
     auto p_cvar = impl().at(key);
     MG_ASSERT(p_cvar != nullptr);
     return p_cvar->value().string;
 }
 
-std::string Config::assignment_line(std::string_view key) const
+std::string Config::format_assignment_line(Identifier key) const
 {
     auto p_cvar = impl().at(key);
     MG_ASSERT(p_cvar != nullptr);
@@ -203,7 +182,7 @@ std::string Config::assignment_line(std::string_view key) const
     }
 
     // Format output line
-    return fmt::format("{} = {}", key, value);
+    return fmt::format("{} = {}", key.str_view(), value);
 }
 
 bool Config::evaluate_line(std::string_view input)
@@ -260,7 +239,7 @@ bool Config::evaluate_line(std::string_view input)
         value = std::string(rhs);
     }
 
-    set_value(key, value);
+    set_value(Identifier::from_runtime_string(key), value);
 
     return true;
 }
@@ -331,8 +310,8 @@ void Config::write_to_file(std::string_view filepath) const
     std::vector<Line> new_lines;
 
     // Format new config lines
-    for (auto& cvar : impl().m_values) {
-        new_lines.emplace_back(assignment_line(cvar.key()));
+    for (const auto& [key, value] : impl().m_values) {
+        new_lines.emplace_back(format_assignment_line(key));
     }
 
     std::sort(new_lines.begin(), new_lines.end());

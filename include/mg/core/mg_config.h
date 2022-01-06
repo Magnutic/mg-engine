@@ -11,6 +11,7 @@
 #pragma once
 
 
+#include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_simple_pimpl.h"
 
@@ -42,23 +43,23 @@ public:
     /** Set the default value for the given key.
      * This only sets the value if a value for the given key does not already exist.
      */
-    void set_default_value(std::string_view key, std::string_view value);
+    void set_default_value(Identifier key, std::string_view value);
 
     /** Set the default value for the given key.
      * This only sets the value if a value for the given key does not already exist.
      */
     template<typename NumT, typename = std::enable_if_t<std::is_arithmetic_v<NumT>>>
-    void set_default_value(std::string_view key, NumT value)
+    void set_default_value(Identifier key, NumT value)
     {
         _set_default_value_numeric(key, static_cast<double>(value));
     }
 
     /** Set the current value for the given key to string value. */
-    void set_value(std::string_view key, std::string_view value);
+    void set_value(Identifier key, std::string_view value);
 
     /** Set the current value for the given key to numeric value. */
     template<typename NumT, typename = std::enable_if_t<std::is_arithmetic_v<NumT>>>
-    void set_value(std::string_view key, NumT value)
+    void set_value(Identifier key, NumT value)
     {
         _set_value_numeric(key, static_cast<double>(value));
     }
@@ -66,13 +67,13 @@ public:
     /** Get configuration variable as numeric, e.g. `as<int32_t>("key_name")`
      * @return Numeric value of the variable (rounded to nearest, if integral).
      */
-    template<typename NumT> NumT as(std::string_view key) const;
+    template<typename NumT> NumT as(Identifier key) const;
 
     /** Get configuration variable as string. */
-    std::string_view as_string(std::string_view key) const;
+    std::string_view as_string(Identifier key) const;
 
     /** Get configuration value assignment line, as used by `evaluate_line`. */
-    std::string assignment_line(std::string_view key) const;
+    std::string format_assignment_line(Identifier key) const;
 
     /** Evaluates a config assignment line, taken from file or console.
      * The syntax is as follows:
@@ -96,8 +97,8 @@ public:
     void write_to_file(std::string_view filepath) const;
 
 private:
-    void _set_default_value_numeric(std::string_view key, double value);
-    void _set_value_numeric(std::string_view key, double value);
+    void _set_default_value_numeric(Identifier key, double value);
+    void _set_value_numeric(Identifier key, double value);
 };
 
 } // namespace Mg

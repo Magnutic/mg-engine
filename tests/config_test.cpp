@@ -37,8 +37,6 @@ TEST_CASE("Config")
         REQUIRE(config.as<bool>("bool_value_2") == false);
     }
 
-    // I know unit tests are not supposed to touch the file system, so uh, let's
-    // call it an integration test then?
     SECTION("Reading from file")
     {
         config.read_from_file(file);
