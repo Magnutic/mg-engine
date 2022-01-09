@@ -14,6 +14,25 @@ namespace Mg::gfx::internal {
 
 namespace {
 
+constexpr const auto vertex_fragment_common_code = R"(
+struct ClusterGridParams {
+    vec2 z_param;
+    float scale;
+    float bias;
+};
+
+layout(std140) uniform FrameBlock {
+    ClusterGridParams cluster_grid_params;
+    vec4 camera_position_and_time;
+    uvec2 viewport_size;
+    float z_near;
+    float z_far;
+
+    float exposure;
+} _frame_block;
+
+)";
+
 constexpr const auto vertex_framework_code = R"(
 layout(location = 0) in vec3 vert_position;
 layout(location = 1) in vec2 vert_tex_coord;
@@ -42,20 +61,6 @@ layout(std140) uniform MatrixBlock {
 #    define SKINNING_MATRIX(index) (_skinning_matrix_block.skinning_matrices[index])
 
 #endif // SKELETAL_ANIMATION_ENABLED
-
-struct ClusterGridParams {
-    vec2 z_param;
-    float scale;
-    float bias;
-};
-
-layout(std140) uniform FrameBlock {
-    ClusterGridParams cluster_grid_params;
-    vec4 camera_position_and_time;
-    uvec2 viewport_size;
-
-    float exposure;
-} _frame_block;
 
 #define CAMERA_POSITION (_frame_block.camera_position_and_time.xyz)
 #define CAMERA_EXPOSURE (_frame_block.exposure)
@@ -160,24 +165,12 @@ in v2f {
 
 layout (location = 0) out vec4 _frag_out;
 
-struct ClusterGridParams {
-    vec2 z_param;
-    float scale;
-    float bias;
-};
-
-layout(std140) uniform FrameBlock {
-    ClusterGridParams cluster_grid_params;
-    vec4 camera_position_and_time;
-    uvec2 viewport_size;
-
-    float exposure;
-} _frame_block;
-
 #define CAMERA_POSITION (_frame_block.camera_position_and_time.xyz)
 #define CAMERA_EXPOSURE (_frame_block.exposure)
 #define TIME (_frame_block.camera_position_and_time.w)
 #define VIEWPORT_SIZE (_frame_block.viewport_size)
+#define ZNEAR (_frame_block.z_near)
+#define ZFAR (_frame_block.z_far)
 
 #define WORLD_POSITION (_frag_in.position)
 #define TEX_COORD (_frag_in.tex_coord)
@@ -294,7 +287,7 @@ void main() {
 }
 )"sv;
 
-void add_define(std::string& string, const std::string_view define_name, size_t value)
+void add_define(std::string& string, const std::string_view define_name, const size_t value)
 {
     string += "#define ";
     string += define_name;
@@ -312,6 +305,7 @@ mesh_renderer_vertex_shader_framework_code(const MeshRendererFrameworkShaderPara
     result.reserve(vertex_framework_code.size() + 500);
 
     result += "#version 330 core\n";
+    result += vertex_fragment_common_code;
     add_define(result, "MATRIX_ARRAY_SIZE", params.matrix_array_size);
     add_define(result, "SKINNING_MATRIX_ARRAY_SIZE", params.skinning_matrix_array_size);
     if (params.skinning_matrix_array_size > 0) {
@@ -330,6 +324,7 @@ mesh_renderer_fragment_shader_framework_code(const MeshRendererFrameworkShaderPa
     result.reserve(fragment_framework_code.size() + 500);
 
     result += "#version 330 core\n";
+    result += vertex_fragment_common_code;
     add_define(result, "MAX_NUM_LIGHTS", params.light_grid_config.max_num_lights);
     add_define(result, "LIGHT_GRID_WIDTH", params.light_grid_config.grid_width);
     add_define(result, "LIGHT_GRID_HEIGHT", params.light_grid_config.grid_height);

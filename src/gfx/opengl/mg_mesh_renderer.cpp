@@ -68,6 +68,9 @@ struct FrameBlock {
 
     glm::uvec2 viewport_size{};
 
+    float z_near = 0.0f;
+    float z_far = 0.0f;
+
     float camera_exposure = 0.0f;
 };
 
@@ -112,6 +115,9 @@ FrameBlock make_frame_block(const ICamera& camera,
     FrameBlock frame_block;
     frame_block.camera_position_and_time = glm::vec4(camera.get_position(), current_time);
     frame_block.viewport_size = viewport_size;
+
+    frame_block.z_near = z_near;
+    frame_block.z_far = z_far;
 
     frame_block.cluster_grid_params.z_param = glm::vec2(z_near - z_far, z_near + z_far);
     frame_block.cluster_grid_params.scale = -scale;
