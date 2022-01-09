@@ -36,8 +36,8 @@ public:
     /** Clear the currently bound render target. */
     void clear(bool colour = true, bool depth = true) noexcept;
 
-    /** Synchronise application with graphics device. */
-    void synchronise() noexcept;
+    /** Synchronize application with graphics device. */
+    void synchronize() noexcept;
 };
 
 } // namespace Mg::gfx

@@ -50,7 +50,7 @@ public:
     MG_MAKE_NON_COPYABLE(BaseResource);
 
     /** Load resource from binary file data. This is the interface through which Mg::ResourceCache
-     * initialises resource types.
+     * initializes resource types.
      */
     LoadResourceResult load_resource(ResourceLoadingInput& input);
 

@@ -292,18 +292,18 @@ std::string Keyboard::description(InputSource::Id id) const
         return name;
     }
 
-    // Ask GLFW for localised key name
+    // Ask GLFW for localized key name
     // TODO: bug in GLFW < 3.3 makes this return LATIN-1 instead of UTF-8 when run in an X11 env.
     // Enforce use of GLFW >= 3.3 in build system?
-    const char* localised_name = glfwGetKeyName(glfw_key_code(key), 0);
+    const char* localized_name = glfwGetKeyName(glfw_key_code(key), 0);
 
-    if (localised_name != nullptr) {
-        name = localised_name;
+    if (localized_name != nullptr) {
+        name = localized_name;
         return name;
     }
 
-    // If glfwGetKeyName does not return localised name, fall back to these.
-    log.warning("Input: could not get localised name of key {}.", glfw_key_code(key));
+    // If glfwGetKeyName does not return localized name, fall back to these.
+    log.warning("Input: could not get localized name of key {}.", glfw_key_code(key));
 
     name = default_key_name(key);
     return name;

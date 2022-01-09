@@ -23,8 +23,8 @@ bool is_not_whitespace(char32_t c) noexcept
            std::find(k_white_space.begin(), k_white_space.end(), c) == k_white_space.end();
 }
 
-/** Tokenise string by delimiter, returns tokens in vector. */
-std::vector<std::string_view> tokenise_string(std::string_view s, std::string_view delims) noexcept
+/** Tokenize string by delimiter, returns tokens in vector. */
+std::vector<std::string_view> tokenize_string(std::string_view s, std::string_view delims) noexcept
 {
     auto elems = std::vector<std::string_view>{};
     bool is_delim = true;

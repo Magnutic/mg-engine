@@ -40,10 +40,10 @@ public:
     }
 
 
-    /** Same as from_coefficients, but assumes that the coefficients are already normalised (i.e.
+    /** Same as from_coefficients, but assumes that the coefficients are already normalized (i.e.
      * length of (a,b,c) == 1.
      */
-    static PointNormalPlane from_normalised_coefficients(const glm::vec4& coefficients)
+    static PointNormalPlane from_normalized_coefficients(const glm::vec4& coefficients)
     {
         return PointNormalPlane{ coefficients.x, coefficients.y, coefficients.z, coefficients.w };
     }

@@ -318,7 +318,7 @@ void Scene::render(const double lerp_factor)
         hdr_target->bind();
         app.gfx_device().clear();
 
-        const auto& commands = render_command_producer.finalise(camera,
+        const auto& commands = render_command_producer.finalize(camera,
                                                                 Mg::gfx::SortingMode::near_to_far);
 
         Mg::gfx::RenderParameters params = {};

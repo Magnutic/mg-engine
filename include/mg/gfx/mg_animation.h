@@ -18,7 +18,7 @@
 
 namespace Mg::gfx::Mesh {
 
-// TODO store animation length, tick rate (or normalise timings on conversion)
+// TODO store animation length, tick rate (or normalize timings on conversion)
 
 struct PositionKey {
     double time;

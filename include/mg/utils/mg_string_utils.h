@@ -71,14 +71,14 @@ constexpr bool is_ascii_alphanumeric(char c) noexcept
     return is_ascii_alphanumeric(to_char32(c));
 }
 
-/** Tokenise string by delimiter, returns tokens in vector. Works on UTF-8
+/** Tokenize string by delimiter, returns tokens in vector. Works on UTF-8
  * strings, but delimiter has to be ASCII.
- * @param s String to tokenise
+ * @param s String to tokenize
  * @param delims String of delimiter characters
  * @return Vector of tokens. Note that these are not copies, they are references
  * to parts of the input string.
  */
-std::vector<std::string_view> tokenise_string(std::string_view s, std::string_view delims) noexcept;
+std::vector<std::string_view> tokenize_string(std::string_view s, std::string_view delims) noexcept;
 
 /** Split string on first occurrence of char c. Works on UTF-8 strings, but
  * delimiter has to be ASCII.

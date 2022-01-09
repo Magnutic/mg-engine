@@ -90,7 +90,7 @@ public:
 
     /** Checks input devices but does not update state. This can be used to poll input more often
      * than state is updated. The typical use case is to ensure mouse motion is polled every render
-     * frame to minimise input latency, when rendering framerate is disconnected from the logical
+     * frame to minimize input latency, when rendering framerate is disconnected from the logical
      * time step.
      */
     void refresh();

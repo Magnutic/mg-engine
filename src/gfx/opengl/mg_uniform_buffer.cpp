@@ -53,7 +53,7 @@ void UniformBuffer::set_data(span<const std::byte> data, size_t dest_offset)
     const auto ubo_id = m_handle.as_gl_id();
 
     if (ubo_id == 0) {
-        log.warning("Attempting to write to uninitialised UBO");
+        log.warning("Attempting to write to uninitialized UBO");
         return;
     }
 

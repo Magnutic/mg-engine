@@ -102,7 +102,7 @@ void set_vsync(GLFWwindow* window, bool enable)
 }
 
 // Make sure settings are reasonable (fall back to defaults for invalid settings).
-WindowSettings sanitise_settings(WindowSettings s)
+WindowSettings sanitize_settings(WindowSettings s)
 {
     if (s.video_mode.width <= 0 || s.video_mode.height <= 0) {
         if (s.fullscreen && defs::k_default_to_desktop_res_in_fullscreen) {
@@ -164,11 +164,11 @@ std::unique_ptr<Window> Window::make(WindowSettings settings, std::string title)
 {
     // glfwInit() may be called multiple times
     if (glfwInit() == GLFW_FALSE) {
-        log.error("Window::make(): failed to initialise GLFW.");
+        log.error("Window::make(): failed to initialize GLFW.");
         return {};
     }
 
-    settings = sanitise_settings(settings);
+    settings = sanitize_settings(settings);
 
     glfwSetErrorCallback(glfw_error_callback);
 
@@ -269,7 +269,7 @@ void Window::poll_input_events()
 
 void Window::apply_settings(WindowSettings s)
 {
-    m_settings = sanitise_settings(s);
+    m_settings = sanitize_settings(s);
     reset();
 }
 

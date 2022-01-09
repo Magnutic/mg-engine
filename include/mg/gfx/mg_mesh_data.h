@@ -16,7 +16,7 @@
 #include "mg/mg_bounding_volumes.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_optional.h"
-#include "mg/utils/mg_vector_normalised.h"
+#include "mg/utils/mg_vector_normalized.h"
 
 #include <glm/mat4x4.hpp>
 
@@ -42,9 +42,9 @@ struct Vertex {
 
     uint32_t padding; // TODO temp for compatibility.
 
-    vec3_normalised normal;
-    vec3_normalised tangent;
-    vec3_normalised bitangent;
+    vec3_normalized normal;
+    vec3_normalized tangent;
+    vec3_normalized bitangent;
 };
 
 /** Attribute array corresponding to Vertex. Describes the data layout of a vertex. */
@@ -58,17 +58,17 @@ constexpr std::array<VertexAttribute, 5> mesh_vertex_attributes = {
     VertexAttribute{ 3,
                      sizeof(Vertex::normal),
                      VertexAttributeType::i16,
-                     IntValueMeaning::Normalise },
+                     IntValueMeaning::Normalize },
 
     VertexAttribute{ 3,
                      sizeof(Vertex::tangent),
                      VertexAttributeType::i16,
-                     IntValueMeaning::Normalise },
+                     IntValueMeaning::Normalize },
 
     VertexAttribute{ 3,
                      sizeof(Vertex::bitangent),
                      VertexAttributeType::i16,
-                     IntValueMeaning::Normalise }
+                     IntValueMeaning::Normalize }
 };
 
 //--------------------------------------------------------------------------------------------------

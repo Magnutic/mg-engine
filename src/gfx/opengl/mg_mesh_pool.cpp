@@ -231,12 +231,12 @@ void setup_vertex_attribute(const uint32_t attribute_index,
                             const int32_t stride,
                             const size_t offset)
 {
-    const bool is_normalised = attribute.int_value_meaning == IntValueMeaning::Normalise;
+    const bool is_normalized = attribute.int_value_meaning == IntValueMeaning::Normalize;
 
     glVertexAttribPointer(attribute_index,
                           narrow<GLint>(attribute.num_elements),
                           static_cast<GLuint>(attribute.type),
-                          static_cast<GLboolean>(is_normalised),
+                          static_cast<GLboolean>(is_normalized),
                           stride,
                           reinterpret_cast<GLvoid*>(offset)); // NOLINT
 

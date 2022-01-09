@@ -439,7 +439,7 @@ void DebugRenderer::draw_bones(const mat4& view_proj,
         const vec4 centre = matrix * origo;
 
         // Draw the axis and use the vector also as colour, so x is red, y is green, z is blue.
-        // It is easy to memorise which axis has which color if you think xyz=rgb.
+        // It is easy to memorize which axis has which color if you think xyz=rgb.
         auto draw_axis = [&](const vec4 axis) {
             const vec4 axis_point = centre + joint_axis_length * normalize(matrix * axis - centre);
             draw_line(view_proj, centre, axis_point, axis, 2.0f);

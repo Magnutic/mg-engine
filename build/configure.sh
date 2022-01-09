@@ -12,11 +12,11 @@ if [[ $# -eq 0 ]]; then
     echo "Arguments:"
     echo "    --debug Debug build (default is release with debug info)"
     echo "    --release Release build without debug info (default is release with debug info)"
-    echo "    --use-sanitisers Enable runtime debug sanitisers"
+    echo "    --use-sanitizers Enable runtime debug sanitizers"
     echo "    --use-gfx-debug-groups Enable debug groups (for use with e.g. apitrace)"
     echo "    --clang-tidy-command <command> Run clang-tidy when building using the given command."
     echo "    --generator <generator> Which generator to use (corresponds to CMake option -G)."
-    echo "Example: $0 clang-deb clang-8 clang++-8 --debug --use-sanitisers --use-gfx-debug-groups"
+    echo "Example: $0 clang-deb clang-8 clang++-8 --debug --use-sanitizers --use-gfx-debug-groups"
     echo "Note: this script can be invoked multiple times to set up different configurations, as long as the configuration-names differ."
     exit
 fi
@@ -27,7 +27,7 @@ CXX_COMPILER=$3
 shift 3
 
 BUILD_TYPE=RelWithDebInfo
-USE_SANITISERS=0
+USE_SANITIZERS=0
 USE_GFX_DEBUG_GROUPS=0
 CLANG_TIDY_COMMAND=""
 GENERATOR=""
@@ -45,8 +45,8 @@ do
         BUILD_TYPE=Release
         shift
         ;;
-        --use-sanitisers|--use-sanitizers)
-        USE_SANITISERS=1
+        --use-sanitizers|--use-sanitizers)
+        USE_SANITIZERS=1
         shift
         ;;
         --use-gfx-debug-groups)
@@ -76,7 +76,7 @@ fi
 
 echo "Configuring '$CONFNAME' with C compiler '$C_COMPILER' and C++ compiler '$CXX_COMPILER'"
 echo "Build type: $BUILD_TYPE."
-echo "Sanitisers enabled: $USE_SANITISERS"
+echo "Sanitizers enabled: $USE_SANITIZERS"
 echo "Use gfx debug groups: $USE_GFX_DEBUG_GROUPS"
 if [[ $CLANG_TIDY_COMMAND != "" ]]; then
     echo "Clang-tidy enabled with command: $CLANG_TIDY_COMMAND"
@@ -93,7 +93,7 @@ mkdir "$BUILD_ROOT/$CONFNAME" || exit 1
 
 (cd "$BUILD_ROOT/$CONFNAME" &&
 cmake "$SRC_ROOT" -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
-    -DCMAKE_C_COMPILER="$C_COMPILER" -DCMAKE_CXX_COMPILER="$CXX_COMPILER" -DMG_DEBUG_SANITISERS=$USE_SANITISERS \
+    -DCMAKE_C_COMPILER="$C_COMPILER" -DCMAKE_CXX_COMPILER="$CXX_COMPILER" -DMG_DEBUG_SANITIZERS=$USE_SANITIZERS \
     -DMG_ENABLE_GFX_DEBUG_GROUPS=$USE_GFX_DEBUG_GROUPS \
     -DCMAKE_CXX_CLANG_TIDY="$CLANG_TIDY_COMMAND" \
     $GENERATOR_PART)

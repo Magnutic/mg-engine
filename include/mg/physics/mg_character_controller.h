@@ -210,7 +210,7 @@ private:
     float m_vertical_velocity = 0.0f;
     float m_vertical_step = 0.0f;
 
-    /// The desired velocity and its normalised direction, as set by the user.
+    /// The desired velocity and its normalized direction, as set by the user.
     glm::vec3 m_desired_velocity = glm::vec3(0.0f);
     glm::vec3 m_desired_direction = glm::vec3(0.0f);
 

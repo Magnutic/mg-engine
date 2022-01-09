@@ -72,13 +72,13 @@ private:
     ControlPoints m_control_points;
 };
 
-std::string serialise_curve(const Curve& curve);
+std::string serialize_curve(const Curve& curve);
 
-struct DeserialiseCurveResult {
+struct DeserializeCurveResult {
     Opt<Curve> curve;
     std::string error;
 };
 
-DeserialiseCurveResult deserialise_curve(std::string_view serialised_curve);
+DeserializeCurveResult deserialize_curve(std::string_view serialized_curve);
 
 } // namespace Mg

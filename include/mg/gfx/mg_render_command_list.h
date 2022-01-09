@@ -175,7 +175,7 @@ public:
      * @param sorting_mode Sorting order for the command sequence.
      * @return Reference to sorted command sequence along with associated transformation matrices.
      */
-    const RenderCommandList& finalise(const ICamera& camera, SortingMode sorting_mode);
+    const RenderCommandList& finalize(const ICamera& camera, SortingMode sorting_mode);
 
     /** Number of enqueued RenderCommand instances. */
     size_t size() const noexcept;

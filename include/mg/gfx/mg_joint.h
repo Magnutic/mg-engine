@@ -52,7 +52,7 @@ constexpr std::array<VertexAttribute, 2> influences_attributes = {
     VertexAttribute{ 4,
                      sizeof(Influences::weights),
                      VertexAttributeType::u16,
-                     IntValueMeaning::Normalise }
+                     IntValueMeaning::Normalize }
 };
 
 struct Joint {

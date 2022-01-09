@@ -5,7 +5,7 @@
 //**************************************************************************************************
 
 /** @file mg_bitmap_font.h
- * Loads and rasterises fonts, and prepares texts using the rasterised font that can be drawn using
+ * Loads and rasterizes fonts, and prepares texts using the rasterized font that can be drawn using
  * Mg::gfx::UIRenderer.
  */
 

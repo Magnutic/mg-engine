@@ -516,9 +516,9 @@ private:
 // the smallest weight.
 std::optional<size_t> get_influence_index_to_use(const Influences& bindings, const float weight)
 {
-    const auto normalised_weight = normalise<JointWeights::value_type>(weight);
+    const auto normalized_weight = normalize<JointWeights::value_type>(weight);
     auto it = std::min_element(bindings.weights.begin(), bindings.weights.end());
-    if (*it < normalised_weight) {
+    if (*it < normalized_weight) {
         return size_t(std::distance(bindings.weights.begin(), it));
     }
     return std::nullopt;
@@ -591,24 +591,24 @@ void MeshData::visit(const aiMesh& mesh)
                 if (std::optional<size_t> index = get_influence_index_to_use(influences, weight);
                     index.has_value()) {
                     influences.ids[index.value()] = m_joint_data->get_joint_id(bone);
-                    influences.weights[index.value()] = normalise<JointWeights::value_type>(weight);
+                    influences.weights[index.value()] = normalize<JointWeights::value_type>(weight);
                 }
             }
         });
     }
 
-    // Normalise influence weights, such that each vertex's weights sum to 1.0.
+    // Normalize influence weights, such that each vertex's weights sum to 1.0.
     for (Influences& influences : m_influences) {
         float total_weight = 0.0f;
         for (const auto weight : influences.weights) {
-            total_weight += denormalise(weight);
+            total_weight += denormalize(weight);
         }
         if (total_weight <= 0.0f) {
             continue;
         }
 
         for (auto& weight : influences.weights) {
-            weight = normalise<JointWeights::value_type>(denormalise(weight) / total_weight);
+            weight = normalize<JointWeights::value_type>(denormalize(weight) / total_weight);
         }
     }
 
@@ -620,7 +620,7 @@ void MeshData::visit(const aiMesh& mesh)
     submesh.num_indices = uint32_t(3 * mesh.mNumFaces);
 }
 
-// TODO: if the converter needs to be optimised, this function seems like a low-hanging fruit.
+// TODO: if the converter needs to be optimized, this function seems like a low-hanging fruit.
 void MeshData::add_vertex(const aiMesh& mesh, const uint32_t index)
 {
     Vertex& vertex = m_vertices.emplace_back();

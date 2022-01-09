@@ -6,14 +6,14 @@ vec3 unpack_normal(const vec3 packed_normal)
     return normalize(TANGENT_TO_WORLD * n);
 }
 
-float linearise_depth(float depth) {
+float linearize_depth(float depth) {
     return ZNEAR * ZFAR / (ZFAR + depth * (ZNEAR - ZFAR));
 }
 
 void final_colour(const SurfaceInput s_in, const SurfaceParams s, inout vec4 colour) {
     const float fog_density = 0.025;
     float depth = distance(WORLD_POSITION, CAMERA_POSITION);
-    // Alternative, non-radial: float depth = linearise_depth(gl_FragCoord.z);
+    // Alternative, non-radial: float depth = linearize_depth(gl_FragCoord.z);
     float fog_factor = 1.0 - exp2(-fog_density * depth);
     colour = mix(colour, vec4(0.5, 0.4, 1.0, 1.0), fog_factor);
 }

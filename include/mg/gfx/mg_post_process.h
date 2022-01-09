@@ -30,7 +30,7 @@ public:
 
     class Context;
 
-    /** Create a post-processing context. This initialises some state within the renderer so that it
+    /** Create a post-processing context. This initializes some state within the renderer so that it
      * can be re-used between multiple sequential invocations to `post_process`. It should not live
      * longer than necessary; in particular, it is not allowed to keep the Context while rendering
      * using some other renderer.

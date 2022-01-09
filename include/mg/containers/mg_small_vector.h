@@ -778,7 +778,7 @@ private:
         _move_elems_between_buffers(_storage_ptr(), new_buffer.get(), size());
 
         if (uses_local_storage()) {
-            // Initialise external-buffer-owning pointer
+            // Initialize external-buffer-owning pointer
             new (&m_external.buffer) ExternalBuffer();
         }
 

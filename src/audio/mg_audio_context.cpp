@@ -34,12 +34,12 @@ namespace {
 // OpenAL context management
 //--------------------------------------------------------------------------------------------------
 
-// Initialise OpenAL
+// Initialize OpenAL
 void init_OpenAL()
 {
-    // Open and initialise default OpenAL device.
+    // Open and initialize default OpenAL device.
     // TODO: should this be configurable / overridable, or is default always right?
-    // TODO: error handling: allow running without sound if OpenAL fails to initialise?
+    // TODO: error handling: allow running without sound if OpenAL fails to initialize?
     ALCdevice* device = alcOpenDevice(nullptr);
     if (!device) {
         log.error("Audio system error: Failed to open OpenAL device.");
@@ -65,7 +65,7 @@ void init_OpenAL()
         device_name = alcGetString(device, ALC_DEVICE_SPECIFIER);
     }
 
-    log.message("Successfully initialised OpenAL audio context [device: {}].", device_name);
+    log.message("Successfully initialized OpenAL audio context [device: {}].", device_name);
 }
 
 // Destroy OpenAL context and close its device.

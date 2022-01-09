@@ -59,7 +59,7 @@ GfxDevice::GfxDevice(Window& window)
 
     // Init GLAD
     if (gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)) == 0) { // NOLINT
-        log.error("Failed to initialise GLAD.");
+        log.error("Failed to initialize GLAD.");
         throw RuntimeError();
     }
 
@@ -136,10 +136,10 @@ void GfxDevice::clear(bool colour, bool depth) noexcept
     }
 }
 
-/** Synchronise application with graphics device. */
-void GfxDevice::synchronise() noexcept
+/** Synchronize application with graphics device. */
+void GfxDevice::synchronize() noexcept
 {
-    MG_GFX_DEBUG_GROUP("GfxDevice::synchronise")
+    MG_GFX_DEBUG_GROUP("GfxDevice::synchronize")
     // N.B. I tried using fences with glClientWaitSync as I hear that is a better approach (for
     // unclear reasons) but it had nowhere near the same impact on reducing input lag as glFinish.
     glFinish();

@@ -143,12 +143,12 @@ static_assert(std::is_trivially_copyable_v<Identifier>);
 namespace detail {
 
 // Static storage for dynamic string copies
-static struct StrMapInitialiser {
-    StrMapInitialiser() noexcept;
-    MG_MAKE_NON_MOVABLE(StrMapInitialiser);
-    MG_MAKE_NON_COPYABLE(StrMapInitialiser);
-    ~StrMapInitialiser();
-} str_map_initialiser;
+static struct StrMapInitializer {
+    StrMapInitializer() noexcept;
+    MG_MAKE_NON_MOVABLE(StrMapInitializer);
+    MG_MAKE_NON_COPYABLE(StrMapInitializer);
+    ~StrMapInitializer();
+} str_map_initializer;
 
 void report_hash_collision(std::string_view first, std::string_view second);
 
@@ -187,7 +187,7 @@ inline bool operator!=(const Identifier& lhs, const Identifier& rhs)
 
 namespace std {
 
-// We need to specialise std::hash in order to use Mg::Identifier in e.g. std::unordered_map. This
+// We need to specialize std::hash in order to use Mg::Identifier in e.g. std::unordered_map. This
 // just returns the pre-calculated hash value.
 template<> struct hash<Mg::Identifier> {
     std::size_t operator()(const Mg::Identifier& rhs) const noexcept { return rhs.hash(); }

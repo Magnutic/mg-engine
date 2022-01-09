@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
     bool run_auto_converter = false;
     std::string_view file;
 
-    std::vector<std::string_view> unrecognised_args;
+    std::vector<std::string_view> unrecognized_args;
 
     while (!args.empty()) {
         const auto arg = args.back();
@@ -206,13 +206,13 @@ int main(int argc, char* argv[])
             args.pop_back();
         }
         else {
-            unrecognised_args.push_back(arg);
+            unrecognized_args.push_back(arg);
             error = true;
         }
     }
 
-    for (const auto arg : unrecognised_args) {
-        std::cerr << "Unrecognised argument: " << arg << '\n';
+    for (const auto arg : unrecognized_args) {
+        std::cerr << "Unrecognized argument: " << arg << '\n';
     }
 
     if (error || (file.empty() && !run_auto_converter)) {

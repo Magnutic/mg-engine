@@ -5,7 +5,7 @@
 //**************************************************************************************************
 
 /** @file mg_audio_context.h
- * Initialises and owns audio system context.
+ * Initializes and owns audio system context.
  */
 
 #pragma once
@@ -36,7 +36,7 @@ struct ListenerState {
 
 struct AudioContextData;
 
-/** Initialises and owns audio system context. */
+/** Initializes and owns audio system context. */
 class AudioContext : PImplMixin<AudioContextData> {
     friend class SoundBufferHandle;
     friend class SoundSource;

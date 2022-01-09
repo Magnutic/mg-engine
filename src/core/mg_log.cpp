@@ -277,7 +277,7 @@ static std::aligned_storage_t<sizeof(Log)> log_buf;
 
 // GCC 7 helpfully warns against strict aliasing violations when using reinterpret_cast; but, as I
 // understand it, this case is actually well-defined, since log will only be accessed after
-// placement-new in LogInitialiser's constructor.
+// placement-new in LogInitializer's constructor.
 #ifdef __GNUC__
 #    pragma GCC diagnostic push
 #    pragma GCC diagnostic ignored "-Wstrict-aliasing"
@@ -289,14 +289,14 @@ Log& log = reinterpret_cast<Log&>(log_buf); // NOLINT
 #    pragma GCC diagnostic pop
 #endif
 
-detail::LogInitialiser::LogInitialiser() noexcept
+detail::LogInitializer::LogInitializer() noexcept
 {
     if (nifty_counter++ == 0) {
         new (&log) Log{ defs::k_engine_log_file };
     }
 }
 
-detail::LogInitialiser::~LogInitialiser()
+detail::LogInitializer::~LogInitializer()
 {
     if (--nifty_counter == 0) {
         (&log)->~Log();

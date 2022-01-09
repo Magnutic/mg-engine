@@ -25,7 +25,7 @@ class BufferTexture;
 class IRenderTarget;
 class UniformBuffer;
 
-/** How polygons should be rasterised. */
+/** How polygons should be rasterized. */
 enum class PolygonMode : unsigned { point = 0, line = 1, fill = 2 };
 
 /** Condition for letting a fragment pass through depth-testing against the depth buffer. */
@@ -58,7 +58,7 @@ struct PipelineInputDescriptor {
 
     /** Whether the input is mandatory; is it an error if the pipeline has no such active input?
      * Note that it is not uncommon for pipelines not to have an active input even if they are
-     * defined in the shader code, since they will be optimised away by the shader compiler if they
+     * defined in the shader code, since they will be optimized away by the shader compiler if they
      * are unused.
      */
     bool mandatory;
@@ -174,7 +174,7 @@ struct Pipeline::Settings {
      */
     DepthTestCondition depth_test_condition : 3;
 
-    /** How polygons should be rasterised by this pipeline. */
+    /** How polygons should be rasterized by this pipeline. */
     PolygonMode polygon_mode : 2;
 
     /** Which if any faces of polygons should be culled away. */

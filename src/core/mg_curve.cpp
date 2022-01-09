@@ -143,7 +143,7 @@ Curve::ControlPoints::const_iterator Curve::insertion_it(float x)
     return std::lower_bound(m_control_points.begin(), m_control_points.end(), x, cmp);
 }
 
-std::string serialise_curve(const Curve& curve)
+std::string serialize_curve(const Curve& curve)
 {
     std::stringstream stream;
     stream << "curve{";
@@ -154,25 +154,25 @@ std::string serialise_curve(const Curve& curve)
     return stream.str();
 }
 
-DeserialiseCurveResult deserialise_curve(const std::string_view serialised_curve)
+DeserializeCurveResult deserialize_curve(const std::string_view serialized_curve)
 {
     constexpr std::string_view expected_prefix = "curve{";
     constexpr std::string_view expected_suffix = "}";
 
     auto error = [&](const std::string& reason) {
-        return DeserialiseCurveResult{
-            nullopt, fmt::format("Error deserialising curve '{}': {}", serialised_curve, reason)
+        return DeserializeCurveResult{
+            nullopt, fmt::format("Error deserialising curve '{}': {}", serialized_curve, reason)
         };
     };
 
-    if (!is_prefix_of(expected_prefix, serialised_curve)) {
+    if (!is_prefix_of(expected_prefix, serialized_curve)) {
         return error(fmt::format("expected prefix '{}'", expected_prefix));
     }
-    if (!is_suffix_of(expected_suffix, serialised_curve)) {
+    if (!is_suffix_of(expected_suffix, serialized_curve)) {
         return error(fmt::format("expected suffix '{}'", expected_suffix));
     }
 
-    std::string_view input = split_string_on_char(serialised_curve, '{').second;
+    std::string_view input = split_string_on_char(serialized_curve, '{').second;
     input = substring_until(input, '}');
 
     auto next_control_point = [&input]() -> Opt<std::array<float, 4>> {
@@ -181,7 +181,7 @@ DeserialiseCurveResult deserialise_curve(const std::string_view serialised_curve
         std::string_view points_string;
         std::tie(points_string, input) = split_string_on_char(input, ';');
 
-        auto values = tokenise_string(points_string, ",");
+        auto values = tokenize_string(points_string, ",");
         if (values.size() != control_point.size()) {
             return nullopt;
         }

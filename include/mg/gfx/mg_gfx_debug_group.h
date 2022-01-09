@@ -6,7 +6,7 @@
 
 /** @file mg_gfx_debug_group.h
  * RAII-guard for defining a graphics debugging scope.
- * This is be used to organise e.g. OpenGL calls when inspected with apitrace.
+ * This is be used to organize e.g. OpenGL calls when inspected with apitrace.
  */
 
 #include "mg/utils/mg_macros.h"
@@ -26,7 +26,7 @@ public:
 
 #if MG_ENABLE_GFX_DEBUG_GROUPS
 /* RAII-guard for defining a graphics debugging scope.
- * This is be used to organise e.g. OpenGL calls when inspected with apitrace.
+ * This is be used to organize e.g. OpenGL calls when inspected with apitrace.
  */
 #    define MG_GFX_DEBUG_GROUP(message) \
         ::Mg::gfx::detail::GfxDebugGroupGuard gfxDebugGroup_(message);

@@ -112,7 +112,7 @@ struct BitmapFontData {
 
 namespace {
 
-// Initial size of rasterised font textures. They grow as needed to fit requested glyphs.
+// Initial size of rasterized font textures. They grow as needed to fit requested glyphs.
 constexpr int k_initial_font_texture_width = 128;
 constexpr int k_initial_font_texture_height = 128;
 
@@ -511,7 +511,7 @@ PreparedText BitmapFont::prepare_text(std::string_view text_utf8,
         const stbtt_aligned_quad& q = char_quads[i];
         const size_t offset = i * verts_per_char;
 
-        // Normalise vertex positions into [0.0, 1.0] to simplify transformations (width and height
+        // Normalize vertex positions into [0.0, 1.0] to simplify transformations (width and height
         // is stored along with the text so that it can be scaled appropriately in the vertex
         // shader).
         // Flipped Y-axis compared with what stb_truetype expects.

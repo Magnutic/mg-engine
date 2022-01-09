@@ -24,7 +24,7 @@ namespace {
 //--------------------------------------------------------------------------------------------------
 // Nifty counter-based lifetime management for dynamic-string-copy map.
 // Guarantees initialisation before first use, even during static initialisation of other objects.
-// (This is the same pattern used to initialise std::cout, etc.)
+// (This is the same pattern used to initialize std::cout, etc.)
 //--------------------------------------------------------------------------------------------------
 
 // Strings are stored in linked list, with a map from hash to iterator pair of strings matching that
@@ -53,7 +53,7 @@ private:
     StringList::iterator m_end;
 };
 
-// This map stores copies of dynamic strings that have been used to initialise Identifiers.
+// This map stores copies of dynamic strings that have been used to initialize Identifiers.
 struct DynamicStrMap {
     StringList string_list;
 
@@ -67,14 +67,14 @@ DynamicStrMap* p_dynamic_str_map = nullptr;
 
 } // namespace
 
-detail::StrMapInitialiser::StrMapInitialiser() noexcept
+detail::StrMapInitializer::StrMapInitializer() noexcept
 {
     if (nifty_counter++ == 0) {
         p_dynamic_str_map = new (&map_buf) DynamicStrMap{};
     }
 }
 
-detail::StrMapInitialiser::~StrMapInitialiser()
+detail::StrMapInitializer::~StrMapInitializer()
 {
     if (--nifty_counter == 0) {
         p_dynamic_str_map->~DynamicStrMap();

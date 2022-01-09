@@ -35,7 +35,7 @@ enum class IntValueMeaning {
     /** Intepret integral value as float by normalising the integral type's range to the range
      * [0.0f, 1.0f], if unsigned; or [-1.0f, 1.0f], if signed.
      */
-    Normalise
+    Normalize
 };
 
 /** Vertex attributes describe how vertex data is to be interpreted. */

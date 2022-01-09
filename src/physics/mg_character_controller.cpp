@@ -58,7 +58,7 @@ namespace {
 constexpr vec3 world_up(0.0f, 0.0f, 1.0f);
 constexpr int num_penetration_recovery_iterations = 5;
 
-vec3 normalise_if_nonzero(const vec3& v)
+vec3 normalize_if_nonzero(const vec3& v)
 {
     return length(v) > FLT_EPSILON ? normalize(v) : vec3{ 0.0f, 0.0f, 0.0f };
 }
@@ -573,7 +573,7 @@ void CharacterController::step_down()
 void CharacterController::move(const vec3& velocity)
 {
     m_desired_velocity = velocity;
-    m_desired_direction = normalise_if_nonzero(velocity);
+    m_desired_direction = normalize_if_nonzero(velocity);
 }
 
 vec3 CharacterController::velocity() const

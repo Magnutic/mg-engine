@@ -32,7 +32,7 @@ struct CurveEditorSettings {
     /** Label for the widget. */
     std::string_view label;
 
-    /** Number of vertices used to visualise the curve. */
+    /** Number of vertices used to visualize the curve. */
     int num_curve_vertices = 256;
 
     /** Desired size of the widget, in pixels. */

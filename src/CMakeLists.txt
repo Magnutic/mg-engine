@@ -119,19 +119,19 @@ if((${CMAKE_COMPILER_IS_GNUCXX}) OR (${CMAKE_CXX_COMPILER_ID} MATCHES Clang))
     # Link std::experimental::filesystem
     target_link_libraries(mg_engine PUBLIC stdc++fs)
 
-    # Set up sanitisers in debug builds
+    # Set up sanitizers in debug builds
     if(CMAKE_BUILD_TYPE STREQUAL Debug)
-        set(SANITISERS "-fsanitize=address,undefined")
+        set(SANITIZERS "-fsanitize=address,undefined")
 
         if(${CMAKE_CXX_COMPILER_ID} MATCHES Clang)
             # Clang also has instrumentation to detect unsigned overflow, which is not necessarily
             # incorrect code, but often indicative of bugs.
-            set(SANITISERS "${SANITISERS},unsigned-integer-overflow")
+            set(SANITIZERS "${SANITIZERS},unsigned-integer-overflow")
         endif()
 
-        if(MG_DEBUG_SANITISERS)
-            target_compile_options(mg_engine PRIVATE ${SANITISERS})
-            target_link_libraries(mg_engine PRIVATE ${SANITISERS})
+        if(MG_DEBUG_SANITIZERS)
+            target_compile_options(mg_engine PRIVATE ${SANITIZERS})
+            target_link_libraries(mg_engine PRIVATE ${SANITIZERS})
         endif()
 
         # Enable minimal optimisations for debug builds

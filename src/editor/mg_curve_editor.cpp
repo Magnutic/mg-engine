@@ -20,7 +20,7 @@ namespace Mg::editor {
 
 namespace {
 
-ImVec2 normalise(ImVec2 v)
+ImVec2 normalize(ImVec2 v)
 {
     return v / std::sqrt(v.x * v.x + v.y * v.y);
 }
@@ -62,11 +62,11 @@ ControlPointScreenPosition control_point_screen_positions(ImRect bbox, const Con
     // 1.0f away. This provides a good enough visualisation for intuitive purposes.
     // Note: tangents are negated from what might be expected, due to this working in screen space,
     // which has y-axis growing downwards.
-    const auto left_tangent_handle_normalised = normalise(ImVec2{ -1.0f, cp.left_tangent });
-    const auto right_tangent_handle_normalised = normalise(ImVec2{ 1.0f, -cp.right_tangent });
+    const auto left_tangent_handle_normalized = normalize(ImVec2{ -1.0f, cp.left_tangent });
+    const auto right_tangent_handle_normalized = normalize(ImVec2{ 1.0f, -cp.right_tangent });
 
-    const auto right_tangent_point = point + right_tangent_handle_normalised * handle_length_pixels;
-    const auto left_tangent_point = point + left_tangent_handle_normalised * handle_length_pixels;
+    const auto right_tangent_point = point + right_tangent_handle_normalized * handle_length_pixels;
+    const auto left_tangent_point = point + left_tangent_handle_normalized * handle_length_pixels;
 
     ControlPointScreenPosition result;
     result.point = point;

@@ -30,7 +30,7 @@ template<typename T> struct CounterValues {
  * a utility type for test code, but it could also be used (with some overhead) to add error
  * checking to application or library code.
  *
- * It also tracks the state of the object -- is it initialised, moved from, and/or destroyed -- and
+ * It also tracks the state of the object -- is it initialized, moved from, and/or destroyed -- and
  * throws when used incorrectly.
  *
  * Use by including Counter<T> as a member of T or as a base of T (CRTP-use), for example:
@@ -39,7 +39,7 @@ template<typename T> struct CounterValues {
  *     class SomeClassB : public Mg::Counter<SomeClassB> { ... };
  *
  * @tparam T type to be counted
- * @tparam allow_copy_from_moved Whether it is valid to assign or initialise an object of type T by
+ * @tparam allow_copy_from_moved Whether it is valid to assign or initialize an object of type T by
  * copying/moving a moved-from T.
  */
 template<typename T, bool allow_copy_from_moved = false, bool allow_self_assignment = false>
@@ -47,7 +47,7 @@ class InstanceCounter {
 public:
     InstanceCounter()
     {
-        m_initialised = true;
+        m_initialized = true;
         ++detail::CounterValues<T>::s_counter;
         ++detail::CounterValues<T>::s_counter_move;
     }
@@ -56,7 +56,7 @@ public:
     {
         check_rhs("Copy constructing", rhs);
 
-        m_initialised = true;
+        m_initialized = true;
         m_moved_from = rhs.m_moved_from;
 
         if (!rhs.is_moved_from()) {
@@ -70,7 +70,7 @@ public:
     {
         check_rhs("Move constructing", rhs);
 
-        m_initialised = true;
+        m_initialized = true;
         m_moved_from = rhs.m_moved_from;
         ++detail::CounterValues<T>::s_counter_move;
         rhs.m_moved_from = true;
@@ -78,7 +78,7 @@ public:
 
     ~InstanceCounter()
     {
-        m_initialised = false;
+        m_initialized = false;
         m_destroyed = true;
         --detail::CounterValues<T>::s_counter_move;
         if (!is_moved_from()) {
@@ -129,7 +129,7 @@ public:
     /** Get the number of objects of type T that currently exist, including moved-from objects. */
     static int get_counter_move() { return detail::CounterValues<T>::s_counter_move; }
 
-    bool is_initialised() const { return m_initialised; }
+    bool is_initialized() const { return m_initialized; }
 
     bool is_destroyed() const { return m_destroyed; }
 
@@ -151,8 +151,8 @@ private:
             notify_error("self-assignment");
         }
 
-        if (!rhs.is_initialised()) {
-            notify_error("rhs is unitialised");
+        if (!rhs.is_initialized()) {
+            notify_error("rhs is unitialized");
         }
 
         if (!allow_copy_from_moved && rhs.is_moved_from()) {
@@ -169,7 +169,7 @@ private:
         }
     }
 
-    bool m_initialised = false;
+    bool m_initialized = false;
     bool m_destroyed = false;
     bool m_moved_from = false;
 };

@@ -24,7 +24,7 @@ namespace Mg::input {
 class Keyboard final : public IInputDevice {
 public:
     /** Each value corresponds to a physical key location on the keyboard, and is named for its
-     * meaning on a US-English QWERTY keyboard. To get the localised name for the key as the user
+     * meaning on a US-English QWERTY keyboard. To get the localized name for the key as the user
      * perceives it, use `KeyBoard::key(key_id).description()`.
      */
     enum class Key {

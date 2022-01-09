@@ -135,7 +135,7 @@ void RenderCommandProducer::clear() noexcept
     data.m_transforms_unsorted.clear();
 }
 
-namespace { // Helpers for RenderCommandList::finalise
+namespace { // Helpers for RenderCommandList::finalize
 
 template<bool invert> bool cmp_draw_call(SortKey lhs, SortKey rhs) noexcept
 {
@@ -187,7 +187,7 @@ SortKey create_sort_key(const RenderCommandProducerData& data,
 
 } // namespace
 
-const RenderCommandList& RenderCommandProducer::finalise(const ICamera& camera,
+const RenderCommandList& RenderCommandProducer::finalize(const ICamera& camera,
                                                          SortingMode sorting_mode)
 {
     RenderCommandProducerData& data = impl();

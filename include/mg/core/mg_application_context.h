@@ -43,7 +43,7 @@ struct UpdateTimerSettings {
      * `IApplication::simulation_step` will only be called `simulation_steps_per_second`. When
      * `decouple_rendering_from_time_step` is false, an invocation to
      * `IApplication::simulation_step` is always immediately followed by an invocation to
-     * `IApplication::render`, meaning that rendering is fully synchronised to simulation time
+     * `IApplication::render`, meaning that rendering is fully synchronized to simulation time
      * steps.
      */
     bool decouple_rendering_from_time_step = true;

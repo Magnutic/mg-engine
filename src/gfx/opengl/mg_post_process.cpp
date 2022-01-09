@@ -69,11 +69,11 @@ layout(std140) uniform FrameBlock {
 uniform sampler2D sampler_colour;
 uniform sampler2D sampler_depth;
 
-float linearise_depth_perspective(float depth) {
+float linearize_depth_perspective(float depth) {
     return ZNEAR * ZFAR / (ZFAR + depth * (ZNEAR - ZFAR));
 }
 
-float linearise_depth_ortho(float depth) {
+float linearize_depth_ortho(float depth) {
     return (2.0 * depth - 1.0) * (ZFAR - ZNEAR) + ZNEAR;
 }
 )";

@@ -14,7 +14,7 @@ namespace Mg::audio {
 
 SoundSource::SoundSource()
 {
-    AudioContext::get(); // Ensures OpenAL is initialised.
+    AudioContext::get(); // Ensures OpenAL is initialized.
 
     ALuint source_id = 0;
     alGenSources(1, &source_id);

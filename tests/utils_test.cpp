@@ -8,9 +8,9 @@
 
 using namespace Mg;
 
-TEST_CASE("tokenise_string")
+TEST_CASE("tokenize_string")
 {
-    auto tokens = tokenise_string(" \t this is \ta string   ", " \t");
+    auto tokens = tokenize_string(" \t this is \ta string   ", " \t");
     std::string string = "hello";
 
     REQUIRE(tokens.size() == 4);
@@ -19,7 +19,7 @@ TEST_CASE("tokenise_string")
     REQUIRE(tokens[2] == "a");
     REQUIRE(tokens[3] == "string");
 
-    tokens = tokenise_string("another :string:here:", ":");
+    tokens = tokenize_string("another :string:here:", ":");
 
     REQUIRE(tokens.size() == 3);
     REQUIRE(tokens[0] == "another ");

@@ -156,7 +156,7 @@ std::string assemble_shader_code(const std::vector<fs::path>& include_directorie
 {
     // Read line-by-line, try to parse each line as an #include directive; if successful, include
     // the file, otherwise, insert the line as is.
-    std::vector<std::string_view> lines = tokenise_string(code, "\n");
+    std::vector<std::string_view> lines = tokenize_string(code, "\n");
     std::string assembled_code;
 
     for (const auto line : lines) {

@@ -32,7 +32,7 @@
 namespace Mg {
 
 namespace detail {
-// Reserved index for uninitialised handles, Slot_map size is thus limited to `k_invalid_index - 1`.
+// Reserved index for uninitialized handles, Slot_map size is thus limited to `k_invalid_index - 1`.
 static constexpr auto k_invalid_index = std::numeric_limits<uint32_t>::max();
 
 static constexpr auto k_slot_map_growth_factor = 1.5f;
@@ -52,7 +52,7 @@ public:
         : m_index(index), m_counter(counter)
     {}
 
-    /** Get whether this handle is initialised. */
+    /** Get whether this handle is initialized. */
     operator bool() const noexcept { return m_counter < detail::k_invalid_index; }
 
     auto index() const noexcept { return m_index; }

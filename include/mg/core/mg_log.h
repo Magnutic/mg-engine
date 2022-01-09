@@ -125,14 +125,14 @@ private:
 
 // Nifty counter lifetime management of log instance
 namespace detail {
-struct LogInitialiser {
-    LogInitialiser() noexcept;
-    MG_MAKE_NON_COPYABLE(LogInitialiser);
-    MG_MAKE_NON_MOVABLE(LogInitialiser);
-    ~LogInitialiser();
+struct LogInitializer {
+    LogInitializer() noexcept;
+    MG_MAKE_NON_COPYABLE(LogInitializer);
+    MG_MAKE_NON_MOVABLE(LogInitializer);
+    ~LogInitializer();
 };
 
-static LogInitialiser log_initialiser;
+static LogInitializer log_initializer;
 } // namespace detail
 
 /** Mg Engine main log. */
