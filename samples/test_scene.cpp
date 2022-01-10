@@ -469,17 +469,12 @@ Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file)
 
 Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::Identifier> options)
 {
-    auto handle = resource_cache.resource_handle<Mg::ShaderResource>("shaders/default.mgshader");
-    Mg::gfx::Material* m = material_pool.create(file, handle);
-
-    for (auto o : options) {
-        m->set_option(o, true);
-    }
-
     const std::string diffuse_filename = fmt::format("textures/{}_da.dds", file.str_view());
     const std::string diffuse_filename_alt = fmt::format("textures/{}_d.dds", file.str_view());
     const std::string normal_filename = fmt::format("textures/{}_n.dds", file.str_view());
     const std::string specular_filename = fmt::format("textures/{}_s.dds", file.str_view());
+    const std::string ao_roughness_metallic_filename = fmt::format("textures/{}_arm.dds",
+                                                                   file.str_view());
 
     Mg::gfx::Texture2D* diffuse_texture =
         load_texture(Mg::Identifier::from_runtime_string(diffuse_filename));
@@ -498,16 +493,42 @@ Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::
             texture_pool.get_default_texture(Mg::gfx::TexturePool::DefaultTexture::NormalsFlat);
     }
 
-    Mg::gfx::Texture2D* specular_texture =
-        load_texture(Mg::Identifier::from_runtime_string(specular_filename));
-    if (!specular_texture) {
-        specular_texture =
-            texture_pool.get_default_texture(Mg::gfx::TexturePool::DefaultTexture::Transparent);
+    Mg::gfx::Texture2D* ao_roughness_metallic_texture =
+        load_texture(Mg::Identifier::from_runtime_string(ao_roughness_metallic_filename));
+
+    Mg::gfx::Texture2D* specular_texture = nullptr;
+
+    if (!ao_roughness_metallic_texture) {
+        specular_texture = load_texture(Mg::Identifier::from_runtime_string(specular_filename));
+
+        if (!specular_texture) {
+            specular_texture =
+                texture_pool.get_default_texture(Mg::gfx::TexturePool::DefaultTexture::Transparent);
+        }
+    }
+
+    const bool use_metallic_workflow = ao_roughness_metallic_texture != nullptr;
+
+    Mg::gfx::Material* m = nullptr;
+    if (use_metallic_workflow) {
+        auto handle = resource_cache.resource_handle<Mg::ShaderResource>(
+            "shaders/default_metallic_workflow.mgshader");
+        m = material_pool.create(file, handle);
+        m->set_sampler("sampler_ao_roughness_metallic", ao_roughness_metallic_texture->handle());
+    }
+    else {
+        auto handle = resource_cache.resource_handle<Mg::ShaderResource>(
+            "shaders/default_specular_workflow.mgshader");
+        m = material_pool.create(file, handle);
+        m->set_sampler("sampler_specular", specular_texture->handle());
+    }
+
+    for (auto o : options) {
+        m->set_option(o, true);
     }
 
     m->set_sampler("sampler_diffuse", diffuse_texture->handle());
     m->set_sampler("sampler_normal", normal_texture->handle());
-    m->set_sampler("sampler_specular", specular_texture->handle());
 
     mesh_renderer.prepare_shader(*m, true, true);
 
@@ -845,9 +866,12 @@ void Scene::load_models()
         std::array<MaterialFileAssignment, 1> crate_mats;
         crate_mats[0] = { 0, "crate" };
 
+        std::array<Mg::Identifier, 1> crate_mat_options;
+        crate_mat_options[0] = "PARALLAX";
+
         add_dynamic_model("meshes/box.mgm",
                           crate_mats,
-                          {},
+                          crate_mat_options,
                           { 0.0f, 0.0f, 10.0f },
                           Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
                           { 1.0f, 1.0f, 1.0f },

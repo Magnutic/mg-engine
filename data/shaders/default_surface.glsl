@@ -1,15 +1,3 @@
-// Unpack normal from normal map
-vec3 unpack_normal(const vec3 packed_normal)
-{
-    vec3 n = packed_normal * (255.0 / 128.0) - 1.0;
-    n.z    = sqrt(1.0 - dot(n.x, n.x) - dot(n.y, n.y));
-    return normalize(TANGENT_TO_WORLD * n);
-}
-
-float linearize_depth(float depth) {
-    return ZNEAR * ZFAR / (ZFAR + depth * (ZNEAR - ZFAR));
-}
-
 void final_colour(const SurfaceInput s_in, const SurfaceParams s, inout vec4 colour) {
     const float fog_density = 0.025;
     float depth = distance(WORLD_POSITION, CAMERA_POSITION);
@@ -56,22 +44,21 @@ void surface(const SurfaceInput s_in, out SurfaceParams s_out) {
     }
 #endif
 
-    vec4 spec_gloss = texture(sampler_specular, tex_coord.xy);
-    vec4 albedo_alpha = texture(sampler_diffuse, tex_coord.xy);
-    vec3 normal = unpack_normal(texture(sampler_normal, tex_coord.xy).xyz);
+    MaterialValues material;
+    get_material_values(tex_coord, material);
 
-    s_out.albedo   = albedo_alpha.rgb;
-    s_out.specular = spec_gloss.rgb;
-    s_out.gloss    = spec_gloss.a;
-    s_out.normal   = normal;
-    s_out.emission = albedo_alpha.rgb * material_params.ambient_colour.rgb;
+    s_out.albedo   = material.albedo;
+    s_out.specular = material.specular;
+    s_out.gloss    = material.gloss;
+    s_out.normal   = material.normal;
+    s_out.emission = material.albedo * material_params.ambient_colour.rgb * material.ambient_occlusion;
 
 #if RIM_LIGHT
-    float rim_factor = 1.0 - max(0.0, dot(s_in.view_direction, normal));
+    float rim_factor = 1.0 - max(0.0, dot(s_in.view_direction, material.normal));
     rim_factor       = pow(rim_factor, material_params.rim_power) * material_params.rim_intensity;
-    s_out.emission   += rim_factor * spec_gloss.rgb;
+    s_out.emission   += rim_factor * material.specular;
 #endif
 
-    s_out.occlusion  = 0.0;
+    s_out.occlusion  = 0.0; // TODO: material.ambient_occlusion ?
     s_out.alpha      = 1.0;
 }
