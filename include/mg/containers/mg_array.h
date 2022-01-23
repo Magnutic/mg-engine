@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -210,7 +210,7 @@ public:
 
     static ArrayUnknownSize make_copy(span<const T> data)
     {
-        if (data.size() == 0) {
+        if (data.empty()) {
             return ArrayUnknownSize{};
         }
         if constexpr (std::is_trivially_copyable_v<T>) {
@@ -297,7 +297,7 @@ public:
 
     static Array make_copy(span<const T> data)
     {
-        if (data.size() == 0) {
+        if (data.empty()) {
             return Array{};
         }
 
@@ -399,6 +399,8 @@ public:
     }
 
     typename Base::size_type size() const noexcept { return m_size; }
+
+    bool empty() const noexcept { return m_size == 0; }
 
 private:
     explicit Array(T* ptr, size_t size) noexcept : Base(ptr), m_size(size) {}
