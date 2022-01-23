@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -14,6 +14,7 @@
 #include "mg/utils/mg_assert.h"
 
 #include <cstddef>
+#include <initializer_list>
 #include <type_traits>
 #include <utility>
 
@@ -167,6 +168,12 @@ public:
     template<typename U, size_t N>
     constexpr span(U (&array)[N]) MG_SPAN_NOEXCEPT // NOLINT(cppcoreguidelines-avoid-c-arrays)
         : span(&array[0], &array[0] + N)
+    {}
+
+    // Construction from std::initializer_list. Not in std::span, but proposed as P2447.
+    template<typename U>
+    constexpr span(std::initializer_list<U> ilist) MG_SPAN_NOEXCEPT
+        : span(ilist.begin(), ilist.end())
     {}
 
     template<typename U> constexpr span& operator=(const span<U>& rhs) noexcept

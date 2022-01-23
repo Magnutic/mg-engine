@@ -25,17 +25,13 @@ public:
 
     bool should_reload_on_file_change() const override { return true; }
 
-    /** Load from file. */
     /** Access byte stream. */
-    span<std::byte> bytes() noexcept { return span{ m_buffer.begin(), m_buffer.end() }; }
+    span<std::byte> bytes() noexcept { return m_buffer; }
 
     /** Access byte stream. */
-    span<const std::byte> bytes() const noexcept
-    {
-        return span{ m_buffer.begin(), m_buffer.end() };
-    }
+    span<const std::byte> bytes() const noexcept { return m_buffer; }
 
-    Identifier type_id() const override { return "RawResource"; }
+    Identifier type_id() const override { return "RawResource"_id; }
 
 protected:
     LoadResourceResult load_resource_impl(ResourceLoadingInput& input) override;

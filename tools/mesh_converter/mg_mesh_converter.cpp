@@ -1,7 +1,7 @@
 #include "mg_mesh_converter.h"
 
-#include "mg_assimp_utils.h"
 #include "../shared/mg_file_writer.h"
+#include "mg_assimp_utils.h"
 
 #include <mg/resources/mg_mesh_resource_data.h>
 #include <mg/utils/mg_assert.h>
@@ -62,7 +62,7 @@ constexpr mat4 to_mg_space({ -k_scaling_factor, 0, 0, 0 },
                            { 0, k_scaling_factor, 0, 0 },
                            { 0, 0, 0, 1 });
 
-const glm::mat4& from_mg_space = glm::inverse(to_mg_space);
+const mat4 from_mg_space = glm::inverse(to_mg_space);
 
 inline mat4 convert_matrix(const aiMatrix4x4& aiMat)
 {
@@ -77,15 +77,15 @@ inline mat4 convert_matrix(const aiMatrix4x4& aiMat)
 
 inline vec3 convert_vector(const aiVector3D& ai_vector)
 {
-    return vec3(-ai_vector.x * k_scaling_factor,
-                ai_vector.z * k_scaling_factor,
-                ai_vector.y * k_scaling_factor);
+    return { -ai_vector.x * k_scaling_factor,
+             ai_vector.z * k_scaling_factor,
+             ai_vector.y * k_scaling_factor };
 }
 
 // TODO verify, very unsure about this
 inline quat convert_quaternion(const aiQuaternion& quaternion)
 {
-    return quat(quaternion.w, -quaternion.x, quaternion.z, quaternion.y);
+    return { quaternion.w, -quaternion.x, quaternion.z, quaternion.y };
 }
 
 template<typename... Ts> void notify(const Ts&... what)
@@ -858,15 +858,15 @@ bool write_file(const std::filesystem::path& file_path,
             animation_clip.channels = writer.enqueue_array(channels);
 
             for (size_t i = 0; i < position_channels.size(); ++i) {
-                channels[i].position_keys = writer.enqueue_array(span{ position_channels[i] });
+                channels[i].position_keys = writer.enqueue_array(span(position_channels[i]));
             }
 
             for (size_t i = 0; i < rotation_channels.size(); ++i) {
-                channels[i].rotation_keys = writer.enqueue_array(span{ rotation_channels[i] });
+                channels[i].rotation_keys = writer.enqueue_array(span(rotation_channels[i]));
             }
 
             for (size_t i = 0; i < scale_channels.size(); ++i) {
-                channels[i].scale_keys = writer.enqueue_array(span{ scale_channels[i] });
+                channels[i].scale_keys = writer.enqueue_array(span(scale_channels[i]));
             }
         }
     }

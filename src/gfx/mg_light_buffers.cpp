@@ -201,8 +201,8 @@ void LightBuffers::update(span<const Light> lights, const ICamera& cam)
     }
 
     // Clear buffers.
-    const auto light_index_array_bytes = span{ m.light_index_array }.size_bytes();
-    const auto tile_data_bytes = span{ m.clusters }.size_bytes();
+    const auto light_index_array_bytes = span(m.light_index_array).size_bytes();
+    const auto tile_data_bytes = span(m.clusters).size_bytes();
     std::memset(m.light_index_array.data(), 0, light_index_array_bytes);
     std::memset(m.clusters.data(), 0, tile_data_bytes);
 
@@ -225,8 +225,8 @@ void LightBuffers::update(span<const Light> lights, const ICamera& cam)
 
     // Upload to GPU.
     light_block_buffer.set_data(lights.as_bytes());
-    clusters_texture.set_data(as_bytes(span{ m.clusters }));
-    light_index_texture.set_data(as_bytes(span{ m.light_index_array }));
+    clusters_texture.set_data(as_bytes(span(m.clusters)));
+    light_index_texture.set_data(as_bytes(span(m.light_index_array)));
 }
 
 const LightGridConfig& LightBuffers::config() const

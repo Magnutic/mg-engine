@@ -238,7 +238,7 @@ void Material::_set_parameter_impl(Identifier name,
     const auto size = 4 * num_elems_for_param_type(param_type);
     MG_ASSERT(offset + size <= m_parameter_data.size());
     MG_ASSERT(param_value.size_bytes() >= size);
-    std::memcpy(&m_parameter_data.buffer[offset], param_value.data(), size);
+    std::memcpy(&m_parameter_data[offset], param_value.data(), size);
 }
 
 Opt<glm::vec4> Material::_get_parameter_impl(Identifier name,
@@ -269,7 +269,7 @@ Opt<glm::vec4> Material::_get_parameter_impl(Identifier name,
     const auto size = 4 * num_elems_for_param_type(p_param->type);
     MG_ASSERT(offset + size <= m_parameter_data.size());
     MG_ASSERT(sizeof(result) >= size);
-    std::memcpy(&result[0], &m_parameter_data.buffer[offset], size);
+    std::memcpy(&result[0], &m_parameter_data[offset], size);
     static_assert(std::is_trivially_copyable_v<glm::vec4>);
 
     return result;

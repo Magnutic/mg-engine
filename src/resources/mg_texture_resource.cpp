@@ -263,7 +263,7 @@ TextureResource::MipLevelData TextureResource::pixel_data(MipIndexT mip_index) c
         size = num_blocks_by_img_size(width, height) * block_size;
     }
 
-    return MipLevelData{ span{ m_pixel_data }.subspan(offset, size), width, height };
+    return MipLevelData{ span(m_pixel_data).subspan(offset, size), width, height };
 }
 
 } // namespace Mg

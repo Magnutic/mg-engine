@@ -310,6 +310,15 @@ TEST_CASE("Allows to construct from two pointers")
     REQUIRE(std::equal(w.begin(), w.end(), arr));
 }
 
+TEST_CASE("Allows to construct from std::initializer_list")
+{
+    auto receiver = [](span<const int> s) {
+        std::array s2{ 1, 2, 3 };
+        REQUIRE(std::equal(s.begin(), s.end(), s2.begin()));
+    };
+    receiver({ 1, 2, 3 });
+}
+
 TEST_CASE("Allows to construct from two pointers to const")
 {
     const int arr[] = {

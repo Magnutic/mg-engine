@@ -115,7 +115,7 @@ RenderCommandProducer::allocate_skinning_matrix_palette(const uint16_t num_joint
     impl().commands.m_skinning_matrices.resize(skinning_matrices_begin + num_joints);
 
     return SkinningMatrixPalette{
-        span{ impl().commands.m_skinning_matrices }.subspan(skinning_matrices_begin, num_joints),
+        span(impl().commands.m_skinning_matrices).subspan(skinning_matrices_begin, num_joints),
         narrow<uint16_t>(skinning_matrices_begin)
     };
 }

@@ -120,16 +120,11 @@ public:
      */
     span<const std::byte> material_params_buffer() const noexcept
     {
-        return span{ m_parameter_data }.as_bytes();
+        return byte_representation(m_parameter_data);
     }
 
 private:
-    struct ParamsBuffer {
-        std::array<uint8_t, defs::k_material_parameters_buffer_size> buffer;
-
-        const uint8_t* data() const noexcept { return &buffer[0]; }
-        size_t size() const noexcept { return defs::k_material_parameters_buffer_size; }
-    };
+    using ParamsBuffer = std::array<uint8_t, defs::k_material_parameters_buffer_size>;
 
     void _set_parameter_impl(Identifier name,
                              span<const std::byte> param_value,

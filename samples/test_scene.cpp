@@ -818,65 +818,36 @@ void Scene::load_models()
 {
     using namespace Mg::literals;
 
-    {
-        std::array<MaterialFileAssignment, 4> scene_mats;
-        scene_mats[0] = { 0, "buildings/GreenBrick" };
-        scene_mats[1] = { 1, "buildings/W31_1" };
-        scene_mats[2] = { 2, "buildings/BigWhiteBricks" };
-        scene_mats[3] = { 3, "buildings/GreenBrick" };
+    add_scene_model("meshes/misc/test_scene_2.mgm",
+                    { MaterialFileAssignment{ 0, "buildings/GreenBrick"_id },
+                      MaterialFileAssignment{ 1, "buildings/W31_1"_id },
+                      MaterialFileAssignment{ 2, "buildings/BigWhiteBricks"_id },
+                      MaterialFileAssignment{ 3, "buildings/GreenBrick"_id } },
+                    { "PARALLAX"_id });
 
-        std::array<Mg::Identifier, 1> scene_mat_options;
-        scene_mat_options[0] = "PARALLAX";
-        add_scene_model("meshes/misc/test_scene_2.mgm", scene_mats, scene_mat_options);
-    }
+    add_dynamic_model("meshes/Fox.mgm",
+                      { MaterialFileAssignment{ 0, "actors/fox"_id } },
+                      { "RIM_LIGHT"_id },
+                      { 2.0f, 0.0f, 0.0f },
+                      Mg::Rotation(),
+                      { 0.01f, 0.01f, 0.01f },
+                      false);
 
-    {
-        std::array<MaterialFileAssignment, 1> fox_mats;
-        fox_mats[0] = { 0, "actors/fox" };
+    add_dynamic_model("meshes/misc/hestdraugr.mgm"_id,
+                      { MaterialFileAssignment{ 0, "actors/HestDraugr"_id } },
+                      { "RIM_LIGHT"_id },
+                      { -2.0f, 2.0f, 1.0f },
+                      Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
+                      { 1.0f, 1.0f, 1.0f },
+                      true);
 
-        std::array<Mg::Identifier, 1> fox_mat_options;
-        fox_mat_options[0] = "RIM_LIGHT";
-
-        add_dynamic_model("meshes/Fox.mgm",
-                          fox_mats,
-                          fox_mat_options,
-                          { 2.0f, 0.0f, 0.0f },
-                          Mg::Rotation(),
-                          { 0.01f, 0.01f, 0.01f },
-                          false);
-    }
-
-    {
-        std::array<MaterialFileAssignment, 1> hest_mats;
-        hest_mats[0] = { 0, "actors/HestDraugr" };
-
-        std::array<Mg::Identifier, 1> hest_mat_options;
-        hest_mat_options[0] = "RIM_LIGHT";
-
-        add_dynamic_model("meshes/misc/hestdraugr.mgm",
-                          hest_mats,
-                          hest_mat_options,
-                          { -2.0f, 2.0f, 1.0f },
-                          Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
-                          { 1.0f, 1.0f, 1.0f },
-                          true);
-    }
-
-    {
-        std::array<MaterialFileAssignment, 1> crate_mats;
-        crate_mats[0] = { 0, "crate" };
-
-        std::array<Mg::Identifier, 1> crate_mat_options;
-        crate_mat_options[0] = "PARALLAX";
-
-        add_dynamic_model("meshes/box.mgm",
-                          crate_mats,
-                          crate_mat_options,
-                          { 0.0f, 0.0f, 10.0f },
-                          Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
-                          { 1.0f, 1.0f, 1.0f },
-                          true);
-    }
+    add_dynamic_model("meshes/box.mgm",
+                      { MaterialFileAssignment{ 0, "crate"_id } },
+                      { "PARALLAX"_id },
+                      { 0.0f, 0.0f, 10.0f },
+                      Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
+                      { 1.0f, 1.0f, 1.0f },
+                      true);
 }
 
 void Scene::load_materials()

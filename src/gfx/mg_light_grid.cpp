@@ -121,8 +121,7 @@ size_t LightGrid::extents_impl(const glm::vec3& centre_viewspace,
                                const Extremum extremum) noexcept
 {
     const float cmp_sign = (extremum == Extremum::max) ? -1.0f : 1.0f;
-    const auto planes = (axis == ExtentAxis::Y) ? span{ m_delim_plane_hor }
-                                                : span{ m_delim_plane_vert };
+    const auto& planes = (axis == ExtentAxis::Y) ? m_delim_plane_hor : m_delim_plane_vert;
 
     size_t min = 0;
     size_t max = (axis == ExtentAxis::Y) ? m_config.grid_height : m_config.grid_width;
