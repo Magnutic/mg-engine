@@ -40,32 +40,32 @@ public:
 
     /** How textures are filtered. For most textures, you want LINEAR_MIPMAP_LINEAR. */
     enum class Filtering {
-        NEAREST,                /** Nearest neighbour filtering */
-        LINEAR,                 /** Smoothly interpolated */
-        NEAREST_MIPMAP_NEAREST, /** Nearest with mipmapping */
-        LINEAR_MIPMAP_NEAREST,  /** Linear with mipmapping */
-        NEAREST_MIPMAP_LINEAR,  /** Nearest, smooth transitions between mips */
-        LINEAR_MIPMAP_LINEAR    /** Linear, smooth transitions between mips */
+        Nearest,                /** Nearest neighbour filtering */
+        Linear,                 /** Smoothly interpolated */
+        Nearest_mipmap_nearest, /** Nearest with mipmapping */
+        Linear_mipmap_nearest,  /** Linear with mipmapping */
+        Nearest_mipmap_linear,  /** Nearest, smooth transitions between mips */
+        Linear_mipmap_linear    /** Linear, smooth transitions between mips */
     };
 
     /** What happens when textures are sampled outside the [0, 1] UV-range. */
     enum class EdgeSampling {
-        REPEAT,          /** Texture is repeated endlessly */
-        MIRRORED_REPEAT, /** Texture is repeated but alternately mirrored */
-        CLAMP            /** Edge colour is propagated to infinity */
+        Repeat,          /** Texture is repeated endlessly */
+        Mirrored_repeat, /** Texture is repeated but alternately mirrored */
+        Clamp            /** Edge colour is propagated to infinity */
     };
 
     /** Whether the texture is in sRGB colour space. Generally, this is the case
      * (and is desirable) for colour textures, as it provides precision that
      * more closely matches human visual perception. But data textures such as
      * normal-maps should be stored in linear colour space.
-     * SRGBSetting::DEFAULT will choose linear for ATI2, since it is used for
+     * SRGBSetting::Default will choose linear for ATI2, since it is used for
      * normal maps.
      */
     enum class SRGBSetting {
-        DEFAULT, /** Automatically choose sRGB setting based on pixel format. */
-        SRGB,    /** Always treat as sRGB. */
-        LINEAR   /** Always treat as linear. */
+        Default, /** Automatically choose sRGB setting based on pixel format. */
+        sRGB,    /** Always treat as sRGB. */
+        Linear   /** Always treat as linear. */
     };
 
     /** Info on the format of the texture, this describes how to interpret the
@@ -79,16 +79,16 @@ public:
     /** Configurable settings for this texture. */
     struct Settings {
         /** Texture's filtering. See documentation for Filtering enum. */
-        Filtering filtering = Filtering::LINEAR_MIPMAP_LINEAR;
+        Filtering filtering = Filtering::Linear_mipmap_linear;
 
         /** Texture's edge sampling. See documentation for EdgeSampling enum. */
-        EdgeSampling edge_sampling = EdgeSampling::REPEAT;
+        EdgeSampling edge_sampling = EdgeSampling::Repeat;
 
-        /** Whether texture data is to be interpreted as being in sRGB colour
-         * space. This is usually what you want for colour maps (including
-         * specular colour), but not for textures describing other data (e.g.
-         * normal maps). */
-        SRGBSetting sRGB = SRGBSetting::DEFAULT;
+        /** Whether texture data is to be interpreted as being in sRGB colour space. This is usually
+         * what you want for colour maps, but not for textures containing other data (e.g. normal
+         * maps).
+         */
+        SRGBSetting sRGB = SRGBSetting::Default;
 
         /** Whether DXT1 texture has alpha. Unused for other texture formats. */
         bool dxt1_has_alpha = false;

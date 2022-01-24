@@ -179,9 +179,9 @@ GlTextureInfo gl_texture_info(const TextureResource& texture) noexcept
     info.type = GL_UNSIGNED_BYTE;
 
     // Determine whether to use sRGB colour space
-    bool sRGB = tex_settings.sRGB == TextureResource::SRGBSetting::SRGB;
+    bool sRGB = tex_settings.sRGB == TextureResource::SRGBSetting::sRGB;
 
-    if (tex_settings.sRGB == TextureResource::SRGBSetting::DEFAULT) {
+    if (tex_settings.sRGB == TextureResource::SRGBSetting::Default) {
         // Default to sRGB unless it is a normal map (ATI2 compression)
         sRGB = tex_format.pixel_format != TextureResource::PixelFormat::ATI2;
     }
@@ -241,16 +241,16 @@ void set_sampling_params(const TextureResource::Settings& settings) noexcept
     GLint edge_sampling = 0;
 
     switch (settings.edge_sampling) {
-    case TextureResource::EdgeSampling::CLAMP:
+    case TextureResource::EdgeSampling::Clamp:
         // N.B. a common mistake is to use GL_CLAMP here.
         edge_sampling = GL_CLAMP_TO_EDGE;
         break;
 
-    case TextureResource::EdgeSampling::REPEAT:
+    case TextureResource::EdgeSampling::Repeat:
         edge_sampling = GL_REPEAT;
         break;
 
-    case TextureResource::EdgeSampling::MIRRORED_REPEAT:
+    case TextureResource::EdgeSampling::Mirrored_repeat:
         edge_sampling = GL_MIRRORED_REPEAT;
         break;
     }
@@ -262,27 +262,27 @@ void set_sampling_params(const TextureResource::Settings& settings) noexcept
     GLint mag_filter = 0;
 
     switch (settings.filtering) {
-    case TextureResource::Filtering::NEAREST:
+    case TextureResource::Filtering::Nearest:
         min_filter = GL_NEAREST;
         mag_filter = GL_NEAREST;
         break;
-    case TextureResource::Filtering::NEAREST_MIPMAP_NEAREST:
+    case TextureResource::Filtering::Nearest_mipmap_nearest:
         min_filter = GL_NEAREST_MIPMAP_NEAREST;
         mag_filter = GL_NEAREST;
         break;
-    case TextureResource::Filtering::NEAREST_MIPMAP_LINEAR:
+    case TextureResource::Filtering::Nearest_mipmap_linear:
         min_filter = GL_NEAREST_MIPMAP_LINEAR;
         mag_filter = GL_NEAREST;
         break;
-    case TextureResource::Filtering::LINEAR:
+    case TextureResource::Filtering::Linear:
         min_filter = GL_LINEAR;
         mag_filter = GL_LINEAR;
         break;
-    case TextureResource::Filtering::LINEAR_MIPMAP_NEAREST:
+    case TextureResource::Filtering::Linear_mipmap_nearest:
         min_filter = GL_LINEAR_MIPMAP_NEAREST;
         mag_filter = GL_LINEAR;
         break;
-    case TextureResource::Filtering::LINEAR_MIPMAP_LINEAR:
+    case TextureResource::Filtering::Linear_mipmap_linear:
         min_filter = GL_LINEAR_MIPMAP_LINEAR;
         mag_filter = GL_LINEAR;
         break;
