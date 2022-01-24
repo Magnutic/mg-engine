@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -208,6 +208,11 @@ GlTextureInfo gl_texture_info(const TextureResource& texture) noexcept
                                     : GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
         break;
 
+    case TextureResource::PixelFormat::ATI1:
+        info.compressed = true;
+        info.internal_format = GL_COMPRESSED_RED_RGTC1;
+        break;
+
     case TextureResource::PixelFormat::ATI2:
         info.compressed = true;
         info.internal_format = GL_COMPRESSED_RG_RGTC2;
@@ -328,7 +333,6 @@ void upload_uncompressed_mip(bool preallocated,
     }
 
     // N.B. internalformat is unsigned in glCompressedTexImage2D, but signed in glTexImage2D.
-    // Another day in OpenGL-land!
     glTexImage2D(GL_TEXTURE_2D,
                  mip_index,
                  narrow<GLint>(info.internal_format),

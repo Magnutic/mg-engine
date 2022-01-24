@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -21,6 +21,16 @@ namespace {
 // DDS format helpers
 //--------------------------------------------------------------------------------------------------
 
+// DDS_header.ddspf.dwFlags
+constexpr uint32_t DDPF_ALPHAPIXELS = 0x00000001;
+constexpr uint32_t DDPF_FOURCC = 0x00000004;
+constexpr uint32_t DDPF_RGB = 0x00000040;
+
+#if 0 // Presently unused constants
+
+// DDS_header.ddspf.dwFlags
+constexpr uint32_t DDPF_INDEXED = 0x00000020;
+
 // DDS_header.dwFlags
 constexpr uint32_t DDSD_CAPS = 0x00000001;
 constexpr uint32_t DDSD_HEIGHT = 0x00000002;
@@ -30,12 +40,6 @@ constexpr uint32_t DDSD_PIXELFORMAT = 0x00001000;
 constexpr uint32_t DDSD_MIPMAPCOUNT = 0x00020000;
 constexpr uint32_t DDSD_LINEARSIZE = 0x00080000;
 constexpr uint32_t DDSD_DEPTH = 0x00800000;
-
-// DDS_header.ddspf.dwFlags
-constexpr uint32_t DDPF_ALPHAPIXELS = 0x00000001;
-constexpr uint32_t DDPF_FOURCC = 0x00000004;
-constexpr uint32_t DDPF_INDEXED = 0x00000020;
-constexpr uint32_t DDPF_RGB = 0x00000040;
 
 // DDS_header.dwCaps1
 constexpr uint32_t DDSCAPS_COMPLEX = 0x00000008;
@@ -52,14 +56,7 @@ constexpr uint32_t DDSCAPS2_CUBEMAP_POSITIVEZ = 0x00004000;
 constexpr uint32_t DDSCAPS2_CUBEMAP_NEGATIVEZ = 0x00008000;
 constexpr uint32_t DDSCAPS2_VOLUME = 0x00200000;
 
-// DDS_HEADER.DDS_PIXELFORMAT.dwFourCC
-constexpr uint32_t DDS = 0x20534444;
-constexpr uint32_t DXT1 = 0x31545844;
-constexpr uint32_t DXT2 = 0x32545844;
-constexpr uint32_t DXT3 = 0x33545844;
-constexpr uint32_t DXT4 = 0x34545844;
-constexpr uint32_t DXT5 = 0x35545844;
-constexpr uint32_t ATI2 = 0x32495441;
+#endif
 
 struct DDS_PIXELFORMAT {
     uint32_t dwSize;
@@ -98,21 +95,46 @@ struct PixelFormatResult {
     TextureResource::PixelFormat format;
 };
 
+constexpr uint32_t make_fourcc(const span<const char> four_chars)
+{
+    MG_ASSERT(four_chars.size() == 4 || (four_chars.size() == 5 && four_chars.back() == '\0'));
+    uint32_t out = 0u;
+    out |= (static_cast<uint32_t>(four_chars[0]));
+    out |= (static_cast<uint32_t>(four_chars[1]) << 8u);
+    out |= (static_cast<uint32_t>(four_chars[2]) << 16u);
+    out |= (static_cast<uint32_t>(four_chars[3]) << 24u);
+    return out;
+}
+
+std::string decompose_fourcc(const uint32_t fourcc)
+{
+    std::string out;
+    out.resize(4);
+    out[0] = static_cast<char>(fourcc & 0xff);
+    out[1] = static_cast<char>((fourcc >> 8u) & 0xff);
+    out[2] = static_cast<char>((fourcc >> 16u) & 0xff);
+    out[3] = static_cast<char>((fourcc >> 24u) & 0xff);
+    return out;
+}
+
+static_assert(make_fourcc("DDS ") == 0x20534444);
+const int test_dummy = (MG_ASSERT(decompose_fourcc(0x20534444) == "DDS "), 0);
+
 /** Determine pixel format of DDS file. Nullopt if format is unsupported. */
 PixelFormatResult dds_pf_to_pixel_format(const DDS_PIXELFORMAT& pf)
 {
     if ((pf.dwFlags & DDPF_FOURCC) != 0) {
         switch (pf.dwFourCC) {
-        case DXT1:
+        case make_fourcc("DXT1"):
             return { true, TextureResource::PixelFormat::DXT1 };
-        case DXT3:
+        case make_fourcc("DXT3"):
             return { true, TextureResource::PixelFormat::DXT3 };
-        case DXT5:
+        case make_fourcc("DXT5"):
             return { true, TextureResource::PixelFormat::DXT5 };
-        case ATI2:
+        case make_fourcc("ATI1"):
+            return { true, TextureResource::PixelFormat::ATI1 };
+        case make_fourcc("ATI2"):
             return { true, TextureResource::PixelFormat::ATI2 };
-        default:
-            break;
         }
     }
 
@@ -141,6 +163,8 @@ size_t block_size_by_format(TextureResource::PixelFormat pixel_format)
         return 16;
     case TextureResource::PixelFormat::DXT5:
         return 16;
+    case TextureResource::PixelFormat::ATI1:
+        return 8;
     case TextureResource::PixelFormat::ATI2:
         return 16;
     case TextureResource::PixelFormat::BGR:
@@ -172,26 +196,30 @@ LoadResourceResult TextureResource::load_resource_impl(ResourceLoadingInput& inp
         return LoadResourceResult::data_error("DDS file corrupt, missing data.");
     }
 
-    // Read 4CC marker
-    uint32_t four_cc;
-    std::memcpy(&four_cc, dds_data.data(), 4);
+    // Read file-type identifier four-character code
+    uint32_t four_cc{};
+    std::memcpy(&four_cc, dds_data.data(), sizeof(four_cc));
 
-    if (four_cc != DDS) {
+    if (four_cc != make_fourcc("DDS ")) {
         return LoadResourceResult::data_error("Not a DDS texture.");
     }
 
     // Read header
     DDS_HEADER header{};
-    std::memcpy(&header, dds_data.subspan(4).data(), sizeof(header));
+    std::memcpy(&header, dds_data.subspan(sizeof(four_cc)).data(), sizeof(header));
 
     // Determine texture's pixel format
     auto [valid, pixel_format] = dds_pf_to_pixel_format(header.ddspf);
     if (!valid) {
-        return LoadResourceResult::data_error("Unsupported DDS format.");
+        if (header.ddspf.dwFourCC == make_fourcc("DX10")) {
+            return LoadResourceResult::data_error("DX10 DDS files are currently unsupported.");
+        }
+        return LoadResourceResult::data_error(
+            fmt::format("Unsupported DDS format: {}", decompose_fourcc(header.ddspf.dwFourCC)));
     }
 
     // Get location and size of pixel data
-    const auto pixel_data_offset = sizeof(DDS_HEADER) + 4;
+    const auto pixel_data_offset = sizeof(DDS_HEADER) + sizeof(four_cc);
     MG_ASSERT_DEBUG(dds_data.length() > pixel_data_offset);
     const auto size = dds_data.length() - pixel_data_offset;
 
@@ -214,6 +242,9 @@ LoadResourceResult TextureResource::load_resource_impl(ResourceLoadingInput& inp
         }
     }
 
+    // The expected size of the image data. Actually an upper bound, since non-block-compressed
+    // textures may not be evenly divisible by the block size; as a result, num_blocks_by_img_size
+    // may have rounded up the number of blocks.
     const auto sane_size = num_blocks * block_size_by_format(pixel_format);
 
     if (size < sane_size) {

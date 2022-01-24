@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -34,6 +34,7 @@ public:
         DXT1, /** RGB, optionally 1-bit alpha, DXT compression. */
         DXT3, /** ARGB, explicit alpha, DXT compression. */
         DXT5, /** ARGB, interpolated alpha, DXT compression. */
+        ATI1, /** Special compression for single-channel images. */
         ATI2  /** Special XY compression format for normal maps. */
     };
 
