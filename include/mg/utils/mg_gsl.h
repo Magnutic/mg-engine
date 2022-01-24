@@ -196,6 +196,22 @@ public:
 
     constexpr T* data() const noexcept { return m_begin; }
 
+    constexpr T& front() const MG_SPAN_NOEXCEPT
+    {
+        if constexpr (MG_CHECK_SPAN_ACCESS) {
+            MG_ASSERT(!empty());
+        }
+        return *m_begin;
+    }
+
+    constexpr T& back() const MG_SPAN_NOEXCEPT
+    {
+        if constexpr (MG_CHECK_SPAN_ACCESS) {
+            MG_ASSERT(!empty());
+        }
+        return *(m_end - 1u);
+    }
+
     //----------------------------------------------------------------------------------------------
     // Subspans
     //----------------------------------------------------------------------------------------------

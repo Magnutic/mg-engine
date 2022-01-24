@@ -784,6 +784,68 @@ TEST_CASE("Allows to change an element via array indexing")
     REQUIRE(33 == arr[2]);
 }
 
+TEST_CASE("Allows to observe an element via front")
+{
+    int arr[] = {
+        1,
+        2,
+        3,
+    };
+    span<int> v(arr);
+    span<int> const w(arr);
+
+    REQUIRE(v.front() == arr[0]);
+    REQUIRE(w.front() == arr[0]);
+}
+
+TEST_CASE("Allows to change an element via front")
+{
+    int arr[] = {
+        1,
+        2,
+        3,
+    };
+    span<int> v(arr);
+    span<int> const w(arr);
+
+    v.front() = 22;
+    REQUIRE(22 == arr[0]);
+
+    w.front() = 33;
+    REQUIRE(33 == arr[0]);
+}
+
+TEST_CASE("Allows to observe an element via back")
+{
+    int arr[] = {
+        1,
+        2,
+        3,
+    };
+    span<int> v(arr);
+    span<int> const w(arr);
+
+    REQUIRE(v.back() == arr[2]);
+    REQUIRE(w.back() == arr[2]);
+}
+
+TEST_CASE("Allows to change an element via back")
+{
+    int arr[] = {
+        1,
+        2,
+        3,
+    };
+    span<int> v(arr);
+    span<int> const w(arr);
+
+    v.back() = 22;
+    REQUIRE(22 == arr[2]);
+
+    w.back() = 33;
+    REQUIRE(33 == arr[2]);
+}
+
 #if 0 // not implemented in Mg::gsl::span
     TEST_CASE("Allows to change an element via call indexing")
     {
