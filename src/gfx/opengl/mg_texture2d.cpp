@@ -164,66 +164,66 @@ TextureHandle generate_gl_render_target_texture(const RenderTargetParams& params
 //--------------------------------------------------------------------------------------------------
 
 // Get texture format info as required by OpenGL
-GlTextureInfo gl_texture_info(const TextureResource& texture) noexcept
+GlTextureInfo gl_texture_info(const TextureResource& resource,
+                              const TextureSettings& settings) noexcept
 {
     GlTextureInfo info{};
 
-    const auto& tex_format = texture.format();
-    const auto& tex_settings = texture.settings();
+    const auto& format = resource.format();
 
-    info.mip_levels = narrow<int32_t>(tex_format.mip_levels);
-    info.width = narrow<int32_t>(tex_format.width);
-    info.height = narrow<int32_t>(tex_format.height);
+    info.mip_levels = narrow<int32_t>(format.mip_levels);
+    info.width = narrow<int32_t>(format.width);
+    info.height = narrow<int32_t>(format.height);
 
     // Texture channels are all 8-bit, so far.
     info.type = GL_UNSIGNED_BYTE;
 
     // Determine whether to use sRGB colour space
-    bool sRGB = tex_settings.sRGB == TextureResource::SRGBSetting::sRGB;
+    bool sRGB = settings.sRGB == gfx::SRGBSetting::sRGB;
 
-    if (tex_settings.sRGB == TextureResource::SRGBSetting::Default) {
+    if (settings.sRGB == gfx::SRGBSetting::Default) {
         // Default to sRGB unless it is a normal map (ATI2 compression)
-        sRGB = tex_format.pixel_format != TextureResource::PixelFormat::ATI2;
+        sRGB = format.pixel_format != gfx::PixelFormat::ATI2;
     }
 
     // Pick OpenGL pixel format
-    switch (tex_format.pixel_format) {
-    case TextureResource::PixelFormat::DXT1:
+    switch (format.pixel_format) {
+    case gfx::PixelFormat::DXT1:
         info.compressed = true;
         info.internal_format =
-            tex_settings.dxt1_has_alpha
+            settings.dxt1_has_alpha
                 ? (sRGB ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT : GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
                 : (sRGB ? GL_COMPRESSED_SRGB_S3TC_DXT1_EXT : GL_COMPRESSED_RGB_S3TC_DXT1_EXT);
         break;
 
-    case TextureResource::PixelFormat::DXT3:
+    case gfx::PixelFormat::DXT3:
         info.compressed = true;
         info.internal_format = sRGB ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT
                                     : GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
         break;
 
-    case TextureResource::PixelFormat::DXT5:
+    case gfx::PixelFormat::DXT5:
         info.compressed = true;
         info.internal_format = sRGB ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT
                                     : GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
         break;
 
-    case TextureResource::PixelFormat::ATI1:
+    case gfx::PixelFormat::ATI1:
         info.compressed = true;
         info.internal_format = GL_COMPRESSED_RED_RGTC1;
         break;
 
-    case TextureResource::PixelFormat::ATI2:
+    case gfx::PixelFormat::ATI2:
         info.compressed = true;
         info.internal_format = GL_COMPRESSED_RG_RGTC2;
         break;
 
-    case TextureResource::PixelFormat::BGR:
+    case gfx::PixelFormat::BGR:
         info.internal_format = GL_RGB8;
         info.format = GL_BGR;
         break;
 
-    case TextureResource::PixelFormat::BGRA:
+    case gfx::PixelFormat::BGRA:
         info.internal_format = GL_RGBA8;
         info.format = GL_BGRA;
         break;
@@ -236,21 +236,21 @@ GlTextureInfo gl_texture_info(const TextureResource& texture) noexcept
 }
 
 // Set up texture sampling parameters for currently bound texture
-void set_sampling_params(const TextureResource::Settings& settings) noexcept
+void set_sampling_params(const TextureSettings& settings) noexcept
 {
     GLint edge_sampling = 0;
 
     switch (settings.edge_sampling) {
-    case TextureResource::EdgeSampling::Clamp:
+    case gfx::EdgeSampling::Clamp:
         // N.B. a common mistake is to use GL_CLAMP here.
         edge_sampling = GL_CLAMP_TO_EDGE;
         break;
 
-    case TextureResource::EdgeSampling::Repeat:
+    case gfx::EdgeSampling::Repeat:
         edge_sampling = GL_REPEAT;
         break;
 
-    case TextureResource::EdgeSampling::Mirrored_repeat:
+    case gfx::EdgeSampling::Mirrored_repeat:
         edge_sampling = GL_MIRRORED_REPEAT;
         break;
     }
@@ -262,27 +262,27 @@ void set_sampling_params(const TextureResource::Settings& settings) noexcept
     GLint mag_filter = 0;
 
     switch (settings.filtering) {
-    case TextureResource::Filtering::Nearest:
+    case gfx::Filtering::Nearest:
         min_filter = GL_NEAREST;
         mag_filter = GL_NEAREST;
         break;
-    case TextureResource::Filtering::Nearest_mipmap_nearest:
+    case gfx::Filtering::Nearest_mipmap_nearest:
         min_filter = GL_NEAREST_MIPMAP_NEAREST;
         mag_filter = GL_NEAREST;
         break;
-    case TextureResource::Filtering::Nearest_mipmap_linear:
+    case gfx::Filtering::Nearest_mipmap_linear:
         min_filter = GL_NEAREST_MIPMAP_LINEAR;
         mag_filter = GL_NEAREST;
         break;
-    case TextureResource::Filtering::Linear:
+    case gfx::Filtering::Linear:
         min_filter = GL_LINEAR;
         mag_filter = GL_LINEAR;
         break;
-    case TextureResource::Filtering::Linear_mipmap_nearest:
+    case gfx::Filtering::Linear_mipmap_nearest:
         min_filter = GL_LINEAR_MIPMAP_NEAREST;
         mag_filter = GL_LINEAR;
         break;
-    case TextureResource::Filtering::Linear_mipmap_linear:
+    case gfx::Filtering::Linear_mipmap_linear:
         min_filter = GL_LINEAR_MIPMAP_LINEAR;
         mag_filter = GL_LINEAR;
         break;
@@ -346,9 +346,10 @@ void upload_uncompressed_mip(bool preallocated,
     MG_CHECK_GL_ERROR();
 }
 
-TextureHandle generate_gl_texture_from(const TextureResource& texture_resource) noexcept
+TextureHandle generate_gl_texture_from(const TextureResource& resource,
+                                       const TextureSettings& settings) noexcept
 {
-    const GlTextureInfo info = gl_texture_info(texture_resource);
+    const GlTextureInfo info = gl_texture_info(resource, settings);
 
     GLuint texture_id{};
     glGenTextures(1, &texture_id);
@@ -373,14 +374,14 @@ TextureHandle generate_gl_texture_from(const TextureResource& texture_resource) 
 
     // Upload texture data, mipmap by mipmap
     for (int32_t mip_index = 0; mip_index < info.mip_levels; ++mip_index) {
-        const auto mip_data = texture_resource.pixel_data(narrow<uint32_t>(mip_index));
+        const auto mip_data = resource.pixel_data(narrow<uint32_t>(mip_index));
         auto pixels = mip_data.data.data();
         auto size = narrow<int32_t>(mip_data.data.size_bytes());
 
         upload_function(preallocate, mip_index, info, size, pixels);
     }
 
-    set_sampling_params(texture_resource.settings());
+    set_sampling_params(settings);
     MG_CHECK_GL_ERROR();
 
     return TextureHandle{ texture_id };
@@ -388,7 +389,8 @@ TextureHandle generate_gl_texture_from(const TextureResource& texture_resource) 
 
 TextureHandle generate_gl_texture_from(span<const uint8_t> rgba8_buffer,
                                        const int32_t width,
-                                       const int32_t height)
+                                       const int32_t height,
+                                       const TextureSettings& settings)
 {
     GLuint texture_id{};
     glGenTextures(1, &texture_id);
@@ -411,6 +413,7 @@ TextureHandle generate_gl_texture_from(span<const uint8_t> rgba8_buffer,
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
+    set_sampling_params(settings);
     MG_CHECK_GL_ERROR();
 
     return TextureHandle{ texture_id };
@@ -422,13 +425,14 @@ TextureHandle generate_gl_texture_from(span<const uint8_t> rgba8_buffer,
 // Texture2D implementation
 //--------------------------------------------------------------------------------------------------
 
-Texture2D Texture2D::from_texture_resource(const TextureResource& texture_resource)
+Texture2D Texture2D::from_texture_resource(const TextureResource& resource,
+                                           const TextureSettings& settings)
 {
-    Texture2D tex(generate_gl_texture_from(texture_resource));
+    Texture2D tex(generate_gl_texture_from(resource, settings));
 
-    tex.m_id = texture_resource.resource_id();
-    tex.m_image_size.width = narrow<int32_t>(texture_resource.format().width);
-    tex.m_image_size.height = narrow<int32_t>(texture_resource.format().height);
+    tex.m_id = resource.resource_id();
+    tex.m_image_size.width = narrow<int32_t>(resource.format().width);
+    tex.m_image_size.height = narrow<int32_t>(resource.format().height);
 
     return tex;
 }
@@ -446,10 +450,11 @@ Texture2D Texture2D::render_target(const RenderTargetParams& params)
 
 Texture2D Texture2D::from_rgba8_buffer(Identifier id,
                                        span<const uint8_t> rgba8_buffer,
-                                       const int32_t width,
-                                       const int32_t height)
+                                       int32_t width,
+                                       int32_t height,
+                                       const TextureSettings& settings)
 {
-    Texture2D tex(generate_gl_texture_from(rgba8_buffer, width, height));
+    Texture2D tex(generate_gl_texture_from(rgba8_buffer, width, height, settings));
 
     tex.m_id = id;
     tex.m_image_size.width = width;

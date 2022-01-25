@@ -21,7 +21,7 @@ class TextureResource;
 namespace Mg::gfx {
 
 class Texture2D;
-
+struct TextureSettings;
 struct RenderTargetParams; // Defined in mg_texture_related_types.h
 struct TexturePoolData;
 
@@ -33,7 +33,7 @@ public:
     MG_MAKE_NON_MOVABLE(TexturePool);
     MG_MAKE_NON_COPYABLE(TexturePool);
 
-    Texture2D* create(const TextureResource& resource);
+    Texture2D* create(const TextureResource& resource, const TextureSettings& settings);
 
     Texture2D* create_render_target(const RenderTargetParams& params);
 

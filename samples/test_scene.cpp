@@ -1,4 +1,5 @@
 ﻿#include "test_scene.h"
+#include "mg/gfx/mg_texture_related_types.h"
 
 #include <mg/core/mg_application_context.h>
 #include <mg/core/mg_config.h>
@@ -449,7 +450,7 @@ void Scene::setup_config()
     cfg.set_default_value("mouse_sensitivity_y", 0.002f);
 }
 
-Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file)
+Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file, const bool sRGB)
 {
     // Get form pool if it exists there.
     Mg::gfx::Texture2D* texture = texture_pool.get(file);
@@ -457,11 +458,14 @@ Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file)
         return texture;
     }
 
+    Mg::gfx::TextureSettings settings = {};
+    settings.sRGB = sRGB ? Mg::gfx::SRGBSetting::sRGB : Mg::gfx::SRGBSetting::Linear;
+
     // Otherwise, load from file.
     if (resource_cache.file_exists(file)) {
         const Mg::ResourceAccessGuard access =
             resource_cache.access_resource<Mg::TextureResource>(file);
-        return texture_pool.create(*access);
+        return texture_pool.create(*access, settings);
     }
 
     return nullptr;
@@ -477,9 +481,10 @@ Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::
                                                                    file.str_view());
 
     Mg::gfx::Texture2D* diffuse_texture =
-        load_texture(Mg::Identifier::from_runtime_string(diffuse_filename));
+        load_texture(Mg::Identifier::from_runtime_string(diffuse_filename), true);
     if (!diffuse_texture) {
-        diffuse_texture = load_texture(Mg::Identifier::from_runtime_string(diffuse_filename_alt));
+        diffuse_texture = load_texture(Mg::Identifier::from_runtime_string(diffuse_filename_alt),
+                                       true);
     }
     if (!diffuse_texture) {
         diffuse_texture =
@@ -487,19 +492,20 @@ Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::
     }
 
     Mg::gfx::Texture2D* normal_texture =
-        load_texture(Mg::Identifier::from_runtime_string(normal_filename));
+        load_texture(Mg::Identifier::from_runtime_string(normal_filename), false);
     if (!normal_texture) {
         normal_texture =
             texture_pool.get_default_texture(Mg::gfx::TexturePool::DefaultTexture::NormalsFlat);
     }
 
     Mg::gfx::Texture2D* ao_roughness_metallic_texture =
-        load_texture(Mg::Identifier::from_runtime_string(ao_roughness_metallic_filename));
+        load_texture(Mg::Identifier::from_runtime_string(ao_roughness_metallic_filename), false);
 
     Mg::gfx::Texture2D* specular_texture = nullptr;
 
     if (!ao_roughness_metallic_texture) {
-        specular_texture = load_texture(Mg::Identifier::from_runtime_string(specular_filename));
+        specular_texture = load_texture(Mg::Identifier::from_runtime_string(specular_filename),
+                                        true);
 
         if (!specular_texture) {
             specular_texture =
@@ -867,14 +873,14 @@ void Scene::load_materials()
 
     billboard_material = material_pool.create("billboard_material", billboard_handle);
     billboard_material->set_sampler("sampler_diffuse",
-                                    load_texture("textures/light_t.dds")->handle());
+                                    load_texture("textures/light_t.dds", true)->handle());
 
     // Create UI material
     const auto ui_handle =
         resource_cache.resource_handle<Mg::ShaderResource>("shaders/ui_render_test.mgshader");
     ui_material = material_pool.create("ui_material", ui_handle);
     ui_material->set_sampler("sampler_colour",
-                             load_texture("textures/ui/book_open_da.dds")->handle());
+                             load_texture("textures/ui/book_open_da.dds", true)->handle());
 }
 
 // Create a lot of random lights

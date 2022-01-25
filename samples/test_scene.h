@@ -167,7 +167,7 @@ private:
 
     bool load_mesh(Mg::Identifier file, Model& model);
 
-    Mg::gfx::Texture2D* load_texture(Mg::Identifier file);
+    Mg::gfx::Texture2D* load_texture(Mg::Identifier file, bool sRGB);
 
     Mg::gfx::Material* load_material(Mg::Identifier file, Mg::span<const Mg::Identifier> options);
 

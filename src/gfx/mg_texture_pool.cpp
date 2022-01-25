@@ -21,13 +21,23 @@
 
 namespace Mg::gfx {
 
+namespace {
+
+// Information about a texture within the pool.
+struct TextureNode {
+    Texture2D* instance;
+    TextureSettings settings;
+};
+
+} // namespace
+
 struct TexturePoolData {
     // Texture node storage -- stores elements largely contiguously, but does not invalidate
     // pointers.
     plf::colony<Texture2D> textures;
 
     // Used for looking up a texture node by identifier.
-    using HandleMap = FlatMap<Identifier, Texture2D*, Identifier::HashCompare>;
+    using HandleMap = FlatMap<Identifier, TextureNode, Identifier::HashCompare>;
     HandleMap texture_map;
 };
 
@@ -36,7 +46,7 @@ namespace {
 TexturePoolData::HandleMap::iterator try_insert_into_handle_map(TexturePoolData& data,
                                                                 Identifier key)
 {
-    const auto [map_it, inserted] = data.texture_map.insert({ key, nullptr });
+    const auto [map_it, inserted] = data.texture_map.insert({ key, { nullptr, {} } });
     if (inserted) {
         return map_it;
     }
@@ -48,12 +58,14 @@ TexturePoolData::HandleMap::iterator try_insert_into_handle_map(TexturePoolData&
 
 Texture2D* create_texture_impl(TexturePoolData& data,
                                const Identifier id,
-                               const std::function<Texture2D()>& texture_create_func)
+                               const std::function<Texture2D()>& texture_create_func,
+                               const TextureSettings& settings)
 {
     const auto handle_map_it = try_insert_into_handle_map(data, id);
     const auto texture_it = data.textures.emplace(texture_create_func());
     Texture2D* ptr = &*texture_it;
-    handle_map_it->second = ptr;
+    handle_map_it->second.instance = ptr;
+    handle_map_it->second.settings = settings;
     return ptr;
 }
 
@@ -62,18 +74,20 @@ Texture2D* create_texture_impl(TexturePoolData& data,
 TexturePool::TexturePool() = default;
 TexturePool::~TexturePool() = default;
 
-Texture2D* TexturePool::create(const TextureResource& resource)
+Texture2D* TexturePool::create(const TextureResource& resource, const TextureSettings& settings)
 {
     MG_GFX_DEBUG_GROUP("TexturePool::create")
-    auto generate_texture = [&resource] { return Texture2D::from_texture_resource(resource); };
-    return create_texture_impl(impl(), resource.resource_id(), generate_texture);
+    auto generate_texture = [&resource, &settings] {
+        return Texture2D::from_texture_resource(resource, settings);
+    };
+    return create_texture_impl(impl(), resource.resource_id(), generate_texture, settings);
 }
 
 Texture2D* TexturePool::create_render_target(const RenderTargetParams& params)
 {
     MG_GFX_DEBUG_GROUP("TexturePool::create_render_target")
     auto generate_texture = [&params] { return Texture2D::render_target(params); };
-    return create_texture_impl(impl(), params.render_target_id, generate_texture);
+    return create_texture_impl(impl(), params.render_target_id, generate_texture, {});
 }
 
 Texture2D* TexturePool::get(const Identifier& texture_id) const
@@ -82,7 +96,7 @@ Texture2D* TexturePool::get(const Identifier& texture_id) const
     if (it == impl().texture_map.end()) {
         return nullptr;
     }
-    return it->second;
+    return it->second.instance;
 }
 
 void TexturePool::update(const TextureResource& resource)
@@ -96,8 +110,8 @@ void TexturePool::update(const TextureResource& resource)
         return;
     }
 
-    Texture2D& old_texture = *it->second;
-    Texture2D new_texture = Texture2D::from_texture_resource(resource);
+    Texture2D& old_texture = *it->second.instance;
+    Texture2D new_texture = Texture2D::from_texture_resource(resource, it->second.settings);
 
     std::swap(old_texture, new_texture);
 
@@ -170,10 +184,10 @@ Texture2D* TexturePool::get_default_texture(DefaultTexture type)
 
     auto generate_texture = [id, index]() {
         span<const uint8_t> buffer = default_texture_buffers.at(index);
-        return Texture2D::from_rgba8_buffer(id, buffer, 2, 2);
+        return Texture2D::from_rgba8_buffer(id, buffer, 2, 2, {});
     };
 
-    return create_texture_impl(impl(), id, generate_texture);
+    return create_texture_impl(impl(), id, generate_texture, {});
 };
 
 } // namespace Mg::gfx

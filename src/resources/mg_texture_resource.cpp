@@ -92,7 +92,7 @@ static_assert(std::is_trivially_copyable_v<DDS_HEADER>);
 
 struct PixelFormatResult {
     bool valid;
-    TextureResource::PixelFormat format;
+    gfx::PixelFormat format;
 };
 
 constexpr uint32_t make_fourcc(const span<const char> four_chars)
@@ -126,15 +126,15 @@ PixelFormatResult dds_pf_to_pixel_format(const DDS_PIXELFORMAT& pf)
     if ((pf.dwFlags & DDPF_FOURCC) != 0) {
         switch (pf.dwFourCC) {
         case make_fourcc("DXT1"):
-            return { true, TextureResource::PixelFormat::DXT1 };
+            return { true, gfx::PixelFormat::DXT1 };
         case make_fourcc("DXT3"):
-            return { true, TextureResource::PixelFormat::DXT3 };
+            return { true, gfx::PixelFormat::DXT3 };
         case make_fourcc("DXT5"):
-            return { true, TextureResource::PixelFormat::DXT5 };
+            return { true, gfx::PixelFormat::DXT5 };
         case make_fourcc("ATI1"):
-            return { true, TextureResource::PixelFormat::ATI1 };
+            return { true, gfx::PixelFormat::ATI1 };
         case make_fourcc("ATI2"):
-            return { true, TextureResource::PixelFormat::ATI2 };
+            return { true, gfx::PixelFormat::ATI2 };
         }
     }
 
@@ -144,36 +144,36 @@ PixelFormatResult dds_pf_to_pixel_format(const DDS_PIXELFORMAT& pf)
     const bool alpha = ((pf.dwFlags & DDPF_ALPHAPIXELS) != 0) && (pf.dwABitMask == 0xff000000u);
 
     if (rgb && alpha && pf.dwRGBBitCount == 32) {
-        return { true, TextureResource::PixelFormat::BGRA };
+        return { true, gfx::PixelFormat::BGRA };
     }
 
     if (rgb && !alpha && pf.dwRGBBitCount == 24) {
-        return { true, TextureResource::PixelFormat::BGR };
+        return { true, gfx::PixelFormat::BGR };
     }
 
     return { false, {} };
 }
 
-size_t block_size_by_format(TextureResource::PixelFormat pixel_format)
+size_t block_size_by_format(gfx::PixelFormat pixel_format)
 {
     switch (pixel_format) {
-    case TextureResource::PixelFormat::DXT1:
+    case gfx::PixelFormat::DXT1:
         return 8;
-    case TextureResource::PixelFormat::DXT3:
+    case gfx::PixelFormat::DXT3:
         return 16;
-    case TextureResource::PixelFormat::DXT5:
+    case gfx::PixelFormat::DXT5:
         return 16;
-    case TextureResource::PixelFormat::ATI1:
+    case gfx::PixelFormat::ATI1:
         return 8;
-    case TextureResource::PixelFormat::ATI2:
+    case gfx::PixelFormat::ATI2:
         return 16;
-    case TextureResource::PixelFormat::BGR:
+    case gfx::PixelFormat::BGR:
         return 48;
-    case TextureResource::PixelFormat::BGRA:
+    case gfx::PixelFormat::BGRA:
         return 64;
     }
 
-    MG_ASSERT(false && "Unexpected value for TextureResource::PixelFormat");
+    MG_ASSERT(false && "Unexpected value for gfx::PixelFormat");
 }
 
 /** Get the number of blocks in a mipmap of given dimensions. */

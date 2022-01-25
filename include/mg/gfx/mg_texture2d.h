@@ -30,7 +30,8 @@ namespace Mg::gfx {
 class Texture2D {
 public:
     /** Create a texture from the given resource. */
-    static Texture2D from_texture_resource(const TextureResource& texture_resource);
+    static Texture2D from_texture_resource(const TextureResource& resource,
+                                           const TextureSettings& settings);
 
     /** Create a render-target texture. */
     static Texture2D render_target(const RenderTargetParams& params);
@@ -40,7 +41,8 @@ public:
     static Texture2D from_rgba8_buffer(Identifier id,
                                        span<const uint8_t> rgba8_buffer,
                                        int32_t width,
-                                       int32_t height);
+                                       int32_t height,
+                                       const TextureSettings& settings);
 
     MG_MAKE_DEFAULT_MOVABLE(Texture2D);
     MG_MAKE_NON_COPYABLE(Texture2D);
