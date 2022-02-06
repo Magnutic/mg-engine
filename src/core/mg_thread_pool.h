@@ -38,6 +38,11 @@ public:
      */
     explicit ThreadPool(size_t thread_count);
 
+    ThreadPool(const ThreadPool&) = delete;
+    ThreadPool(ThreadPool&&) = delete;
+    ThreadPool& operator=(const ThreadPool&) = delete;
+    ThreadPool& operator=(ThreadPool&&) = delete;
+
     /** All jobs will be finished before destruction. */
     ~ThreadPool();
 
@@ -96,14 +101,14 @@ private:
 // ThreadPool implementation
 //--------------------------------------------------------------------------------------------------
 
-ThreadPool::ThreadPool(size_t thread_count)
+inline ThreadPool::ThreadPool(size_t thread_count)
 {
     for (size_t i = 0; i < thread_count; ++i) {
         m_threads.emplace_back([this] { this->execute_job_loop(); });
     }
 }
 
-ThreadPool::~ThreadPool()
+inline ThreadPool::~ThreadPool()
 {
     // Wait for all added jobs to finish
     await_all_jobs();
@@ -118,7 +123,7 @@ ThreadPool::~ThreadPool()
 
     // Sanity check
     MG_ASSERT_DEBUG(m_num_jobs == 0);
-    MG_ASSERT_DEBUG(m_queue.size() == 0);
+    MG_ASSERT_DEBUG(m_queue.empty());
 
     // Join all threads
     for (auto& thread : m_threads) {
@@ -128,7 +133,7 @@ ThreadPool::~ThreadPool()
     }
 }
 
-void ThreadPool::enqueue_job(fu2::unique_function<void()> job_wrapper)
+inline void ThreadPool::enqueue_job(fu2::unique_function<void()> job_wrapper)
 {
     std::lock_guard<std::mutex> lock{ m_jobs_mutex };
     m_queue.emplace(std::move(job_wrapper));
@@ -152,7 +157,7 @@ template<typename Job> auto ThreadPool::add_job(Job job) -> AddJobReturnT<Job>
     }
 }
 
-void ThreadPool::await_all_jobs()
+inline void ThreadPool::await_all_jobs()
 {
     std::unique_lock<std::mutex> lock{ m_jobs_mutex };
     if (m_num_jobs > 0) {
@@ -160,7 +165,7 @@ void ThreadPool::await_all_jobs()
     }
 }
 
-void ThreadPool::execute_job_loop()
+inline void ThreadPool::execute_job_loop()
 {
     for (;;) {
         fu2::unique_function<void()> current_job;
@@ -169,7 +174,7 @@ void ThreadPool::execute_job_loop()
             std::unique_lock<std::mutex> lock{ m_jobs_mutex };
 
             // Wait until a job is available (or the pool is being destroyed)
-            m_job_available_var.wait(lock, [this] { return m_queue.size() > 0 || m_exiting; });
+            m_job_available_var.wait(lock, [this] { return !m_queue.empty() || m_exiting; });
 
             if (m_exiting) {
                 return;
