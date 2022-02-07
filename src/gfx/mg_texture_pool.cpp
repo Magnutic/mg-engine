@@ -127,6 +127,8 @@ void TexturePool::destroy(Texture2D* texture)
     impl().texture_map.erase(texture_id);
 }
 
+namespace {
+
 const auto num_default_textures = static_cast<size_t>(TexturePool::DefaultTexture::Checkerboard) +
                                   1;
 
@@ -173,21 +175,28 @@ constexpr std::array<std::array<uint8_t, 16>, num_default_textures> default_text
 }};
 // clang-format on
 
+} // namespace
+
 Texture2D* TexturePool::get_default_texture(DefaultTexture type)
 {
     const auto index = static_cast<size_t>(type);
     const Identifier& id = default_texture_identifiers.at(index);
 
+    TextureSettings settings = {};
+    settings.sRGB = type == DefaultTexture::NormalsFlat ? SRGBSetting::Linear
+                                                        : SRGBSetting::Default;
+    settings.filtering = Filtering::Nearest;
+
     if (Texture2D* texture = get(id)) {
         return texture;
     }
 
-    auto generate_texture = [id, index]() {
+    auto generate_texture = [&]() {
         span<const uint8_t> buffer = default_texture_buffers.at(index);
-        return Texture2D::from_rgba8_buffer(id, buffer, 2, 2, {});
+        return Texture2D::from_rgba8_buffer(id, buffer, 2, 2, settings);
     };
 
-    return create_texture_impl(impl(), id, generate_texture, {});
+    return create_texture_impl(impl(), id, generate_texture, settings);
 };
 
 } // namespace Mg::gfx

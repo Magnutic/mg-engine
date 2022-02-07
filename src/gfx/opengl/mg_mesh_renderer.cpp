@@ -177,17 +177,17 @@ PipelinePool make_mesh_pipeline_pool(const MeshPipelinePoolKind kind,
     light_block_descriptor.input_name = "LightBlock";
     light_block_descriptor.type = PipelineInputType::UniformBuffer;
     light_block_descriptor.location = k_light_ubo_slot;
-    light_block_descriptor.mandatory = true;
+    light_block_descriptor.mandatory = false;
 
     sampler_tile_data_descriptor.input_name = "_sampler_tile_data";
     sampler_tile_data_descriptor.type = PipelineInputType::BufferTexture;
     sampler_tile_data_descriptor.location = k_sampler_tile_data_index;
-    sampler_tile_data_descriptor.mandatory = true;
+    sampler_tile_data_descriptor.mandatory = false;
 
     sampler_light_index_descriptor.input_name = "_sampler_light_index";
     sampler_light_index_descriptor.type = PipelineInputType::BufferTexture;
     sampler_light_index_descriptor.location = k_sampler_light_index_index;
-    sampler_light_index_descriptor.mandatory = true;
+    sampler_light_index_descriptor.mandatory = false;
 
     config.material_params_ubo_slot = k_material_params_ubo_slot;
 
