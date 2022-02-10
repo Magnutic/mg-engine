@@ -1,11 +1,15 @@
 #include "mg_mesh_converter.h"
 
+#include "mg/utils/mg_stl_helpers.h"
+#include "mg/utils/mg_string_utils.h"
+
 #include <algorithm>
 #include <chrono>
 #include <filesystem>
 #include <iostream>
 #include <map>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <vector>
 
@@ -62,7 +66,7 @@ struct AutoConverterSettings {
 };
 
 // Converts meshes if they have been modified more
-// recently than the .fbx with the same filename
+// recently than the input with the same filename
 void convert_modified_files(const std::vector<fs::path>& input_files,
                             const std::vector<fs::path>& existing_files,
                             const AutoConverterSettings& settings)
@@ -107,18 +111,26 @@ void convert_modified_files(const std::vector<fs::path>& input_files,
 }
 
 // Appends the paths to all files under directory (recursively) with the given extension to result.
-void add_files_to_list(const fs::path& extension,
+void add_files_to_list(const std::vector<std::string_view>& extensions,
                        const fs::path& directory,
                        std::vector<fs::path>& result)
 {
     fs::recursive_directory_iterator directory_iterator(
         directory, fs::directory_options::follow_directory_symlink);
 
+    auto has_sought_extension = [&extensions](const fs::path& filepath) {
+        const auto file_extension = to_lower(filepath.extension().generic_u8string());
+        return any_of(extensions, [&](const std::string_view& extension) {
+            return extension == file_extension;
+        });
+    };
+
     for (const fs::path& file : directory_iterator) {
         if (!fs::is_regular_file(file)) {
             continue;
         }
-        if (file.extension() == extension) {
+
+        if (has_sought_extension(file)) {
             result.push_back(file);
         }
     }
@@ -132,12 +144,9 @@ void auto_mesh_converter(const fs::path& directory, const AutoConverterSettings&
         std::vector<fs::path> source_files;
         std::vector<fs::path> mgm_files;
 
-        // TODO maybe: could probably use a lot of different formats here
-        add_files_to_list(".fbx", directory, source_files);
-        add_files_to_list(".dae", directory, source_files);
-        add_files_to_list(".glb", directory, source_files);
-        add_files_to_list(".gltf", directory, source_files);
-        add_files_to_list(".mgm", directory, mgm_files);
+        // TODO maybe: could probably use a lot more formats here
+        add_files_to_list({ ".fbx", ".dae", ".glb", ".gltf" }, directory, source_files);
+        add_files_to_list({ ".mgm" }, directory, mgm_files);
 
         if (settings.print_found_files) {
             std::cout << "\nSource files: \n";
