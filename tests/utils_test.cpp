@@ -190,33 +190,33 @@ template<typename T> void assert_ref_is_not_const(T&)
     static_assert(!std::is_const_v<T>);
 }
 
-TEST_CASE("IterateAdjacent empty")
+TEST_CASE("iterate_adjacent empty")
 {
     std::vector<int> empty = {};
     size_t num_iterations = 0;
-    for ([[maybe_unused]] auto&& [a, b] : IterateAdjacent(empty)) {
+    for ([[maybe_unused]] auto&& [a, b] : iterate_adjacent(empty)) {
         ++num_iterations;
     }
 
     REQUIRE(num_iterations == 0);
 }
 
-TEST_CASE("IterateAdjacent one element")
+TEST_CASE("iterate_adjacent one element")
 {
     std::vector<int> one_element = { 1 };
     size_t num_iterations = 0;
-    for ([[maybe_unused]] auto&& [a, b] : IterateAdjacent(one_element)) {
+    for ([[maybe_unused]] auto&& [a, b] : iterate_adjacent(one_element)) {
         ++num_iterations;
     }
 
     REQUIRE(num_iterations == 0);
 }
 
-TEST_CASE("IterateAdjacent two element")
+TEST_CASE("iterate_adjacent two element")
 {
     std::vector<int> two_elements = { 1, 2 };
     size_t num_iterations = 0;
-    for (auto&& [a, b] : IterateAdjacent(two_elements)) {
+    for (auto&& [a, b] : iterate_adjacent(two_elements)) {
         ++num_iterations;
         REQUIRE(a == 1);
         REQUIRE(b == 2);
@@ -225,11 +225,11 @@ TEST_CASE("IterateAdjacent two element")
     REQUIRE(num_iterations == 1);
 }
 
-TEST_CASE("IterateAdjacent many elements")
+TEST_CASE("iterate_adjacent many elements")
 {
     std::vector<int> values = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     size_t num_iterations = 0;
-    for (auto&& [a, b] : IterateAdjacent(values)) {
+    for (auto&& [a, b] : iterate_adjacent(values)) {
         ++num_iterations;
         REQUIRE(b == a + 1);
     }
@@ -237,11 +237,11 @@ TEST_CASE("IterateAdjacent many elements")
     REQUIRE(num_iterations == values.size() - 1);
 }
 
-TEST_CASE("IterateAdjacent mutable")
+TEST_CASE("iterate_adjacent mutable")
 {
     std::vector<int> values = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     size_t num_iterations = 0;
-    for (auto&& [a, b] : IterateAdjacent(values)) {
+    for (auto&& [a, b] : iterate_adjacent(values)) {
         ++num_iterations;
         b += a;
     }
@@ -250,14 +250,14 @@ TEST_CASE("IterateAdjacent mutable")
     REQUIRE(values == std::vector{ 1, 3, 6, 10, 15, 21, 28, 36, 45 });
 }
 
-TEST_CASE("IterateAdjacent const")
+TEST_CASE("iterate_adjacent const")
 {
     const std::vector<int> const_values = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     std::vector<int> values = const_values;
 
     {
         size_t num_iterations = 0;
-        for (auto&& [a, b] : IterateAdjacent(std::as_const(values))) {
+        for (auto&& [a, b] : iterate_adjacent(std::as_const(values))) {
             assert_ref_is_const(a);
             assert_ref_is_const(b);
             ++num_iterations;
@@ -267,7 +267,7 @@ TEST_CASE("IterateAdjacent const")
 
     {
         size_t num_iterations = 0;
-        for ([[maybe_unused]] auto&& [a, b] : IterateAdjacent(const_values)) {
+        for ([[maybe_unused]] auto&& [a, b] : iterate_adjacent(const_values)) {
             assert_ref_is_const(a);
             assert_ref_is_const(b);
             ++num_iterations;
@@ -276,22 +276,35 @@ TEST_CASE("IterateAdjacent const")
     }
 }
 
-TEST_CASE("Enumerate empty")
+TEST_CASE("iterate_adjacent initializer_list")
+{
+    size_t num_iterations = 0;
+    for (auto&& [a, b] : iterate_adjacent({ 1, 2, 3 })) {
+        assert_ref_is_const(a);
+        assert_ref_is_const(b);
+        REQUIRE(b == a + 1);
+        ++num_iterations;
+    }
+
+    REQUIRE(num_iterations == 2);
+}
+
+TEST_CASE("enumerate empty")
 {
     std::vector<int> empty = {};
     size_t num_iterations = 0;
-    for ([[maybe_unused]] auto&& [i, v] : Enumerate(empty, size_t(0))) {
+    for ([[maybe_unused]] auto&& [i, v] : enumerate(empty, size_t(0))) {
         ++num_iterations;
     }
 
     REQUIRE(num_iterations == 0);
 }
 
-TEST_CASE("Enumerate one element")
+TEST_CASE("enumerate one element")
 {
     std::vector<int> one_element = { 1 };
     size_t num_iterations = 0;
-    for (auto&& [i, v] : Enumerate(one_element, size_t(0))) {
+    for (auto&& [i, v] : enumerate(one_element, size_t(0))) {
         REQUIRE(num_iterations == i);
         ++num_iterations;
     }
@@ -299,13 +312,13 @@ TEST_CASE("Enumerate one element")
     REQUIRE(num_iterations == 1);
 }
 
-TEST_CASE("Enumerate")
+TEST_CASE("enumerate")
 {
     std::vector<int> values = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
     {
         size_t num_iterations = 0;
-        for (auto&& [i, v] : Enumerate(values, size_t(0))) {
+        for (auto&& [i, v] : enumerate(values, size_t(0))) {
             REQUIRE(i == num_iterations);
             ++num_iterations;
         }
@@ -315,7 +328,7 @@ TEST_CASE("Enumerate")
 
     {
         size_t num_iterations = 0;
-        for (auto&& [i, v] : Enumerate(values, size_t(5))) {
+        for (auto&& [i, v] : enumerate(values, size_t(5))) {
             REQUIRE(i == num_iterations + 5);
             ++num_iterations;
         }
@@ -325,7 +338,7 @@ TEST_CASE("Enumerate")
 
     {
         size_t num_iterations = 0;
-        for (auto&& [i, v] : Enumerate(values, int(0))) {
+        for (auto&& [i, v] : enumerate(values, int(0))) {
             static_assert(std::is_same_v<std::decay_t<decltype(i)>, int>);
             REQUIRE(static_cast<size_t>(i) == num_iterations);
             ++num_iterations;
@@ -336,7 +349,7 @@ TEST_CASE("Enumerate")
 
     {
         size_t num_iterations = 0;
-        for (auto&& [i, v] : Enumerate(values, -5)) {
+        for (auto&& [i, v] : enumerate(values, -5)) {
             static_assert(std::is_same_v<std::decay_t<decltype(i)>, int>);
             REQUIRE(static_cast<size_t>(i + 5) == num_iterations);
             ++num_iterations;
@@ -346,11 +359,11 @@ TEST_CASE("Enumerate")
     }
 }
 
-TEST_CASE("Enumerate mutable")
+TEST_CASE("enumerate mutable")
 {
     std::vector<int> values = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     size_t num_iterations = 0;
-    for (auto&& [i, v] : Enumerate(values, 0)) {
+    for (auto&& [i, v] : enumerate(values, 0)) {
         v += 1;
         ++num_iterations;
     }
@@ -359,14 +372,14 @@ TEST_CASE("Enumerate mutable")
     REQUIRE(values == std::vector{ 2, 3, 4, 5, 6, 7, 8, 9, 10 });
 }
 
-TEST_CASE("Enumerate const")
+TEST_CASE("enumerate const")
 {
     const std::vector<int> const_values = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     std::vector<int> values = const_values;
 
     {
         size_t num_iterations = 0;
-        for (auto&& [i, v] : Enumerate(std::as_const(values), 0)) {
+        for (auto&& [i, v] : enumerate(std::as_const(values), 0)) {
             assert_ref_is_const(v);
             REQUIRE(static_cast<size_t>(i) == num_iterations);
             ++num_iterations;
@@ -376,7 +389,7 @@ TEST_CASE("Enumerate const")
 
     {
         size_t num_iterations = 0;
-        for (auto&& [i, v] : Enumerate(const_values, 0)) {
+        for (auto&& [i, v] : enumerate(const_values, 0)) {
             assert_ref_is_const(v);
             REQUIRE(static_cast<size_t>(i) == num_iterations);
             ++num_iterations;
@@ -385,7 +398,19 @@ TEST_CASE("Enumerate const")
     }
 }
 
-TEST_CASE("Zip empty")
+TEST_CASE("enumerate initializer_list")
+{
+    size_t num_iterations = 0;
+    for (auto&& [i, v] : enumerate({ 1, 2, 3 }, int(0))) {
+        assert_ref_is_const(v);
+        REQUIRE(v == i + 1);
+        ++num_iterations;
+    }
+
+    REQUIRE(num_iterations == 3);
+}
+
+TEST_CASE("zip empty")
 {
     std::vector<int> i_empty = {};
     std::vector<int> i_non_empty = { 1 };
@@ -394,26 +419,26 @@ TEST_CASE("Zip empty")
 
     size_t num_iterations = 0;
 
-    for ([[maybe_unused]] auto&& [i, s] : Zip(i_empty, s_empty)) {
+    for ([[maybe_unused]] auto&& [i, s] : zip(i_empty, s_empty)) {
         ++num_iterations;
     }
-    for ([[maybe_unused]] auto&& [i, s] : Zip(i_empty, s_non_empty)) {
+    for ([[maybe_unused]] auto&& [i, s] : zip(i_empty, s_non_empty)) {
         ++num_iterations;
     }
-    for ([[maybe_unused]] auto&& [i, s] : Zip(i_non_empty, s_empty)) {
+    for ([[maybe_unused]] auto&& [i, s] : zip(i_non_empty, s_empty)) {
         ++num_iterations;
     }
 
     REQUIRE(num_iterations == 0);
 }
 
-TEST_CASE("Zip one element")
+TEST_CASE("zip one element")
 {
     std::vector<int> i_one_element = { 1 };
     std::vector<std::string> s_one_element = { "test" };
     size_t num_iterations = 0;
 
-    for (auto&& [i, s] : Zip(i_one_element, s_one_element)) {
+    for (auto&& [i, s] : zip(i_one_element, s_one_element)) {
         REQUIRE(i == 1);
         REQUIRE(s == "test");
         ++num_iterations;
@@ -422,7 +447,7 @@ TEST_CASE("Zip one element")
     REQUIRE(num_iterations == 1);
 }
 
-TEST_CASE("Zip one element const")
+TEST_CASE("zip one element const")
 {
     std::vector<int> i_one_element = { 1 };
     std::vector<std::string> s_one_element = { "test" };
@@ -431,7 +456,7 @@ TEST_CASE("Zip one element const")
 
     size_t num_iterations = 0;
 
-    for (auto&& [i, s] : Zip(const_i_one_element, const_s_one_element)) {
+    for (auto&& [i, s] : zip(const_i_one_element, const_s_one_element)) {
         assert_ref_is_const(i);
         assert_ref_is_const(s);
         REQUIRE(i == 1);
@@ -439,7 +464,7 @@ TEST_CASE("Zip one element const")
         ++num_iterations;
     }
 
-    for (auto&& [i, s] : Zip(std::as_const(i_one_element), std::as_const(s_one_element))) {
+    for (auto&& [i, s] : zip(std::as_const(i_one_element), std::as_const(s_one_element))) {
         assert_ref_is_const(i);
         assert_ref_is_const(s);
         REQUIRE(i == 1);
@@ -447,7 +472,7 @@ TEST_CASE("Zip one element const")
         ++num_iterations;
     }
 
-    for (auto&& [i, s] : Zip(std::as_const(i_one_element), std::as_const(s_one_element))) {
+    for (auto&& [i, s] : zip(std::as_const(i_one_element), std::as_const(s_one_element))) {
         assert_ref_is_const(i);
         assert_ref_is_const(s);
         REQUIRE(i == 1);
@@ -455,7 +480,7 @@ TEST_CASE("Zip one element const")
         ++num_iterations;
     }
 
-    for (auto&& [i, s] : Zip(const_i_one_element, s_one_element)) {
+    for (auto&& [i, s] : zip(const_i_one_element, s_one_element)) {
         assert_ref_is_const(i);
         assert_ref_is_not_const(s);
         REQUIRE(i == 1);
@@ -463,7 +488,7 @@ TEST_CASE("Zip one element const")
         ++num_iterations;
     }
 
-    for (auto&& [i, s] : Zip(i_one_element, const_s_one_element)) {
+    for (auto&& [i, s] : zip(i_one_element, const_s_one_element)) {
         assert_ref_is_not_const(i);
         assert_ref_is_const(s);
         REQUIRE(i == 1);
@@ -475,12 +500,12 @@ TEST_CASE("Zip one element const")
 }
 
 
-TEST_CASE("Zip two element")
+TEST_CASE("zip two element")
 {
     std::vector<int> i_two_elements = { 1, 2 };
     std::vector<std::string> s_two_elements = { "test_1", "test_2" };
     size_t num_iterations = 0;
-    for (auto&& [i, s] : Zip(i_two_elements, s_two_elements)) {
+    for (auto&& [i, s] : zip(i_two_elements, s_two_elements)) {
         REQUIRE(static_cast<size_t>(i) == num_iterations + 1);
         REQUIRE(s == (num_iterations == 0 ? "test_1" : "test_2"));
         ++num_iterations;
@@ -489,12 +514,12 @@ TEST_CASE("Zip two element")
     REQUIRE(num_iterations == 2);
 }
 
-TEST_CASE("Zip different length 1")
+TEST_CASE("zip different length 1")
 {
     std::vector<int> i_values = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     std::vector<std::string> s_values = { "A", "B", "C", "D" };
     size_t num_iterations = 0;
-    for (auto&& [i, s] : Zip(i_values, s_values)) {
+    for (auto&& [i, s] : zip(i_values, s_values)) {
         REQUIRE(static_cast<size_t>(i) == num_iterations + 1);
         REQUIRE(s == s_values[num_iterations]);
         ++num_iterations;
@@ -503,12 +528,12 @@ TEST_CASE("Zip different length 1")
     REQUIRE(num_iterations == 4);
 }
 
-TEST_CASE("Zip different length 2")
+TEST_CASE("zip different length 2")
 {
     std::vector<int> i_values = { 1, 2, 3, 4, 5 };
     std::vector<std::string> s_values = { "A", "B", "C", "D", "E", "F", "G", "H" };
     size_t num_iterations = 0;
-    for (auto&& [i, s] : Zip(i_values, s_values)) {
+    for (auto&& [i, s] : zip(i_values, s_values)) {
         REQUIRE(static_cast<size_t>(i) == num_iterations + 1);
         REQUIRE(s == s_values[num_iterations]);
         ++num_iterations;
@@ -516,3 +541,56 @@ TEST_CASE("Zip different length 2")
 
     REQUIRE(num_iterations == 5);
 }
+
+TEST_CASE("zip first args initializer_list")
+{
+    size_t num_iterations = 0;
+    std::vector<std::string> s_values = { "1", "2", "3" };
+    for (auto&& [i, s] : zip({ 1, 2, 3 }, s_values)) {
+        assert_ref_is_const(i);
+        assert_ref_is_not_const(s);
+        REQUIRE(std::to_string(i) == s);
+        ++num_iterations;
+    }
+
+    REQUIRE(num_iterations == 3);
+}
+
+TEST_CASE("zip second args initializer_list")
+{
+    size_t num_iterations = 0;
+    std::vector<int> i_values = { 1, 2, 3 };
+    for (auto&& [i, s] : zip(i_values, { "1", "2", "3" })) {
+        assert_ref_is_not_const(i);
+        assert_ref_is_const(s);
+        REQUIRE(std::to_string(i) == s);
+        ++num_iterations;
+    }
+
+    REQUIRE(num_iterations == 3);
+}
+
+TEST_CASE("zip both args initializer_list")
+{
+    size_t num_iterations = 0;
+    for (auto&& [i, s] : zip({ 1, 2, 3 }, { "1", "2", "3" })) {
+        assert_ref_is_const(i);
+        assert_ref_is_const(s);
+        REQUIRE(std::to_string(i) == s);
+        ++num_iterations;
+    }
+
+    REQUIRE(num_iterations == 3);
+}
+
+#if TEST_COMPILE_ERROR_ON_ITERATION_UTILS_FROM_RVALUE_CONTAINER
+TEST_CASE("Iteration utils cannot construct from rvalue")
+{
+    for ([[maybe_unused]] auto&& [i, s] : iterate_adjacent(std::vector{ 1, 2, 3 })) {
+    }
+    for ([[maybe_unused]] auto&& [i, s] : enumerate<int>(std::vector{ 1, 2, 3 })) {
+    }
+    for ([[maybe_unused]] auto&& [i, s] : zip(std::vector{ 1, 2, 3 }, std::vector{ 1, 2, 3 })) {
+    }
+}
+#endif

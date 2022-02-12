@@ -162,7 +162,7 @@ std::vector<UnicodeRange> unicode_ranges_for(std::u32string_view text)
     std::vector<UnicodeRange> result;
     result.push_back({ codepoints.front(), 1 });
 
-    for (auto&& [a, b] : IterateAdjacent{ codepoints }) {
+    for (auto&& [a, b] : iterate_adjacent(codepoints)) {
         if (b == a + 1) {
             ++(result.back().length);
         }
@@ -198,7 +198,7 @@ std::vector<UnicodeRange> merge_overlapping_ranges(span<const UnicodeRange> unic
     std::vector<UnicodeRange> result;
     result.push_back(sorted.front());
 
-    for (auto&& [a, b] : IterateAdjacent{ sorted }) {
+    for (auto&& [a, b] : iterate_adjacent(sorted)) {
         if (ranges_overlap(a, b)) {
             const auto new_end = max(b.start + b.length, a.start + a.length);
             result.back().length = new_end - a.start;
