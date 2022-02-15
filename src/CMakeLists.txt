@@ -77,6 +77,12 @@ add_library(mg_engine
 target_compile_features(mg_engine PUBLIC cxx_std_17)
 set_target_properties(mg_engine PROPERTIES CXX_EXTENSIONS OFF)
 
+# Put resulting libraries under libs/
+set(MG_LIBRARY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/libs/")
+set_target_properties(mg_engine PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MG_LIBRARY_OUTPUT_DIR}")
+set_target_properties(mg_engine PROPERTIES LIBRARY_OUTPUT_DIRECTORY_DEBUG "${MG_LIBRARY_OUTPUT_DIR}")
+set_target_properties(mg_engine PROPERTIES LIBRARY_OUTPUT_DIRECTORY_RELEASE "${MG_LIBRARY_OUTPUT_DIR}")
+
 # Enable debug-logging for debug builds.
 target_compile_definitions(mg_engine PUBLIC MG_ENABLE_DEBUG_LOGGING=$<CONFIG:Debug>)
 

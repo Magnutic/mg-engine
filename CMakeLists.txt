@@ -43,15 +43,6 @@ set(MG_HEADER_INSTALL_PATH "${CMAKE_INSTALL_INCLUDEDIR}/mg_engine-${mg_engine_VE
 set(MG_LIB_INSTALL_PATH "${CMAKE_INSTALL_LIBDIR}/mg_engine-${mg_engine_VERSION_MAJOR}")
 set(MG_CONFIG_INSTALL_PATH "${CMAKE_INSTALL_LIBDIR}/cmake/mg_engine-${mg_engine_VERSION_MAJOR}")
 
-# We want all executables in one, predictable location,
-# since they use relative paths to find resources.
-set(OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_DIRECTORY}")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${OUTPUT_DIRECTORY}")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIRECTORY}")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG "${OUTPUT_DIRECTORY}/../libs/")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIRECTORY}../libs/")
-
 #---------------------------------------------------------------------------------------------------
 # Dependency management
 #---------------------------------------------------------------------------------------------------

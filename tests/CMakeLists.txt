@@ -22,6 +22,8 @@ endif()
 
 # Tests
 
+set(MG_TEST_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/test/")
+
 function(add_mg_test name)
     add_executable(${name} ${name}.cpp)
     target_include_directories(${name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/unittest-cpp)
@@ -36,9 +38,13 @@ function(add_mg_test name)
     add_test(ctest_build_${name} "${CMAKE_COMMAND}" --build "${CMAKE_BINARY_DIR}" --target ${name} -j 8)
 
     add_test(NAME ${name}
-        COMMAND "${OUTPUT_DIRECTORY}${name}"
+        COMMAND "${MG_TEST_OUTPUT_DIR}${name}"
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
+
+    set_target_properties(${name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${MG_TEST_OUTPUT_DIR}")
+    set_target_properties(${name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG "${MG_TEST_OUTPUT_DIR}")
+    set_target_properties(${name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE "${MG_TEST_OUTPUT_DIR}")
 
     set_tests_properties(${name} PROPERTIES DEPENDS ctest_build_${name})
 endfunction()
