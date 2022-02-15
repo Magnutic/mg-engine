@@ -1,4 +1,4 @@
-﻿#include "test_scene.h"
+#include "test_scene.h"
 #include "mg/gfx/mg_texture_related_types.h"
 
 #include <mg/core/mg_application_context.h>
@@ -547,7 +547,12 @@ Model::~Model() = default;
 void Model::update()
 {
     if (physics_body) {
-        transform = physics_body->get_transform();
+        if (auto dynamic_body = physics_body->as_dynamic_body(); dynamic_body.has_value()) {
+            transform = dynamic_body->interpolated_transform();
+        }
+        else {
+            transform = physics_body->get_transform();
+        }
     }
 }
 
