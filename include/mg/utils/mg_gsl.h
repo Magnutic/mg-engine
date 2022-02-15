@@ -275,8 +275,8 @@ private:
 
     static constexpr size_type elem_size = narrow<size_type>(sizeof(T));
 
-    T* m_begin;
-    T* m_end;
+    T* m_begin = nullptr;
+    T* m_end = nullptr;
 };
 
 // Sanity check
