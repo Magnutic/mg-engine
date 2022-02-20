@@ -14,7 +14,7 @@ bugprone-inaccurate-erase,
 bugprone-incorrect-roundings,
 bugprone-integer-division,
 bugprone-lambda-function-name,
-bugprone-macro-parentheses,
+# bugprone-macro-parentheses, # Warns in a bunch of harmless instances
 bugprone-macro-repeated-side-effects,
 bugprone-misplaced-operator-in-strlen-in-alloc,
 bugprone-misplaced-widening-cast,
@@ -46,7 +46,7 @@ cppcoreguidelines-avoid-c-arrays,
 cppcoreguidelines-avoid-goto,
 cppcoreguidelines-c-copy-assignment-signature,
 cppcoreguidelines-interfaces-global-init,
-cppcoreguidelines-macro-usage,
+# cppcoreguidelines-macro-usage, # Warns on reasonable uses of macros
 cppcoreguidelines-narrowing-conversions,
 cppcoreguidelines-no-malloc,
 cppcoreguidelines-pro-bounds-array-to-pointer-decay,
@@ -140,7 +140,7 @@ readability-string-compare,
 readability-uniqueptr-delete-release,
 '
 WarningsAsErrors: ''
-HeaderFilterRegex: ''
+HeaderFilterRegex: 'mg_.*'
 AnalyzeTemporaryDtors: false
 FormatStyle:     file
 CheckOptions:    
