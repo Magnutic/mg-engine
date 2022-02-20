@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -61,6 +61,8 @@ public:
     void swap(ExternalBuffer& rhs) noexcept { std::swap(m_p_data, rhs.m_p_data); }
 
     T* get() const noexcept { return m_p_data; }
+
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     T& operator[](std::size_t i) const noexcept { return m_p_data[i]; }
 
 private:
@@ -120,6 +122,7 @@ template<typename T, std::size_t num_local_elems> class small_vector {
     static constexpr bool nothrow_swap = trivial_copy || nothrow_move;
 
     struct alignas(T) elem_data_t {
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays)
         unsigned char data[sizeof(T)];
     };
 
@@ -152,7 +155,7 @@ public:
 
     ~small_vector() { clear(); }
 
-    small_vector(const small_vector& rhs) : small_vector()
+    small_vector(const small_vector& rhs) : m_size(0), m_uses_external_storage(0)
     {
         reserve(rhs.size());
         for (const T& elem : rhs) {
@@ -160,7 +163,7 @@ public:
         }
     }
 
-    small_vector(small_vector&& rhs) noexcept : small_vector()
+    small_vector(small_vector&& rhs) noexcept : m_size(0), m_uses_external_storage(0)
     {
         if (rhs.uses_local_storage()) {
             while (m_size < rhs.size()) {
@@ -176,10 +179,10 @@ public:
     }
 
     /** Construct small_vector with `count` number of copies of `value`. */
-    explicit small_vector(size_type count, const T& value) : small_vector()
+    explicit small_vector(size_type count, const T& value) : m_size(0), m_uses_external_storage(0)
     {
         reserve(count);
-        while (count--) {
+        while (count-- != 0) {
             push_back(value);
         }
     }
@@ -187,10 +190,13 @@ public:
     /** Construct small_vector with `count` number of default-constructed elements.
      * Requires that the element_type is default-constructible.
      */
-    explicit small_vector(size_type count) : small_vector(count, T()) {}
+    explicit small_vector(size_type count) // NOLINT(cppcoreguidelines-pro-type-member-init)
+                                           // Impossible-to-please false positive warning
+        : small_vector(count, T())
+    {}
 
     /** Construct by copying elements from initializer-list. */
-    small_vector(std::initializer_list<T> init) : small_vector()
+    small_vector(std::initializer_list<T> init) : m_size(0), m_uses_external_storage(0)
     {
         reserve(init.size());
         for (const T& elem : init) {
@@ -371,7 +377,7 @@ public:
     {
         auto index = _distance(cbegin(), pos);
         reserve(size() + count);
-        while (count--) {
+        while (count-- != 0) {
             emplace_back(value);
         }
         _move_last_n_to_pos(index, 1);
@@ -459,7 +465,7 @@ public:
             // elements. This prevents dangling reference errors when args depend on an element in
             // this vector (e.g. v.emplace_back(v[0]); )
 
-            size_type new_capacity = static_cast<size_type>(capacity() * k_growth_factor);
+            auto new_capacity = static_cast<size_type>(capacity() * k_growth_factor);
 
             // If k_growth_factor is not large enough, new_capacity might not be any larger.
             // This is especially likely to happen if initial capacity was very small.
@@ -536,6 +542,7 @@ private:
     template<typename... Args>
     pointer _construct_in_buffer_at(elem_data_t* buffer, size_type index, Args&&... args)
     {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         return new (&buffer[index]) value_type(std::forward<Args>(args)...);
     }
 
@@ -721,7 +728,9 @@ private:
 
         try {
             for (i = 0; i < num; ++i) {
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
                 T& elem = reinterpret_cast<T&>(src[i]);
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
                 new (&dst[i]) T(std::move_if_noexcept(elem));
             }
         }
@@ -729,6 +738,7 @@ private:
             // If copying failed, destroy the copies that were made.
             for (size_type u = 0; u < i; ++u) {
                 // Destroy copies in new buffer.
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
                 const elem_data_t* addr = &dst[i - 1 - u];
                 reinterpret_cast<const_pointer>(addr)->~T();
             }
@@ -738,6 +748,7 @@ private:
 
         // If successful, destroy original elements
         for (i = 0; i < num; ++i) {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
             reinterpret_cast<pointer>(&src[num - 1 - i])->~T();
         }
     }
@@ -819,6 +830,7 @@ private:
     // We do not need access to capacity and local buffer at the same time.
     union {
         struct {
+            // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays)
             elem_data_t buffer[num_local_elems];
         } m_local;
         struct {
