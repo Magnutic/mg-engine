@@ -191,7 +191,7 @@ public:
         if constexpr (MG_CHECK_SPAN_ACCESS) {
             MG_ASSERT(i < size());
         }
-        return *(m_begin + i);
+        return *(m_begin + i); // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     }
 
     constexpr T* data() const noexcept { return m_begin; }
@@ -209,7 +209,7 @@ public:
         if constexpr (MG_CHECK_SPAN_ACCESS) {
             MG_ASSERT(!empty());
         }
-        return *(m_end - 1u);
+        return *(m_end - 1u); // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     }
 
     //----------------------------------------------------------------------------------------------
