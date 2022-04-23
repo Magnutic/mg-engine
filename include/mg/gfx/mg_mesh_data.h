@@ -40,7 +40,7 @@ struct Vertex {
     glm::vec3 position = glm::vec3(0.0f);
     glm::vec2 tex_coord = glm::vec2(0.0f);
 
-    uint32_t padding; // TODO temp for compatibility.
+    uint32_t padding = 0; // TODO temp for compatibility.
 
     vec3_normalized normal;
     vec3_normalized tangent;
@@ -85,7 +85,7 @@ struct SubmeshRange {
  * rendered with a different material.
  */
 struct Submesh {
-    SubmeshRange index_range;
+    SubmeshRange index_range = {};
     Identifier name{ "" };
 };
 

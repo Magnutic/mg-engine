@@ -140,7 +140,7 @@ readability-string-compare,
 readability-uniqueptr-delete-release,
 '
 WarningsAsErrors: ''
-HeaderFilterRegex: 'mg_.*'
+HeaderFilterRegex: 'mg_[A-Za-z_0-9]*.h'
 AnalyzeTemporaryDtors: false
 FormatStyle:     file
 CheckOptions:    

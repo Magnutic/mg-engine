@@ -56,8 +56,8 @@ constexpr std::array<VertexAttribute, 2> influences_attributes = {
 };
 
 struct Joint {
-    glm::mat4 inverse_bind_matrix;
-    JointChildren children;
+    glm::mat4 inverse_bind_matrix = glm::mat4(1.0f);
+    JointChildren children = {};
     Identifier name;
 };
 

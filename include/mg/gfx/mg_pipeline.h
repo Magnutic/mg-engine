@@ -51,17 +51,17 @@ struct PipelineInputDescriptor {
     Identifier input_name;
 
     /** What type of input. */
-    PipelineInputType type;
+    PipelineInputType type = {};
 
     /** Binding location to assign this input. */
-    uint32_t location;
+    uint32_t location = 0;
 
     /** Whether the input is mandatory; is it an error if the pipeline has no such active input?
      * Note that it is not uncommon for pipelines not to have an active input even if they are
      * defined in the shader code, since they will be optimized away by the shader compiler if they
      * are unused.
      */
-    bool mandatory;
+    bool mandatory = {};
 };
 
 /** A pipeline input binding is an association from input-location index value to a graphics

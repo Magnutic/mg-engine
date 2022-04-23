@@ -47,7 +47,7 @@ struct PipelinePoolConfig {
     ShaderCode preamble_shader_code;
     ShaderCode on_error_shader_code;
 
-    uint32_t material_params_ubo_slot;
+    uint32_t material_params_ubo_slot = {};
 
     Array<PipelineInputDescriptor> shared_input_layout;
 };

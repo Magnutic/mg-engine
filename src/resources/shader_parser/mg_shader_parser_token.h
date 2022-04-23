@@ -148,12 +148,12 @@ struct Token {
     size_t line{};
 };
 
-inline float numeric_value(const Token& token) noexcept
+inline float numeric_value(const Token& token)
 {
     return std::get<float>(token.literal_value);
 }
 
-inline std::string_view string_value(const Token& token) noexcept
+inline std::string_view string_value(const Token& token)
 {
     return std::get<std::string_view>(token.literal_value);
 }

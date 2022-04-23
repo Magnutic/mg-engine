@@ -122,8 +122,11 @@ template<typename T, std::size_t num_local_elems> class small_vector {
     static constexpr bool nothrow_swap = trivial_copy || nothrow_move;
 
     struct alignas(T) elem_data_t {
+        // NOLINTNEXTLINE(bugprone-sizeof-expression) T could be a pointer, triggering a warning.
+        static constexpr size_t elem_size = sizeof(T);
+
         // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays)
-        unsigned char data[sizeof(T)];
+        unsigned char data[elem_size];
     };
 
     using ExternalBuffer = detail::ExternalBuffer<elem_data_t>;
@@ -262,12 +265,14 @@ public:
 
     reference operator[](size_type index) noexcept
     {
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(index < size());
         return data()[index];
     }
 
     const_reference operator[](size_type index) const noexcept
     {
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(index < size());
         return data()[index];
     }
@@ -325,6 +330,7 @@ public:
             return;
         }
 
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(new_capacity < max_size());
         _switch_to_external_storage(ExternalBuffer::allocate(new_capacity), new_capacity);
     }
@@ -458,6 +464,7 @@ public:
 
         if (size() < capacity()) {
             // Construct new elem at end-position.
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
             new (&_storage_ptr()[size()]) T(std::forward<Args>(args)...);
         }
         else {
@@ -524,6 +531,7 @@ public:
 private:
     static size_type _distance(const_iterator begin, const_iterator end)
     {
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(begin <= end);
         return static_cast<size_type>(end - begin);
     }
@@ -553,7 +561,9 @@ private:
 
     void _destroy_in_buffer_at(const elem_data_t* buffer, size_type index) noexcept
     {
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(buffer != nullptr);
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         reinterpret_cast<const_pointer>(buffer + index)->~T();
     }
 
@@ -564,7 +574,9 @@ private:
     // Swap for the case where both operands use local storage.
     void _swap_local(small_vector& rhs) noexcept(nothrow_swap)
     {
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(uses_local_storage());
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(rhs.uses_local_storage());
 
         if (trivial_copy) {
@@ -625,7 +637,9 @@ private:
     // Swap for the case where both operands use external storage.
     void _swap_external(small_vector& rhs) noexcept
     {
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(!uses_local_storage());
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(!rhs.uses_local_storage());
 
         using std::swap;
@@ -642,7 +656,9 @@ private:
     // noexcept commented out due to warning.
     void _swap_this_local_rhs_external(small_vector& rhs) /* noexcept(nothrow_swap) */
     {
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(uses_local_storage());
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(!rhs.uses_local_storage());
 
         // tmp_vec gets rhs' data; rhs becomes empty.
@@ -698,6 +714,7 @@ private:
 
     void _shrink_to(size_type count)
     {
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(count <= size());
 
         if (!uses_local_storage() && count <= num_local_elems) {
@@ -721,7 +738,9 @@ private:
             return;
         }
 
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(src != nullptr);
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(dst != nullptr);
 
         size_type i = 0;
@@ -756,7 +775,9 @@ private:
     // Switch to local buffer for element storage. (noexcept commented due to warnings).
     void _switch_to_local_storage(size_type elems_to_move) /* noexcept(nothrow_move) */
     {
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(!uses_local_storage());
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(elems_to_move <= num_local_elems);
 
         // Since m_capacity is in union with local buffer, we need to copy it before writing to
@@ -784,6 +805,7 @@ private:
     void _switch_to_external_storage(ExternalBuffer&& new_buffer,
                                      size_type new_capacity) noexcept(nothrow_move)
     {
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(new_capacity >= size());
 
         _move_elems_between_buffers(_storage_ptr(), new_buffer.get(), size());
@@ -801,6 +823,7 @@ private:
     // Rotates the last num elems to start at pos (invoked by position insert/emplace)
     void _move_last_n_to_pos(size_type index, size_type num)
     {
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(size() - num >= index);
         std::rotate(begin() + index, end() - num, end());
     }
@@ -809,7 +832,9 @@ private:
     iterator _move_to_end(const_iterator pos, size_type num)
     {
         const auto mut_pos = begin() + _distance(cbegin(), pos);
+        // NOLINTNEXTLINE due to false positive https://github.com/llvm/llvm-project/issues/53174
         MG_SMALL_VECTOR_ASSERT(mut_pos + num <= end());
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         return std::rotate(mut_pos, mut_pos + num, end());
     }
 

@@ -18,8 +18,8 @@ class Angle {
 public:
     enum class Unit { degree, radian };
 
-    static constexpr Angle from_radians(float angle) { return Angle(Angle::Unit::radian, angle); }
-    static constexpr Angle from_degrees(float angle) { return Angle(Angle::Unit::degree, angle); }
+    static constexpr Angle from_radians(float angle) { return { Angle::Unit::radian, angle }; }
+    static constexpr Angle from_degrees(float angle) { return { Angle::Unit::degree, angle }; }
 
     static constexpr Angle clamp(Angle v, Angle low, Angle high) noexcept
     {
@@ -40,6 +40,10 @@ public:
 
     constexpr Angle(const Angle&) = default;
     constexpr Angle& operator=(const Angle&) = default;
+    constexpr Angle(Angle&&) = default;
+    constexpr Angle& operator=(Angle&&) = default;
+
+    ~Angle() = default;
 
     constexpr float degrees() const noexcept { return rad_to_deg * m_angle_radians; }
     constexpr float radians() const noexcept { return m_angle_radians; }
@@ -120,19 +124,19 @@ namespace literals {
 
 constexpr Angle operator""_degrees(long double degrees)
 {
-    return Angle(Angle::Unit::degree, static_cast<float>(degrees));
+    return { Angle::Unit::degree, static_cast<float>(degrees) };
 }
 constexpr Angle operator""_degrees(unsigned long long degrees)
 {
-    return Angle(Angle::Unit::degree, static_cast<float>(degrees));
+    return { Angle::Unit::degree, static_cast<float>(degrees) };
 }
 constexpr Angle operator""_radians(long double radians)
 {
-    return Angle(Angle::Unit::radian, static_cast<float>(radians));
+    return { Angle::Unit::radian, static_cast<float>(radians) };
 }
 constexpr Angle operator""_radians(unsigned long long radians)
 {
-    return Angle(Angle::Unit::radian, static_cast<float>(radians));
+    return { Angle::Unit::radian, static_cast<float>(radians) };
 }
 
 } // namespace literals

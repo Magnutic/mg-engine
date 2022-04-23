@@ -29,11 +29,13 @@ public:
     using MipIndexT = uint32_t;
 
     /** Info on the format of the texture, this describes how to interpret the
-     * binary data. */
+     * binary data.
+     */
     struct Format {
-        gfx::PixelFormat pixel_format;
-        DimT width, height;
-        MipIndexT mip_levels;
+        gfx::PixelFormat pixel_format = gfx::PixelFormat::BGR;
+        DimT width = 0;
+        DimT height = 0;
+        MipIndexT mip_levels = 0;
     };
 
     struct MipLevelData {

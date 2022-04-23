@@ -20,10 +20,10 @@ namespace Mg::gfx::internal {
 
 struct MeshRendererFrameworkShaderParams {
     // Size of arrays of M (model-to-world) and MVP (model-to-perspective-projection) matrices.
-    size_t matrix_array_size;
+    size_t matrix_array_size = {};
 
     // Size of array of skinning matrices for animated meshes. If 0, skinning animation is disabled.
-    size_t skinning_matrix_array_size;
+    size_t skinning_matrix_array_size = {};
 
     // Configuration relating to the light grid.
     LightGridConfig light_grid_config;

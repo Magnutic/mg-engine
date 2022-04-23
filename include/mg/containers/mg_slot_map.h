@@ -262,7 +262,7 @@ private:
 
     void init(size_type max_elems);
 
-    void erase_at(size_type index);
+    void erase_at(size_type position);
 
     // Helper for element insertion: find position, create handle, and update auxiliary Key array.
     std::pair<size_type, Slot_map_handle> insert_helper();
@@ -297,7 +297,7 @@ private:
 private:
     /** Storage for element data. */
     struct alignas(T) Elem_data {
-        char data[sizeof(T)];
+        char data[sizeof(T)]; // NOLINT(cppcoreguidelines-avoid-c-arrays)
     };
 
     /** Data buffer, stores both elements. */
@@ -309,7 +309,7 @@ private:
     size_type m_num_elems = 0;
 
     // Head of free-key linked-list
-    size_type m_first_free_key_index;
+    size_type m_first_free_key_index = 0;
 };
 
 /** Insertion iterator (similar to std::insert_iterator)
@@ -327,9 +327,6 @@ public:
     using iterator_category = std::output_iterator_tag;
 
     explicit Slot_map_insert_iterator(Slot_map<T>& sm) : m_slot_map(&sm) {}
-
-    Slot_map_insert_iterator(const Slot_map_insert_iterator&) = default;
-    Slot_map_insert_iterator& operator=(const Slot_map_insert_iterator&) = default;
 
     // No-ops for OutputIterator interface conformance
     Slot_map_insert_iterator& operator++() { return *this; }
@@ -622,7 +619,7 @@ template<typename T> Slot_map_handle Slot_map<T>::make_handle(const_iterator it)
     auto position = std::distance(begin(), it);
 
     if (position < 0 || size_type(position) >= size()) {
-        return Slot_map_handle();
+        return {};
     }
 
     const Key& k = m_key[m_key[size_type(position)].inverse_index];

@@ -20,8 +20,8 @@ template<typename F> void for_each_mesh(const aiScene& scene, const aiNode& node
 {
     for (uint32_t i = 0; i < node.mNumMeshes; ++i) {
         const auto meshIndex = node.mMeshes[i]; // NOLINT
-        assert(meshIndex < scene.mNumMeshes);
-        function(*scene.mMeshes[meshIndex]); // NOLINT
+        assert(meshIndex < scene.mNumMeshes);   // NOLINT
+        function(*scene.mMeshes[meshIndex]);    // NOLINT
     }
 }
 

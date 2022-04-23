@@ -89,7 +89,7 @@ template<typename T> void read_binary(std::istream& stream, T& value_out)
  */
 template<typename T> size_t read_binary_array(std::istream& stream, span<T> out)
 {
-    if (out.size() == 0) {
+    if (out.empty()) {
         return 0;
     }
     static_assert(std::is_trivially_copyable<T>::value, "Target type is not trivially copyable.");

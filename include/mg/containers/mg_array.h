@@ -100,6 +100,7 @@ template<typename T> static void destroy_array(T* array_begin)
 
 template<typename T> class ArrayCopyGenerator {
 public:
+    // NOLINTNEXTLINE false positive
     explicit ArrayCopyGenerator(const span<const T> source) : m_source(source) {}
     const T& operator()() { return m_source[m_index++]; }
 
@@ -246,8 +247,15 @@ public:
 
     void swap(ArrayUnknownSize& rhs) noexcept { std::swap(this->m_ptr, rhs.m_ptr); }
 
-    T& operator[](size_t i) noexcept { return this->m_ptr[i]; }
-    const T& operator[](size_t i) const noexcept { return this->m_ptr[i]; }
+    T& operator[](size_t i) noexcept
+    {
+        return this->m_ptr[i]; // NOLINT
+    }
+
+    const T& operator[](size_t i) const noexcept
+    {
+        return this->m_ptr[i]; // NOLINT
+    }
 
 private:
     explicit ArrayUnknownSize(T* ptr) noexcept : Base(ptr) {}
@@ -365,37 +373,37 @@ public:
     T& operator[](size_t i) noexcept
     {
         MG_ASSERT(i < m_size);
-        return this->m_ptr[i];
+        return this->m_ptr[i]; // NOLINT
     }
 
     const T& operator[](size_t i) const noexcept
     {
         MG_ASSERT(i < m_size);
-        return this->m_ptr[i];
+        return this->m_ptr[i]; // NOLINT
     }
 
     T& back() noexcept
     {
         MG_ASSERT(m_size != 0);
-        return this->m_ptr[m_size - 1];
+        return this->m_ptr[m_size - 1]; // NOLINT
     }
 
     const T& back() const noexcept
     {
         MG_ASSERT(m_size != 0);
-        return this->m_ptr[m_size - 1];
+        return this->m_ptr[m_size - 1]; // NOLINT
     }
 
     T& front() noexcept
     {
         MG_ASSERT(m_size != 0);
-        return this->m_ptr[0];
+        return this->m_ptr[0]; // NOLINT
     }
 
     const T& front() const noexcept
     {
         MG_ASSERT(m_size != 0);
-        return this->m_ptr[0];
+        return this->m_ptr[0]; // NOLINT
     }
 
     typename Base::size_type size() const noexcept { return m_size; }

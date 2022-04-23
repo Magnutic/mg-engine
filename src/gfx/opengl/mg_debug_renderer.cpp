@@ -520,9 +520,11 @@ void DebugRenderer::draw_view_frustum(const glm::mat4& view_projection,
     draw_line(view_projection, corners_near, { 1.0f, 0.0f, 0.0f, 1.0f }, 2.0f);
     draw_line(view_projection, corners_far, { 0.0f, 0.0f, 1.0f, 1.0f }, 2.0f);
 
-    std::array<glm::vec3, 5> corners_middle;
+    std::array<glm::vec3, 5> corners_middle = {};
 
     const float z_range = glm::length(corners_far[0] - corners_near[0]);
+
+    // NOLINTNEXTLINE clang-tidy warns about float as loop counter. I think it's fine here.
     for (float d = z_range / 2.0f; d > 1.0f; d /= 2.0f) {
         for (size_t i = 0; i < corners_middle.size(); ++i) {
             corners_middle[i] = corners_near[i] +

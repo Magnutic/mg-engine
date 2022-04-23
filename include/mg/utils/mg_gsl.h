@@ -128,7 +128,8 @@ public:
     }
 
     // Basic, safety-checking constructor. All other constructors delegate to this one.
-    template<typename U> constexpr span(U* begin, U* end) MG_SPAN_NOEXCEPT
+    template<typename U>
+    constexpr span(U* begin, U* end) MG_SPAN_NOEXCEPT // NOLINT(readability-non-const-parameter)
     {
         // N.B. these static assert checks are stricter than normal type checking on pointer
         // assignment, as it prevents pointers to subclasses of T (and thus prevents slicing).
@@ -167,7 +168,7 @@ public:
 
     template<typename U, size_t N>
     constexpr span(U (&array)[N]) MG_SPAN_NOEXCEPT // NOLINT(cppcoreguidelines-avoid-c-arrays)
-        : span(&array[0], &array[0] + N)
+        : span(&array[0], &array[0] + N) // NOLINT
     {}
 
     // Construction from std::initializer_list. Not in std::span, but proposed as P2447.
@@ -218,7 +219,7 @@ public:
     constexpr span subspan(size_type offset, size_type count) const MG_SPAN_NOEXCEPT
     {
         MG_ASSERT(offset + count <= size());
-        return span(m_begin + offset, m_begin + offset + count);
+        return span(m_begin + offset, m_begin + offset + count); // NOLINT
     }
 
     constexpr span subspan(size_type offset) const MG_SPAN_NOEXCEPT
