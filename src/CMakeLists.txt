@@ -168,6 +168,7 @@ target_link_libraries(mg_engine
         glfw
         libzip::zip
         stb
+        utf8.h
         SndFile::sndfile
         OpenAL::OpenAL
 )

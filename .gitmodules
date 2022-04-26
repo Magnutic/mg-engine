@@ -46,3 +46,6 @@
 [submodule "external/submodules/imgui"]
 	path = external/submodules/imgui
 	url = https://github.com/ocornut/imgui
+[submodule "external/submodules/utf8.h"]
+	path = external/submodules/utf8.h
+	url = https://github.com/sheredom/utf8.h
