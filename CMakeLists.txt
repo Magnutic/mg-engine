@@ -21,7 +21,6 @@ option(MG_ENABLE_GFX_DEBUG_GROUPS "Enable the use of OpenGL debug groups to ease
 # Dependency-handling options.
 option(MG_USE_VENDORED_DEPENDENCIES "Use dependencies vendored with Mg Engine" ON)
 option(MG_USE_VENDORED_HEADER_ONLY_DEPENDENCIES "Use header-only dependencies vendored with Mg Engine" ON)
-option(MG_USE_DEPENDENCY_ARCHIVE "")
 set(MG_DEPENDENCIES_DIR "${MG_SOURCE_DIR}/external/mg_dependencies" CACHE PATH "Where Mg Engine should search for its dependencies.")
 set(MG_HEADER_ONLY_DEPENDENCIES_DIR "${MG_DEPENDENCIES_DIR}" CACHE PATH "Where to find header-only dependencies needed by Mg Engine")
 
