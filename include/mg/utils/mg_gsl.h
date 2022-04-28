@@ -68,8 +68,7 @@ template<typename To, typename From> constexpr To narrow_cast(From value) noexce
 template<typename To, typename From> constexpr To narrow(From value)
 {
     auto ret_val = narrow_cast<To>(value);
-    MG_ASSERT(static_cast<From>(ret_val) == value &&
-              "Narrowing conversion resulted in changed value.");
+    MG_ASSERT(static_cast<From>(ret_val) == value && "conversion resulted in changed value.");
     return ret_val;
 }
 
@@ -168,7 +167,7 @@ public:
 
     template<typename U, size_t N>
     constexpr span(U (&array)[N]) MG_SPAN_NOEXCEPT // NOLINT(cppcoreguidelines-avoid-c-arrays)
-        : span(&array[0], &array[0] + N) // NOLINT
+        : span(&array[0], &array[0] + N)           // NOLINT
     {}
 
     // Construction from std::initializer_list. Not in std::span, but proposed as P2447.
@@ -369,6 +368,15 @@ using ::Mg::gsl::finally;
 using ::Mg::gsl::narrow;
 using ::Mg::gsl::narrow_cast;
 using ::Mg::gsl::span;
+
+// Alternative shorter name for narrow:
+
+/** Cast to another type and assert that the resulting value remains unchanged. */
+template<typename To, typename From> constexpr To as(From value)
+{
+    return ::Mg::gsl::narrow<To, From>(value);
+}
+
 } // namespace Mg
 
 #undef MG_SPAN_NOEXCEPT
