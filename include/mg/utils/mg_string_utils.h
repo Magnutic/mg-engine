@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -119,10 +119,10 @@ std::string_view trim(std::string_view str) noexcept;
  */
 size_t find_any_of(std::string_view str, std::string_view chars) noexcept;
 
-/** Returns a lowercase version of an ASCII string. */
+/** Returns a lowercase version of a UTF-8 string. */
 std::string to_lower(std::string_view str) noexcept;
 
-/** Returns a uppercase version of an ASCII string. */
+/** Returns a uppercase version of an UTF-8 string. */
 std::string to_upper(std::string_view str) noexcept;
 
 /** Returns whether `prefix` is a prefix of `string` (including if they are equal). */

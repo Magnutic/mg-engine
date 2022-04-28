@@ -1,15 +1,17 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
 #include "mg/utils/mg_string_utils.h"
 
+#include "mg/utils/mg_gsl.h"
+
+#include <utf8.h>
+
 #include <algorithm>
 #include <cstring> // memcpy
-
-#include "mg/utils/mg_gsl.h"
 
 namespace Mg {
 bool is_whitespace(char32_t c) noexcept
@@ -119,25 +121,19 @@ size_t find_any_of(std::string_view str, std::string_view chars) noexcept
     return ret_val;
 }
 
-/** Returns a lowercase version of an ASCII string. */
+/** Returns a lowercase version of a UTF-8 string. */
 std::string to_lower(std::string_view str) noexcept
 {
-    std::string ret_val;
-    ret_val.reserve(str.length());
-    for (const char c : str) {
-        ret_val += narrow<char>(tolower(c));
-    }
+    std::string ret_val{str};
+    utf8lwr(ret_val.data());
     return ret_val;
 }
 
-/** Returns a uppercase version of an ASCII string. */
+/** Returns a uppercase version of a UTF-8 string. */
 std::string to_upper(std::string_view str) noexcept
 {
-    std::string ret_val;
-    ret_val.reserve(str.length());
-    for (const char c : str) {
-        ret_val += narrow<char>(toupper(c));
-    }
+    std::string ret_val{str};
+    utf8upr(ret_val.data());
     return ret_val;
 }
 
