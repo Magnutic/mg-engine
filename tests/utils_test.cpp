@@ -295,19 +295,6 @@ TEST_CASE("iterate_adjacent const")
     }
 }
 
-TEST_CASE("iterate_adjacent initializer_list")
-{
-    size_t num_iterations = 0;
-    for (auto&& [a, b] : iterate_adjacent({ 1, 2, 3 })) {
-        assert_ref_is_const(a);
-        assert_ref_is_const(b);
-        REQUIRE(b == a + 1);
-        ++num_iterations;
-    }
-
-    REQUIRE(num_iterations == 2);
-}
-
 TEST_CASE("enumerate empty")
 {
     std::vector<int> empty = {};
@@ -415,18 +402,6 @@ TEST_CASE("enumerate const")
         }
         REQUIRE(num_iterations == const_values.size());
     }
-}
-
-TEST_CASE("enumerate initializer_list")
-{
-    size_t num_iterations = 0;
-    for (auto&& [i, v] : enumerate({ 1, 2, 3 }, int(0))) {
-        assert_ref_is_const(v);
-        REQUIRE(v == i + 1);
-        ++num_iterations;
-    }
-
-    REQUIRE(num_iterations == 3);
 }
 
 TEST_CASE("zip empty")
@@ -559,47 +534,6 @@ TEST_CASE("zip different length 2")
     }
 
     REQUIRE(num_iterations == 5);
-}
-
-TEST_CASE("zip first args initializer_list")
-{
-    size_t num_iterations = 0;
-    std::vector<std::string> s_values = { "1", "2", "3" };
-    for (auto&& [i, s] : zip({ 1, 2, 3 }, s_values)) {
-        assert_ref_is_const(i);
-        assert_ref_is_not_const(s);
-        REQUIRE(std::to_string(i) == s);
-        ++num_iterations;
-    }
-
-    REQUIRE(num_iterations == 3);
-}
-
-TEST_CASE("zip second args initializer_list")
-{
-    size_t num_iterations = 0;
-    std::vector<int> i_values = { 1, 2, 3 };
-    for (auto&& [i, s] : zip(i_values, { "1", "2", "3" })) {
-        assert_ref_is_not_const(i);
-        assert_ref_is_const(s);
-        REQUIRE(std::to_string(i) == s);
-        ++num_iterations;
-    }
-
-    REQUIRE(num_iterations == 3);
-}
-
-TEST_CASE("zip both args initializer_list")
-{
-    size_t num_iterations = 0;
-    for (auto&& [i, s] : zip({ 1, 2, 3 }, { "1", "2", "3" })) {
-        assert_ref_is_const(i);
-        assert_ref_is_const(s);
-        REQUIRE(std::to_string(i) == s);
-        ++num_iterations;
-    }
-
-    REQUIRE(num_iterations == 3);
 }
 
 #if TEST_COMPILE_ERROR_ON_ITERATION_UTILS_FROM_RVALUE_CONTAINER

@@ -10,7 +10,6 @@
 
 #pragma once
 
-#include <initializer_list>
 #include <type_traits>
 #include <utility>
 
@@ -41,18 +40,6 @@ template<typename ItT, typename ItU> class ZipRange;
 template<typename ContT>
 auto iterate_adjacent(ContT&) -> IterateAdjacentRange<detail::ContainerIt<ContT>>;
 
-/** Create an iterator range that iterates two adjacent items in the given initializer list at a
- * time.
- *
- * Usage example:
- *     for (auto&& [i1, i2] : Mg::iterate_adjacent({1,2,3,4})) {
- *         // do something with i1, i2...
- *     }
- */
-template<typename ElemT>
-auto iterate_adjacent(std::initializer_list<ElemT>)
-    -> IterateAdjacentRange<typename std::initializer_list<ElemT>::iterator>;
-
 /** Disallows iterate_adjacent over rvalue containers to reduce the risk of lifetime hazards. */
 template<typename ContT>
 auto iterate_adjacent(ContT&&) -> IterateAdjacentRange<detail::ContainerIt<ContT>>
@@ -78,20 +65,6 @@ auto iterate_adjacent(ContT&&) -> IterateAdjacentRange<detail::ContainerIt<ContT
 template<typename NumT, typename ContT>
 auto enumerate(ContT&, NumT counter_start = 0) -> EnumerateRange<NumT, detail::ContainerIt<ContT>>;
 
-/** Returns an iterator range over the given initializer list that increments a counter along with
- * the iteration.
- *
- * Usage example:
- *     for (auto&& [i, value] : Mg::enumerate<size_t>({"a","b","c"}, 0)) {
- *         // First iteration: i == 0; value = "a";
- *         // Second iteration: i == 1; value = "b";
- *         // etc.
- *     }
- */
-template<typename NumT, typename ElemT>
-auto enumerate(std::initializer_list<ElemT> ilist, NumT counter_start = 0)
-    -> EnumerateRange<NumT, typename std::initializer_list<ElemT>::iterator>;
-
 /** Disallows enumerate over rvalue containers to reduce the risk of lifetime hazards. */
 template<typename NumT, typename ContT>
 auto enumerate(ContT&&, NumT = 0) -> EnumerateRange<NumT, detail::ContainerIt<ContT>>
@@ -115,43 +88,6 @@ auto enumerate(ContT&&, NumT = 0) -> EnumerateRange<NumT, detail::ContainerIt<Co
 template<typename ContT_T, typename ContT_U>
 auto zip(ContT_T&, ContT_U&)
     -> ZipRange<detail::ContainerIt<ContT_T>, detail::ContainerIt<ContT_U>>;
-
-/** Constructs an iterator range that iterates over two ranges simultaneously. Stops at the end of
- * the shorter range.
- *
- * Usage example: given e.g. a vectors of T `std::vector<T> vec`:
- *     for (auto&& [tv, uv] : Mg::zip({1,2,3}, vec)) {
- *         // Do something with tv and uv...
- *     }
- */
-template<typename ElemT, typename ContT_U>
-auto zip(std::initializer_list<ElemT>, ContT_U&)
-    -> ZipRange<typename std::initializer_list<ElemT>::iterator, detail::ContainerIt<ContT_U>>;
-
-/** Constructs an iterator range that iterates over two ranges simultaneously. Stops at the end of
- * the shorter range.
- *
- * Usage example: given e.g. a vectors of T `std::vector<T> vec`:
- *     for (auto&& [tv, uv] : Mg::zip(vec, {1,2,3})) {
- *         // Do something with tv and uv...
- *     }
- */
-template<typename ContT_T, typename ElemU>
-auto zip(ContT_T&, std::initializer_list<ElemU>)
-    -> ZipRange<detail::ContainerIt<ContT_T>, typename std::initializer_list<ElemU>::iterator>;
-
-/** Constructs an iterator range that iterates over two ranges simultaneously. Stops at the end of
- * the shorter range.
- *
- * Usage example:
- *     for (auto&& [tv, uv] : Mg::zip({1,2,3}, {"1","2","3"})) {
- *         // Do something with tv and uv...
- *     }
- */
-template<typename ElemT, typename ElemU>
-auto zip(std::initializer_list<ElemT>, std::initializer_list<ElemU>)
-    -> ZipRange<typename std::initializer_list<ElemT>::iterator,
-                typename std::initializer_list<ElemU>::iterator>;
 
 /** Disallows zip over rvalue containers to reduce the risk of lifetime hazards. */
 template<typename ContT_T, typename ContT_U>
@@ -267,13 +203,6 @@ auto iterate_adjacent(ContT& container) -> IterateAdjacentRange<detail::Containe
     return IterateAdjacentRange<detail::ContainerIt<ContT>>{ container };
 }
 
-template<typename ElemT>
-auto iterate_adjacent(std::initializer_list<ElemT> ilist)
-    -> IterateAdjacentRange<typename std::initializer_list<ElemT>::iterator>
-{
-    return IterateAdjacentRange<typename std::initializer_list<ElemT>::iterator>{ ilist };
-}
-
 //--------------------------------------------------------------------------------------------------
 // enumerate implementation
 //-------------------------------------------------------------------------------------------------
@@ -348,14 +277,6 @@ auto enumerate(ContT& container, const NumT counter_start)
     -> EnumerateRange<NumT, detail::ContainerIt<ContT>>
 {
     return EnumerateRange<NumT, detail::ContainerIt<ContT>>{ container, counter_start };
-}
-
-template<typename NumT, typename ElemT>
-auto enumerate(std::initializer_list<ElemT> ilist, const NumT counter_start)
-    -> EnumerateRange<NumT, typename std::initializer_list<ElemT>::iterator>
-{
-    return EnumerateRange<NumT, typename std::initializer_list<ElemT>::iterator>{ ilist,
-                                                                                  counter_start };
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -441,31 +362,5 @@ auto zip(ContT_T& container_t, ContT_U& container_u)
                                                                                  container_u };
 }
 
-template<typename ElemT, typename ContT_U>
-auto zip(std::initializer_list<ElemT> ilist, ContT_U& container_u)
-    -> ZipRange<typename std::initializer_list<ElemT>::iterator, detail::ContainerIt<ContT_U>>
-{
-    return ZipRange<typename std::initializer_list<ElemT>::iterator, detail::ContainerIt<ContT_U>>{
-        ilist, container_u
-    };
-}
-
-template<typename ContT_T, typename ElemU>
-auto zip(ContT_T& container_t, std::initializer_list<ElemU> ilist_u)
-    -> ZipRange<detail::ContainerIt<ContT_T>, typename std::initializer_list<ElemU>::iterator>
-{
-    return ZipRange<detail::ContainerIt<ContT_T>, typename std::initializer_list<ElemU>::iterator>{
-        container_t, ilist_u
-    };
-}
-
-template<typename ElemT, typename ElemU>
-auto zip(std::initializer_list<ElemT> ilist_t, std::initializer_list<ElemU> ilist_u)
-    -> ZipRange<typename std::initializer_list<ElemT>::iterator,
-                typename std::initializer_list<ElemU>::iterator>
-{
-    return ZipRange<typename std::initializer_list<ElemT>::iterator,
-                    typename std::initializer_list<ElemU>::iterator>{ ilist_t, ilist_u };
-}
 
 } // namespace Mg
