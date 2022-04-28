@@ -11,6 +11,7 @@
 #include "mg/core/mg_log.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_file_io.h"
+#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_math_utils.h"
 #include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_stl_helpers.h"
@@ -195,7 +196,7 @@ bool Config::evaluate_line(std::string_view input)
     };
 
     // Ignore comment
-    const auto size = narrow<size_t>(find(input, '#') - input.begin());
+    const auto size = Mg::as<size_t>(find(input, '#') - input.begin());
     input = trim(input.substr(0, size));
 
     if (input.empty()) {

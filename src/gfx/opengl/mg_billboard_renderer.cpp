@@ -202,14 +202,11 @@ void update_buffer(BillboardRendererData& data, span<const Billboard> billboards
     // According to the following source, this should help reduce synchronisation overhead.
     // TODO: investigate further.
     // https://www.khronos.org/opengl/wiki/Buffer_Object_Streaming
-    glBufferData(GL_ARRAY_BUFFER,
-                 narrow<GLsizeiptr>(data.vertex_buffer_size),
-                 nullptr,
-                 GL_STREAM_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, as<GLsizeiptr>(data.vertex_buffer_size), nullptr, GL_STREAM_DRAW);
 
     data.vertex_buffer_size = billboards.size() * sizeof(Billboard);
     glBufferData(GL_ARRAY_BUFFER,
-                 narrow<GLsizeiptr>(data.vertex_buffer_size),
+                 as<GLsizeiptr>(data.vertex_buffer_size),
                  billboards.data(),
                  GL_STREAM_DRAW);
 }
@@ -289,12 +286,10 @@ void BillboardRenderer::render(const ICamera& camera,
     Pipeline::bind_shared_inputs(shared_inputs);
 
     PipelineBindingContext binding_context;
-    impl().pipeline_pool.bind_material_pipeline(material,
-                                                      pipeline_settings(),
-                                                      binding_context);
+    impl().pipeline_pool.bind_material_pipeline(material, pipeline_settings(), binding_context);
 
     glBindVertexArray(impl().vao.as_gl_id());
-    glDrawArrays(GL_POINTS, 0, narrow<GLint>(billboards.size()));
+    glDrawArrays(GL_POINTS, 0, as<GLint>(billboards.size()));
 }
 
 void BillboardRenderer::drop_shaders() noexcept

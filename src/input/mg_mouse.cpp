@@ -151,7 +151,7 @@ void Mouse::refresh()
     GLFWwindow* window_handle = m_window.glfw_window();
 
     for (size_t i = 0; i < k_num_buttons; ++i) {
-        m_button_states[i] = (glfwGetMouseButton(window_handle, narrow<int>(i)) == GLFW_PRESS);
+        m_button_states[i] = (glfwGetMouseButton(window_handle, as<int>(i)) == GLFW_PRESS);
     }
 
     const float prev_x_pos = m_x_pos;

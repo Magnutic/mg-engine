@@ -124,10 +124,10 @@ Opt<int32_t> get_packedchar_index(const BitmapFontData& font, char32_t codepoint
     int32_t result = 0;
     for (const UnicodeRange& range : font.unicode_ranges) {
         if (contains_codepoint(range, codepoint)) {
-            result += narrow<int>(codepoint - range.start);
+            result += as<int>(codepoint - range.start);
             return result;
         }
-        result += narrow<int32_t>(range.length);
+        result += as<int32_t>(range.length);
     }
 
     return nullopt;
@@ -178,8 +178,8 @@ private:
                    BitmapFontData& font)
     {
         {
-            auto texture_data = Array<uint8_t>::make_for_overwrite(
-                narrow<size_t>(m_texture_width * m_texture_height));
+            auto texture_data =
+                Array<uint8_t>::make_for_overwrite(as<size_t>(m_texture_width * m_texture_height));
             stbtt_pack_context pack_context;
 
             std::copy(unicode_ranges.begin(),
@@ -215,8 +215,8 @@ private:
             size_t packed_char_offset = 0;
 
             for (UnicodeRange unicode_range : unicode_ranges) {
-                const auto first_codepoint = narrow<int>(unicode_range.start);
-                const auto num_codepoints = narrow<int>(unicode_range.length);
+                const auto first_codepoint = as<int>(unicode_range.start);
+                const auto num_codepoints = as<int>(unicode_range.length);
                 const auto* font_data_ptr = reinterpret_cast<const uint8_t*>(font_data.data());
 
                 auto* chardata_for_range = &font.packed_chars[packed_char_offset];
@@ -537,11 +537,11 @@ PreparedText BitmapFont::prepare_text(std::string_view text_utf8,
     glGenBuffers(1, &gl_buffer_id);
     glBindBuffer(GL_ARRAY_BUFFER, gl_buffer_id);
     glBufferData(GL_ARRAY_BUFFER,
-                 narrow<GLsizei>(sizeof(Vertex) * vertices.size()),
+                 as<GLsizei>(sizeof(Vertex) * vertices.size()),
                  static_cast<const GLvoid*>(vertices.data()),
                  GL_STATIC_DRAW);
 
-    const auto stride = narrow<GLsizei>(sizeof(Vertex));
+    const auto stride = as<GLsizei>(sizeof(Vertex));
     const GLvoid* position_offset = nullptr;
     const auto* texcoord_offset = reinterpret_cast<const GLvoid*>(sizeof(glm::vec2));
 

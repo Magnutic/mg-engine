@@ -189,7 +189,7 @@ void LightBuffers::update(span<const Light> lights, const ICamera& cam)
                                                       m.cluster_working_data,
                                                       grid_config);
                     if (datum.light_indices.size() < grid_config.max_lights_per_cluster) {
-                        datum.light_indices.push_back(narrow<uint16_t>(light_index));
+                        datum.light_indices.push_back(as<uint16_t>(light_index));
                     }
                     else if (!has_warned_about_too_many_lights) {
                         log.warning("Too many light sources in cluster.");
@@ -215,7 +215,7 @@ void LightBuffers::update(span<const Light> lights, const ICamera& cam)
 
         // Write the offset into the LightIndex array for this cluster.
         cluster.offset_in_light_index_array = current_light_index_buffer_index;
-        cluster.num_lights_in_cluster = narrow<uint32_t>(datum.light_indices.size());
+        cluster.num_lights_in_cluster = as<uint32_t>(datum.light_indices.size());
 
         for (LightIndex light_index : datum.light_indices) {
             m.light_index_array[current_light_index_buffer_index] = light_index;

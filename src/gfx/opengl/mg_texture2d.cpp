@@ -140,15 +140,15 @@ TextureHandle generate_gl_render_target_texture(const RenderTargetParams& params
             const auto mip_height = info.height >> i;
 
             // Allocate storage for texture target
-            glTexImage2D(GL_TEXTURE_2D,                       // target
-                         i,                                   // miplevel
-                         narrow<GLint>(info.internal_format), // internalformat
-                         mip_width,                           // texture width
-                         mip_height,                          // texture height
-                         0,                                   // border (must be 0)
-                         info.format,                         // format
-                         info.type,                           // pixel data type
-                         nullptr                              // pixel data
+            glTexImage2D(GL_TEXTURE_2D,                   // target
+                         i,                               // miplevel
+                         as<GLint>(info.internal_format), // internalformat
+                         mip_width,                       // texture width
+                         mip_height,                      // texture height
+                         0,                               // border (must be 0)
+                         info.format,                     // format
+                         info.type,                       // pixel data type
+                         nullptr                          // pixel data
             );
         }
     }
@@ -171,9 +171,9 @@ GlTextureInfo gl_texture_info(const TextureResource& resource,
 
     const auto& format = resource.format();
 
-    info.mip_levels = narrow<int32_t>(format.mip_levels);
-    info.width = narrow<int32_t>(format.width);
-    info.height = narrow<int32_t>(format.height);
+    info.mip_levels = as<int32_t>(format.mip_levels);
+    info.width = as<int32_t>(format.width);
+    info.height = as<int32_t>(format.height);
 
     // Texture channels are all 8-bit, so far.
     info.type = GL_UNSIGNED_BYTE;
@@ -335,7 +335,7 @@ void upload_uncompressed_mip(bool preallocated,
     // N.B. internalformat is unsigned in glCompressedTexImage2D, but signed in glTexImage2D.
     glTexImage2D(GL_TEXTURE_2D,
                  mip_index,
-                 narrow<GLint>(info.internal_format),
+                 as<GLint>(info.internal_format),
                  width,
                  height,
                  0,
@@ -374,9 +374,9 @@ TextureHandle generate_gl_texture_from(const TextureResource& resource,
 
     // Upload texture data, mipmap by mipmap
     for (int32_t mip_index = 0; mip_index < info.mip_levels; ++mip_index) {
-        const auto mip_data = resource.pixel_data(narrow<uint32_t>(mip_index));
+        const auto mip_data = resource.pixel_data(as<uint32_t>(mip_index));
         auto pixels = mip_data.data.data();
-        auto size = narrow<int32_t>(mip_data.data.size_bytes());
+        auto size = as<int32_t>(mip_data.data.size_bytes());
 
         upload_function(preallocate, mip_index, info, size, pixels);
     }
@@ -396,7 +396,7 @@ TextureHandle generate_gl_texture_from(span<const uint8_t> rgba8_buffer,
     glGenTextures(1, &texture_id);
     glBindTexture(GL_TEXTURE_2D, texture_id);
 
-    MG_ASSERT(narrow<int32_t>(rgba8_buffer.size()) == width * height * 4);
+    MG_ASSERT(as<int32_t>(rgba8_buffer.size()) == width * height * 4);
 
     glTexImage2D(GL_TEXTURE_2D,
                  0,
@@ -431,8 +431,8 @@ Texture2D Texture2D::from_texture_resource(const TextureResource& resource,
     Texture2D tex(generate_gl_texture_from(resource, settings));
 
     tex.m_id = resource.resource_id();
-    tex.m_image_size.width = narrow<int32_t>(resource.format().width);
-    tex.m_image_size.height = narrow<int32_t>(resource.format().height);
+    tex.m_image_size.width = as<int32_t>(resource.format().width);
+    tex.m_image_size.height = as<int32_t>(resource.format().height);
 
     return tex;
 }

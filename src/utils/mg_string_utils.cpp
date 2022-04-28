@@ -80,7 +80,7 @@ std::string_view rtrim(std::string_view str) noexcept
 {
     const auto end =
         std::find_if(str.rbegin(), str.rend(), [](auto c) { return is_not_whitespace(c); }).base();
-    const auto length = narrow<size_t>(str.end() - end);
+    const auto length = as<size_t>(str.end() - end);
     str.remove_suffix(length);
     return str;
 }
@@ -90,7 +90,7 @@ std::string_view ltrim(std::string_view str) noexcept
 {
     const auto begin =
         std::find_if(str.begin(), str.end(), [](auto c) { return is_not_whitespace(c); });
-    const auto length = narrow<size_t>(begin - str.begin());
+    const auto length = as<size_t>(begin - str.begin());
     str.remove_prefix(length);
     return str;
 }
@@ -124,7 +124,7 @@ size_t find_any_of(std::string_view str, std::string_view chars) noexcept
 /** Returns a lowercase version of a UTF-8 string. */
 std::string to_lower(std::string_view str) noexcept
 {
-    std::string ret_val{str};
+    std::string ret_val{ str };
     utf8lwr(ret_val.data());
     return ret_val;
 }
@@ -132,7 +132,7 @@ std::string to_lower(std::string_view str) noexcept
 /** Returns a uppercase version of a UTF-8 string. */
 std::string to_upper(std::string_view str) noexcept
 {
-    std::string ret_val{str};
+    std::string ret_val{ str };
     utf8upr(ret_val.data());
     return ret_val;
 }

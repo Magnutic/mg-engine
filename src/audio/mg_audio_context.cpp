@@ -99,13 +99,13 @@ struct State {
 sf_count_t read(void* ptr, sf_count_t count, void* user_data)
 {
     auto* state = static_cast<State*>(user_data);
-    const auto file_size = narrow<sf_count_t>(state->data.size_bytes());
+    const auto file_size = as<sf_count_t>(state->data.size_bytes());
     const sf_count_t real_count = min(file_size - state->pos, count);
     if (real_count <= 0) {
         return 0;
     }
 
-    std::memcpy(ptr, &state->data[narrow<size_t>(state->pos)], narrow<size_t>(real_count));
+    std::memcpy(ptr, &state->data[as<size_t>(state->pos)], as<size_t>(real_count));
     state->pos += real_count;
     return real_count;
 }
@@ -113,13 +113,13 @@ sf_count_t read(void* ptr, sf_count_t count, void* user_data)
 sf_count_t get_filelen(void* user_data)
 {
     auto* state = static_cast<State*>(user_data);
-    return narrow<sf_count_t>(state->data.size_bytes());
+    return as<sf_count_t>(state->data.size_bytes());
 }
 
 sf_count_t seek(sf_count_t offset, int whence, void* user_data)
 {
     auto* state = static_cast<State*>(user_data);
-    const auto file_size = narrow<sf_count_t>(state->data.size_bytes());
+    const auto file_size = as<sf_count_t>(state->data.size_bytes());
 
     switch (whence) {
     case SEEK_CUR:
@@ -190,7 +190,7 @@ struct GenerateOpenALBufferResult {
 GenerateOpenALBufferResult generate_OpenAL_buffer(SNDFILE* sndfile, SF_INFO& sf_info)
 {
     const sf_count_t max_num_frames = std::numeric_limits<int>::max() /
-                                      (narrow<int>(sizeof(short)) * sf_info.channels);
+                                      (as<int>(sizeof(short)) * sf_info.channels);
 
     if (sf_info.frames < 1 || sf_info.frames > max_num_frames) {
         return { nullopt, fmt::format("Bad sample count (was {})", sf_info.frames) };
@@ -211,7 +211,7 @@ GenerateOpenALBufferResult generate_OpenAL_buffer(SNDFILE* sndfile, SF_INFO& sf_
 
     { // Use libsndfile to decode the audio file to an OpenAL buffer.
         auto buffer =
-            Array<short>::make_for_overwrite(narrow<size_t>(sf_info.frames * sf_info.channels));
+            Array<short>::make_for_overwrite(as<size_t>(sf_info.frames * sf_info.channels));
         short* dst = buffer.data();
 
         const sf_count_t num_frames = sf_readf_short(sndfile, dst, sf_info.frames);
@@ -219,7 +219,7 @@ GenerateOpenALBufferResult generate_OpenAL_buffer(SNDFILE* sndfile, SF_INFO& sf_
             return { nullopt, "Failed to read samples." };
         }
 
-        const auto num_bytes = narrow<ALsizei>(buffer.size() * sizeof(short));
+        const auto num_bytes = as<ALsizei>(buffer.size() * sizeof(short));
 
         alGenBuffers(1, &al_buffer_id);
         alBufferData(al_buffer_id, format, buffer.data(), num_bytes, sf_info.samplerate);
@@ -361,7 +361,7 @@ void AudioContext::check_for_errors() const
 void AudioContext::link_buffer_to_source(uintptr_t sound_source_id, const SoundBufferHandle& buffer)
 {
     const ALuint al_buffer_id = buffer.m_ptr->al_buffer_id;
-    alSourcei(narrow<ALuint>(sound_source_id), AL_BUFFER, narrow<ALint>(al_buffer_id));
+    alSourcei(as<ALuint>(sound_source_id), AL_BUFFER, as<ALint>(al_buffer_id));
     MG_ASSERT_DEBUG(alGetError() == AL_NO_ERROR);
 }
 

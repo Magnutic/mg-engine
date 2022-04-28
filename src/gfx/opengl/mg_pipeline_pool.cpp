@@ -231,7 +231,7 @@ generate_material_input_layout(const Material& material, const uint32_t material
     for (size_t i = 0; i < samplers.size(); ++i) {
         descriptors[i].input_name = samplers[i].name;
         descriptors[i].type = PipelineInputType::Sampler2D;
-        descriptors[i].location = narrow<uint32_t>(i);
+        descriptors[i].location = as<uint32_t>(i);
         descriptors[i].mandatory = false;
     }
 
@@ -352,7 +352,7 @@ void PipelinePool::bind_material_pipeline(const Material& material,
 
     const auto& samplers = material.samplers();
     for (size_t i = 0; i < samplers.size(); ++i) {
-        material_input_bindings.push_back({ narrow<uint32_t>(i), samplers[i].sampler });
+        material_input_bindings.push_back({ as<uint32_t>(i), samplers[i].sampler });
     }
 
     Pipeline::bind_material_inputs(material_input_bindings);

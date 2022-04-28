@@ -203,7 +203,7 @@ SharedBuffer* MeshPoolImpl::_make_vertex_buffer(size_t size)
     GLuint vertex_buffer_id = 0;
     glGenBuffers(1, &vertex_buffer_id);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
-    glBufferData(GL_ARRAY_BUFFER, narrow<GLsizeiptr>(size), nullptr, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, as<GLsizeiptr>(size), nullptr, GL_STATIC_DRAW);
 
     const auto it = m_vertex_buffers.emplace();
     it->handle.set(vertex_buffer_id);
@@ -217,7 +217,7 @@ SharedBuffer* MeshPoolImpl::_make_index_buffer(size_t size)
     GLuint index_buffer_id = 0;
     glGenBuffers(1, &index_buffer_id);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, narrow<GLsizeiptr>(size), nullptr, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, as<GLsizeiptr>(size), nullptr, GL_STATIC_DRAW);
 
     const auto it = m_index_buffers.emplace();
     it->handle.set(index_buffer_id);
@@ -234,7 +234,7 @@ void setup_vertex_attribute(const uint32_t attribute_index,
     const bool is_normalized = attribute.int_value_meaning == IntValueMeaning::Normalize;
 
     glVertexAttribPointer(attribute_index,
-                          narrow<GLint>(attribute.num_elements),
+                          as<GLint>(attribute.num_elements),
                           static_cast<GLuint>(attribute.type),
                           static_cast<GLboolean>(is_normalized),
                           stride,
@@ -302,8 +302,8 @@ void MeshPoolImpl::_make_mesh_at(MeshInternal& mesh, Identifier name, const Make
 
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
         glBufferSubData(GL_ARRAY_BUFFER,
-                        narrow<GLintptr>(params.vertex_buffer_data_offset),
-                        narrow<GLsizeiptr>(vertex_data.size()),
+                        as<GLintptr>(params.vertex_buffer_data_offset),
+                        as<GLsizeiptr>(vertex_data.size()),
                         vertex_data.data());
 
         setup_opengl_mesh_vertex_attributes();
@@ -318,8 +318,8 @@ void MeshPoolImpl::_make_mesh_at(MeshInternal& mesh, Identifier name, const Make
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER,
-                        narrow<GLintptr>(params.index_buffer_data_offset),
-                        narrow<GLsizeiptr>(index_buffer_data.size()),
+                        as<GLintptr>(params.index_buffer_data_offset),
+                        as<GLsizeiptr>(index_buffer_data.size()),
                         index_buffer_data.data());
     }
 
@@ -336,8 +336,8 @@ void MeshPoolImpl::_make_mesh_at(MeshInternal& mesh, Identifier name, const Make
 
         glBindBuffer(GL_ARRAY_BUFFER, influences_buffer_id);
         glBufferSubData(GL_ARRAY_BUFFER,
-                        narrow<GLintptr>(params.influences_buffer_data_offset),
-                        narrow<GLsizeiptr>(influences_data.size()),
+                        as<GLintptr>(params.influences_buffer_data_offset),
+                        as<GLsizeiptr>(influences_data.size()),
                         influences_data.data());
 
         setup_opengl_influences_attributes();

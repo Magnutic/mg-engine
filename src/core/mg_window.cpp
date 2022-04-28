@@ -138,7 +138,7 @@ Array<VideoMode> find_available_video_modes()
     const auto vid_modes = []() -> span<const GLFWvidmode> {
         int n_modes;
         auto p_modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &n_modes);
-        return { p_modes, narrow<size_t>(n_modes) };
+        return { p_modes, as<size_t>(n_modes) };
     };
 
     // Iterate through modes and add relevant ones (24bpp) to list

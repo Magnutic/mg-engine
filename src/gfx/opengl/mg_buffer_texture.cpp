@@ -190,7 +190,7 @@ BufferTexture::BufferTexture(Type type, size_t buffer_size) : m_buffer_size(buff
     // Create data buffer and allocate storage
     glGenBuffers(1, &buf_id);
     glBindBuffer(GL_TEXTURE_BUFFER, buf_id);
-    glBufferData(GL_TEXTURE_BUFFER, narrow<GLintptr>(buffer_size), nullptr, GL_STREAM_DRAW);
+    glBufferData(GL_TEXTURE_BUFFER, as<GLintptr>(buffer_size), nullptr, GL_STREAM_DRAW);
 
     // Create texture object
     glGenTextures(1, &tex_id);
@@ -224,7 +224,7 @@ void BufferTexture::set_data(span<const std::byte> data) noexcept
     // Update data buffer contents
     const auto buf_id = m_buf_id.as_gl_id();
     glBindBuffer(GL_TEXTURE_BUFFER, buf_id);
-    glBufferSubData(GL_TEXTURE_BUFFER, 0, narrow<GLsizeiptr>(data.size_bytes()), data.data());
+    glBufferSubData(GL_TEXTURE_BUFFER, 0, as<GLsizeiptr>(data.size_bytes()), data.data());
 }
 
 } // namespace Mg::gfx

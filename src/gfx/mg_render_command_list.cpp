@@ -103,9 +103,9 @@ void RenderCommandProducer::add_skinned_mesh(MeshHandle mesh,
     RenderCommand& command = impl().render_commands_unsorted.back();
 
     // Keep track of where the skinning matrix palette's data resides.
-    command.skinning_matrices_begin = narrow<uint16_t>(skinning_matrix_palette.m_start_index);
+    command.skinning_matrices_begin = as<uint16_t>(skinning_matrix_palette.m_start_index);
     command.num_skinning_matrices =
-        narrow<uint16_t>(skinning_matrix_palette.m_skinning_matrices.size());
+        as<uint16_t>(skinning_matrix_palette.m_skinning_matrices.size());
 }
 
 SkinningMatrixPalette
@@ -116,7 +116,7 @@ RenderCommandProducer::allocate_skinning_matrix_palette(const uint16_t num_joint
 
     return SkinningMatrixPalette{
         span(impl().commands.m_skinning_matrices).subspan(skinning_matrices_begin, num_joints),
-        narrow<uint16_t>(skinning_matrices_begin)
+        as<uint16_t>(skinning_matrices_begin)
     };
 }
 
@@ -182,7 +182,7 @@ SortKey create_sort_key(const RenderCommandProducerData& data,
     const glm::vec3 translation = m_transform[3];
     const auto depth = view_depth_in_cm(camera, translation);
     const uint32_t command_fingerprint = render_command_fingerpint(command);
-    return { depth, command_fingerprint, narrow<uint32_t>(unsorted_command_index) };
+    return { depth, command_fingerprint, as<uint32_t>(unsorted_command_index) };
 }
 
 } // namespace

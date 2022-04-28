@@ -37,7 +37,7 @@ template<GLenum shader_stage> Opt<GLuint> compile_shader(const std::string& code
 
     // If there was a message, write to log.
     if (log_length > 1) {
-        msg.resize(narrow<size_t>(log_length));
+        msg.resize(as<size_t>(log_length));
         glGetShaderInfoLog(id, log_length, nullptr, msg.data());
 
         const auto msg_type = result != 0 ? Log::Prio::Message : Log::Prio::Error;

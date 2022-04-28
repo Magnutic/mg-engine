@@ -277,10 +277,10 @@ private:
         btIndexedMesh bt_indexed_mesh = {};
         bt_indexed_mesh.m_vertexType = PHY_FLOAT;
         bt_indexed_mesh.m_vertexStride = sizeof(m_vertices[0]);
-        bt_indexed_mesh.m_numVertices = Mg::narrow<int>(m_vertices.size());
+        bt_indexed_mesh.m_numVertices = Mg::as<int>(m_vertices.size());
         bt_indexed_mesh.m_vertexBase = reinterpret_cast<const uint8_t*>(m_vertices.data());
         bt_indexed_mesh.m_triangleIndexStride = 3 * sizeof(m_indices[0]);
-        bt_indexed_mesh.m_numTriangles = Mg::narrow<int>(m_indices.size() / 3);
+        bt_indexed_mesh.m_numTriangles = Mg::as<int>(m_indices.size() / 3);
         bt_indexed_mesh.m_triangleIndexBase = reinterpret_cast<const uint8_t*>(m_indices.data());
 
         m_bt_triangle_mesh.addIndexedMesh(bt_indexed_mesh, PHY_SHORT);

@@ -74,8 +74,8 @@ void UniformBuffer::set_data(span<const std::byte> data, size_t dest_offset)
 
     glBindBuffer(GL_UNIFORM_BUFFER, ubo_id);
     GLvoid* p = glMapBufferRange(GL_UNIFORM_BUFFER,
-                                 narrow<GLintptr>(dest_offset),
-                                 narrow<GLsizeiptr>(data.size_bytes()),
+                                 as<GLintptr>(dest_offset),
+                                 as<GLsizeiptr>(data.size_bytes()),
                                  GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT);
     MG_ASSERT(p != nullptr);
 
@@ -93,7 +93,7 @@ size_t UniformBuffer::max_size()
         log.verbose("GL_MAX_UNIFORM_BLOCK_SIZE: {}", result);
     }
 
-    return narrow<size_t>(result);
+    return as<size_t>(result);
 }
 
 } // namespace Mg::gfx

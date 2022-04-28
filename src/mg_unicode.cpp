@@ -23,7 +23,7 @@ namespace Mg {
 constexpr UnicodeRange make_unicode_range(char32_t start, char32_t end)
 {
     MG_ASSERT(start < end);
-    return { start, narrow<uint32_t>(end - start) + 1 };
+    return { start, as<uint32_t>(end - start) + 1 };
 }
 
 static constexpr std::array<UnicodeRange, 207> unicode_block_ranges = {

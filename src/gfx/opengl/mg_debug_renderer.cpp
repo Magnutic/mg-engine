@@ -82,13 +82,13 @@ DebugMesh generate_mesh(span<const vec3> positions, span<const uint16_t> indices
 
     if (!positions.empty()) {
         glBufferData(GL_ARRAY_BUFFER,
-                     narrow<GLsizeiptr>(positions.size_bytes()),
+                     as<GLsizeiptr>(positions.size_bytes()),
                      positions.data(),
                      GL_DYNAMIC_DRAW);
     }
     if (!indices.empty()) {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                     narrow<GLsizeiptr>(indices.size_bytes()),
+                     as<GLsizeiptr>(indices.size_bytes()),
                      indices.data(),
                      GL_DYNAMIC_DRAW);
     }
@@ -103,7 +103,7 @@ DebugMesh generate_mesh(span<const vec3> positions, span<const uint16_t> indices
     return { VertexArrayHandle::Owner{ vao_id },
              BufferHandle::Owner{ vbo_id },
              BufferHandle::Owner{ ibo_id },
-             narrow<GLsizei>(indices.size()) };
+             as<GLsizei>(indices.size()) };
 }
 
 void update_mesh(DebugMesh& debug_mesh, span<const vec3> positions, span<const uint16_t> indices)
@@ -114,11 +114,11 @@ void update_mesh(DebugMesh& debug_mesh, span<const vec3> positions, span<const u
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, debug_mesh.ibo.handle.as_gl_id());
 
     glBufferData(GL_ARRAY_BUFFER,
-                 narrow<GLsizeiptr>(positions.size_bytes()),
+                 as<GLsizeiptr>(positions.size_bytes()),
                  positions.data(),
                  GL_DYNAMIC_DRAW);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                 narrow<GLsizeiptr>(indices.size_bytes()),
+                 as<GLsizeiptr>(indices.size_bytes()),
                  indices.data(),
                  GL_DYNAMIC_DRAW);
 
@@ -127,7 +127,7 @@ void update_mesh(DebugMesh& debug_mesh, span<const vec3> positions, span<const u
 
     glBindVertexArray(0);
 
-    debug_mesh.num_indices = narrow<GLsizei>(indices.size());
+    debug_mesh.num_indices = as<GLsizei>(indices.size());
 
     MG_CHECK_GL_ERROR();
 }
@@ -355,7 +355,7 @@ void draw(const ShaderProgramOwner& program,
         // glGet(GL_POLYGON_MODE) returns front- and back polygon modes separately; but since
         // GL 3.2, it is not allowed to set front- and back separately.
         MG_ASSERT_DEBUG(old_poly_mode[0] == old_poly_mode[1]);
-        glPolygonMode(GL_FRONT_AND_BACK, narrow<GLuint>(old_poly_mode[0]));
+        glPolygonMode(GL_FRONT_AND_BACK, as<GLuint>(old_poly_mode[0]));
         glEnable(GL_CULL_FACE);
     }
 

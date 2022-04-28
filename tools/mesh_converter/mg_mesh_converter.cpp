@@ -711,7 +711,7 @@ void dump_joints(const JointData& joint_data)
     {
         const auto& joints = joint_data.joints();
         for (const Joint& joint : joints) {
-            const auto joint_id = narrow<JointId>(std::distance(joints.data(), &joint));
+            const auto joint_id = as<JointId>(std::distance(joints.data(), &joint));
             const bool has_inverse_bind_matrix = joint.inverse_bind_matrix != mat4(1.0f);
             print(0, '[', std::to_string(joint_id), "] ", joint_data.get_joint_name(joint_id), ':');
             print(0, "\tHas inverse_bind_matrix: ", has_inverse_bind_matrix ? "true" : "false");

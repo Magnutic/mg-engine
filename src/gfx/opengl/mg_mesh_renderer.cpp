@@ -101,8 +101,8 @@ FrameBlock make_frame_block(const ICamera& camera,
 {
     std::array<int, 4> viewport_data{};
     glGetIntegerv(GL_VIEWPORT, &viewport_data[0]);
-    const glm::uvec2 viewport_size{ narrow<uint32_t>(viewport_data[2]),
-                                    narrow<uint32_t>(viewport_data[3]) };
+    const glm::uvec2 viewport_size{ as<uint32_t>(viewport_data[2]),
+                                    as<uint32_t>(viewport_data[3]) };
 
     const float scale = float(light_grid_config.grid_depth) /
                         std::log2(float(light_grid_config.grid_far_plane));
@@ -253,7 +253,7 @@ void draw_elements(size_t num_elements, size_t starting_element) noexcept
 {
     const uintptr_t begin = starting_element * sizeof(Mesh::Index);
     glDrawElements(GL_TRIANGLES,
-                   narrow<int32_t>(num_elements),
+                   as<int32_t>(num_elements),
                    GL_UNSIGNED_SHORT,
                    reinterpret_cast<GLvoid*>(begin));
 }

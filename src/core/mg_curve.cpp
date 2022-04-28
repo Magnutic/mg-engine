@@ -60,7 +60,7 @@ Curve::Index Curve::insert(ControlPoint point)
 {
     auto it = insertion_it(point.x);
     m_control_points.insert(it, point);
-    return narrow<Index>(std::distance(m_control_points.cbegin(), it));
+    return as<Index>(std::distance(m_control_points.cbegin(), it));
 }
 
 bool Curve::remove(Index index)
@@ -115,11 +115,11 @@ float Curve::evaluate(float x) const
 
 Curve::Index Curve::wrap_around(ptrdiff_t i) const
 {
-    const auto size = narrow<ptrdiff_t>(m_control_points.size());
+    const auto size = as<ptrdiff_t>(m_control_points.size());
     if (size == 0) return 0;
     while (i < 0) i += size;
     while (i >= size) i -= size;
-    return narrow<Index>(i);
+    return as<Index>(i);
 }
 
 std::pair<const ControlPoint*, const ControlPoint*> Curve::get_samples(float x) const

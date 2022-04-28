@@ -50,7 +50,7 @@ bool FileWriter::write(const std::filesystem::path& out_path)
             log.error("FileWriter: unexpected error. Stream write position does not match queue.");
             return false;
         }
-        out_file.write(item.data, narrow<std::streamsize>(item.length));
+        out_file.write(item.data, as<std::streamsize>(item.length));
     }
 
     out_file.close();

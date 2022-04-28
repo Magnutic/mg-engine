@@ -63,8 +63,7 @@ void check_framebuffer()
     const auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
     if (status != GL_FRAMEBUFFER_COMPLETE) {
-        log.error(
-            fmt::format("TextureRenderTarget incomplete with status code {:#x}", status));
+        log.error(fmt::format("TextureRenderTarget incomplete with status code {:#x}", status));
         throw RuntimeError();
     }
 }
@@ -81,8 +80,8 @@ public:
     }
     ~FramebufferBindGuard()
     {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, narrow<uint32_t>(old_read_binding));
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, narrow<uint32_t>(old_write_binding));
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, as<uint32_t>(old_read_binding));
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, as<uint32_t>(old_write_binding));
     }
 
     GLint old_read_binding{};
@@ -184,14 +183,13 @@ TextureRenderTarget::with_colour_and_depth_targets(Texture2D* colour_target,
         log.warning(
             "TextureRenderTarget::with_colour_and_depth_targets(): colour_target and depth_target "
             "have different image sizes.");
-        log.verbose(
-            fmt::format("\n\tColour target '{}': {}x{}\n\tDepth target '{}': {}x{}.",
-                        colour_target->id().c_str(),
-                        colour_target->image_size().width,
-                        colour_target->image_size().height,
-                        depth_target->id().c_str(),
-                        depth_target->image_size().width,
-                        depth_target->image_size().height));
+        log.verbose(fmt::format("\n\tColour target '{}': {}x{}\n\tDepth target '{}': {}x{}.",
+                                colour_target->id().c_str(),
+                                colour_target->image_size().width,
+                                colour_target->image_size().height,
+                                depth_target->id().c_str(),
+                                depth_target->image_size().width,
+                                depth_target->image_size().height));
     }
 
     auto trt = std::make_unique<TextureRenderTarget>(PrivateCtorKey{});

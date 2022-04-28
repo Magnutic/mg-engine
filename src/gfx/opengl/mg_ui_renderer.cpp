@@ -9,8 +9,8 @@
 #include "../mg_shader.h"
 
 #include "mg/containers/mg_array.h"
-#include "mg/gfx/mg_blend_modes.h"
 #include "mg/gfx/mg_bitmap_font.h"
+#include "mg/gfx/mg_blend_modes.h"
 #include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_pipeline_pool.h"
@@ -374,7 +374,7 @@ void UIRenderer::draw_text(const UIPlacement& placement,
     setup_text_pipeline(impl(), text.gpu_data().texture, M, blend_mode);
 
     glBindVertexArray(text.gpu_data().vertex_array.as_gl_id());
-    glDrawArrays(GL_TRIANGLES, 0, narrow<GLsizei>(verts_per_char * text.num_glyphs()));
+    glDrawArrays(GL_TRIANGLES, 0, as<GLsizei>(verts_per_char * text.num_glyphs()));
 }
 
 void UIRenderer::drop_shaders() noexcept

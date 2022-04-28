@@ -224,9 +224,9 @@ LoadResourceResult TextureResource::load_resource_impl(ResourceLoadingInput& inp
     const auto size = dds_data.length() - pixel_data_offset;
 
     // Size sanity check
-    const auto width = narrow<DimT>(header.dwWidth);
-    const auto height = narrow<DimT>(header.dwHeight);
-    const auto num_mip_maps = narrow<MipIndexT>(header.dwMipMapCount);
+    const auto width = as<DimT>(header.dwWidth);
+    const auto height = as<DimT>(header.dwHeight);
+    const auto num_mip_maps = as<MipIndexT>(header.dwMipMapCount);
 
     auto num_blocks = num_blocks_by_img_size(width, height);
 

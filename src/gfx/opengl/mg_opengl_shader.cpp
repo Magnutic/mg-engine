@@ -52,7 +52,7 @@ bool link_program(GLuint program_id)
 
     // If there was log message, write to log.
     if (log_length > 1) {
-        msg.resize(narrow<size_t>(log_length));
+        msg.resize(as<size_t>(log_length));
         glGetProgramInfoLog(program_id, log_length, nullptr, msg.data());
 
         const auto msg_type = result != 0 ? Log::Prio::Message : Log::Prio::Error;
