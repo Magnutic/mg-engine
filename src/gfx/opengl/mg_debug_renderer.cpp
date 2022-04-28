@@ -157,9 +157,9 @@ const std::array<uint16_t, 36> box_indices = { {
 std::vector<uint16_t> generate_line_vertex_indices(const size_t num_vertices)
 {
     std::vector<uint16_t> indices(num_vertices * 2u - 1u);
-    for (uint16_t i = 0; i + 1 < indices.size(); i += 2u) {
-        indices[i] = i / 2;
-        indices[i + 1] = i / 2 + 1;
+    for (size_t i = 0; i + 1 < indices.size(); i += 2u) {
+        indices[i] = as<uint16_t>(i / 2);
+        indices[i + 1] = as<uint16_t>(i / 2 + 1);
     }
     return indices;
 }
