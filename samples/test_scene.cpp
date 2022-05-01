@@ -152,7 +152,7 @@ void Scene::init()
         app.window().release_cursor(); // Don't lock instantly.
     }
 
-    resource_cache.set_resource_reload_callback(
+    resource_cache->set_resource_reload_callback(
         [](void* scene, const Mg::FileChangedEvent& event) {
             static_cast<Scene*>(scene)->on_resource_reload(event);
         },
@@ -176,7 +176,7 @@ void Scene::init()
     generate_lights();
 
     const auto font_resource =
-        resource_cache.resource_handle<Mg::FontResource>("fonts/LiberationMono-Regular.ttf");
+        resource_cache->resource_handle<Mg::FontResource>("fonts/LiberationMono-Regular.ttf");
     std::vector<Mg::UnicodeRange> unicode_ranges = { Mg::get_unicode_range(
         Mg::UnicodeBlock::Basic_Latin) };
     font = std::make_unique<Mg::gfx::BitmapFont>(font_resource, 24, unicode_ranges);
@@ -452,7 +452,7 @@ void Scene::setup_config()
 
 Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file, const bool sRGB)
 {
-    // Get form pool if it exists there.
+    // Get from pool if it exists there.
     Mg::gfx::Texture2D* texture = texture_pool.get(file);
     if (texture) {
         return texture;
@@ -462,10 +462,10 @@ Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file, const bool sRGB)
     settings.sRGB = sRGB ? Mg::gfx::SRGBSetting::sRGB : Mg::gfx::SRGBSetting::Linear;
 
     // Otherwise, load from file.
-    if (resource_cache.file_exists(file)) {
+    if (resource_cache->file_exists(file)) {
         const Mg::ResourceAccessGuard access =
-            resource_cache.access_resource<Mg::TextureResource>(file);
-        return texture_pool.create(*access, settings);
+            resource_cache->access_resource<Mg::TextureResource>(file);
+        return texture_pool.from_resource(*access, settings);
     }
 
     return nullptr;
@@ -517,13 +517,13 @@ Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::
 
     Mg::gfx::Material* m = nullptr;
     if (use_metallic_workflow) {
-        auto handle = resource_cache.resource_handle<Mg::ShaderResource>(
+        auto handle = resource_cache->resource_handle<Mg::ShaderResource>(
             "shaders/default_metallic_workflow.mgshader");
         m = material_pool.create(file, handle);
         m->set_sampler("sampler_ao_roughness_metallic", ao_roughness_metallic_texture->handle());
     }
     else {
-        auto handle = resource_cache.resource_handle<Mg::ShaderResource>(
+        auto handle = resource_cache->resource_handle<Mg::ShaderResource>(
             "shaders/default_specular_workflow.mgshader");
         m = material_pool.create(file, handle);
         m->set_sampler("sampler_specular", specular_texture->handle());
@@ -564,7 +564,7 @@ Model Scene::load_model(Mg::Identifier mesh_file,
     model.id = mesh_file;
 
     const Mg::ResourceAccessGuard access =
-        resource_cache.access_resource<Mg::MeshResource>(mesh_file);
+        resource_cache->access_resource<Mg::MeshResource>(mesh_file);
 
     const Mg::Opt<Mg::gfx::MeshHandle> mesh_handle = mesh_pool.get(mesh_file);
     if (mesh_handle.has_value()) {
@@ -615,7 +615,7 @@ Model& Scene::add_scene_model(Mg::Identifier mesh_file,
     Model& model = it->second;
 
     const Mg::ResourceAccessGuard access =
-        resource_cache.access_resource<Mg::MeshResource>(mesh_file);
+        resource_cache->access_resource<Mg::MeshResource>(mesh_file);
 
     Mg::physics::Shape* shape = physics_world->create_mesh_shape(access->data_view());
     model.physics_body = physics_world->create_static_body(mesh_file, *shape, glm::mat4{ 1.0f });
@@ -637,7 +637,7 @@ Model& Scene::add_dynamic_model(Mg::Identifier mesh_file,
 
     if (enable_physics) {
         const Mg::ResourceAccessGuard access =
-            resource_cache.access_resource<Mg::MeshResource>(mesh_file);
+            resource_cache->access_resource<Mg::MeshResource>(mesh_file);
 
         Mg::physics::DynamicBodyParameters body_params = {};
         body_params.type = Mg::physics::DynamicBodyType::Dynamic;
@@ -865,16 +865,16 @@ void Scene::load_materials()
 {
     // Create post-process materials
     const auto bloom_handle =
-        resource_cache.resource_handle<Mg::ShaderResource>("shaders/post_process_bloom.mgshader");
+        resource_cache->resource_handle<Mg::ShaderResource>("shaders/post_process_bloom.mgshader");
     auto const blur_handle =
-        resource_cache.resource_handle<Mg::ShaderResource>("shaders/post_process_blur.mgshader");
+        resource_cache->resource_handle<Mg::ShaderResource>("shaders/post_process_blur.mgshader");
 
     bloom_material = material_pool.create("bloom_material", bloom_handle);
     blur_material = material_pool.create("blur_material", blur_handle);
 
     // Create billboard material
     const auto billboard_handle =
-        resource_cache.resource_handle<Mg::ShaderResource>("shaders/simple_billboard.mgshader");
+        resource_cache->resource_handle<Mg::ShaderResource>("shaders/simple_billboard.mgshader");
 
     billboard_material = material_pool.create("billboard_material", billboard_handle);
     billboard_material->set_sampler("sampler_diffuse",
@@ -882,7 +882,7 @@ void Scene::load_materials()
 
     // Create UI material
     const auto ui_handle =
-        resource_cache.resource_handle<Mg::ShaderResource>("shaders/ui_render_test.mgshader");
+        resource_cache->resource_handle<Mg::ShaderResource>("shaders/ui_render_test.mgshader");
     ui_material = material_pool.create("ui_material", ui_handle);
     ui_material->set_sampler("sampler_colour",
                              load_texture("textures/ui/book_open_da.dds", true)->handle());
@@ -925,7 +925,7 @@ void Scene::generate_lights()
 void Scene::on_window_focus_change(const bool is_focused)
 {
     if (is_focused) {
-        resource_cache.refresh();
+        resource_cache->refresh();
     }
 }
 

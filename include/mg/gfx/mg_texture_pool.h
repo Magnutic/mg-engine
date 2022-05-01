@@ -13,8 +13,11 @@
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_simple_pimpl.h"
 
+#include <memory>
+
 namespace Mg {
 class Identifier;
+class ResourceCache;
 class TextureResource;
 } // namespace Mg
 
@@ -27,13 +30,15 @@ struct TexturePoolData;
 
 class TexturePool : PImplMixin<TexturePoolData> {
 public:
-    TexturePool();
+    explicit TexturePool(std::shared_ptr<ResourceCache> resource_cache);
     ~TexturePool();
 
     MG_MAKE_NON_MOVABLE(TexturePool);
     MG_MAKE_NON_COPYABLE(TexturePool);
 
-    Texture2D* create(const TextureResource& resource, const TextureSettings& settings);
+    Texture2D* load(const Identifier& texture_id);
+
+    Texture2D* from_resource(const TextureResource& resource, const TextureSettings& settings);
 
     Texture2D* create_render_target(const RenderTargetParams& params);
 

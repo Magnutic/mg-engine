@@ -62,9 +62,9 @@ struct MaterialFileAssignment {
     Mg::Identifier material_fname = "";
 };
 
-inline Mg::ResourceCache setup_resource_cache()
+inline std::shared_ptr<Mg::ResourceCache> setup_resource_cache()
 {
-    return Mg::ResourceCache{ std::make_unique<Mg::BasicFileLoader>("../data") };
+    return std::make_shared<Mg::ResourceCache>(std::make_unique<Mg::BasicFileLoader>("../data"));
 }
 
 using RenderPassTargets = std::vector<std::unique_ptr<Mg::gfx::TextureRenderTarget>>;
@@ -114,10 +114,10 @@ public:
     MG_MAKE_NON_MOVABLE(Scene);
     MG_MAKE_NON_COPYABLE(Scene);
 
-    Mg::ResourceCache resource_cache = setup_resource_cache();
+    std::shared_ptr<Mg::ResourceCache> resource_cache = setup_resource_cache();
 
     Mg::gfx::MeshPool mesh_pool;
-    Mg::gfx::TexturePool texture_pool;
+    Mg::gfx::TexturePool texture_pool{ resource_cache };
     Mg::gfx::MaterialPool material_pool;
 
     std::unique_ptr<Mg::gfx::BitmapFont> font;

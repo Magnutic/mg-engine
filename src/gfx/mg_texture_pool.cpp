@@ -13,7 +13,9 @@
 #include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_texture2d.h"
 #include "mg/gfx/mg_texture_related_types.h"
+#include "mg/resource_cache/mg_resource_cache.h"
 #include "mg/resources/mg_texture_resource.h"
+#include "mg/utils/mg_string_utils.h"
 
 #include <plf_colony.h>
 
@@ -32,6 +34,9 @@ struct TextureNode {
 } // namespace
 
 struct TexturePoolData {
+    // The resource cache from which we will load textures.
+    std::shared_ptr<ResourceCache> resource_cache;
+
     // Texture node storage -- stores elements largely contiguously, but does not invalidate
     // pointers.
     plf::colony<Texture2D> textures;
@@ -42,6 +47,49 @@ struct TexturePoolData {
 };
 
 namespace {
+
+// Deduce texture settings given a texture filename.
+// Based on a system of convention where the filename suffix indicates its intended use.
+TextureSettings texture_settings_from_filename(const Identifier& id)
+{
+    TextureSettings settings = {};
+
+    Opt<TextureCategory> category = deduce_texture_category(id.str_view());
+    if (!category.has_value()) {
+        log.warning("Could not deduce texture category for '{}'", id.str_view());
+        log.message("Note: expected filename ending with one of the following:");
+        for (const auto& [c, suffix] : g_texture_category_to_filename_suffix_map) {
+            log.message("\t{}", suffix);
+        }
+    }
+    else {
+        switch (category.value()) {
+        case TextureCategory::Diffuse:
+            settings.sRGB = SRGBSetting::sRGB;
+            settings.dxt1_has_alpha = false;
+            break;
+        case TextureCategory::Diffuse_transparent:
+            settings.sRGB = SRGBSetting::sRGB;
+            settings.dxt1_has_alpha = true;
+            break;
+        case TextureCategory::Diffuse_alpha:
+            settings.sRGB = SRGBSetting::sRGB;
+            settings.dxt1_has_alpha = true;
+            break;
+        case TextureCategory::Normal:
+            settings.sRGB = SRGBSetting::Linear;
+            break;
+        case TextureCategory::Specular_gloss:
+            settings.sRGB = SRGBSetting::sRGB;
+            break;
+        case TextureCategory::Ao_roughness_metallic:
+            settings.sRGB = SRGBSetting::Linear;
+            break;
+        }
+    }
+
+    return settings;
+}
 
 TexturePoolData::HandleMap::iterator try_insert_into_handle_map(TexturePoolData& data,
                                                                 Identifier key)
@@ -71,12 +119,24 @@ Texture2D* create_texture_impl(TexturePoolData& data,
 
 } // namespace
 
-TexturePool::TexturePool() = default;
+TexturePool::TexturePool(std::shared_ptr<ResourceCache> resource_cache)
+{
+    MG_ASSERT(resource_cache != nullptr);
+    impl().resource_cache = std::move(resource_cache);
+}
+
 TexturePool::~TexturePool() = default;
 
-Texture2D* TexturePool::create(const TextureResource& resource, const TextureSettings& settings)
+Texture2D* TexturePool::load(const Identifier& texture_id)
 {
-    MG_GFX_DEBUG_GROUP("TexturePool::create")
+    auto access_guard = impl().resource_cache->access_resource<TextureResource>(texture_id);
+    const auto settings = texture_settings_from_filename(texture_id);
+    return from_resource(*access_guard, settings);
+}
+
+Texture2D* TexturePool::from_resource(const TextureResource& resource, const TextureSettings& settings)
+{
+    MG_GFX_DEBUG_GROUP("TexturePool::from_resource")
     auto generate_texture = [&resource, &settings] {
         return Texture2D::from_texture_resource(resource, settings);
     };
