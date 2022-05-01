@@ -143,14 +143,56 @@ inline bool is_suffix_of(std::string_view suffix, std::string_view string)
     return std::equal(suffix.begin(), suffix.end(), string.end() - suffix.size());
 }
 
-/** Get the substring of str up to the first occurrence of character 'c'. */
+/** Get the substring of str up (not including) to the first occurrence of character 'c'. */
 inline std::string_view substring_until(std::string_view str, const char c)
 {
     const size_t index = str.find(c);
     if (index == std::string_view::npos || index == 0) {
         return std::string_view{};
     }
-    return str.substr(0, index - 1);
+    return str.substr(0, index);
+}
+
+/** Get the substring of str up to (not including) the last occurrence of character 'c'. */
+inline std::string_view substring_until_last(std::string_view str, const char c)
+{
+    const size_t index = str.find_last_of(c);
+    if (index == std::string_view::npos || index == 0) {
+        return std::string_view{};
+    }
+    return str.substr(0, index);
+}
+
+/** Get the substring of str after (not including) the first occurrence of character 'c'. */
+inline std::string_view substring_after(std::string_view str, const char c)
+{
+    const size_t index = str.find(c);
+    if (index == std::string_view::npos) {
+        return std::string_view{};
+    }
+    return str.substr(index + 1);
+}
+
+/** Get the substring of str after (not including) the last occurrence of character 'c'. */
+inline std::string_view substring_after_last(std::string_view str, const char c)
+{
+    const size_t index = str.find_last_of(c);
+    if (index == std::string_view::npos) {
+        return std::string_view{};
+    }
+    return str.substr(index + 1);
+}
+
+inline std::string
+replace_char(std::string_view str, const char to_replace, const char replace_with)
+{
+    auto result = std::string(str);
+    for (char& c : result) {
+        if (c == to_replace) {
+            c = replace_with;
+        }
+    }
+    return result;
 }
 
 /** Parse value from string if possible.

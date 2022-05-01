@@ -153,6 +153,46 @@ TEST_CASE("is_suffix_of")
     REQUIRE(!is_suffix_of("asdasd", "asd"));
 }
 
+TEST_CASE("substring_until")
+{
+    REQUIRE(substring_until("abcdefabcdef", 'd') == "abc");
+    REQUIRE(substring_until("abcdefabcdef", 'a') == "");
+    REQUIRE(substring_until("abcdefabcdef", 'f') == "abcde");
+    REQUIRE(substring_until("abcdefabcdef", 'x') == "");
+    REQUIRE(substring_until("", 'd') == "");
+
+    REQUIRE(substring_until_last("abcdefabcdef", 'd') == "abcdefabc");
+    REQUIRE(substring_until_last("abcdefabcdef", 'a') == "abcdef");
+    REQUIRE(substring_until_last("abcdefabcdef", 'f') == "abcdefabcde");
+    REQUIRE(substring_until_last("abcdefabcdef", 'x') == "");
+    REQUIRE(substring_until_last("", 'd') == "");
+}
+
+TEST_CASE("substring_after")
+{
+    REQUIRE(substring_after("abcdefabcdef", 'd') == "efabcdef");
+    REQUIRE(substring_after("abcdefabcdef", 'a') == "bcdefabcdef");
+    REQUIRE(substring_after("abcdefabcdef", 'f') == "abcdef");
+    REQUIRE(substring_after("abcdefabcdef", 'x') == "");
+    REQUIRE(substring_after("", 'd') == "");
+
+    REQUIRE(substring_after_last("abcdefabcdef", 'd') == "ef");
+    REQUIRE(substring_after_last("abcdefabcdef", 'a') == "bcdef");
+    REQUIRE(substring_after_last("abcdefabcdef", 'f') == "");
+    REQUIRE(substring_after_last("abcdefabcdef", 'x') == "");
+    REQUIRE(substring_after_last("", 'd') == "");
+}
+
+TEST_CASE("replace_char")
+{
+    REQUIRE(replace_char("abcdef", 'x', 'd') == "abcdef");
+    REQUIRE(replace_char("abcdef", 'c', 'd') == "abddef");
+    REQUIRE(replace_char("abcdefabcdef", 'c', 'd') == "abddefabddef");
+    REQUIRE(replace_char("c", 'c', 'd') == "d");
+    REQUIRE(replace_char("f", 'c', 'd') == "f");
+    REQUIRE(replace_char("", 'c', 'd') == "");
+}
+
 TEST_CASE("PointNormalPlane")
 {
     auto p{ PointNormalPlane::from_point_and_normal({ 1.0f, 2.0f, 3.0f }, { -1.0f, 1.0f, 0.0f }) };
