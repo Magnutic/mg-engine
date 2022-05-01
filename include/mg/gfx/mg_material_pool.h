@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "mg/containers/mg_array.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/resource_cache/mg_resource_handle.h"
 #include "mg/utils/mg_macros.h"
@@ -35,6 +36,12 @@ public:
     Material* create(Identifier id, ResourceHandle<ShaderResource> shader);
 
     void destroy(const Material* handle);
+
+    Material* find(Identifier id);
+    const Material* find(Identifier id) const;
+
+    Array<Material*> get_all_materials();
+    Array<const Material*> get_all_materials() const;
 };
 
 } // namespace Mg::gfx
