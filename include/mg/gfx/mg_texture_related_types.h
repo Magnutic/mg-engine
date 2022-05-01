@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -12,7 +12,9 @@
 
 #include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_optional.h"
 
+#include <array>
 #include <cstdint>
 
 namespace Mg::gfx {
@@ -129,5 +131,48 @@ struct TextureSettings {
     /** Whether DXT1 texture has alpha. Unused for other texture formats. */
     bool dxt1_has_alpha = false;
 };
+
+/** Category of texture. */
+enum class TextureCategory {
+    /** Only diffuse (surface colour) information; no alpha channel. */
+    Diffuse,
+
+    /** Diffuse (surface colour) information with an alpha channel representing transparency. */
+    Diffuse_transparent,
+
+    /** Diffuse (surface colour) and an alpha channel with some data other than transparency. */
+    Diffuse_alpha,
+
+    /** Surface normal map. */
+    Normal,
+
+    /** Specular-glossiness map. Specular colour in RGB channels and glossiness in alpha channel.
+     * Specular-workflow alternative to Ao_roughness_metallic.
+     */
+    Specular_gloss,
+
+    /** Red channel: ambient occlusion, green channel: surface roughness, blue channel:
+     * metallicness. Metallic-roughness-workflow alternative to Specular_gloss.
+     */
+    Ao_roughness_metallic,
+};
+
+/** Mapping associating filename suffixes to texture categories. This lets us deduce category based
+ * simply on filename, removing the need for extra configuration files or embedded metadata.
+ */
+inline constexpr std::array<std::pair<TextureCategory, std::string_view>, 6>
+    g_texture_category_to_filename_suffix_map = { //
+        { { TextureCategory::Diffuse, "_d" },
+          { TextureCategory::Diffuse_transparent, "_t" },
+          { TextureCategory::Diffuse_alpha, "_da" },
+          { TextureCategory::Normal, "_n" },
+          { TextureCategory::Specular_gloss, "_s" },
+          { TextureCategory::Ao_roughness_metallic, "_arm" }
+
+        }
+    };
+
+/** Deduce category depending on filename suffix. */
+Opt<TextureCategory> deduce_texture_category(std::string_view texture_filename);
 
 } // namespace Mg::gfx

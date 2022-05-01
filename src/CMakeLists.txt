@@ -28,6 +28,7 @@ add_library(mg_engine
     gfx/mg_render_command_list.cpp
     gfx/mg_skeleton.cpp
     gfx/mg_texture_pool.cpp
+    gfx/mg_texture_related_types.cpp
     gfx/opengl/mg_billboard_renderer.cpp
     gfx/opengl/mg_buffer_texture.cpp
     gfx/opengl/mg_debug_renderer.cpp
