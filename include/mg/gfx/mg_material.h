@@ -14,7 +14,7 @@
 #include "mg/core/mg_identifier.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/resource_cache/mg_resource_handle.h"
-#include "mg/resources/mg_shader_resource.h"
+#include "mg/resources/mg_shader_resource.h" // TODO remove after moving needed declarations elsewhere
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_optional.h"
 
@@ -27,17 +27,24 @@
 #include <cstdint>
 #include <string>
 
+namespace Mg {
+class Value;
+class ShaderResource;
+class MaterialResource;
+} // namespace Mg
+
 namespace Mg::gfx {
 
 /** Material for rendering meshes. */
 class Material {
 public:
-    explicit Material(Identifier material_id, ResourceHandle<ShaderResource> shader);
+    explicit Material(Identifier material_id, ResourceHandle<ShaderResource> shader_resource);
 
     struct Sampler {
         Identifier name;
         shader::SamplerType type{};
-        TextureHandle sampler{};
+        TextureHandle texture{};
+        Opt<Identifier> texture_resource_id;
     };
 
     struct Parameter {
@@ -81,12 +88,14 @@ public:
     OptionFlags option_flags() const noexcept { return m_option_flags; }
 
     /** Enable or disable the given option. Throws if the option does not exist for this material */
-    void set_option(Identifier option, bool enabled);
+    void set_option(Option option, bool enabled);
 
     /** Returns whether the given option is enabled. Throws if the option does not exist. */
-    bool get_option(Identifier option) const;
+    bool get_option(Option option) const;
 
-    void set_sampler(Identifier name, TextureHandle texture);
+    void set_sampler(Identifier name,
+                     TextureHandle texture,
+                     Opt<Identifier> texture_resource_id = nullopt);
 
     Opt<size_t> sampler_index(Identifier name);
 
@@ -94,6 +103,7 @@ public:
     void set_parameter(Identifier name, float param);
     void set_parameter(Identifier name, const glm::vec2& param);
     void set_parameter(Identifier name, const glm::vec4& param);
+    void set_parameter(Identifier name, const Value& value);
 
     Opt<int> get_parameter_int(Identifier name) const;
     Opt<float> get_parameter_float(Identifier name) const;
@@ -111,9 +121,9 @@ public:
      */
     Material::PipelineId pipeline_identifier() const noexcept;
 
-    ResourceHandle<ShaderResource> shader() const noexcept { return m_shader; }
+    ResourceHandle<ShaderResource> shader() const noexcept { return m_shader_resource; }
 
-    [[nodiscard]] std::string debug_print() const;
+    [[nodiscard]] std::string serialize() const;
 
     /** Get material parameter values as a raw byte buffer. This is then passed into shaders as a
      * uniform buffer.
@@ -140,7 +150,7 @@ private:
 
     ParamsBuffer m_parameter_data{};
 
-    ResourceHandle<ShaderResource> m_shader;
+    ResourceHandle<ShaderResource> m_shader_resource;
 
     // State of Options represented as a bit-field
     OptionFlags m_option_flags;

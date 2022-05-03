@@ -17,6 +17,7 @@
 #include "mg/mg_defs.h"
 #include "mg/resource_cache/mg_resource_access_guard.h"
 #include "mg/resources/mg_shader_resource.h"
+#include "mg/utils/mg_iteration_utils.h"
 #include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_stl_helpers.h"
 
@@ -353,9 +354,8 @@ void PipelinePool::bind_material_pipeline(const Material& material,
     material_input_bindings.push_back(
         { impl().config.material_params_ubo_slot, impl().material_params_ubo });
 
-    const auto& samplers = material.samplers();
-    for (size_t i = 0; i < samplers.size(); ++i) {
-        material_input_bindings.push_back({ as<uint32_t>(i), samplers[i].sampler });
+    for (const auto& [i, sampler] : enumerate<uint32_t>(material.samplers())) {
+        material_input_bindings.push_back({ i, sampler.texture });
     }
 
     Pipeline::bind_material_inputs(material_input_bindings);

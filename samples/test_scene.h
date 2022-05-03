@@ -117,8 +117,9 @@ public:
     std::shared_ptr<Mg::ResourceCache> resource_cache = setup_resource_cache();
 
     Mg::gfx::MeshPool mesh_pool;
-    Mg::gfx::TexturePool texture_pool{ resource_cache };
-    Mg::gfx::MaterialPool material_pool;
+    std::shared_ptr<Mg::gfx::TexturePool> texture_pool =
+        std::make_shared<Mg::gfx::TexturePool>(resource_cache);
+    Mg::gfx::MaterialPool material_pool{ texture_pool };
 
     std::unique_ptr<Mg::gfx::BitmapFont> font;
 

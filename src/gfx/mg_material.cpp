@@ -8,10 +8,12 @@
 
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
+#include "mg/core/mg_value.h"
 #include "mg/mg_defs.h"
 #include "mg/resource_cache/mg_resource_access_guard.h"
 #include "mg/resources/mg_shader_resource.h"
 #include "mg/utils/mg_stl_helpers.h"
+#include "mg/utils/mg_string_utils.h"
 #include "mg/utils/mg_vec_to_string.h"
 
 #include <glm/vec2.hpp>
@@ -43,10 +45,10 @@ size_t num_elems_for_param_type(shader::ParameterType type) noexcept
 
 } // namespace
 
-Material::Material(Identifier material_id, ResourceHandle<ShaderResource> shader)
-    : m_shader(shader), m_id(material_id)
+Material::Material(Identifier material_id, ResourceHandle<ShaderResource> shader_resource)
+    : m_shader_resource(shader_resource), m_id(material_id)
 {
-    ResourceAccessGuard shader_resource_access(shader);
+    ResourceAccessGuard shader_resource_access(m_shader_resource);
 
     MG_ASSERT(shader_resource_access->samplers().size() <= defs::k_max_samplers_per_material);
     MG_ASSERT(shader_resource_access->options().size() <= defs::k_max_options_per_material);
@@ -64,31 +66,34 @@ Material::Material(Identifier material_id, ResourceHandle<ShaderResource> shader
     };
 
     for (const shader::Sampler& s : shader_resource_access->samplers()) {
-        m_samplers.push_back({ s.name, s.type, {} });
+        m_samplers.push_back({ s.name, s.type, {}, {} });
     }
 }
 
-void Material::set_sampler(Identifier name, TextureHandle texture)
+void Material::set_sampler(Identifier name,
+                           TextureHandle texture,
+                           Opt<Identifier> texture_resource_id)
 {
     auto opt_index = sampler_index(name);
 
     if (!opt_index.has_value()) {
-        log.error("Material '{}': set_sampler(\"{}\", ...): no such sampler.",
+        log.error("Material '{}': set_sampler(\"{}\", ...): shader has no such sampler.",
                   m_id.str_view(),
                   name.str_view());
         throw RuntimeError();
     }
 
     m_samplers[*opt_index].name = name;
-    m_samplers[*opt_index].sampler = texture;
+    m_samplers[*opt_index].texture = texture;
+    m_samplers[*opt_index].texture_resource_id = texture_resource_id;
 }
 
-void Material::set_option(Identifier option, bool enabled)
+void Material::set_option(Option option, bool enabled)
 {
     auto [found, index] = index_of(m_options, option);
 
     if (!found) {
-        log.error("Material '{}': set_option(\"{}\", ...): no such option.",
+        log.error("Material '{}': set_option(\"{}\", ...): shader has no such option.",
                   m_id.str_view(),
                   option.str_view());
         throw RuntimeError();
@@ -97,12 +102,12 @@ void Material::set_option(Identifier option, bool enabled)
     m_option_flags.set(index, enabled);
 }
 
-bool Material::get_option(Identifier option) const
+bool Material::get_option(Option option) const
 {
     auto [found, index] = index_of(m_options, option);
 
     if (!found) {
-        log.error("Material '{}': get_option(\"{}\"): no such option.",
+        log.error("Material '{}': get_option(\"{}\"): shader has no such option.",
                   m_id.str_view(),
                   option.str_view());
         throw RuntimeError();
@@ -137,6 +142,35 @@ void Material::set_parameter(Identifier name, const glm::vec2& param)
 void Material::set_parameter(Identifier name, const glm::vec4& param)
 {
     _set_parameter_impl(name, byte_representation(param), shader::ParameterType::Vec4);
+}
+
+void Material::set_parameter(Identifier name, const Value& value)
+{
+    switch (value.type()) {
+    case Value::Type::Int:
+        set_parameter(name, value.as_int().value());
+        break;
+
+    case Value::Type::Float:
+        set_parameter(name, value.as_float().value());
+        break;
+
+    case Value::Type::Vec2:
+        set_parameter(name, value.as_vec2().value());
+        break;
+
+    case Value::Type::Vec4:
+        set_parameter(name, value.as_vec4().value());
+        break;
+
+    default:
+        log.error(
+            "Material '{}': set_parameter(\"{}\", ...): Wrong type. Cannot use value of type {} as "
+            "a material parameter.",
+            id().c_str(),
+            name.c_str(),
+            value.type_as_string());
+    }
 }
 
 Opt<int> Material::get_parameter_int(Identifier name) const
@@ -217,7 +251,7 @@ void Material::_set_parameter_impl(Identifier name,
     auto [p_param, offset] = find_parameter(name, m_params);
 
     if (p_param == nullptr) {
-        log.warning("Material '{}': set_parameter(\"{}\", ...): no such parameter.",
+        log.warning("Material '{}': set_parameter(\"{}\", ...): shader has no such parameter.",
                     id().str_view(),
                     name.str_view());
         return;
@@ -248,7 +282,7 @@ Opt<glm::vec4> Material::_get_parameter_impl(Identifier name,
     glm::vec4 result = { 0.0f, 0.0f, 0.0f, 0.0f };
 
     if (p_param == nullptr) {
-        log.warning("Material '{}': get_parameter(\"{}\", ...): no such parameter.",
+        log.warning("Material '{}': get_parameter(\"{}\", ...): shader has no such parameter.",
                     id().str_view(),
                     name.str_view());
         return nullopt;
@@ -298,39 +332,47 @@ std::string Material::_parameter_value_as_string(Identifier name) const
 
 Material::PipelineId Material::pipeline_identifier() const noexcept
 {
-    return { m_shader.resource_id(), m_option_flags };
+    return { m_shader_resource.resource_id(), m_option_flags };
 }
 
-std::string Material::debug_print() const
+std::string Material::serialize() const
 {
     std::ostringstream oss;
-    oss << "// Material '" << id().c_str() << "'\n";
-    oss << "// ShaderResource: '" << m_shader.resource_id().str_view() << "'\n";
+    oss << "// Material id: '" << id().c_str() << "'\n";
+    oss << "shader = \"" << m_shader_resource.resource_id().str_view() << "\"\n\n";
 
-    oss << "\nOPTIONS {";
-
-    for (const Option& o : options()) {
-        oss << "\n\t" << o.str_view() << " = " << (get_option(o) ? "true" : "false") << ';';
-    };
-
-    oss << (options().empty() ? "}" : "\n}");
-
-    oss << "\nSAMPLERS {";
-
-    for (const Sampler& s : samplers()) {
-        oss << "\n\t" << shader::sampler_type_to_string(s.type) << ' ' << s.name.str_view() << ';';
+    {
+        WriteBracedBlock options_block(oss, "OPTIONS");
+        for (const Option& o : options()) {
+            options_block.writeLine(o.str_view(), " = ", (get_option(o) ? "true" : "false"), ';');
+        }
     }
 
-    oss << (samplers().empty() ? "}" : "\n}");
+    oss << '\n';
 
-    oss << "\nPARAMETERS {";
+    {
+        WriteBracedBlock parameters_block(oss, "PARAMETERS");
 
-    for (const Parameter& p : parameters()) {
-        oss << "\n\t" << shader::parameter_type_to_string(p.type) << ' ' << p.name.str_view()
-            << " = " << _parameter_value_as_string(p.name) << ';';
+        for (const Sampler& s : samplers()) {
+            parameters_block.writeLine(shader::sampler_type_to_string(s.type),
+                                       ' ',
+                                       s.name.str_view(),
+                                       " = \"",
+                                       s.texture_resource_id.value_or("").str_view(),
+                                       "\";");
+        }
+
+        parameters_block.writeLine();
+
+        for (const Parameter& p : parameters()) {
+            parameters_block.writeLine(shader::parameter_type_to_string(p.type),
+                                       ' ',
+                                       p.name.str_view(),
+                                       " = ",
+                                       _parameter_value_as_string(p.name),
+                                       ';');
+        }
     }
-
-    oss << (parameters().empty() ? "}" : "\n}");
 
     return oss.str();
 }

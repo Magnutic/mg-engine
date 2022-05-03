@@ -1,5 +1,6 @@
 #include "test_scene.h"
 #include "mg/gfx/mg_texture_related_types.h"
+#include "mg/resources/mg_material_resource.h"
 
 #include <mg/core/mg_application_context.h>
 #include <mg/core/mg_config.h>
@@ -220,10 +221,10 @@ void Scene::simulation_step()
 
         // Dispose of old render target textures. TODO: RAII
         {
-            texture_pool.destroy(hdr_target->colour_target());
-            texture_pool.destroy(hdr_target->depth_target());
-            texture_pool.destroy(blur_targets.hor_pass_target_texture);
-            texture_pool.destroy(blur_targets.vert_pass_target_texture);
+            texture_pool->destroy(hdr_target->colour_target());
+            texture_pool->destroy(hdr_target->depth_target());
+            texture_pool->destroy(blur_targets.hor_pass_target_texture);
+            texture_pool->destroy(blur_targets.vert_pass_target_texture);
         }
 
         make_hdr_target(app.window().settings().video_mode);
@@ -453,7 +454,7 @@ void Scene::setup_config()
 Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file, const bool sRGB)
 {
     // Get from pool if it exists there.
-    Mg::gfx::Texture2D* texture = texture_pool.get(file);
+    Mg::gfx::Texture2D* texture = texture_pool->get(file);
     if (texture) {
         return texture;
     }
@@ -465,7 +466,7 @@ Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file, const bool sRGB)
     if (resource_cache->file_exists(file)) {
         const Mg::ResourceAccessGuard access =
             resource_cache->access_resource<Mg::TextureResource>(file);
-        return texture_pool.from_resource(*access, settings);
+        return texture_pool->from_resource(*access, settings);
     }
 
     return nullptr;
@@ -473,6 +474,7 @@ Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file, const bool sRGB)
 
 Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::Identifier> options)
 {
+#if 0
     const std::string diffuse_filename = fmt::format("textures/{}_da.dds", file.str_view());
     const std::string diffuse_filename_alt = fmt::format("textures/{}_d.dds", file.str_view());
     const std::string normal_filename = fmt::format("textures/{}_n.dds", file.str_view());
@@ -488,14 +490,14 @@ Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::
     }
     if (!diffuse_texture) {
         diffuse_texture =
-            texture_pool.get_default_texture(Mg::gfx::TexturePool::DefaultTexture::Checkerboard);
+            texture_pool->get_default_texture(Mg::gfx::TexturePool::DefaultTexture::Checkerboard);
     }
 
     Mg::gfx::Texture2D* normal_texture =
         load_texture(Mg::Identifier::from_runtime_string(normal_filename), false);
     if (!normal_texture) {
         normal_texture =
-            texture_pool.get_default_texture(Mg::gfx::TexturePool::DefaultTexture::NormalsFlat);
+            texture_pool->get_default_texture(Mg::gfx::TexturePool::DefaultTexture::NormalsFlat);
     }
 
     Mg::gfx::Texture2D* ao_roughness_metallic_texture =
@@ -509,7 +511,7 @@ Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::
 
         if (!specular_texture) {
             specular_texture =
-                texture_pool.get_default_texture(Mg::gfx::TexturePool::DefaultTexture::Transparent);
+                texture_pool->get_default_texture(Mg::gfx::TexturePool::DefaultTexture::Transparent);
         }
     }
 
@@ -539,6 +541,11 @@ Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::
     mesh_renderer.prepare_shader(*m, true, true);
 
     return m;
+#else
+    auto material_access =
+        resource_cache->access_resource<Mg::MaterialResource>("materials/default.mgmaterial");
+    return material_pool.create(*material_access);
+#endif
 }
 
 Model::Model() = default;
@@ -704,10 +711,10 @@ void Scene::make_blur_targets(Mg::VideoMode video_mode)
     params.texture_format = Mg::gfx::RenderTargetParams::Format::RGBA16F;
 
     params.render_target_id = "Blur_horizontal";
-    blur_targets.hor_pass_target_texture = texture_pool.create_render_target(params);
+    blur_targets.hor_pass_target_texture = texture_pool->create_render_target(params);
 
     params.render_target_id = "Blur_vertical";
-    blur_targets.vert_pass_target_texture = texture_pool.create_render_target(params);
+    blur_targets.vert_pass_target_texture = texture_pool->create_render_target(params);
 
     for (int32_t mip_level = 0; mip_level < k_num_mip_levels; ++mip_level) {
         blur_targets.hor_pass_targets.emplace_back(Mg::gfx::TextureRenderTarget::with_colour_target(
@@ -734,12 +741,12 @@ void Scene::make_hdr_target(Mg::VideoMode mode)
     params.render_target_id = "HDR.colour";
     params.texture_format = Mg::gfx::RenderTargetParams::Format::RGBA16F;
 
-    Mg::gfx::Texture2D* colour_target = texture_pool.create_render_target(params);
+    Mg::gfx::Texture2D* colour_target = texture_pool->create_render_target(params);
 
     params.render_target_id = "HDR.depth";
     params.texture_format = Mg::gfx::RenderTargetParams::Format::Depth24;
 
-    Mg::gfx::Texture2D* depth_target = texture_pool.create_render_target(params);
+    Mg::gfx::Texture2D* depth_target = texture_pool->create_render_target(params);
 
     hdr_target = Mg::gfx::TextureRenderTarget::with_colour_and_depth_targets(colour_target,
                                                                              depth_target);
@@ -886,6 +893,10 @@ void Scene::load_materials()
     ui_material = material_pool.create("ui_material", ui_handle);
     ui_material->set_sampler("sampler_colour",
                              load_texture("textures/ui/book_open_da.dds", true)->handle());
+
+    for (Mg::gfx::Material* material : material_pool.get_all_materials()) {
+        Mg::log.message(material->serialize());
+    }
 }
 
 // Create a lot of random lights
@@ -940,13 +951,18 @@ void Scene::on_resource_reload(const Mg::FileChangedEvent& event)
     switch (event.resource_type.hash()) {
     case "TextureResource"_hash: {
         Mg::ResourceAccessGuard<Mg::TextureResource> access(event.resource);
-        texture_pool.update(*access);
+        texture_pool->update(*access);
         break;
     }
     case "MeshResource"_hash: {
         Mg::ResourceAccessGuard<Mg::MeshResource> access(event.resource);
         mesh_pool.update(*access);
         break;
+    }
+    case "MaterialResource"_hash: {
+        Mg::ResourceAccessGuard<Mg::MaterialResource> access(event.resource);
+        material_pool.update(*access);
+        [[fallthrough]];
     }
     case "ShaderResource"_hash:
         mesh_renderer.drop_shaders();

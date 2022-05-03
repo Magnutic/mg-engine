@@ -18,22 +18,27 @@
 
 namespace Mg {
 class ShaderResource;
-}
+class MaterialResource;
+} // namespace Mg
 
 namespace Mg::gfx {
 
 class Material;
 struct MaterialPoolData;
+class TexturePool;
 
 class MaterialPool : PImplMixin<MaterialPoolData> {
 public:
     MG_MAKE_NON_MOVABLE(MaterialPool);
     MG_MAKE_NON_COPYABLE(MaterialPool);
 
-    MaterialPool();
+    explicit MaterialPool(std::shared_ptr<gfx::TexturePool> texture_pool);
     ~MaterialPool();
 
-    Material* create(Identifier id, ResourceHandle<ShaderResource> shader);
+    Material* create(Identifier id, ResourceHandle<ShaderResource> shader_resource_handle);
+    Material* create(const MaterialResource& material_resource);
+
+    void update(const MaterialResource& material_resource);
 
     void destroy(const Material* handle);
 

@@ -7,6 +7,14 @@
 // X-macros list of parser tokens for Mg Engine.
 // See: https://en.wikipedia.org/wiki/X_Macro
 // Parameters are: internal_name, string_representation, is_keyword
+// where
+//    internal_name: the name of the enum value representing this token type
+//
+//    string_representation: string representation of the token
+//
+//    is_keyword: whether the string_representation is alphanumeric and is written exactly as the
+//    string_representation in parsed text. Non-keyword tokens need to be handled manually in the
+//    lexer.
 
 // Symbols
 X(COMMA, ",", false)
@@ -17,7 +25,7 @@ X(CURLY_LEFT, "{", false)
 X(CURLY_RIGHT, "}", false)
 X(EQUALS, "=", false)
 
-// Values
+// Literals
 X(TRUE, "true", true)
 X(FALSE, "false", true)
 X(STRING_LITERAL, "STRING_LITERAL", false)
@@ -31,6 +39,9 @@ X(FLOAT, "float", true)
 X(VEC2, "vec2", true)
 X(VEC3, "vec3", true)
 X(VEC4, "vec4", true)
+
+// Resources
+X(SHADER, "shader", true)
 
 // Top-level identifier for shaders
 X(TAGS, "TAGS", true)

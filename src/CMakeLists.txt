@@ -14,6 +14,7 @@ add_library(mg_engine
     core/mg_identifier.cpp
     core/mg_log.cpp
     core/mg_rotation.cpp
+    core/mg_value.cpp
     core/mg_window.cpp
     core/mg_window_settings.cpp
     ecs/mg_entity.cpp
@@ -63,6 +64,7 @@ add_library(mg_engine
     resource_cache/mg_base_resource.cpp
     resource_cache/mg_resource_cache.cpp
     resources/mg_font_resource.cpp
+    resources/mg_material_resource.cpp
     resources/mg_mesh_resource.cpp
     resources/mg_raw_resource.cpp
     resources/mg_shader_resource.cpp

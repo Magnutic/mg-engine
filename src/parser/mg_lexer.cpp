@@ -35,8 +35,8 @@ public:
 private:
     SimpleInputStream m_stream{ "" };
     std::vector<Token> m_tokens;
-
     size_t token_start = 0;
+
     void lex_error(std::string_view reason)
     {
         log.error("Error parsing at line {} col {}: {}",
@@ -59,6 +59,21 @@ private:
     {
         const std::string_view lexeme = m_stream.data.substr(token_start, lexeme_length());
         m_tokens.push_back({ type, lexeme, literal_value, m_stream.line });
+    }
+
+    void string_literal()
+    {
+        while (m_stream.peek() != '"' && !m_stream.is_at_end()) {
+            if (m_stream.peek() == '\n') {
+                lex_error("Unexpected line break in string-literal.");
+            }
+            m_stream.advance();
+        }
+
+        m_stream.advance(); // Skip ending quote
+
+        add_token(TokenType::STRING_LITERAL,
+                  m_stream.data.substr(token_start + 1, lexeme_length() - 2));
     }
 
     void numeric_literal()
@@ -158,6 +173,9 @@ private:
             break;
         case '=':
             add_token(TokenType::EQUALS);
+            break;
+        case '"':
+            string_literal();
             break;
         case '/':
             if (m_stream.peek() == '/') {

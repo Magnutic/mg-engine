@@ -11,6 +11,7 @@
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/utils/mg_math_utils.h"
+#include "mg/utils/mg_string_utils.h"
 
 #include "fmt/core.h"
 #include "glm/vec2.hpp"
@@ -77,38 +78,37 @@ public:
 
     [[nodiscard]] bool has_more() const { return !m_remaining_tokens.empty(); }
 
-    float parse_numeric()
-    {
-        auto& token = expect_next(TokenType::NUMERIC_LITERAL);
-        return numeric_value(token);
-    }
-
-    std::string_view parse_identifier()
-    {
-        auto& id_token = expect_next(TokenType::IDENTIFIER);
-        return string_value(id_token);
-    }
-
-    std::string_view parse_string_literal()
-    {
-        auto& str_token = expect_next(TokenType::STRING_LITERAL);
-        return string_value(str_token);
-    }
-
-
 private:
     std::vector<Token> m_tokens;
     span<Token> m_remaining_tokens;
 };
+
+float parse_numeric(TokenStream& stream)
+{
+    auto& token = stream.expect_next(TokenType::NUMERIC_LITERAL);
+    return numeric_value(token);
+}
+
+std::string_view parse_identifier(TokenStream& stream)
+{
+    auto& id_token = stream.expect_next(TokenType::IDENTIFIER);
+    return string_value(id_token);
+}
+
+std::string_view parse_string_literal(TokenStream& stream)
+{
+    auto& str_token = stream.expect_next(TokenType::STRING_LITERAL);
+    return string_value(str_token);
+}
 
 glm::vec2 parse_vec2(TokenStream& stream)
 {
     glm::vec2 result = { 0.0f, 0.0f };
     stream.expect_next(TokenType::VEC2);
     stream.expect_next(TokenType::PARENTHESIS_LEFT);
-    result.x = stream.parse_numeric();
+    result.x = parse_numeric(stream);
     stream.expect_next(TokenType::COMMA);
-    result.y = stream.parse_numeric();
+    result.y = parse_numeric(stream);
     stream.expect_next(TokenType::PARENTHESIS_RIGHT);
     return result;
 }
@@ -118,11 +118,11 @@ glm::vec3 parse_vec3(TokenStream& stream)
     glm::vec3 result = { 0.0f, 0.0f, 0.0f };
     stream.expect_next(TokenType::VEC3);
     stream.expect_next(TokenType::PARENTHESIS_LEFT);
-    result.x = stream.parse_numeric();
+    result.x = parse_numeric(stream);
     stream.expect_next(TokenType::COMMA);
-    result.y = stream.parse_numeric();
+    result.y = parse_numeric(stream);
     stream.expect_next(TokenType::COMMA);
-    result.z = stream.parse_numeric();
+    result.z = parse_numeric(stream);
     stream.expect_next(TokenType::PARENTHESIS_RIGHT);
     return result;
 }
@@ -132,26 +132,207 @@ glm::vec4 parse_vec4(TokenStream& stream)
     glm::vec4 result = { 0.0f, 0.0f, 0.0f, 0.0f };
     stream.expect_next(TokenType::VEC4);
     stream.expect_next(TokenType::PARENTHESIS_LEFT);
-    result.x = stream.parse_numeric();
+    result.x = parse_numeric(stream);
     stream.expect_next(TokenType::COMMA);
-    result.y = stream.parse_numeric();
+    result.y = parse_numeric(stream);
     stream.expect_next(TokenType::COMMA);
-    result.z = stream.parse_numeric();
+    result.z = parse_numeric(stream);
     stream.expect_next(TokenType::COMMA);
-    result.w = stream.parse_numeric();
+    result.w = parse_numeric(stream);
     stream.expect_next(TokenType::PARENTHESIS_RIGHT);
     return result;
 }
 
-class ShaderParser {
+void parse_block(TokenStream& stream, const std::function<void(TokenStream&)>& statement_parser)
+{
+    stream.expect_next(TokenType::CURLY_LEFT);
+
+    while (stream.peek_token().type != TokenType::CURLY_RIGHT) {
+        statement_parser(stream);
+    }
+
+    stream.expect_next(TokenType::CURLY_RIGHT);
+}
+
+[[nodiscard]] SamplerDeclaration parse_sampler_declaration(TokenStream& stream,
+                                                           const bool get_texture_resource_id)
+{
+    SamplerDeclaration result;
+
+    auto& type_token = stream.next_token();
+    switch (type_token.type) {
+    case TokenType::SAMPLER2D:
+        result.type = shader::SamplerType::Sampler2D;
+        break;
+    case TokenType::SAMPLERCUBE:
+        result.type = shader::SamplerType::SamplerCube;
+        break;
+    default:
+        parse_error("Unexpected token (expected sampler2D or samplerCube).", type_token);
+    }
+
+    result.name = Identifier::from_runtime_string(parse_identifier(stream));
+
+    if (get_texture_resource_id && stream.peek_token().type == TokenType::EQUALS) {
+        stream.next_token();
+        result.texture_resource_id = Identifier::from_runtime_string(parse_string_literal(stream));
+    }
+
+    stream.expect_next(TokenType::SEMICOLON);
+    return result;
+}
+
+[[nodiscard]] ParameterDeclaration parse_parameter_declaration(TokenStream& stream)
+{
+    ParameterDeclaration result;
+
+    auto& type_token = stream.next_token();
+    result.name = Identifier::from_runtime_string(parse_identifier(stream));
+    stream.expect_next(TokenType::EQUALS, "Specifying default value for parameter is mandatory");
+
+    switch (type_token.type) {
+    case TokenType::INT: {
+        result.type = shader::ParameterType::Int;
+        result.value = round<int>(parse_numeric(stream));
+        break;
+    }
+    case TokenType::FLOAT: {
+        result.type = shader::ParameterType::Float;
+        result.value = parse_numeric(stream);
+        break;
+    }
+    case TokenType::VEC2: {
+        result.type = shader::ParameterType::Vec2;
+        result.value = parse_vec2(stream);
+        break;
+    }
+    case TokenType::VEC3: {
+        // According to the following source, memory layout for vec3 does not follow the
+        // specification with some drivers. To prevent portability issues, the use of vec3 in
+        // shader parameters is unsupported.
+        // https://www.khronos.org/opengl/wiki/Interface_Block_(GLSL)#Memory_layout
+        parse_error("vec3 is unsupported due to driver inconsistencies. Please use vec4 instead.",
+                    type_token);
+        break;
+    }
+    case TokenType::VEC4: {
+        result.type = shader::ParameterType::Vec4;
+        result.value = parse_vec4(stream);
+        break;
+    }
+    default:
+        parse_error("Unexpected token, expected parameter type (int|float|vec2|vec4).", type_token);
+    }
+
+    stream.expect_next(TokenType::SEMICOLON);
+    return result;
+}
+
+
+[[nodiscard]] OptionDeclaration parse_option_declaration(TokenStream& stream)
+{
+    OptionDeclaration result;
+    result.name = Identifier::from_runtime_string(parse_identifier(stream));
+
+    if (auto& equal_token = stream.next_token(); equal_token.type != TokenType::EQUALS) {
+        parse_error("Expected '= true|false' (value for option).", equal_token);
+    }
+
+    auto& value_token = stream.next_token();
+    switch (value_token.type) {
+    case TokenType::TRUE:
+        result.value = true;
+        break;
+    case TokenType::FALSE:
+        result.value = false;
+        break;
+    default:
+        parse_error("Expected 'true' or 'false'.", value_token);
+    }
+
+    stream.expect_next(TokenType::SEMICOLON);
+    return result;
+}
+
+class MaterialParser {
 public:
-    explicit ShaderParser(std::string_view shader_resource_definition)
-        : m_stream(shader_resource_definition)
+    explicit MaterialParser(std::string_view resource_definition) : m_stream(resource_definition)
     {
         parse_outer_scope();
     }
 
-    enum class ShaderBlockType { Vertex, Fragment };
+    void parse_outer_scope()
+    {
+        auto&& t = m_stream.next_token();
+        switch (t.type) {
+        case TokenType::SHADER:
+            if (m_result.shader_resource_id != "") {
+                parse_error("Multiple shader declarations", t);
+            }
+            parse_shader_resource_id();
+            break;
+        case TokenType::PARAMETERS:
+            parse_parameters_block();
+            break;
+        case TokenType::OPTIONS:
+            parse_options_block();
+            break;
+        case TokenType::END_OF_FILE:
+            return;
+        default:
+            parse_error("Unexpected token at global scope.", t);
+        }
+
+        MG_ASSERT(m_stream.has_more());
+        parse_outer_scope();
+    }
+
+    void parse_shader_resource_id()
+    {
+        m_stream.expect_next(TokenType::EQUALS);
+        m_result.shader_resource_id =
+            Identifier::from_runtime_string(parse_string_literal(m_stream));
+    }
+
+    void parse_sampler_or_parameter_declaration()
+    {
+        auto& type_token = m_stream.peek_token();
+        const bool parameter_is_sampler = type_token.type == TokenType::SAMPLER2D ||
+                                          type_token.type == TokenType::SAMPLERCUBE;
+
+        if (parameter_is_sampler) {
+            m_result.samplers.push_back(parse_sampler_declaration(m_stream, true));
+        }
+        else {
+            m_result.parameters.push_back(parse_parameter_declaration(m_stream));
+        }
+    }
+
+    void parse_parameters_block()
+    {
+        parse_block(m_stream, [this](TokenStream&) { parse_sampler_or_parameter_declaration(); });
+    }
+
+    void parse_options_block()
+    {
+        parse_block(m_stream, [&](TokenStream& stream) {
+            m_result.options.push_back(parse_option_declaration(stream));
+        });
+    }
+
+    MaterialParseResult take_result() noexcept { return std::move(m_result); }
+
+private:
+    TokenStream m_stream;
+    MaterialParseResult m_result;
+};
+
+class ShaderParser {
+public:
+    explicit ShaderParser(std::string_view resource_definition) : m_stream(resource_definition)
+    {
+        parse_outer_scope();
+    }
 
     void parse_outer_scope()
     {
@@ -182,136 +363,10 @@ public:
         parse_outer_scope();
     }
 
-    void parse_block(const std::function<void(void)>& statement_parser)
-    {
-        m_stream.expect_next(TokenType::CURLY_LEFT);
-
-        while (m_stream.peek_token().type != TokenType::CURLY_RIGHT) {
-            statement_parser();
-        }
-
-        m_stream.expect_next(TokenType::CURLY_RIGHT);
-    }
-
-    void parse_sampler_declaration()
-    {
-        auto& type_token = m_stream.next_token();
-        shader::SamplerType sampler_type{};
-
-        switch (type_token.type) {
-        case TokenType::SAMPLER2D:
-            sampler_type = shader::SamplerType::Sampler2D;
-            break;
-        case TokenType::SAMPLERCUBE:
-            sampler_type = shader::SamplerType::SamplerCube;
-            break;
-        default:
-            parse_error("Unexpected token (expected sampler2D or samplerCube).", type_token);
-        }
-
-        const std::string_view identifier = m_stream.parse_identifier();
-
-        m_stream.expect_next(TokenType::SEMICOLON);
-
-        shader::Sampler s{ Identifier::from_runtime_string(identifier), sampler_type };
-        m_result.samplers.push_back(s);
-    }
-
-    void parse_parameter_declaration()
-    {
-        // If parameter type is a sampler type
-        if (auto& type_token = m_stream.peek_token();
-            type_token.type == TokenType::SAMPLER2D || type_token.type == TokenType::SAMPLERCUBE) {
-            parse_sampler_declaration();
-            return;
-        }
-
-        auto& type_token = m_stream.next_token();
-
-        const std::string_view id = m_stream.parse_identifier();
-
-        m_stream.expect_next(TokenType::EQUALS,
-                             "Specifying default value for parameter is mandatory");
-
-        shader::Parameter p{};
-        p.name = Identifier::from_runtime_string(id);
-
-        glm::vec4 value{ 0.0f };
-
-        switch (type_token.type) {
-        case TokenType::INT:
-            p.type = shader::ParameterType::Int;
-            value.x = m_stream.parse_numeric();
-            break;
-        case TokenType::FLOAT:
-            p.type = shader::ParameterType::Float;
-            value.x = m_stream.parse_numeric();
-            break;
-        case TokenType::VEC2:
-            p.type = shader::ParameterType::Vec2;
-            value = glm::vec4(parse_vec2(m_stream), 0.0f, 0.0f);
-            break;
-        case TokenType::VEC3:
-            // According to the following source, memory layout for vec3 does not follow the
-            // specification with some drivers. To prevent portability issues, the use of vec3 in
-            // shader parameters is unsupported.
-            // https://www.khronos.org/opengl/wiki/Interface_Block_(GLSL)#Memory_layout
-            parse_error(
-                "vec3 is unsupported due to driver inconsistencies. Please use vec4 instead.",
-                type_token);
-            break;
-        case TokenType::VEC4:
-            p.type = shader::ParameterType::Vec4;
-            value = parse_vec4(m_stream);
-            break;
-        default:
-            parse_error("Unexpected token, expected parameter type (int|float|vec2|vec4).",
-                        type_token);
-        }
-
-        // If the required type is an integer, round the given value to nearest int.
-        if (p.type == shader::ParameterType::Int) {
-            const std::array<int32_t, 4> int_value = { round<int32_t>(value.x), 0, 0, 0 };
-            std::memcpy(&p.value, &int_value, sizeof(p.value));
-        }
-        else {
-            std::memcpy(&p.value, &value, sizeof(p.value));
-        }
-
-        m_stream.expect_next(TokenType::SEMICOLON);
-        m_result.parameters.push_back(p);
-    }
-
-    void parse_option_declaration()
-    {
-        const std::string_view option_name = m_stream.parse_identifier();
-
-        if (auto& equal_token = m_stream.next_token(); equal_token.type != TokenType::EQUALS) {
-            parse_error("Expected = (i.e. default value for option, true|false).", equal_token);
-        }
-
-        bool default_value{};
-        auto& value_token = m_stream.next_token();
-        switch (value_token.type) {
-        case TokenType::TRUE:
-            default_value = true;
-            break;
-        case TokenType::FALSE:
-            default_value = false;
-            break;
-        default:
-            parse_error("Expected 'true' or 'false'.", value_token);
-        }
-
-        m_stream.expect_next(TokenType::SEMICOLON);
-
-        m_result.options.push_back({ Identifier::from_runtime_string(option_name), default_value });
-    }
-
     void parse_tags_block()
     {
-        const auto parse_tag = [this] {
-            auto& tag_token = m_stream.next_token();
+        const auto parse_tag = [this](TokenStream& stream) {
+            auto& tag_token = stream.next_token();
             switch (tag_token.type) {
             case TokenType::UNLIT:
                 m_result.tags |= shader::Tag::UNLIT;
@@ -330,20 +385,36 @@ public:
                 break;
             }
 
-            m_stream.expect_next(TokenType::SEMICOLON);
+            stream.expect_next(TokenType::SEMICOLON);
         };
 
-        parse_block(parse_tag);
+        parse_block(m_stream, parse_tag);
+    }
+
+    void parse_sampler_or_parameter_declaration()
+    {
+        auto& type_token = m_stream.peek_token();
+        const bool parameter_is_sampler = type_token.type == TokenType::SAMPLER2D ||
+                                          type_token.type == TokenType::SAMPLERCUBE;
+
+        if (parameter_is_sampler) {
+            m_result.samplers.push_back(parse_sampler_declaration(m_stream, false));
+        }
+        else {
+            m_result.parameters.push_back(parse_parameter_declaration(m_stream));
+        }
     }
 
     void parse_parameters_block()
     {
-        parse_block([this] { parse_parameter_declaration(); });
+        parse_block(m_stream, [this](TokenStream&) { parse_sampler_or_parameter_declaration(); });
     }
 
     void parse_options_block()
     {
-        parse_block([this] { parse_option_declaration(); });
+        parse_block(m_stream, [&](TokenStream& stream) {
+            m_result.options.push_back(parse_option_declaration(stream));
+        });
     }
 
     ShaderParseResult take_result() noexcept { return std::move(m_result); }
@@ -355,22 +426,59 @@ private:
 
 } // namespace
 
-glm::vec2 parse_vec2(std::string_view definition)
+bool parse(std::string_view definition, int& out)
 {
-    TokenStream stream{ definition };
-    return parse_vec2(stream);
+    const auto [success, result] = string_to<int>(definition);
+    out = result;
+    return success;
 }
 
-glm::vec3 parse_vec3(std::string_view definition)
+bool parse(std::string_view definition, float& out)
 {
-    TokenStream stream{ definition };
-    return parse_vec3(stream);
+    const auto [success, result] = string_to<float>(definition);
+    out = result;
+    return success;
 }
 
-glm::vec4 parse_vec4(std::string_view definition)
+bool parse(std::string_view definition, glm::vec2& out)
 {
     TokenStream stream{ definition };
-    return parse_vec4(stream);
+    try {
+        out = parse_vec2(stream);
+        return true;
+    }
+    catch (...) {
+        return false;
+    }
+}
+
+bool parse(std::string_view definition, glm::vec3& out)
+{
+    TokenStream stream{ definition };
+    try {
+        out = parse_vec3(stream);
+        return true;
+    }
+    catch (...) {
+        return false;
+    }
+}
+
+bool parse(std::string_view definition, glm::vec4& out)
+{
+    TokenStream stream{ definition };
+    try {
+        out = parse_vec4(stream);
+        return true;
+    }
+    catch (...) {
+        return false;
+    }
+}
+
+MaterialParseResult parse_material(std::string_view material_resource_definition)
+{
+    return MaterialParser{ material_resource_definition }.take_result();
 }
 
 ShaderParseResult parse_shader(std::string_view shader_resource_definition)

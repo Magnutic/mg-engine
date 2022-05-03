@@ -42,11 +42,11 @@ public:
 
     Texture2D* create_render_target(const RenderTargetParams& params);
 
-    // Null if there is no texture with that id.
+    /** Find a texture by its resource id. Null if there is no texture with that id. */
     Texture2D* get(const Identifier& texture_id) const;
 
     /** Update the texture that was created from resource.
-     * N.B. used for hot-reloading of texture files.
+     * Used for hot-reloading of texture files.
      */
     void update(const TextureResource& resource);
 

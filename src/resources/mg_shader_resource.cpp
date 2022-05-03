@@ -8,10 +8,10 @@
 
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
+#include "mg/parser/mg_parser.h"
 #include "mg/resource_cache/mg_resource_exceptions.h"
 #include "mg/resource_cache/mg_resource_loading_input.h"
 #include "mg/resources/mg_text_resource.h"
-#include "mg/parser/mg_parser.h"
 #include "mg/utils/mg_stl_helpers.h"
 #include "mg/utils/mg_string_utils.h"
 
@@ -191,9 +191,27 @@ LoadResourceResult ShaderResource::load_resource_impl(ResourceLoadingInput& inpu
 
     try {
         parser::ShaderParseResult parse_result = parser::parse_shader(shader_resource_definition);
-        m_parameters = std::move(parse_result.parameters);
-        m_samplers = std::move(parse_result.samplers);
-        m_options = std::move(parse_result.options);
+
+        m_parameters.reserve(parse_result.parameters.size());
+        m_samplers.reserve(parse_result.samplers.size());
+        m_options.reserve(parse_result.options.size());
+
+        for (parser::ParameterDeclaration& declaration : parse_result.parameters) {
+            shader::Parameter& parameter = m_parameters.emplace_back();
+            parameter.name = declaration.name;
+            parameter.type = declaration.type;
+            declaration.value.write_binary_data(parameter.value);
+        }
+
+        for (parser::SamplerDeclaration& declaration : parse_result.samplers) {
+            shader::Sampler& sampler = m_samplers.emplace_back();
+            sampler.name = declaration.name;
+            sampler.type = declaration.type;
+        }
+
+        for (parser::OptionDeclaration& declaration : parse_result.options) {
+            m_options.push_back({ declaration.name, declaration.value });
+        }
 
         const auto filepath = fs::path(resource_id().str_view());
         const auto include_directories = include_dirs_for_file({}, filepath);

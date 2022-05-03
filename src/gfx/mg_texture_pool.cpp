@@ -129,6 +129,11 @@ TexturePool::~TexturePool() = default;
 
 Texture2D* TexturePool::load(const Identifier& texture_id)
 {
+    if (Texture2D* result = get(texture_id); result)
+    {
+        return result;
+    }
+
     auto access_guard = impl().resource_cache->access_resource<TextureResource>(texture_id);
     const auto settings = texture_settings_from_filename(texture_id);
     return from_resource(*access_guard, settings);

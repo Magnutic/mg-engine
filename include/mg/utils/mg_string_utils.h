@@ -312,4 +312,40 @@ public:
     constexpr bool is_at_end() const noexcept { return pos >= data.size(); }
 };
 
+/** Writes a braced block of indented lines to a stream, like so:
+ *
+ * {
+ *     line 1
+ *     line 2
+ * }
+ *
+ * The opening brace is written on construction of this object, and the closing brace on
+ * destruction.
+ */
+class WriteBracedBlock {
+public:
+    WriteBracedBlock(std::ostringstream& oss, std::string_view block_name) : m_oss(oss)
+    {
+        m_oss << block_name << "\n{\n";
+    }
+
+    ~WriteBracedBlock() { m_oss << "}\n"; }
+
+    MG_MAKE_NON_COPYABLE(WriteBracedBlock);
+    MG_MAKE_NON_MOVABLE(WriteBracedBlock);
+
+    template<typename... Args> void writeLine(Args&&... args)
+    {
+        if constexpr (sizeof...(Args) > 0) {
+            m_oss << "\t";
+            (m_oss << ... << std::forward<Args>(args)); // NOLINT
+        }
+
+        m_oss << '\n';
+    }
+
+private:
+    std::ostringstream& m_oss;
+};
+
 } // namespace Mg

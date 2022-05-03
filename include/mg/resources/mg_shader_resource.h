@@ -21,6 +21,7 @@
 #include <vector>
 
 /** Types and utilities related to shaders. */
+// TODO move to separate header and remove unnecessary includes of this header.
 namespace Mg::shader {
 
 enum class SamplerType { Sampler2D, SamplerCube };

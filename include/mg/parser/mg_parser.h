@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "mg/resources/mg_material_resource.h"
 #include "mg/resources/mg_shader_resource.h"
 #include "mg/utils/mg_gsl.h"
 
@@ -21,19 +22,50 @@
 
 namespace Mg::parser {
 
-glm::vec2 parse_vec2(std::string_view definition);
+bool parse(std::string_view definition, int& out);
 
-glm::vec3 parse_vec3(std::string_view definition);
+bool parse(std::string_view definition, float& out);
 
-glm::vec4 parse_vec4(std::string_view definition);
+bool parse(std::string_view definition, glm::vec2& out);
+
+bool parse(std::string_view definition, glm::vec3& out);
+
+bool parse(std::string_view definition, glm::vec4& out);
+
+struct SamplerDeclaration {
+    Identifier name;
+    shader::SamplerType type{};
+    Opt<Identifier> texture_resource_id;
+};
+
+struct ParameterDeclaration {
+    Identifier name;
+    shader::ParameterType type{};
+    Mg::Value value;
+};
+
+struct OptionDeclaration {
+    Identifier name;
+    bool value;
+};
+
+struct MaterialParseResult {
+    std::vector<SamplerDeclaration> samplers;
+    std::vector<ParameterDeclaration> parameters;
+    std::vector<OptionDeclaration> options;
+
+    Identifier shader_resource_id;
+};
+
+MaterialParseResult parse_material(std::string_view material_resource_definition);
 
 struct ShaderParseResult {
     std::string vertex_code;
     std::string fragment_code;
 
-    std::vector<shader::Sampler> samplers;
-    std::vector<shader::Parameter> parameters;
-    std::vector<shader::Option> options;
+    std::vector<SamplerDeclaration> samplers;
+    std::vector<ParameterDeclaration> parameters;
+    std::vector<OptionDeclaration> options;
 
     shader::Tag tags = {};
 };
