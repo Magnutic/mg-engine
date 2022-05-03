@@ -35,8 +35,8 @@ add_library(mg_engine
     gfx/opengl/mg_gfx_debug_group.cpp
     gfx/opengl/mg_gfx_device.cpp
     gfx/opengl/mg_gl_debug.cpp
-    gfx/opengl/mg_mesh_renderer.cpp
     gfx/opengl/mg_mesh_pool.cpp
+    gfx/opengl/mg_mesh_renderer.cpp
     gfx/opengl/mg_opengl_shader.cpp
     gfx/opengl/mg_pipeline.cpp
     gfx/opengl/mg_pipeline_pool.cpp
@@ -51,9 +51,11 @@ add_library(mg_engine
     input/mg_joy.cpp
     input/mg_keyboard.cpp
     input/mg_mouse.cpp
-    mg_unicode.cpp
     mg_bounding_volumes.cpp
     mg_imgui_overlay.cpp
+    mg_unicode.cpp
+    parser/mg_lexer.cpp
+    parser/mg_shader_parser.cpp
     physics/mg_character_controller.cpp
     physics/mg_physics.cpp
     physics/mg_physics_debug_renderer.cpp
@@ -66,8 +68,6 @@ add_library(mg_engine
     resources/mg_shader_resource.cpp
     resources/mg_sound_resource.cpp
     resources/mg_texture_resource.cpp
-    resources/shader_parser/mg_shader_lexer.cpp
-    resources/shader_parser/mg_shader_parser.cpp
     utils/mg_file_io.cpp
     utils/mg_file_time_helper.cpp
     utils/mg_rand.cpp

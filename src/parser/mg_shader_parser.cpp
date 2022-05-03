@@ -1,12 +1,12 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-#include "mg/resources/shader_parser/mg_shader_parser.h"
+#include "mg/parser/mg_shader_parser.h"
 
-#include "mg_shader_lexer.h"
+#include "mg_lexer.h"
 
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
@@ -15,14 +15,14 @@
 #include "fmt/core.h"
 #include "glm/vec4.hpp"
 
-namespace Mg::shader {
+namespace Mg::parser {
 
 namespace {
 
 class Parser {
 public:
     explicit Parser(std::string_view shader_resource_definition)
-        : m_tokens(lex_shader_definition(shader_resource_definition))
+        : m_tokens(lex_resource_definition(shader_resource_definition))
         , m_current_token{ m_tokens.begin() }
     {
         parse_outer_scope();
@@ -97,14 +97,14 @@ public:
     void parse_sampler_declaration()
     {
         auto& type_token = next_token();
-        SamplerType sampler_type{};
+        shader::SamplerType sampler_type{};
 
         switch (type_token.type) {
         case TokenType::SAMPLER2D:
-            sampler_type = SamplerType::Sampler2D;
+            sampler_type = shader::SamplerType::Sampler2D;
             break;
         case TokenType::SAMPLERCUBE:
-            sampler_type = SamplerType::SamplerCube;
+            sampler_type = shader::SamplerType::SamplerCube;
             break;
         default:
             parse_error("Unexpected token (expected sampler2D or samplerCube).", type_token);
@@ -114,7 +114,7 @@ public:
 
         expect_next(TokenType::SEMICOLON);
 
-        Sampler s{ Identifier::from_runtime_string(identifier), sampler_type };
+        shader::Sampler s{ Identifier::from_runtime_string(identifier), sampler_type };
         m_result.samplers.push_back(s);
     }
 
@@ -133,22 +133,22 @@ public:
 
         expect_next(TokenType::EQUALS, "Specifying default value for parameter is mandatory");
 
-        Parameter p{};
+        shader::Parameter p{};
         p.name = Identifier::from_runtime_string(id);
 
         glm::vec4 value{ 0.0f };
 
         switch (type_token.type) {
         case TokenType::INT:
-            p.type = ParameterType::Int;
+            p.type = shader::ParameterType::Int;
             value.x = parse_numeric();
             break;
         case TokenType::FLOAT:
-            p.type = ParameterType::Float;
+            p.type = shader::ParameterType::Float;
             value.x = parse_numeric();
             break;
         case TokenType::VEC2:
-            p.type = ParameterType::Vec2;
+            p.type = shader::ParameterType::Vec2;
             expect_next(TokenType::VEC2);
             expect_next(TokenType::PARENTHESIS_LEFT);
             value.x = parse_numeric();
@@ -157,7 +157,7 @@ public:
             expect_next(TokenType::PARENTHESIS_RIGHT);
             break;
         case TokenType::VEC4:
-            p.type = ParameterType::Vec4;
+            p.type = shader::ParameterType::Vec4;
             expect_next(TokenType::VEC4);
             expect_next(TokenType::PARENTHESIS_LEFT);
             value.x = parse_numeric();
@@ -176,7 +176,7 @@ public:
 
         // If the required type is an integer, round the given value to nearest int.
         // TODO: a better solution would be to parse as int to begin with.
-        if (p.type == ParameterType::Int) {
+        if (p.type == shader::ParameterType::Int) {
             const std::array<int32_t, 4> int_value = { round<int32_t>(value.x), 0, 0, 0 };
             std::memcpy(&p.value, &int_value, sizeof(p.value));
         }
@@ -220,16 +220,16 @@ public:
             auto& tag_token = next_token();
             switch (tag_token.type) {
             case TokenType::UNLIT:
-                m_result.tags |= Tag::UNLIT;
+                m_result.tags |= shader::Tag::UNLIT;
                 break;
             case TokenType::OPAQUE:
-                m_result.tags |= Tag::OPAQUE;
+                m_result.tags |= shader::Tag::OPAQUE;
                 break;
             case TokenType::DEFINES_LIGHT_MODEL:
-                m_result.tags |= Tag::DEFINES_LIGHT_MODEL;
+                m_result.tags |= shader::Tag::DEFINES_LIGHT_MODEL;
                 break;
             case TokenType::DEFINES_VERTEX_PREPROCESS:
-                m_result.tags |= Tag::DEFINES_VERTEX_PREPROCESS;
+                m_result.tags |= shader::Tag::DEFINES_VERTEX_PREPROCESS;
                 break;
             default:
                 parse_error("Unexpected tag.", tag_token);
@@ -305,4 +305,4 @@ ParseResult parse_shader(std::string_view shader_resource_definition)
     return Parser{ shader_resource_definition }.take_result();
 }
 
-} // namespace Mg::shader
+} // namespace Mg::parser

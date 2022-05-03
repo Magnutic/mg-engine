@@ -1,10 +1,10 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-#include "mg_shader_lexer.h"
+#include "mg_lexer.h"
 
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
@@ -12,11 +12,11 @@
 
 #include "fmt/core.h"
 
-namespace Mg::shader {
+namespace Mg::parser {
 
 namespace {
 
-class ShaderLexer {
+class Lexer {
 public:
     std::vector<Token> lex(std::string_view shader_resource_definition)
     {
@@ -192,9 +192,9 @@ private:
 
 } // namespace
 
-std::vector<Token> lex_shader_definition(std::string_view shader_resource_definition)
+std::vector<Token> lex_resource_definition(std::string_view resource_definition)
 {
-    return ShaderLexer{}.lex(shader_resource_definition);
+    return Lexer{}.lex(resource_definition);
 }
 
-} // namespace Mg::shader
+} // namespace Mg::parser
