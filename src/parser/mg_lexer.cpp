@@ -18,9 +18,9 @@ namespace {
 
 class Lexer {
 public:
-    std::vector<Token> lex(std::string_view shader_resource_definition)
+    std::vector<Token> lex(std::string_view definition)
     {
-        m_stream = SimpleInputStream{ shader_resource_definition };
+        m_stream = SimpleInputStream{ definition };
         m_tokens.clear();
 
         while (!m_stream.is_at_end()) {
@@ -182,9 +182,9 @@ private:
 
 } // namespace
 
-std::vector<Token> lex_resource_definition(std::string_view resource_definition)
+std::vector<Token> lex_definition(std::string_view definition)
 {
-    return Lexer{}.lex(resource_definition);
+    return Lexer{}.lex(definition);
 }
 
 } // namespace Mg::parser

@@ -55,7 +55,7 @@ add_library(mg_engine
     mg_imgui_overlay.cpp
     mg_unicode.cpp
     parser/mg_lexer.cpp
-    parser/mg_shader_parser.cpp
+    parser/mg_parser.cpp
     physics/mg_character_controller.cpp
     physics/mg_physics.cpp
     physics/mg_physics_debug_renderer.cpp

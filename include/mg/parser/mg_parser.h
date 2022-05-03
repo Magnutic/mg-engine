@@ -4,8 +4,8 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-/** @file mg_shader_parser.h
- * Parser for shader resource files.
+/** @file mg_parser.h
+ * Parsers for resource declarations and files.
  */
 
 #pragma once
@@ -13,13 +13,21 @@
 #include "mg/resources/mg_shader_resource.h"
 #include "mg/utils/mg_gsl.h"
 
+#include <glm/fwd.hpp>
+
 #include <string>
 #include <string_view>
 #include <vector>
 
 namespace Mg::parser {
 
-struct ParseResult {
+glm::vec2 parse_vec2(std::string_view definition);
+
+glm::vec3 parse_vec3(std::string_view definition);
+
+glm::vec4 parse_vec4(std::string_view definition);
+
+struct ShaderParseResult {
     std::string vertex_code;
     std::string fragment_code;
 
@@ -30,6 +38,6 @@ struct ParseResult {
     shader::Tag::Value tags = {};
 };
 
-ParseResult parse_shader(std::string_view shader_resource_definition);
+ShaderParseResult parse_shader(std::string_view shader_resource_definition);
 
 } // namespace Mg::parser

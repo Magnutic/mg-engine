@@ -11,7 +11,7 @@
 #include "mg/resource_cache/mg_resource_exceptions.h"
 #include "mg/resource_cache/mg_resource_loading_input.h"
 #include "mg/resources/mg_text_resource.h"
-#include "mg/parser/mg_shader_parser.h"
+#include "mg/parser/mg_parser.h"
 #include "mg/utils/mg_stl_helpers.h"
 #include "mg/utils/mg_string_utils.h"
 
@@ -190,7 +190,7 @@ LoadResourceResult ShaderResource::load_resource_impl(ResourceLoadingInput& inpu
     const std::string_view shader_resource_definition = input.resource_data_as_text();
 
     try {
-        parser::ParseResult parse_result = parser::parse_shader(shader_resource_definition);
+        parser::ShaderParseResult parse_result = parser::parse_shader(shader_resource_definition);
         m_parameters = std::move(parse_result.parameters);
         m_samplers = std::move(parse_result.samplers);
         m_options = std::move(parse_result.options);

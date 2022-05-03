@@ -7,9 +7,10 @@
 #include "mg_parser_token.h"
 
 #include <vector>
+#include <string_view>
 
 namespace Mg::parser {
 
-std::vector<Token> lex_resource_definition(std::string_view resource_definition);
+std::vector<Token> lex_definition(std::string_view definition);
 
 } // namespace Mg::parser
