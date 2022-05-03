@@ -59,7 +59,7 @@ public:
         parse_outer_scope();
     }
 
-    void parse_error(std::string_view reason, const Token& t)
+    [[noreturn]] void parse_error(std::string_view reason, const Token& t)
     {
         log.error("Parse error at line {}: {} [parsing '{}']", t.line, reason, t.lexeme);
         throw RuntimeError();
@@ -156,6 +156,14 @@ public:
             value.y = parse_numeric();
             expect_next(TokenType::PARENTHESIS_RIGHT);
             break;
+        case TokenType::VEC3:
+            // According to the following source, memory layout for vec3 does not follow the
+            // specification with some drivers. To prevent portability issues, the use of vec3 is
+            // unsupported.
+            // https://www.khronos.org/opengl/wiki/Interface_Block_(GLSL)#Memory_layout
+            parse_error(
+                "vec3 is unsupported due to driver inconsistencies. Please use vec4 instead.",
+                type_token);
         case TokenType::VEC4:
             p.type = shader::ParameterType::Vec4;
             expect_next(TokenType::VEC4);

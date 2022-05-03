@@ -29,6 +29,7 @@ X(SAMPLERCUBE, "samplerCube", true)
 X(INT, "int", true)
 X(FLOAT, "float", true)
 X(VEC2, "vec2", true)
+X(VEC3, "vec3", true)
 X(VEC4, "vec4", true)
 
 // Top-level identifier for shaders

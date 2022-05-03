@@ -111,16 +111,6 @@ private:
         }
 
         auto lexeme = m_stream.data.substr(token_start, lexeme_length());
-
-        // According to the following source, memory layout for vec3 does not follow the
-        // specification with some drivers. To prevent portability issues, the use of vec3 is
-        // unsupported.
-        // https://www.khronos.org/opengl/wiki/Interface_Block_(GLSL)#Memory_layout
-        if (lexeme == "vec3") {
-            lex_error(
-                "vec3 is unsupported due to driver inconsistencies. Please use vec4 instead.");
-        }
-
         auto opt_token_type = get_keyword_type(lexeme);
 
         if (opt_token_type) {
