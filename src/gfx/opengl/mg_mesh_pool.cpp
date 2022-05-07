@@ -124,8 +124,8 @@ private:
             return handle;
         }
 
-        log.error("Creating mesh {}: a mesh by that identifier already exists.", name.str_view());
-        throw RuntimeError{};
+        throw RuntimeError{ "Creating mesh {}: a mesh by that identifier already exists.",
+                            name.str_view() };
     }
 
     static MeshHandle _ptr_to_handle(MeshInternal* ptr)
@@ -155,8 +155,7 @@ MeshHandle MeshPoolImpl::create(Identifier name, const Mesh::MeshDataView& mesh_
 
     if (!has_vertices || !has_indices) {
         const auto problem = (!has_vertices) ? "no vertex data"sv : "no index data"sv;
-        log.error("MeshPool: cannot create mesh '{}': {}.", name.str_view(), problem);
-        throw RuntimeError{};
+        throw RuntimeError{ "MeshPool: cannot create mesh '{}': {}.", name.str_view(), problem };
     }
 
     const MakeMeshParams params = _mesh_params_from_mesh_data(mesh_data);

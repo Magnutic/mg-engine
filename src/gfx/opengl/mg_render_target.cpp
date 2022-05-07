@@ -63,8 +63,7 @@ void check_framebuffer()
     const auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
     if (status != GL_FRAMEBUFFER_COMPLETE) {
-        log.error(fmt::format("TextureRenderTarget incomplete with status code {:#x}", status));
-        throw RuntimeError();
+        throw RuntimeError{ "TextureRenderTarget incomplete with status code {:#x}", status };
     }
 }
 

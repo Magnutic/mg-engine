@@ -204,8 +204,7 @@ private:
                                      stride_in_bytes,
                                      padding,
                                      alloc_context)) {
-                log.error("Failed to initiate STBTT font packing context.");
-                throw RuntimeError{};
+                throw RuntimeError{"Failed to initiate STBTT font packing context."};
             }
 
             const auto font_index = 0;

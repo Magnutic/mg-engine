@@ -24,8 +24,7 @@ namespace {
 
 [[noreturn]] void parse_error(std::string_view reason, const Token& t)
 {
-    log.error("Parse error at line {}: {} [parsing '{}']", t.line, reason, t.lexeme);
-    throw RuntimeError();
+    throw RuntimeError{ "Parse error at line {}: {} [parsing '{}']", t.line, reason, t.lexeme };
 }
 
 class TokenStream {
@@ -48,8 +47,7 @@ public:
     const Token& peek_token() const
     {
         if (m_remaining_tokens.empty()) {
-            log.error("Parse error: unexpected end of file.");
-            throw RuntimeError();
+            throw RuntimeError{ "Parse error: unexpected end of file." };
         }
         return m_remaining_tokens.front();
     }

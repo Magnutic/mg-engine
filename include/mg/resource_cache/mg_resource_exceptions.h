@@ -15,29 +15,26 @@
 namespace Mg {
 
 /** Base of exceptions thrown on resource loading errors. */
-class ResourceError : public RuntimeError {};
+class ResourceError : public RuntimeError {
+    using RuntimeError::RuntimeError;
+};
 
 /** Exception thrown when a requested resource cannot be found. */
 class ResourceNotFound : public ResourceError {
 public:
-    ResourceNotFound() = default;
-
-    const char* what() const noexcept override
-    {
-        return "A requested resource file could not be found (see log for details)";
-    }
+    ResourceNotFound()
+        : ResourceError("A requested resource file could not be found (see log for details)")
+    {}
 };
 
 /** Exception thrown when a resource file had invalid data. */
 class ResourceDataError : public ResourceError {
 public:
-    ResourceDataError() = default;
-
-    const char* what() const noexcept override
-    {
-        return "A requested resource file could not be loaded due to invalid data (see log for "
-               "details)";
-    }
+    ResourceDataError()
+        : ResourceError(
+              "A requested resource file could not be loaded due to invalid data (see log for "
+              "details)")
+    {}
 };
 
 } // namespace Mg

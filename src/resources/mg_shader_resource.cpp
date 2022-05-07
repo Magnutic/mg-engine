@@ -172,10 +172,9 @@ std::string assemble_shader_code(const std::vector<fs::path>& include_directorie
         const auto [include_success,
                     included_code] = get_include(input, include_directories, include_path);
         if (!include_success) {
-            log.error("Could not find '{}' (#include directive in '{}'.)",
-                      include_path,
-                      source_file.generic_u8string());
-            throw RuntimeError{};
+            throw RuntimeError{ "Could not find '{}' (#include directive in '{}'.)",
+                                include_path,
+                                source_file.generic_u8string() };
         }
         assembled_code += included_code;
     }

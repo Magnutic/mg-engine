@@ -42,8 +42,7 @@ void init_OpenAL()
     // TODO: error handling: allow running without sound if OpenAL fails to initialize?
     ALCdevice* device = alcOpenDevice(nullptr);
     if (!device) {
-        log.error("Audio system error: Failed to open OpenAL device.");
-        throw RuntimeError();
+        throw RuntimeError{ "Audio system error: Failed to open OpenAL device." };
     }
 
     ALCcontext* context = alcCreateContext(device, nullptr);
@@ -53,8 +52,7 @@ void init_OpenAL()
         }
 
         alcCloseDevice(device);
-        log.error("Audio system error: Failed to set OpenAL context.");
-        throw RuntimeError();
+        throw RuntimeError{ "Audio system error: Failed to set OpenAL context." };
     }
 
     const char* device_name = nullptr;
@@ -353,8 +351,7 @@ void AudioContext::check_for_errors() const
 {
     const ALenum error = alGetError();
     if (error != AL_NO_ERROR) {
-        log.error("Audio context: {}", al_error_to_str(error));
-        throw RuntimeError{};
+        throw RuntimeError{ "Audio context: {}", al_error_to_str(error) };
     }
 }
 

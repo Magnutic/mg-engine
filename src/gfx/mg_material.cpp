@@ -77,10 +77,9 @@ void Material::set_sampler(Identifier name,
     auto opt_index = sampler_index(name);
 
     if (!opt_index.has_value()) {
-        log.error("Material '{}': set_sampler(\"{}\", ...): shader has no such sampler.",
-                  m_id.str_view(),
-                  name.str_view());
-        throw RuntimeError();
+        throw RuntimeError{ "Material '{}': set_sampler(\"{}\", ...): shader has no such sampler.",
+                            m_id.str_view(),
+                            name.str_view() };
     }
 
     m_samplers[*opt_index].name = name;
@@ -93,10 +92,9 @@ void Material::set_option(Option option, bool enabled)
     auto [found, index] = index_of(m_options, option);
 
     if (!found) {
-        log.error("Material '{}': set_option(\"{}\", ...): shader has no such option.",
-                  m_id.str_view(),
-                  option.str_view());
-        throw RuntimeError();
+        throw RuntimeError{ "Material '{}': set_option(\"{}\", ...): shader has no such option.",
+                            m_id.str_view(),
+                            option.str_view() };
     }
 
     m_option_flags.set(index, enabled);
@@ -107,10 +105,9 @@ bool Material::get_option(Option option) const
     auto [found, index] = index_of(m_options, option);
 
     if (!found) {
-        log.error("Material '{}': get_option(\"{}\"): shader has no such option.",
-                  m_id.str_view(),
-                  option.str_view());
-        throw RuntimeError();
+        throw RuntimeError{ "Material '{}': get_option(\"{}\"): shader has no such option.",
+                            m_id.str_view(),
+                            option.str_view() };
     }
 
     return m_option_flags.test(index);

@@ -18,8 +18,7 @@ Value::Type Value::parse(std::string_view value_string)
     bool success = false;
     std::visit([&](auto& value) { success = parser::parse(value_string, value); }, m_data);
     if (!success) {
-        log.error("Failed to parse '{}' as a value.", value_string);
-        throw RuntimeError{};
+        throw RuntimeError{ "Failed to parse '{}' as a value.", value_string };
     }
 
     return type();
@@ -43,8 +42,9 @@ void Value::write_binary_data(span<std::byte> destination)
     std::visit(
         [&](const auto& value) {
             if (sizeof(value) > destination.size_bytes()) {
-                log.error("Value::write_binary_data: trying to write to too-small buffer.");
-                throw RuntimeError{};
+                throw RuntimeError{
+                    "Value::write_binary_data: trying to write to too-small buffer."
+                };
             }
 
             std::memcpy(destination.data(), &value, sizeof(value));

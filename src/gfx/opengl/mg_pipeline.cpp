@@ -114,10 +114,11 @@ void apply_input_descriptor(const opengl::ShaderProgramHandle& shader_handle,
     }
 
     if (!success && mandatory) {
-        log.error("Mg::Pipeline::Pipeline: no such active uniform '{}' (shader-program id {}).",
-                  name,
-                  shader_handle.get());
-        throw RuntimeError{};
+        throw RuntimeError{
+            "Mg::Pipeline::Pipeline: no such active uniform '{}' (shader-program id {}).",
+            name,
+            shader_handle.get()
+        };
     }
 }
 
@@ -291,8 +292,9 @@ PipelineBindingContext* g_current_context = nullptr;
 PipelineBindingContext::PipelineBindingContext()
 {
     if (g_current_context != nullptr) {
-        log.error("Attempting to create multiple simultaneous PipelineBindingContext instances.");
-        throw RuntimeError{};
+        throw RuntimeError{
+            "Attempting to create multiple simultaneous PipelineBindingContext instances."
+        };
     }
 
     g_current_context = this;

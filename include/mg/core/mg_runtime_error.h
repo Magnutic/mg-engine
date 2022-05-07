@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -10,15 +10,30 @@
 
 #pragma once
 
+#include "mg/core/mg_log.h"
+
+#include <fmt/core.h>
+
+#include <string>
+#include <string_view>
+
 namespace Mg {
 
 class RuntimeError {
 public:
+    template<typename... Ts>
+    explicit RuntimeError(std::string_view message, Ts&&... format_args)
+        : m_message(fmt::format(message, std::forward<Ts>(format_args)...))
+    {
+        log.error(m_message);
+    }
+
     virtual ~RuntimeError() = default;
-    virtual const char* what() const noexcept { return m_message; }
+
+    virtual const char* what() const noexcept { return m_message.c_str(); }
 
 private:
-    const char* m_message = "An unexpected error occurred; see log for details.";
+    std::string m_message;
 };
 
 } // namespace Mg

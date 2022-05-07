@@ -50,9 +50,7 @@ std::time_t last_write_time_t(const std::filesystem::path& file)
     const bool gotTime = GetFileTime(handle, nullptr, nullptr, &ft);
 
     if (!gotTime) {
-        const auto msg = fmt::format(msg_failed_to_read, file.generic_u8string());
-        log.error(msg);
-        throw RuntimeError{};
+        throw RuntimeError{ msg_failed_to_read, file.generic_u8string() };
     }
 
     SYSTEMTIME st;
@@ -79,9 +77,7 @@ std::time_t last_write_time_t(const std::filesystem::path& file)
         return result.st_mtime;
     }
 
-    const auto msg = fmt::format(msg_failed_to_read, file.generic_u8string());
-    log.error(msg);
-    throw RuntimeError{};
+    throw RuntimeError{ msg_failed_to_read, file.generic_u8string() };
 #endif // _WIN32
 }
 

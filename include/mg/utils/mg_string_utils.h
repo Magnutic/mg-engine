@@ -261,8 +261,7 @@ public:
         if (is_at_end()) {
             switch (peekmode) {
             case PeekMode::throw_on_eof:
-                log.error("Unexpected end of file.");
-                throw RuntimeError{};
+                throw RuntimeError{ "Unexpected end of file." };
             case PeekMode::return_eof_as_null_char:
                 return '\0';
             }
@@ -276,8 +275,7 @@ public:
         if (pos + n >= data.size()) {
             switch (peekmode) {
             case PeekMode::throw_on_eof:
-                log.error("Unexpected end of file.");
-                throw RuntimeError{};
+                throw RuntimeError{ "Unexpected end of file." };
             case PeekMode::return_eof_as_null_char:
                 return '\0';
             }

@@ -39,11 +39,9 @@ private:
 
     void lex_error(std::string_view reason)
     {
-        log.error("Error parsing at line {} col {}: {}",
-                  m_stream.line,
-                  m_stream.pos_in_line,
-                  reason);
-        throw RuntimeError();
+        throw RuntimeError{
+            "Error parsing at line {} col {}: {}", m_stream.line, m_stream.pos_in_line, reason
+        };
     }
 
     void skip_whitespace()

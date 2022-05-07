@@ -48,8 +48,7 @@ GfxDevice* p_gfx_device = nullptr;
 GfxDevice::GfxDevice(Window& window)
 {
     if (p_gfx_device != nullptr) {
-        log.error("Only one Mg::gfx::GfxDevice may be constructed at a time.");
-        throw RuntimeError();
+        throw RuntimeError{ "Only one Mg::gfx::GfxDevice may be constructed at a time." };
     }
 
     p_gfx_device = this;
@@ -59,14 +58,12 @@ GfxDevice::GfxDevice(Window& window)
 
     // Init GLAD
     if (gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)) == 0) { // NOLINT
-        log.error("Failed to initialize GLAD.");
-        throw RuntimeError();
+        throw RuntimeError{ "Failed to initialize GLAD." };
     }
 
     // Check for errors.
     if (const uint32_t error = glGetError(); error) {
-        log.error("OpenGL initialization: {}", gfx::gl_error_string(error));
-        throw RuntimeError();
+        throw RuntimeError{ "OpenGL initialization: {}", gfx::gl_error_string(error) };
     }
 
 #if MG_ENABLE_DEBUG_LOGGING

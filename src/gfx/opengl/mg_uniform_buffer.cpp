@@ -25,8 +25,9 @@ UniformBuffer::UniformBuffer(size_t size, void* data) : m_size(size)
     MG_GFX_DEBUG_GROUP("Create UniformBuffer")
 
     if (size > max_size()) {
-        log.error("UniformBuffer of size {} exceeds system maximum of {}.", size, max_size());
-        throw RuntimeError{};
+        throw RuntimeError{ "UniformBuffer of size {} exceeds system maximum of {}.",
+                            size,
+                            max_size() };
     }
 
     GLuint ubo_id = 0;
@@ -61,15 +62,14 @@ void UniformBuffer::set_data(span<const std::byte> data, size_t dest_offset)
     const size_t available_size = m_size - dest_offset;
 
     if (available_size < data.size_bytes()) {
-        log.error(
+        throw RuntimeError{
             "UniformBuffer at {}: set_data(): could not fit data in buffer (data size {}, "
             "buffer size {}, writing starting at offset {})",
             static_cast<void*>(this),
             data.size_bytes(),
             m_size,
-            dest_offset);
-
-        throw RuntimeError{};
+            dest_offset
+        };
     }
 
     glBindBuffer(GL_UNIFORM_BUFFER, ubo_id);

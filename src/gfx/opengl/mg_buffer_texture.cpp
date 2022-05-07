@@ -176,8 +176,7 @@ uint32_t buffer_texture_type_to_gl_enums(BufferTexture::Type type)
         break;
     }
 
-    log.error("Unexpected BufferTexture::Type.");
-    throw RuntimeError();
+    throw RuntimeError{ "Unexpected BufferTexture::Type." };
 }
 
 BufferTexture::BufferTexture(Type type, size_t buffer_size) : m_buffer_size(buffer_size)

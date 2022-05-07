@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -65,7 +65,7 @@ void init_material_from_resource(Material& material,
     catch (const RuntimeError&) {
         log.message(
             "Error initializing Material from MaterialResource '{}'. Is there a mismatch between "
-            "shader parameters and material values?",
+            "the paramaters of the shader and the values defined in the material resource file?",
             material_resource.resource_id().str_view());
         throw;
     }
@@ -81,25 +81,33 @@ Material* MaterialPool::create(const MaterialResource& material_resource)
     return material;
 }
 
-void MaterialPool::update(const MaterialResource& material_resource) {
-
+void MaterialPool::update(const MaterialResource& material_resource)
+{
     const Identifier material_id = material_resource.resource_id();
     Material* destination = find(material_id);
 
-    if (!destination)
-    {
+    if (!destination) {
+        // No Material has been created from this resource, so there is nothing to update.
         return;
     }
 
-    // Get shader resource from material_resource (potentially different from before).
-    auto shader_resource = material_resource.shader_resource();
+    Opt<Material> new_material;
 
-    // Create new Material.
-    Material new_material{material_resource.resource_id(), shader_resource};
-    init_material_from_resource(new_material, material_resource, *impl().texture_pool);
+    try {
+        // Get shader resource from material_resource (potentially different from before).
+        auto shader_resource = material_resource.shader_resource();
+
+        // Create new Material.
+        new_material.emplace(material_resource.resource_id(), shader_resource);
+        init_material_from_resource(*new_material, material_resource, *impl().texture_pool);
+    }
+    catch (Mg::RuntimeError&) {
+        log.warning("Failed to update Material '{}'.", material_id.str_view());
+    }
 
     // Swap into place.
-    std::swap(*destination, new_material);
+    MG_ASSERT(new_material.has_value());
+    std::swap(*destination, *new_material);
 }
 
 void MaterialPool::destroy(const Material* handle)

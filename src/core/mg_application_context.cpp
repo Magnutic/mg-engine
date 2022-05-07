@@ -95,8 +95,7 @@ PerformanceInfo ApplicationContext::performance_info() const
 void ApplicationContext::run_main_loop(IApplication& application)
 {
     if (impl().main_loop_is_running.exchange(true)) {
-        log.error("ApplicationContext::run_main_loop: main loop already running.");
-        throw RuntimeError{};
+        throw RuntimeError{ "ApplicationContext::run_main_loop: main loop already running." };
     }
 
     log.message("Starting main loop.");

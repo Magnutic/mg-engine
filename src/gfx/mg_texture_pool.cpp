@@ -98,10 +98,8 @@ TexturePoolData::HandleMap::iterator try_insert_into_handle_map(TexturePoolData&
     if (inserted) {
         return map_it;
     }
-    const auto fmt_string = "Creating texture {}: a texture by that identifier already exists.";
-    const auto error_msg = fmt::format(fmt_string, key.str_view());
-    log.error(error_msg);
-    throw RuntimeError{};
+    throw RuntimeError{ "Creating texture {}: a texture by that identifier already exists.",
+                        key.str_view() };
 }
 
 Texture2D* create_texture_impl(TexturePoolData& data,
@@ -129,8 +127,7 @@ TexturePool::~TexturePool() = default;
 
 Texture2D* TexturePool::load(const Identifier& texture_id)
 {
-    if (Texture2D* result = get(texture_id); result)
-    {
+    if (Texture2D* result = get(texture_id); result) {
         return result;
     }
 
@@ -139,7 +136,8 @@ Texture2D* TexturePool::load(const Identifier& texture_id)
     return from_resource(*access_guard, settings);
 }
 
-Texture2D* TexturePool::from_resource(const TextureResource& resource, const TextureSettings& settings)
+Texture2D* TexturePool::from_resource(const TextureResource& resource,
+                                      const TextureSettings& settings)
 {
     MG_GFX_DEBUG_GROUP("TexturePool::from_resource")
     auto generate_texture = [&resource, &settings] {
