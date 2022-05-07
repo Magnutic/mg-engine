@@ -93,7 +93,7 @@ public:
     MG_MAKE_NON_COPYABLE(BitmapFont);
     MG_MAKE_NON_MOVABLE(BitmapFont);
 
-    /** Prepare a text for rendering, creating GPU buffers containing the visualisation data.
+    /** Prepare a text for rendering, creating GPU buffers containing the visualization data.
      *
      * Limitations: only supports basic type setting for left-to-right languages that do not require
      * "text shaping". Therefore it works with text in e.g. English, Swedish, Russian, and Korean,

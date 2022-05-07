@@ -141,7 +141,7 @@ if((${CMAKE_COMPILER_IS_GNUCXX}) OR (${CMAKE_CXX_COMPILER_ID} MATCHES Clang))
             target_link_libraries(mg_engine PRIVATE ${SANITIZERS})
         endif()
 
-        # Enable minimal optimisations for debug builds
+        # Enable minimal optimizations for debug builds
         # target_compile_options(mg_engine PRIVATE -Og)
     endif()
 endif()

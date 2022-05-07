@@ -655,7 +655,7 @@ Model& Scene::add_dynamic_model(Mg::Identifier mesh_file,
         // model.physics_body->as_dynamic_body()->set_filter_mask(
         //~Mg::physics::CollisionGroup::Character);
 
-        // Add visualisation translation relative to centre of mass.
+        // Add visualization translation relative to centre of mass.
         // Note unusual order: for once we translate before the scale, since the translation is in
         // model space, not world space.
         model.vis_transform = glm::scale(scale) * glm::translate(-model.centre);

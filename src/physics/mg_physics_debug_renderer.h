@@ -5,7 +5,7 @@
 //**************************************************************************************************
 
 /** @file mg_physics_debug_renderer.h
- * Adapter for Mg::gfx::DebugRenderer to render physics debug visualisation.
+ * Adapter for Mg::gfx::DebugRenderer to render physics debug visualization.
  */
 
 #pragma once

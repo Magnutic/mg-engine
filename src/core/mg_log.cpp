@@ -271,7 +271,7 @@ void Log::write_impl(Prio prio, std::string msg)
 
 //--------------------------------------------------------------------------------------------------
 
-// Nifty counter initialisation for engine log
+// Nifty counter initialization for engine log
 static size_t nifty_counter;
 static std::aligned_storage_t<sizeof(Log)> log_buf;
 

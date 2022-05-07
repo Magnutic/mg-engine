@@ -38,7 +38,7 @@ struct CurveEditorSettings {
     /** Desired size of the widget, in pixels. */
     glm::vec2 desired_size = { 500.0f, 200.0f };
 
-    /** Width of the curve-line visualisation. */
+    /** Width of the curve-line visualization. */
     float curve_width = 2.0f;
 
     /** Radius of control-point handles, in pixels. */

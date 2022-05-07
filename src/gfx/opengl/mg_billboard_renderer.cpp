@@ -199,7 +199,7 @@ void update_buffer(BillboardRendererData& data, span<const Billboard> billboards
 {
     glBindBuffer(GL_ARRAY_BUFFER, data.vbo.as_gl_id());
 
-    // According to the following source, this should help reduce synchronisation overhead.
+    // According to the following source, this should help reduce synchronization overhead.
     // TODO: investigate further.
     // https://www.khronos.org/opengl/wiki/Buffer_Object_Streaming
     glBufferData(GL_ARRAY_BUFFER, as<GLsizeiptr>(data.vertex_buffer_size), nullptr, GL_STREAM_DRAW);

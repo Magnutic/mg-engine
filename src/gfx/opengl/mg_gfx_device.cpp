@@ -65,7 +65,7 @@ GfxDevice::GfxDevice(Window& window)
 
     // Check for errors.
     if (const uint32_t error = glGetError(); error) {
-        log.error("OpenGL initialisation: {}", gfx::gl_error_string(error));
+        log.error("OpenGL initialization: {}", gfx::gl_error_string(error));
         throw RuntimeError();
     }
 

@@ -516,7 +516,7 @@ public:
         }
     }
 
-    // Initialisation for dynamic rigid bodies.
+    // Initialization for dynamic rigid bodies.
     void init_dynamic(const DynamicBodyParameters& parameters)
     {
         body.setCollisionFlags(body.getCollisionFlags() | btCollisionObject::CF_DYNAMIC_OBJECT);

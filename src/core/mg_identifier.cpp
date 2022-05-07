@@ -23,7 +23,7 @@ namespace {
 
 //--------------------------------------------------------------------------------------------------
 // Nifty counter-based lifetime management for dynamic-string-copy map.
-// Guarantees initialisation before first use, even during static initialisation of other objects.
+// Guarantees initialization before first use, even during static initialization of other objects.
 // (This is the same pattern used to initialize std::cout, etc.)
 //--------------------------------------------------------------------------------------------------
 

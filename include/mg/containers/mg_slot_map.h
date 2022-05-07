@@ -380,7 +380,7 @@ template<typename T> void Slot_map<T>::allocate_arrays(size_type num_elems)
     m_max_elems = num_elems;
 }
 
-// Initialisation
+// Initialization
 template<typename T> void Slot_map<T>::init(size_type max_elems)
 {
     m_num_elems = 0;

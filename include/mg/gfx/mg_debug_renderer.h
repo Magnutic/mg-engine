@@ -27,7 +27,7 @@ struct SkeletonPose;
 struct DebugRendererData;
 
 /** Renderer for drawing debug geometry.
- * This renderer is relatively inefficient and is intended for debugging visualisation.
+ * This renderer is relatively inefficient and is intended for debugging visualization.
  */
 class DebugRenderer : PImplMixin<DebugRendererData> {
 public:

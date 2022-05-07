@@ -141,7 +141,7 @@ public:
                       "span construction: attempting to construct span using a subclass of span's "
                       "type. This would invoke the slicing problem.");
 
-        m_begin = begin; // Not using initialisation lists in order to let static_asserts trigger
+        m_begin = begin; // Not using initialization lists in order to let static_asserts trigger
         m_end = end;     // before pointer assignment type errors (gives clearer error messages).
 
         if constexpr (MG_CHECK_SPAN_CONSTRUCTION) {

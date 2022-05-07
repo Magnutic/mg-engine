@@ -59,7 +59,7 @@ ControlPointScreenPosition control_point_screen_positions(ImRect bbox, const Con
     // It is not possible to draw these correctly, consistenly, and symmetrically, since the tangent
     // is specified in relation to the x-axis distance to the neighbouring control point, which may
     // differ from left to right. Therefore we cheat instead and assume the next control point is
-    // 1.0f away. This provides a good enough visualisation for intuitive purposes.
+    // 1.0f away. This provides a good enough visualization for intuitive purposes.
     // Note: tangents are negated from what might be expected, due to this working in screen space,
     // which has y-axis growing downwards.
     const auto left_tangent_handle_normalized = normalize(ImVec2{ -1.0f, cp.left_tangent });

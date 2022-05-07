@@ -95,7 +95,7 @@ public:
     /** Construction parameters for `Pipeline`s. */
     struct Params;
 
-    /** Pipeline settings controlling blending, rasterisation, etc. */
+    /** Pipeline settings controlling blending, rasterization, etc. */
     struct Settings;
 
     /** Create a new Pipeline. May fail in case the shaders fail to link. */
@@ -150,7 +150,7 @@ struct Pipeline::Params {
     span<const PipelineInputDescriptor> material_input_layout;
 };
 
-/** Pipeline settings controlling blending, rasterisation, etc. */
+/** Pipeline settings controlling blending, rasterization, etc. */
 struct Pipeline::Settings {
     Settings()
         : blend_mode(blend_mode_constants::bm_default)
