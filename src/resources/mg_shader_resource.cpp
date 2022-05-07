@@ -230,6 +230,9 @@ LoadResourceResult ShaderResource::load_resource_impl(ResourceLoadingInput& inpu
     catch (const std::exception& e) {
         return LoadResourceResult::data_error(e.what());
     }
+    catch (const RuntimeError& e) {
+        return LoadResourceResult::data_error(e.what());
+    }
 
     return LoadResourceResult::success();
 }

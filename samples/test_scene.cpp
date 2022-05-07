@@ -948,27 +948,45 @@ void Scene::on_resource_reload(const Mg::FileChangedEvent& event)
 
     const auto resource_name = event.resource.resource_id().str_view();
     Mg::log.message(fmt::format("File '{}' changed and was reloaded.", resource_name));
+
+    auto try_reload = [&](auto&& reload_action) {
+        try {
+            reload_action();
+        }
+        catch (...) {
+            Mg::log.error("An error occurred when reloading resource from '{}'", resource_name);
+        }
+    };
+
     switch (event.resource_type.hash()) {
     case "TextureResource"_hash: {
-        Mg::ResourceAccessGuard<Mg::TextureResource> access(event.resource);
-        texture_pool->update(*access);
+        try_reload([&] {
+            Mg::ResourceAccessGuard<Mg::TextureResource> access(event.resource);
+            texture_pool->update(*access);
+        });
         break;
     }
     case "MeshResource"_hash: {
-        Mg::ResourceAccessGuard<Mg::MeshResource> access(event.resource);
-        mesh_pool.update(*access);
+        try_reload([&] {
+            Mg::ResourceAccessGuard<Mg::MeshResource> access(event.resource);
+            mesh_pool.update(*access);
+        });
         break;
     }
     case "MaterialResource"_hash: {
-        Mg::ResourceAccessGuard<Mg::MaterialResource> access(event.resource);
-        material_pool.update(*access);
+        try_reload([&] {
+            Mg::ResourceAccessGuard<Mg::MaterialResource> access(event.resource);
+            material_pool.update(*access);
+        });
         [[fallthrough]];
     }
     case "ShaderResource"_hash:
-        mesh_renderer.drop_shaders();
-        billboard_renderer.drop_shaders();
-        post_renderer.drop_shaders();
-        ui_renderer.drop_shaders();
+        try_reload([&] {
+            mesh_renderer.drop_shaders();
+            billboard_renderer.drop_shaders();
+            post_renderer.drop_shaders();
+            ui_renderer.drop_shaders();
+        });
         break;
     }
 }
