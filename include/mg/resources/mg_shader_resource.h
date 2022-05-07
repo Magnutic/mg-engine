@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -81,15 +81,14 @@ inline Opt<ParameterType> string_to_parameter_type(std::string_view str) noexcep
     return nullopt;
 }
 
-namespace Tag {
-using Value = uint32_t;
-enum Flags : Value {
+enum class Tag : uint32_t {
     OPAQUE = 1 << 0,
     UNLIT = 1 << 1,
     DEFINES_VERTEX_PREPROCESS = 1 << 2,
-    DEFINES_LIGHT_MODEL = 1 << 3,
+    DEFINES_LIGHT_MODEL = 1 << 3
 };
-} // namespace Tag
+
+MG_DEFINE_BITMASK_OPERATORS(Tag);
 
 struct Sampler {
     Identifier name{ "" };
@@ -124,7 +123,7 @@ public:
     std::string_view vertex_code() const noexcept { return m_vertex_code; }
     std::string_view fragment_code() const noexcept { return m_fragment_code; }
 
-    shader::Tag::Value tags() const noexcept { return m_tags; }
+    shader::Tag tags() const noexcept { return m_tags; }
 
     bool should_reload_on_file_change() const override { return true; }
 
@@ -143,7 +142,7 @@ private:
     std::string m_vertex_code;
     std::string m_fragment_code;
 
-    shader::Tag::Value m_tags = 0;
+    shader::Tag m_tags = {};
 };
 
 } // namespace Mg

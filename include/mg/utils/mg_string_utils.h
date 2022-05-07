@@ -255,15 +255,15 @@ public:
         return data[pos++];
     }
 
-    enum PeekMode { throw_on_eof, return_eof_as_null_char };
-    constexpr char peek(PeekMode peekmode = throw_on_eof) const
+    enum class PeekMode { throw_on_eof, return_eof_as_null_char };
+    constexpr char peek(PeekMode peekmode = PeekMode::throw_on_eof) const
     {
         if (is_at_end()) {
             switch (peekmode) {
-            case throw_on_eof:
+            case PeekMode::throw_on_eof:
                 log.error("Unexpected end of file.");
                 throw RuntimeError{};
-            case return_eof_as_null_char:
+            case PeekMode::return_eof_as_null_char:
                 return '\0';
             }
         }
@@ -271,21 +271,21 @@ public:
         return data[pos];
     }
 
-    constexpr char peek_next(size_t n = 1, PeekMode peekmode = throw_on_eof) const
+    constexpr char peek_next(size_t n = 1, PeekMode peekmode = PeekMode::throw_on_eof) const
     {
         if (pos + n >= data.size()) {
             switch (peekmode) {
-            case throw_on_eof:
+            case PeekMode::throw_on_eof:
                 log.error("Unexpected end of file.");
                 throw RuntimeError{};
-            case return_eof_as_null_char:
+            case PeekMode::return_eof_as_null_char:
                 return '\0';
             }
         }
         return data[pos + n];
     }
 
-    constexpr bool match(char c, PeekMode peekmode = throw_on_eof)
+    constexpr bool match(char c, PeekMode peekmode = PeekMode::throw_on_eof)
     {
         if (peek(peekmode) == c) {
             advance();
@@ -295,7 +295,7 @@ public:
         return false;
     }
 
-    constexpr bool match(std::string_view str, PeekMode peekmode = throw_on_eof)
+    constexpr bool match(std::string_view str, PeekMode peekmode = PeekMode::throw_on_eof)
     {
         for (size_t i = 0; i < str.size(); ++i) {
             if (peek_next(i, peekmode) != str[i]) {

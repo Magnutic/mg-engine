@@ -41,13 +41,13 @@ void ResourceEntryBase::load_resource()
     LoadResourceResult result = resource.load_resource(input);
 
     switch (result.result_code) {
-    case LoadResourceResult::DataError:
+    case LoadResourceResultCode::DataError:
         log.error("Loading resource '{}': DataError: {}",
                   resource_id().str_view(),
                   result.error_reason);
         throw ResourceDataError{};
 
-    case LoadResourceResult::Success:
+    case LoadResourceResultCode::Success:
         break;
     }
 }

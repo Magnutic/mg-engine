@@ -35,7 +35,7 @@ struct ShaderParseResult {
     std::vector<shader::Parameter> parameters;
     std::vector<shader::Option> options;
 
-    shader::Tag::Value tags = {};
+    shader::Tag tags = {};
 };
 
 ShaderParseResult parse_shader(std::string_view shader_resource_definition);

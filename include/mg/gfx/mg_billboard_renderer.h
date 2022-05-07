@@ -26,14 +26,14 @@ class Material;
 // TODO: implement support for different materials?
 // TODO: texture atlas for mixing billboard textures or animating.
 
-namespace BillboardSetting {
-using Value = uint8_t;
-enum Flags : Value {
+// TODO looks like these settings are unused now. Look into this.
+enum class BillboardSetting : uint8_t {
     A_TEST = 0x1,          // discard fragment when alpha < 0.5
     FADE_WHEN_CLOSE = 0x2, // shrink and fade billboards near camera to reduce overdraw
     FIXED_SIZE = 0x4 // radius as proportion of view height (same size irrespective of distance)
 };
-} // namespace BillboardSetting
+
+MG_DEFINE_BITMASK_OPERATORS(BillboardSetting);
 
 struct Billboard {
     glm::vec3 pos;

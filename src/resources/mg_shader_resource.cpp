@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -56,7 +56,7 @@ std::vector<fs::path> include_dirs_for_file(std::vector<fs::path> include_direct
 std::pair<bool, std::string> try_parse_line_as_include(std::string_view line)
 {
     const std::pair<bool, std::string> fail_value = { false, "" };
-    const SimpleInputStream::PeekMode peekmode = SimpleInputStream::return_eof_as_null_char;
+    const auto peekmode = SimpleInputStream::PeekMode::return_eof_as_null_char;
 
     SimpleInputStream stream(line);
 

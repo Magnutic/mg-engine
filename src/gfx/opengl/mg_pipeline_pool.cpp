@@ -30,10 +30,13 @@ namespace Mg::gfx {
 
 namespace {
 
-namespace ShaderErrorFlags {
-using Value = uint32_t;
-enum Flags { VertexShader = 0x1, FragmentShader = 0x1 << 1, GeometryShader = 0x1 << 2 };
-} // namespace ShaderErrorFlags
+enum class ShaderErrorFlags : uint32_t {
+    VertexShader = 0x1,
+    FragmentShader = 0x1 << 1,
+    GeometryShader = 0x1 << 2
+};
+
+MG_DEFINE_BITMASK_OPERATORS(ShaderErrorFlags)
 
 // Dump code to log with line numbers
 std::string error_dump_code(std::string_view code)
@@ -106,11 +109,11 @@ struct ShaderCompileResult {
     Opt<VertexShaderHandle> vs_handle;
     Opt<GeometryShaderHandle> gs_handle;
     Opt<FragmentShaderHandle> fs_handle;
-    ShaderErrorFlags::Value error_flags = 0;
+    ShaderErrorFlags error_flags = {};
 };
 
 // Write details on shader compilation error to log.
-void log_shader_error(const ShaderCode& code, ShaderErrorFlags::Value error_flags)
+void log_shader_error(const ShaderCode& code, ShaderErrorFlags error_flags)
 {
     if ((error_flags & ShaderErrorFlags::VertexShader) != 0) {
         log.error("Error compiling vertex shader");

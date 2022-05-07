@@ -20,17 +20,17 @@ namespace Mg {
 
 class ResourceLoadingInput;
 
-struct LoadResourceResult {
-    enum ResultCode { Success, DataError };
+enum class LoadResourceResultCode { Success, DataError };
 
-    static LoadResourceResult success() { return { ResultCode::Success, "" }; }
+struct LoadResourceResult {
+    static LoadResourceResult success() { return { LoadResourceResultCode::Success, "" }; }
 
     static LoadResourceResult data_error(std::string_view reason)
     {
-        return { ResultCode::DataError, std::string(reason) };
+        return { LoadResourceResultCode::DataError, std::string(reason) };
     }
 
-    ResultCode result_code;
+    LoadResourceResultCode result_code;
     std::string error_reason;
 };
 
