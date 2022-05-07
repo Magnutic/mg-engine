@@ -73,39 +73,45 @@
     virtual ~class_name() {}
 
 /** Generate the operators needed to use a scoped enum as a set of bit flags. */
-#define MG_DEFINE_BITMASK_OPERATORS(x)       \
-    inline x operator&(x l, x r)             \
-    {                                        \
-        using T = std::underlying_type_t<x>; \
-        return static_cast<x>(T(l) & T(r));  \
-    }                                        \
-    inline x operator|(x l, x r)             \
-    {                                        \
-        using T = std::underlying_type_t<x>; \
-        return static_cast<x>(T(l) | T(r));  \
-    }                                        \
-    inline x operator^(x l, x r)             \
-    {                                        \
-        using T = std::underlying_type_t<x>; \
-        return static_cast<x>(T(l) ^ T(r));  \
-    }                                        \
-    inline x operator~(x v)                  \
-    {                                        \
-        using T = std::underlying_type_t<x>; \
-        return static_cast<x>(~T(v));        \
-    }                                        \
-    inline x& operator&=(x& l, x r)          \
-    {                                        \
-        l = l & r;                           \
-        return l;                            \
-    }                                        \
-    inline x& operator|=(x& l, x r)          \
-    {                                        \
-        l = l | r;                           \
-        return l;                            \
-    }                                        \
-    inline x& operator^=(x& l, x r)          \
-    {                                        \
-        l = l ^ r;                           \
-        return l;                            \
-    }
+#define MG_DEFINE_BITMASK_OPERATORS(EnumT)                                                 \
+    inline EnumT operator&(EnumT l, EnumT r)                                               \
+    {                                                                                      \
+        return static_cast<EnumT>(std::underlying_type_t<EnumT>(l) &                       \
+                                  std::underlying_type_t<EnumT>(r));                       \
+    }                                                                                      \
+    inline EnumT operator|(EnumT l, EnumT r)                                               \
+    {                                                                                      \
+        return static_cast<EnumT>(std::underlying_type_t<EnumT>(l) |                       \
+                                  std::underlying_type_t<EnumT>(r));                       \
+    }                                                                                      \
+    inline EnumT operator^(EnumT l, EnumT r)                                               \
+    {                                                                                      \
+        return static_cast<EnumT>(std::underlying_type_t<EnumT>(l) ^                       \
+                                  std::underlying_type_t<EnumT>(r));                       \
+    }                                                                                      \
+    inline EnumT operator~(EnumT v)                                                        \
+    {                                                                                      \
+        return static_cast<EnumT>(~std::underlying_type_t<EnumT>(v));                      \
+    }                                                                                      \
+    inline EnumT& operator&=(EnumT& l, EnumT r)                                            \
+    {                                                                                      \
+        l = l & r;                                                                         \
+        return l;                                                                          \
+    }                                                                                      \
+    inline EnumT& operator|=(EnumT& l, EnumT r)                                            \
+    {                                                                                      \
+        l = l | r;                                                                         \
+        return l;                                                                          \
+    }                                                                                      \
+    inline EnumT& operator^=(EnumT& l, EnumT r)                                            \
+    {                                                                                      \
+        l = l ^ r;                                                                         \
+        return l;                                                                          \
+    }                                                                                      \
+    inline bool operator==(EnumT l, std::underlying_type_t<EnumT> r)                       \
+    {                                                                                      \
+        return std::underlying_type_t<EnumT>(l) == r;                                      \
+    }                                                                                      \
+    inline bool operator!=(EnumT l, std::underlying_type_t<EnumT> r) { return !(l == r); } \
+    inline bool operator==(std::underlying_type_t<EnumT> l, EnumT r) { return r == l; }    \
+    inline bool operator!=(std::underlying_type_t<EnumT> l, EnumT r) { return !(r == l); }
