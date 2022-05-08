@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -11,9 +11,9 @@
 #pragma once
 
 #include "mg/core/mg_value.h"
+#include "mg/gfx/mg_shader_related_types.h"
 #include "mg/resource_cache/mg_base_resource.h"
 #include "mg/resource_cache/mg_resource_handle.h"
-#include "mg/resources/mg_shader_resource.h"
 #include "mg/utils/mg_gsl.h"
 
 #include <memory>
@@ -22,6 +22,7 @@
 
 namespace Mg {
 
+class ShaderResource;
 class TextureResource;
 
 namespace material {

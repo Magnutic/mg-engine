@@ -10,8 +10,8 @@
 
 #pragma once
 
-#include "mg/resources/mg_material_resource.h"
-#include "mg/resources/mg_shader_resource.h"
+#include "mg/core/mg_value.h"
+#include "mg/gfx/mg_shader_related_types.h"
 #include "mg/utils/mg_gsl.h"
 
 #include <glm/fwd.hpp>

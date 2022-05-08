@@ -11,6 +11,7 @@
 #include "mg/parser/mg_parser.h"
 #include "mg/resource_cache/mg_resource_exceptions.h"
 #include "mg/resource_cache/mg_resource_loading_input.h"
+#include "mg/resources/mg_shader_resource.h"
 #include "mg/resources/mg_text_resource.h"
 #include "mg/resources/mg_texture_resource.h"
 #include "mg/utils/mg_stl_helpers.h"

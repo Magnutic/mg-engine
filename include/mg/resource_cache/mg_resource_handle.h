@@ -12,6 +12,7 @@
 #pragma once
 
 #include "mg/core/mg_identifier.h"
+#include "mg/resource_cache/internal/mg_resource_entry_base.h"
 
 namespace Mg {
 
