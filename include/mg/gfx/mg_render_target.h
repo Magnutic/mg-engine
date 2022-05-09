@@ -30,7 +30,9 @@ class IRenderTarget {
 public:
     MG_INTERFACE_BOILERPLATE(IRenderTarget);
 
-    virtual void bind() = 0;
+    virtual FrameBufferHandle handle() const = 0;
+
+    virtual bool is_window_render_target() const = 0;
 
     virtual ImageSize image_size() const = 0;
 };
@@ -40,10 +42,11 @@ class WindowRenderTarget : public IRenderTarget {
     friend class ::Mg::Window;
 
 public:
-    void bind() noexcept final;
-    ImageSize image_size() const noexcept final { return m_image_size; }
+    FrameBufferHandle handle() const override;
 
-    void update_viewport() noexcept;
+    bool is_window_render_target() const override { return true; }
+
+    ImageSize image_size() const noexcept final { return m_image_size; }
 
 private:
     WindowRenderTarget() = default;
@@ -112,7 +115,9 @@ public:
     MG_MAKE_NON_COPYABLE(TextureRenderTarget);
     MG_MAKE_NON_MOVABLE(TextureRenderTarget);
 
-    void bind() final;
+    FrameBufferHandle handle() const override;
+
+    bool is_window_render_target() const override { return false; }
 
     ImageSize image_size() const final;
 

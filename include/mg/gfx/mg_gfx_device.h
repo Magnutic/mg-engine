@@ -19,6 +19,8 @@ class Window;
 /** Renderer and graphics utilities. */
 namespace Mg::gfx {
 
+class IRenderTarget;
+
 /** Provides access to the graphics context.
  * N.B. only one GfxDevice object exist at a time.
  */
@@ -33,8 +35,8 @@ public:
     /** Set colour & alpha to use when clearing render target. */
     void set_clear_colour(float red, float green, float blue, float alpha) noexcept;
 
-    /** Clear the currently bound render target. */
-    void clear(bool colour = true, bool depth = true) noexcept;
+    /** Clear the given render target. */
+    void clear(const IRenderTarget& target, bool colour = true, bool depth = true) noexcept;
 
     /** Synchronize application with graphics device. */
     void synchronize() noexcept;

@@ -22,7 +22,7 @@ glm::mat4 transform_bullet_to_glm(const btTransform& transform)
 
 glm::vec3 vector_bullet_to_glm(const btVector3& vector)
 {
-    return glm::vec3(vector.x(), vector.y(), vector.z());
+    return { vector.x(), vector.y(), vector.z() };
 }
 
 gfx::DebugRenderer::BoxDrawParams
@@ -46,7 +46,8 @@ void PhysicsDebugRenderer::drawLine(const btVector3& from,
 {
     // This is staggeringly inefficient for large debug geometries. It will do for now, but
     // debugging complex scenes may be difficult if it turns into a slide show.
-    m_debug_renderer->draw_line(m_view_proj,
+    m_debug_renderer->draw_line(*m_render_target,
+                                m_view_proj,
                                 vector_bullet_to_glm(from),
                                 vector_bullet_to_glm(to),
                                 { color.x(), color.y(), color.z(), 1.0f });
@@ -59,14 +60,14 @@ void PhysicsDebugRenderer::drawSphere(const btVector3& p, btScalar radius, const
     params.dimensions = { radius, radius, radius };
     params.colour = { color.x(), color.y(), color.z(), 1.0f };
     params.wireframe = true;
-    m_debug_renderer->draw_ellipsoid(m_view_proj, params);
+    m_debug_renderer->draw_ellipsoid(*m_render_target, m_view_proj, params);
 }
 
 void PhysicsDebugRenderer::drawBox(const btVector3& bbMin,
                                    const btVector3& bbMax,
                                    const btVector3& color)
 {
-    m_debug_renderer->draw_box(m_view_proj, box_params(bbMin, bbMax, color));
+    m_debug_renderer->draw_box(*m_render_target, m_view_proj, box_params(bbMin, bbMax, color));
 }
 
 void PhysicsDebugRenderer::drawBox(const btVector3& bbMin,
@@ -74,7 +75,8 @@ void PhysicsDebugRenderer::drawBox(const btVector3& bbMin,
                                    const btTransform& trans,
                                    const btVector3& color)
 {
-    m_debug_renderer->draw_box(m_view_proj * transform_bullet_to_glm(trans),
+    m_debug_renderer->draw_box(*m_render_target,
+                               m_view_proj * transform_bullet_to_glm(trans),
                                box_params(bbMin, bbMax, color));
 }
 
@@ -91,7 +93,10 @@ void PhysicsDebugRenderer::drawTriangle(const btVector3& v0,
         vector_bullet_to_glm(v0),
     };
 
-    m_debug_renderer->draw_line(m_view_proj, vertices, { color.x(), color.y(), color.z(), 1.0f });
+    m_debug_renderer->draw_line(*m_render_target,
+                                m_view_proj,
+                                vertices,
+                                { color.x(), color.y(), color.z(), 1.0f });
 }
 
 void PhysicsDebugRenderer::reportErrorWarning(const char* warningString)

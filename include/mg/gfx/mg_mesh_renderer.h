@@ -19,6 +19,7 @@ namespace Mg::gfx {
 
 struct Light;
 class ICamera;
+class IRenderTarget;
 class RenderCommandList;
 class Material;
 
@@ -41,6 +42,7 @@ public:
     void render(const ICamera& cam,
                 const RenderCommandList& command_list,
                 span<const Light> lights,
+                const IRenderTarget& render_target,
                 RenderParameters params);
 
     // TODO prepare_shader does not really work, because the driver will not compile the shaders

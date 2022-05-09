@@ -14,6 +14,7 @@
 #include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_pipeline_pool.h"
+#include "mg/gfx/mg_render_target.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 
 #include <glm/mat2x2.hpp>
@@ -288,6 +289,7 @@ float UIRenderer::scaling_factor() const
 }
 
 namespace {
+
 void setup_material_pipeline(UIRendererData& data,
                              const mat4& M,
                              const Material& material,
@@ -306,6 +308,7 @@ void setup_material_pipeline(UIRendererData& data,
                                               pipeline_settings(blend_mode),
                                               binding_context);
 }
+
 } // namespace
 
 void UIRenderer::draw_rectangle(const UIPlacement& placement,
@@ -325,22 +328,10 @@ void UIRenderer::draw_rectangle(const UIPlacement& placement,
 }
 
 namespace {
-Pipeline::Settings text_pipeline_settings(const BlendMode blend_mode)
-{
-    Pipeline::Settings settings = {};
-    settings.blending_enabled = true;
-    settings.blend_mode = blend_mode;
-    settings.depth_test_condition = DepthTestCondition::always;
-    settings.depth_write_enabled = false;
-    settings.colour_write_enabled = true;
-    settings.alpha_write_enabled = true;
-    settings.polygon_mode = PolygonMode::fill;
-    settings.culling_mode = CullingMode::back;
-    return settings;
-}
 
 void setup_text_pipeline(UIRendererData& data,
-                         const TextureHandle texture,
+                         const IRenderTarget& render_target,
+                         const PreparedText::GpuData& text_gpu_data,
                          const mat4& M,
                          const BlendMode blend_mode)
 {
@@ -348,19 +339,33 @@ void setup_text_pipeline(UIRendererData& data,
     block.M = M;
     data.draw_params_ubo.set_data(byte_representation(block));
 
-    std::array input_bindings = { PipelineInputBinding(0, data.draw_params_ubo),
-                                  PipelineInputBinding(0, texture) };
+    Pipeline::Settings pipeline_settings = {};
+    pipeline_settings.blending_enabled = true;
+    pipeline_settings.blend_mode = blend_mode;
+    pipeline_settings.depth_test_condition = DepthTestCondition::always;
+    pipeline_settings.depth_write_enabled = false;
+    pipeline_settings.colour_write_enabled = true;
+    pipeline_settings.alpha_write_enabled = true;
+    pipeline_settings.polygon_mode = PolygonMode::fill;
+    pipeline_settings.culling_mode = CullingMode::back;
+    pipeline_settings.target_framebuffer = render_target.handle();
+    pipeline_settings.viewport_size = render_target.image_size();
+    pipeline_settings.vertex_array = text_gpu_data.vertex_array;
 
     PipelineBindingContext binding_context;
-    binding_context.bind_pipeline(data.text_pipeline, text_pipeline_settings(blend_mode));
-    Pipeline::bind_shared_inputs(input_bindings);
+    binding_context.bind_pipeline(data.text_pipeline, pipeline_settings);
+
+    Pipeline::bind_shared_inputs({ PipelineInputBinding(0, data.draw_params_ubo),
+                                   PipelineInputBinding(0, text_gpu_data.texture) });
 }
+
 } // namespace
 
-void UIRenderer::draw_text(const UIPlacement& placement,
+void UIRenderer::draw_text(const IRenderTarget& render_target,
+                           const UIPlacement& placement,
                            const PreparedText& text,
-                           float scale,
-                           BlendMode blend_mode) noexcept
+                           const float scale,
+                           const BlendMode blend_mode) noexcept
 {
     MG_GFX_DEBUG_GROUP("UIRenderer::draw_text");
 
@@ -371,9 +376,8 @@ void UIRenderer::draw_text(const UIPlacement& placement,
                                          impl().resolution,
                                          impl().scaling_factor);
 
-    setup_text_pipeline(impl(), text.gpu_data().texture, M, blend_mode);
+    setup_text_pipeline(impl(), render_target, text.gpu_data(), M, blend_mode);
 
-    glBindVertexArray(text.gpu_data().vertex_array.as_gl_id());
     glDrawArrays(GL_TRIANGLES, 0, as<GLsizei>(verts_per_char * text.num_glyphs()));
 }
 

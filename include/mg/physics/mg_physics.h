@@ -12,6 +12,7 @@
 
 #include "mg/core/mg_identifier.h"
 #include "mg/gfx/mg_camera.h"
+#include "mg/gfx/mg_render_target.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_optional.h"
@@ -25,6 +26,7 @@
 namespace Mg::gfx {
 class DebugRenderer;
 class ICamera;
+class IRenderTarget;
 } // namespace Mg::gfx
 
 namespace Mg::gfx::Mesh {
@@ -515,7 +517,9 @@ public:
     /** Use the provided debug renderer and camera to draw debug geometry, visualising the collision
      * shapes as the physics simulation sees it.
      */
-    void draw_debug(gfx::DebugRenderer& debug_renderer, const glm::mat4& view_proj);
+    void draw_debug(const gfx::IRenderTarget& render_target,
+                    gfx::DebugRenderer& debug_renderer,
+                    const glm::mat4& view_proj);
 };
 
 inline Opt<DynamicBodyHandle> PhysicsBodyHandle::as_dynamic_body() const

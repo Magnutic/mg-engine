@@ -44,6 +44,10 @@ template<> void GfxObjectHandle<GfxObjectType::uniform_buffer>::_free_impl(Value
 {
     delete_gl_object(glDeleteBuffers, value);
 }
+template<> void GfxObjectHandle<GfxObjectType::frame_buffer>::_free_impl(Value value)
+{
+    delete_gl_object(glDeleteFramebuffers, value);
+}
 template<> void GfxObjectHandle<GfxObjectType::vertex_shader>::_free_impl(Value value)
 {
     delete_gl_object(glDeleteShader, value);

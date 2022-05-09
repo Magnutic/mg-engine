@@ -317,8 +317,7 @@ void Scene::render(const double lerp_factor)
             add_to_render_list(model, render_command_producer);
         }
 
-        hdr_target->bind();
-        app.gfx_device().clear();
+        app.gfx_device().clear(*hdr_target);
 
         const auto& commands = render_command_producer.finalize(camera,
                                                                 Mg::gfx::SortingMode::near_to_far);
@@ -327,23 +326,23 @@ void Scene::render(const double lerp_factor)
         params.current_time = Mg::narrow_cast<float>(app.time_since_init());
         params.camera_exposure = -5.0;
 
-        mesh_renderer.render(camera, commands, scene_lights, params);
+        mesh_renderer.render(camera, commands, scene_lights, *hdr_target, params);
 
-        billboard_renderer.render(camera, billboard_render_list, *billboard_material);
+        billboard_renderer.render(*hdr_target, camera, billboard_render_list, *billboard_material);
     }
 
     render_bloom();
 
     // Apply tonemap and render to window render target.
     {
-        app.window().render_target.bind();
-        app.gfx_device().clear();
+        app.gfx_device().clear(app.window().render_target);
 
         bloom_material->set_sampler("sampler_bloom",
                                     blur_targets.vert_pass_target_texture->handle());
 
         post_renderer.post_process(post_renderer.make_context(),
                                    *bloom_material,
+                                   app.window().render_target,
                                    hdr_target->colour_target()->handle());
     }
 
@@ -383,7 +382,9 @@ void Scene::render(const double lerp_factor)
         text += fmt::format("\nPosition: {{{:.2f}, {:.2f}, {:.2f}}}", p.x, p.y, p.z);
         text += fmt::format("\nGrounded: {:b}", actor->character_controller.is_on_ground());
 
-        ui_renderer.draw_text(placement, font->prepare_text(text, typesetting));
+        ui_renderer.draw_text(app.window().render_target,
+                              placement,
+                              font->prepare_text(text, typesetting));
 
 #if 0
         for (const auto& collision : physics_world->get_collisions()) {
@@ -408,8 +409,12 @@ void Scene::render(const double lerp_factor)
     if (draw_debug) {
         // render_light_debug_geometry();
         // render_skeleton_debug_geometry();
-        physics_world->draw_debug(debug_renderer, camera.view_proj_matrix());
-        Mg::gfx::get_debug_render_queue().dispatch(debug_renderer, camera.view_proj_matrix());
+        physics_world->draw_debug(app.window().render_target,
+                                  debug_renderer,
+                                  camera.view_proj_matrix());
+        Mg::gfx::get_debug_render_queue().dispatch(app.window().render_target,
+                                                   debug_renderer,
+                                                   camera.view_proj_matrix());
     }
 
 #if 0 // Raycast from camera test.
@@ -474,7 +479,7 @@ Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file, const bool sRGB)
 
 Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::Identifier> options)
 {
-#if 0
+#if 1
     const std::string diffuse_filename = fmt::format("textures/{}_da.dds", file.str_view());
     const std::string diffuse_filename_alt = fmt::format("textures/{}_d.dds", file.str_view());
     const std::string normal_filename = fmt::format("textures/{}_n.dds", file.str_view());
@@ -510,8 +515,8 @@ Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::
                                         true);
 
         if (!specular_texture) {
-            specular_texture =
-                texture_pool->get_default_texture(Mg::gfx::TexturePool::DefaultTexture::Transparent);
+            specular_texture = texture_pool->get_default_texture(
+                Mg::gfx::TexturePool::DefaultTexture::Transparent);
         }
     }
 
@@ -784,18 +789,18 @@ void Scene::render_bloom()
         for (size_t u = 0; u < k_num_blur_iterations; ++u) {
             // Horizontal pass
             blur_material->set_option("HORIZONTAL", true);
-            hor_target.bind();
             post_renderer.post_process(post_render_context,
                                        *blur_material,
+                                       hor_target,
                                        vert_target.colour_target()->handle());
 
             blur_material->set_parameter("source_mip_level", static_cast<int>(mip_i));
 
             // Vertical pass
             blur_material->set_option("HORIZONTAL", false);
-            vert_target.bind();
             post_renderer.post_process(post_render_context,
                                        *blur_material,
+                                       vert_target,
                                        hor_target.colour_target()->handle());
         }
     }
@@ -814,7 +819,9 @@ void Scene::render_light_debug_geometry()
         params.colour = glm::vec4(normalize(light.colour), 0.05f);
         params.dimensions = glm::vec3(std::sqrt(light.range_sqr));
         params.wireframe = true;
-        debug_renderer.draw_ellipsoid(camera.view_proj_matrix(), params);
+        debug_renderer.draw_ellipsoid(app.window().render_target,
+                                      camera.view_proj_matrix(),
+                                      params);
     }
 }
 
@@ -824,7 +831,8 @@ void Scene::render_skeleton_debug_geometry()
 
     for (const auto& [model_id, model] : scene_models) {
         if (model.skeleton.has_value() && model.pose.has_value()) {
-            debug_renderer.draw_bones(camera.view_proj_matrix(),
+            debug_renderer.draw_bones(app.window().render_target,
+                                      camera.view_proj_matrix(),
                                       model.transform,
                                       *model.skeleton,
                                       *model.pose);

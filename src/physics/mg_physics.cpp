@@ -80,12 +80,12 @@ mat4 convert_transform(const btTransform& transform)
 
 btVector3 convert_vector(const vec3& vector)
 {
-    return btVector3(vector.x, vector.y, vector.z);
+    return { vector.x, vector.y, vector.z };
 }
 
 vec3 convert_vector(const btVector3& vector)
 {
-    return vec3(vector.x(), vector.y(), vector.z());
+    return { vector.x(), vector.y(), vector.z() };
 }
 
 int convert_collision_group(const CollisionGroup group)
@@ -487,7 +487,7 @@ static btRigidBody create_bt_rigid_body(ShapeBase& shape, const DynamicBodyParam
     rb_info.m_rollingFriction = parameters.rolling_friction;
     rb_info.m_spinningFriction = parameters.spinning_friction;
 
-    return btRigidBody(rb_info);
+    return { rb_info };
 }
 
 class DynamicBody : public PhysicsBody {
@@ -1314,10 +1314,12 @@ size_t World::convex_sweep(Shape& shape,
     return callback.num_hits();
 }
 
-void World::draw_debug(gfx::DebugRenderer& debug_renderer, const mat4& view_proj)
+void World::draw_debug(const gfx::IRenderTarget& render_target,
+                       gfx::DebugRenderer& debug_renderer,
+                       const glm::mat4& view_proj)
 {
     // Set up a debug drawer. It will redirect Bullet's debug-rendering calls to debug_renderer.
-    PhysicsDebugRenderer physics_debug_renderer{ debug_renderer, view_proj };
+    PhysicsDebugRenderer physics_debug_renderer{ render_target, debug_renderer, view_proj };
 
     // Tell Bullet to use the debug drawer until the end of this function.
     auto reset_debug_drawer = finally([&] { impl().dynamics_world->setDebugDrawer(nullptr); });

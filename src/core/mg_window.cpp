@@ -382,7 +382,6 @@ void Window::frame_buffer_size_callback(int width, int height)
     log.verbose(
         fmt::format("Setting window render target framebuffer size to: {}x{}", width, height));
     render_target.set_size(width, height);
-    render_target.update_viewport();
 }
 
 // Check whether we got the requested video mode.

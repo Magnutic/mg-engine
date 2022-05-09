@@ -9,6 +9,7 @@
 #include "mg/containers/mg_flat_map.h"
 #include "mg/core/mg_rotation.h"
 #include "mg/gfx/mg_joint.h"
+#include "mg/gfx/mg_render_target.h"
 #include "mg/gfx/mg_skeleton.h"
 #include "mg/utils/mg_assert.h"
 
@@ -320,7 +321,8 @@ DebugRenderer::~DebugRenderer() = default;
 
 namespace {
 
-void draw(const ShaderProgramOwner& program,
+void draw(const IRenderTarget& render_target,
+          const ShaderProgramOwner& program,
           const mat4& MVP,
           const DebugMesh& mesh,
           const vec4& colour,
@@ -328,6 +330,20 @@ void draw(const ShaderProgramOwner& program,
           const bool line_mode,
           const float line_width = 1.0f)
 {
+    { // Bind render target
+        auto handle = render_target.handle();
+        glBindFramebuffer(GL_FRAMEBUFFER, handle.as_gl_id());
+
+        const bool is_window_framebuffer = handle.get() == 0;
+        if (!is_window_framebuffer) {
+            const GLuint buffer = GL_COLOR_ATTACHMENT0;
+            glDrawBuffers(1, &buffer);
+        }
+
+        const auto [w, h] = render_target.image_size();
+        glViewport(0, 0, w, h);
+    }
+
     opengl::use_program(program.handle);
     opengl::set_uniform(program.uniform_location_colour, colour);
     opengl::set_uniform(program.uniform_location_MVP, MVP);
@@ -364,7 +380,8 @@ void draw(const ShaderProgramOwner& program,
     glBindVertexArray(0);
 }
 
-void draw_primitive(const ShaderProgramOwner& program,
+void draw_primitive(const IRenderTarget& render_target,
+                    const ShaderProgramOwner& program,
                     const mat4& view_proj,
                     const DebugMesh& mesh,
                     const DebugRenderer::PrimitiveDrawParams& params)
@@ -378,17 +395,21 @@ void draw_primitive(const ShaderProgramOwner& program,
     const mat4 MVP = view_proj * translation * params.orientation.to_matrix() *
                      scale(params.dimensions);
 
-    draw(program, MVP, mesh, params.colour, params.wireframe, false);
+    draw(render_target, program, MVP, mesh, params.colour, params.wireframe, false);
 }
 
 } // namespace
 
-void DebugRenderer::draw_box(const mat4& view_proj, BoxDrawParams params)
+void DebugRenderer::draw_box(const IRenderTarget& render_target,
+                             const mat4& view_proj,
+                             BoxDrawParams params)
 {
-    draw_primitive(impl().program, view_proj, impl().box, params);
+    draw_primitive(render_target, impl().program, view_proj, impl().box, params);
 }
 
-void DebugRenderer::draw_ellipsoid(const mat4& view_proj, EllipsoidDrawParams params)
+void DebugRenderer::draw_ellipsoid(const IRenderTarget& render_target,
+                                   const mat4& view_proj,
+                                   EllipsoidDrawParams params)
 {
     auto it = impl().spheres.find(params.steps);
 
@@ -399,20 +420,22 @@ void DebugRenderer::draw_ellipsoid(const mat4& view_proj, EllipsoidDrawParams pa
     }
 
     const Sphere& sphere = it->second;
-    draw_primitive(impl().program, view_proj, sphere.mesh, params);
+    draw_primitive(render_target, impl().program, view_proj, sphere.mesh, params);
 }
 
-void DebugRenderer::draw_line(const mat4& view_proj,
+void DebugRenderer::draw_line(const IRenderTarget& render_target,
+                              const mat4& view_proj,
                               span<const vec3> points,
                               const vec4& colour,
                               const float width)
 {
     const auto indices = generate_line_vertex_indices(points.size());
     update_mesh(impl().line, points, indices);
-    draw(impl().program, view_proj, impl().line, colour, false, true, width);
+    draw(render_target, impl().program, view_proj, impl().line, colour, false, true, width);
 }
 
-void DebugRenderer::draw_bones(const mat4& view_proj,
+void DebugRenderer::draw_bones(const IRenderTarget& render_target,
+                               const mat4& view_proj,
                                const mat4& M,
                                const Skeleton& skeleton,
                                const SkeletonPose& pose)
@@ -442,7 +465,7 @@ void DebugRenderer::draw_bones(const mat4& view_proj,
         // It is easy to memorize which axis has which color if you think xyz=rgb.
         auto draw_axis = [&](const vec4 axis) {
             const vec4 axis_point = centre + joint_axis_length * normalize(matrix * axis - centre);
-            draw_line(view_proj, centre, axis_point, axis, 2.0f);
+            draw_line(render_target, view_proj, centre, axis_point, axis, 2.0f);
         };
 
         draw_axis({ 1.0f, 0.0f, 0.0f, 1.0f });
@@ -461,7 +484,8 @@ void DebugRenderer::draw_bones(const mat4& view_proj,
 
         const vec4 position = matrix * origo;
         if (!is_root_joint) {
-            draw_line(view_proj, parent_position, position, bone_colour, bone_line_width);
+            draw_line(
+                render_target, view_proj, parent_position, position, bone_colour, bone_line_width);
         }
 
         for (const Mesh::JointId child_id : skeleton.joints()[joint_id].children) {
@@ -474,7 +498,8 @@ void DebugRenderer::draw_bones(const mat4& view_proj,
     draw_bones_impl({}, Mesh::joint_id_none, 0, draw_bones_impl);
 }
 
-void DebugRenderer::draw_view_frustum(const glm::mat4& view_projection,
+void DebugRenderer::draw_view_frustum(const IRenderTarget& render_target,
+                                      const glm::mat4& view_projection,
                                       const glm::mat4& view_projection_frustum,
                                       const float max_distance)
 {
@@ -517,8 +542,8 @@ void DebugRenderer::draw_view_frustum(const glm::mat4& view_projection,
         { corners[4], corners[5], corners[6], corners[7], corners[4] }
     };
 
-    draw_line(view_projection, corners_near, { 1.0f, 0.0f, 0.0f, 1.0f }, 2.0f);
-    draw_line(view_projection, corners_far, { 0.0f, 0.0f, 1.0f, 1.0f }, 2.0f);
+    draw_line(render_target, view_projection, corners_near, { 1.0f, 0.0f, 0.0f, 1.0f }, 2.0f);
+    draw_line(render_target, view_projection, corners_far, { 0.0f, 0.0f, 1.0f, 1.0f }, 2.0f);
 
     std::array<glm::vec3, 5> corners_middle = {};
 
@@ -530,11 +555,12 @@ void DebugRenderer::draw_view_frustum(const glm::mat4& view_projection,
             corners_middle[i] = corners_near[i] +
                                 (corners_far[i] - corners_near[i]) * (d / z_range);
         }
-        draw_line(view_projection, corners_middle, { 0.5f, 0.5f, 0.5f, 1.0f }, 1.0f);
+        draw_line(render_target, view_projection, corners_middle, { 0.5f, 0.5f, 0.5f, 1.0f }, 1.0f);
     }
 
     for (size_t i = 0; i < 4; ++i) {
-        draw_line(view_projection,
+        draw_line(render_target,
+                  view_projection,
                   corners_near[i],
                   corners_far[i],
                   { 0.0f, 1.0f, 1.0f, 1.0f },
@@ -546,7 +572,8 @@ void DebugRenderer::draw_view_frustum(const glm::mat4& view_projection,
 // DebugRenderQueue implementation
 //--------------------------------------------------------------------------------------------------
 
-using Job = std::function<void(DebugRenderer& renderer, const glm::mat4& view_proj)>;
+using Job = std::function<
+    void(const IRenderTarget& render_target, DebugRenderer& renderer, const glm::mat4& view_proj)>;
 
 struct DebugRenderQueueData {
     std::mutex mutex;
@@ -560,8 +587,10 @@ void DebugRenderQueue::draw_box(DebugRenderer::BoxDrawParams params)
 {
     std::lock_guard g{ impl().mutex };
 
-    impl().jobs.emplace_back([params](DebugRenderer& renderer, const glm::mat4& view_proj) {
-        renderer.draw_box(view_proj, params);
+    impl().jobs.emplace_back([params](const IRenderTarget& render_target,
+                                      DebugRenderer& renderer,
+                                      const glm::mat4& view_proj) {
+        renderer.draw_box(render_target, view_proj, params);
     });
 }
 
@@ -569,8 +598,10 @@ void DebugRenderQueue::draw_ellipsoid(DebugRenderer::EllipsoidDrawParams params)
 {
     std::lock_guard g{ impl().mutex };
 
-    impl().jobs.emplace_back([params](DebugRenderer& renderer, const glm::mat4& view_proj) {
-        renderer.draw_ellipsoid(view_proj, params);
+    impl().jobs.emplace_back([params](const IRenderTarget& render_target,
+                                      DebugRenderer& renderer,
+                                      const glm::mat4& view_proj) {
+        renderer.draw_ellipsoid(render_target, view_proj, params);
     });
 }
 
@@ -578,19 +609,23 @@ void DebugRenderQueue::draw_line(span<const glm::vec3> points, const glm::vec4& 
 {
     std::lock_guard g{ impl().mutex };
 
-    impl().jobs.emplace_back([points = Array<glm::vec3>::make_copy(points),
-                              colour,
-                              width](DebugRenderer& renderer, const glm::mat4& view_proj) {
-        renderer.draw_line(view_proj, points, colour, width);
-    });
+    impl().jobs.emplace_back( //
+        [points = Array<glm::vec3>::make_copy(points),
+         colour,
+         width] //
+        (const IRenderTarget& render_target, DebugRenderer& renderer, const glm::mat4& view_proj) {
+            renderer.draw_line(render_target, view_proj, points, colour, width);
+        });
 }
 
-void DebugRenderQueue::dispatch(DebugRenderer& renderer, const glm::mat4& view_proj_matrix)
+void DebugRenderQueue::dispatch(const IRenderTarget& render_target,
+                                DebugRenderer& renderer,
+                                const glm::mat4& view_proj_matrix)
 {
     std::lock_guard g{ impl().mutex };
 
     for (Job& job : impl().jobs) {
-        job(renderer, view_proj_matrix);
+        job(render_target, renderer, view_proj_matrix);
     }
 }
 

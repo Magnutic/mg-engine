@@ -210,6 +210,15 @@ GLenum gl_blend_factor(BlendFactor factor)
 void apply_pipeline_settings(const Pipeline::Settings settings,
                              const Opt<Pipeline::Settings> prev_settings)
 {
+    const bool change_vertex_array = !prev_settings ||
+                                     (prev_settings->vertex_array != settings.vertex_array);
+
+    const bool change_target_framebuffer = !prev_settings || (prev_settings->target_framebuffer !=
+                                                              settings.target_framebuffer);
+
+    const bool change_viewport = !prev_settings || change_target_framebuffer ||
+                                 (prev_settings->viewport_size != settings.viewport_size);
+
     const bool change_polygon_mode = !prev_settings ||
                                      (prev_settings->polygon_mode != settings.polygon_mode);
 
@@ -230,6 +239,24 @@ void apply_pipeline_settings(const Pipeline::Settings settings,
 
     const bool change_depth_mask = !prev_settings || (prev_settings->depth_write_enabled !=
                                                       settings.depth_write_enabled);
+
+    if (change_vertex_array) {
+        glBindVertexArray(settings.vertex_array.as_gl_id());
+    }
+
+    if (change_target_framebuffer) {
+        glBindFramebuffer(GL_FRAMEBUFFER, settings.target_framebuffer.as_gl_id());
+
+        const bool is_window_framebuffer = settings.target_framebuffer.get() == 0;
+        if (!is_window_framebuffer) {
+            const GLuint buffer = GL_COLOR_ATTACHMENT0;
+            glDrawBuffers(1, &buffer);
+        }
+    }
+
+    if (change_viewport) {
+        glViewport(0, 0, settings.viewport_size.width, settings.viewport_size.height);
+    }
 
     if (change_polygon_mode) {
         glPolygonMode(GL_FRONT_AND_BACK, gl_polygon_mode(settings.polygon_mode));

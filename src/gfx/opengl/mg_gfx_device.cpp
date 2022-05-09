@@ -96,9 +96,17 @@ void GfxDevice::set_clear_colour(float red, float green, float blue, float alpha
     glClearColor(red, green, blue, alpha);
 }
 
-void GfxDevice::clear(bool colour, bool depth) noexcept
+void GfxDevice::clear(const IRenderTarget& target, const bool colour, const bool depth) noexcept
 {
     MG_GFX_DEBUG_GROUP("GfxDevice::clear")
+
+    glBindFramebuffer(GL_FRAMEBUFFER, target.handle().as_gl_id());
+    glViewport(0, 0, target.image_size().width, target.image_size().height);
+
+    if (!target.is_window_render_target()) {
+        const GLuint buffer = GL_COLOR_ATTACHMENT0;
+        glDrawBuffers(1, &buffer);
+    }
 
     // Change depth/colour write state if needed.
     std::array<GLboolean, 4> prev_colour_write = {};

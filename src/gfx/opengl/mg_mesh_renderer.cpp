@@ -21,6 +21,7 @@
 #include "mg/gfx/mg_matrix_uniform_handler.h"
 #include "mg/gfx/mg_pipeline_pool.h"
 #include "mg/gfx/mg_render_command_list.h"
+#include "mg/gfx/mg_render_target.h"
 
 #include "shader_code/mg_mesh_renderer_shader_framework.h"
 
@@ -243,10 +244,14 @@ void bind_shared_inputs(MeshRendererData& data, const ICamera& cam, RenderParame
     Pipeline::bind_shared_inputs(shared_bindings);
 }
 
-Pipeline::Settings pipeline_settings()
+Pipeline::Settings make_pipeline_settings(const IRenderTarget& render_target,
+                                          VertexArrayHandle vertex_array)
 {
     Pipeline::Settings settings;
-    return settings; // default settings
+    settings.target_framebuffer = render_target.handle();
+    settings.viewport_size = render_target.image_size();
+    settings.vertex_array = vertex_array;
+    return settings;
 }
 
 void draw_elements(size_t num_elements, size_t starting_element) noexcept
@@ -290,13 +295,11 @@ MeshRenderer::~MeshRenderer() = default;
 void MeshRenderer::render(const ICamera& cam,
                           const RenderCommandList& command_list,
                           span<const Light> lights,
+                          const IRenderTarget& render_target,
                           RenderParameters params)
 {
     MG_GFX_DEBUG_GROUP("Mesh_renderer::renderer")
     MeshRendererData& data = impl();
-
-    auto current_vao = uint32_t(-1);
-    const Material* current_material = nullptr;
 
     // Upload the data buffers used for lighting.
     data.light_buffers.update(lights, cam);
@@ -306,7 +309,10 @@ void MeshRenderer::render(const ICamera& cam,
     PipelineBindingContext binding_context;
     bind_shared_inputs(data, cam, params);
 
+    Opt<Pipeline::Settings> previous_pipeline_settings;
+
     const auto render_commands = command_list.render_commands();
+    const Material* previous_material = nullptr;
 
     // Number of iterations until we have consumed the transformation matrices so far uploaded to
     // the CPU.
@@ -326,19 +332,20 @@ void MeshRenderer::render(const ICamera& cam,
 
         MG_ASSERT_DEBUG(command.material != nullptr);
 
-        // Set up mesh state.
-        const auto vao_id = command.vertex_array.as_gl_id();
-        if (current_vao != vao_id) {
-            current_vao = vao_id;
-            glBindVertexArray(current_vao);
-        }
+        const bool should_switch_pipeline = //
+            !previous_pipeline_settings.has_value() ||
+            command.vertex_array != previous_pipeline_settings->vertex_array ||
+            command.material != previous_material;
 
-        // Set up material state.
-        if (current_material != command.material) {
+        if (should_switch_pipeline) {
+            Pipeline::Settings pipeline_settings = make_pipeline_settings(render_target,
+                                                                          command.vertex_array);
             pipeline_pool->bind_material_pipeline(*command.material,
-                                                  pipeline_settings(),
+                                                  pipeline_settings,
                                                   binding_context);
-            current_material = command.material;
+
+            previous_pipeline_settings = pipeline_settings;
+            previous_material = command.material;
         }
 
         // Set up mesh transform matrix index.

@@ -13,6 +13,7 @@
 #include "mg/core/mg_identifier.h"
 #include "mg/gfx/mg_blend_modes.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
+#include "mg/gfx/mg_texture_related_types.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_optional.h"
 
@@ -163,10 +164,20 @@ struct Pipeline::Settings {
         , depth_write_enabled(true)
     {}
 
+    /** Vertex array -- the geometry to draw. */
+    VertexArrayHandle vertex_array{};
+
+    /** Which framebuffer to render onto. */
+    FrameBufferHandle target_framebuffer{ 0 };
+
+    /** Size of the rendering viewport. */
+    ImageSize viewport_size = {};
+
     /** Whether, and if so how, the colour resulting from this pipeline should be blended with
      *  previous result in render target.
      */
     BlendMode blend_mode;
+
     bool blending_enabled : 1;
 
     /** Whether -- and if so, by which condition -- to discard fragments based on depth-test

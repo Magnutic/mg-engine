@@ -10,6 +10,7 @@
 #include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_material.h"
 #include "mg/gfx/mg_pipeline_pool.h"
+#include "mg/gfx/mg_render_target.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/mg_defs.h"
 
@@ -119,11 +120,15 @@ PipelinePool make_post_process_pipeline_pool()
     return PipelinePool(std::move(config));
 }
 
-Pipeline::Settings pipeline_settings()
+Pipeline::Settings pipeline_settings(const IRenderTarget& render_target,
+                                     VertexArrayHandle vertex_array)
 {
     Pipeline::Settings settings;
     settings.depth_test_condition = DepthTestCondition::always;
     settings.depth_write_enabled = false;
+    settings.target_framebuffer = render_target.handle();
+    settings.viewport_size = render_target.image_size();
+    settings.vertex_array = vertex_array;
     return settings;
 }
 
@@ -140,7 +145,7 @@ struct PostProcessRendererData {
     Opt<PipelineBindingContext> binding_context;
 };
 
-PostProcessRenderer::PostProcessRenderer() : PImplMixin()
+PostProcessRenderer::PostProcessRenderer()
 {
     MG_GFX_DEBUG_GROUP("init PostProcessRenderer")
 
@@ -183,13 +188,14 @@ PostProcessRenderer::Context PostProcessRenderer::make_context() noexcept
 
 void PostProcessRenderer::post_process(const Context& context,
                                        const Material& material,
+                                       const IRenderTarget& render_target,
                                        TextureHandle sampler_colour) noexcept
 {
     MG_ASSERT(context.m_data == &impl() && "Context belongs to a different PostProcessRenderer");
     MG_GFX_DEBUG_GROUP("PostProcessRenderer::post_process")
 
     impl().pipeline_pool.bind_material_pipeline(material,
-                                                pipeline_settings(),
+                                                pipeline_settings(render_target, impl().vao),
                                                 impl().binding_context.value());
 
     std::array shared_input_bindings = {
@@ -200,15 +206,13 @@ void PostProcessRenderer::post_process(const Context& context,
 
     Pipeline::bind_shared_inputs(shared_input_bindings);
 
-    const auto vao_id = impl().vao.as_gl_id();
-
-    glBindVertexArray(vao_id);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     MG_CHECK_GL_ERROR();
 }
 
 void PostProcessRenderer::post_process(const Context& context,
                                        const Material& material,
+                                       const IRenderTarget& render_target,
                                        TextureHandle sampler_colour,
                                        TextureHandle sampler_depth,
                                        float z_near,
@@ -218,7 +222,7 @@ void PostProcessRenderer::post_process(const Context& context,
     MG_GFX_DEBUG_GROUP("PostProcessRenderer::post_process")
 
     impl().pipeline_pool.bind_material_pipeline(material,
-                                                pipeline_settings(),
+                                                pipeline_settings(render_target, impl().vao),
                                                 impl().binding_context.value());
 
     FrameBlock frame_block{ z_near, z_far };
@@ -232,9 +236,6 @@ void PostProcessRenderer::post_process(const Context& context,
 
     Pipeline::bind_shared_inputs(shared_input_bindings);
 
-    const auto vao_id = impl().vao.as_gl_id();
-
-    glBindVertexArray(vao_id);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     MG_CHECK_GL_ERROR();
 }

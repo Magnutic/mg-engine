@@ -25,15 +25,10 @@ namespace Mg::gfx {
 // WindowRenderTarget implementation
 //--------------------------------------------------------------------------------------------------
 
-void WindowRenderTarget::bind() noexcept
+FrameBufferHandle WindowRenderTarget::handle() const
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    update_viewport();
-}
-
-void WindowRenderTarget::update_viewport() noexcept
-{
-    glViewport(0, 0, m_image_size.width, m_image_size.height);
+    // Handle with value 0 has the special meaning of main window render target.
+    return FrameBufferHandle{ 0 };
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -95,7 +90,7 @@ struct TextureRenderTargetData {
 
     TextureHandle depth_buffer_id; // Depth renderbuffer which may be used if
                                    // depth target texture is not present.
-    GLuint fbo_id = 0;
+    FrameBufferHandle::Owner fbo;
 
     int32_t mip_level = 0;
 };
@@ -107,8 +102,8 @@ void TextureRenderTarget::blit(const TextureRenderTarget& from,
     MG_GFX_DEBUG_GROUP("TextureRenderTarget::with_colour_target")
     FramebufferBindGuard guard;
 
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, from.impl().fbo_id);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, to.impl().fbo_id);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, from.impl().fbo.handle.as_gl_id());
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, to.impl().fbo.handle.as_gl_id());
 
     const GLuint flags = (settings.colour ? GL_COLOR_BUFFER_BIT : 0u) |
                          (settings.depth ? GL_DEPTH_BUFFER_BIT : 0u) |
@@ -136,10 +131,12 @@ TextureRenderTarget::with_colour_target(Texture2D* colour_target,
     data.mip_level = mip_level;
 
     // Create frame buffer object (FBO)
-    glGenFramebuffers(1, &data.fbo_id);
+    GLuint fbo_id = 0;
+    glGenFramebuffers(1, &fbo_id);
+    data.fbo.handle.set(fbo_id);
 
     FramebufferBindGuard fbg;
-    glBindFramebuffer(GL_FRAMEBUFFER, data.fbo_id);
+    glBindFramebuffer(GL_FRAMEBUFFER, data.fbo.handle.as_gl_id());
 
     // Attach texture to FBO
     const auto gl_tex_id = colour_target->handle().as_gl_id();
@@ -198,10 +195,12 @@ TextureRenderTarget::with_colour_and_depth_targets(Texture2D* colour_target,
     data.mip_level = mip_level;
 
     // Create frame buffer object (FBO)
-    glGenFramebuffers(1, &data.fbo_id);
+    GLuint fbo_id = 0;
+    glGenFramebuffers(1, &fbo_id);
+    data.fbo.handle.set(fbo_id);
 
     FramebufferBindGuard fbg;
-    glBindFramebuffer(GL_FRAMEBUFFER, data.fbo_id);
+    glBindFramebuffer(GL_FRAMEBUFFER, data.fbo.handle.as_gl_id());
 
     // Attach texture to FBO
     const auto colour_id = colour_target->handle().as_gl_id();
@@ -226,33 +225,11 @@ TextureRenderTarget::with_colour_and_depth_targets(Texture2D* colour_target,
 
 TextureRenderTarget::TextureRenderTarget(PrivateCtorKey) {}
 
-TextureRenderTarget::~TextureRenderTarget()
+TextureRenderTarget::~TextureRenderTarget() = default;
+
+FrameBufferHandle TextureRenderTarget::handle() const
 {
-    MG_GFX_DEBUG_GROUP("TextureRenderTarget::~TextureRenderTarget")
-
-    // If this buffer is bound, revert to default render target
-    GLint current_binding;
-    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &current_binding);
-
-    if (static_cast<GLuint>(current_binding) == impl().fbo_id) {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-
-    // Delete OpenGL objects
-    glDeleteFramebuffers(1, &impl().fbo_id);
-}
-
-void TextureRenderTarget::bind()
-{
-    MG_GFX_DEBUG_GROUP("TextureRenderTarget::bind")
-
-    MG_ASSERT(impl().fbo_id != 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, impl().fbo_id);
-    const GLuint buffer = GL_COLOR_ATTACHMENT0;
-    glDrawBuffers(1, &buffer);
-
-    // Set up viewport to match FBO size
-    glViewport(0, 0, image_size().width, image_size().height);
+    return impl().fbo.handle;
 }
 
 ImageSize TextureRenderTarget::image_size() const

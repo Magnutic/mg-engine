@@ -16,6 +16,7 @@
 
 namespace Mg::gfx {
 
+class IRenderTarget;
 class Material;
 
 struct PostProcessRendererData;
@@ -40,11 +41,13 @@ public:
     /** Post-process using only colour texture as input. */
     void post_process(const Context& context,
                       const Material& material,
+                      const IRenderTarget& render_target,
                       TextureHandle sampler_colour) noexcept;
 
     /** Post-process using colour and depth textures. */
     void post_process(const Context& context,
                       const Material& material,
+                      const IRenderTarget& render_target,
                       TextureHandle sampler_colour,
                       TextureHandle sampler_depth,
                       float z_near,

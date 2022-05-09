@@ -12,6 +12,7 @@
 #include "mg/gfx/mg_gfx_device.h"
 #include "mg/gfx/mg_material.h"
 #include "mg/gfx/mg_pipeline_pool.h"
+#include "mg/gfx/mg_render_target.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_stl_helpers.h"
@@ -154,12 +155,6 @@ PipelinePool make_billboard_pipeline_factory()
     return PipelinePool(std::move(config));
 }
 
-Pipeline::Settings pipeline_settings()
-{
-    Pipeline::Settings settings;
-    return settings; // default settings
-}
-
 } // namespace
 
 //--------------------------------------------------------------------------------------------------
@@ -259,7 +254,8 @@ BillboardRenderer::~BillboardRenderer()
     glDeleteBuffers(1, &vbo_id);
 }
 
-void BillboardRenderer::render(const ICamera& camera,
+void BillboardRenderer::render(const IRenderTarget& render_target,
+                               const ICamera& camera,
                                const BillboardRenderList& render_list,
                                const Material& material)
 {
@@ -286,9 +282,13 @@ void BillboardRenderer::render(const ICamera& camera,
     Pipeline::bind_shared_inputs(shared_inputs);
 
     PipelineBindingContext binding_context;
-    impl().pipeline_pool.bind_material_pipeline(material, pipeline_settings(), binding_context);
 
-    glBindVertexArray(impl().vao.as_gl_id());
+    Pipeline::Settings pipeline_settings;
+    pipeline_settings.vertex_array = impl().vao;
+    pipeline_settings.target_framebuffer = render_target.handle();
+    pipeline_settings.viewport_size = render_target.image_size();
+    impl().pipeline_pool.bind_material_pipeline(material, pipeline_settings, binding_context);
+
     glDrawArrays(GL_POINTS, 0, as<GLint>(billboards.size()));
 }
 

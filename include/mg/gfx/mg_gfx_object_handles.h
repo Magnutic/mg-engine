@@ -23,6 +23,7 @@ enum class GfxObjectType {
     buffer,
     texture,
     uniform_buffer,
+    frame_buffer,
     vertex_shader,
     geometry_shader,
     fragment_shader,
@@ -107,6 +108,7 @@ using VertexArrayHandle = GfxObjectHandle<GfxObjectType::vertex_array>;
 using BufferHandle = GfxObjectHandle<GfxObjectType::buffer>;
 using TextureHandle = GfxObjectHandle<GfxObjectType::texture>;
 using UniformBufferHandle = GfxObjectHandle<GfxObjectType::uniform_buffer>;
+using FrameBufferHandle = GfxObjectHandle<GfxObjectType::frame_buffer>;
 using VertexShaderHandle = GfxObjectHandle<GfxObjectType::vertex_shader>;
 using GeometryShaderHandle = GfxObjectHandle<GfxObjectType::geometry_shader>;
 using FragmentShaderHandle = GfxObjectHandle<GfxObjectType::fragment_shader>;

@@ -26,6 +26,7 @@ namespace Mg::gfx {
 class Material;
 class Texture2D;
 class PreparedText;
+class IRenderTarget;
 
 namespace detail {
 struct UIRendererData;
@@ -76,7 +77,8 @@ public:
                         const Material& material,
                         Opt<BlendMode> blend_mode) noexcept;
 
-    void draw_text(const UIPlacement& placement,
+    void draw_text(const IRenderTarget& render_target,
+                   const UIPlacement& placement,
                    const PreparedText& text,
                    float scale = 1.0f,
                    BlendMode blend_mode = blend_mode_constants::bm_alpha_premultiplied) noexcept;

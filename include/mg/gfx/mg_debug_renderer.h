@@ -21,6 +21,7 @@
 
 namespace Mg::gfx {
 
+class IRenderTarget;
 class Skeleton;
 struct SkeletonPose;
 
@@ -51,31 +52,37 @@ public:
         size_t steps = 24;
     };
 
-    void draw_box(const glm::mat4& view_proj, BoxDrawParams params);
+    void
+    draw_box(const IRenderTarget& render_target, const glm::mat4& view_proj, BoxDrawParams params);
 
-    void draw_ellipsoid(const glm::mat4& view_proj, EllipsoidDrawParams params);
+    void draw_ellipsoid(const IRenderTarget& render_target,
+                        const glm::mat4& view_proj,
+                        EllipsoidDrawParams params);
 
-    void draw_line(const glm::mat4& view_proj,
+    void draw_line(const IRenderTarget& render_target,
+                   const glm::mat4& view_proj,
                    span<const glm::vec3> points,
                    const glm::vec4& colour,
                    float width = 1.0f);
 
-    void draw_line(const glm::mat4& view_proj,
+    void draw_line(const IRenderTarget& render_target,
+                   const glm::mat4& view_proj,
                    const glm::vec3& start,
                    const glm::vec3& end,
                    const glm::vec4& colour,
                    const float width = 1.0f)
     {
-        std::array<glm::vec3, 2> points = { start, end };
-        draw_line(view_proj, points, colour, width);
+        draw_line(render_target, view_proj, {start, end}, colour, width);
     }
 
-    void draw_bones(const glm::mat4& view_proj,
+    void draw_bones(const IRenderTarget& render_target,
+                    const glm::mat4& view_proj,
                     const glm::mat4& M,
                     const Skeleton& skeleton,
                     const SkeletonPose& pose);
 
-    void draw_view_frustum(const glm::mat4& view_projection,
+    void draw_view_frustum(const IRenderTarget& render_target,
+                           const glm::mat4& view_projection,
                            const glm::mat4& view_projection_frustum,
                            float max_distance = 0.0f);
 };
@@ -109,7 +116,9 @@ public:
         draw_line(points, colour, width);
     }
 
-    void dispatch(DebugRenderer& renderer, const glm::mat4& view_proj_matrix);
+    void dispatch(const IRenderTarget& render_target,
+                  DebugRenderer& renderer,
+                  const glm::mat4& view_proj_matrix);
 
     void clear();
 };

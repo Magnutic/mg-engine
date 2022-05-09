@@ -21,6 +21,7 @@
 namespace Mg::gfx {
 
 class ICamera;
+class IRenderTarget;
 class Material;
 
 // TODO: implement support for different materials?
@@ -77,8 +78,10 @@ public:
     MG_MAKE_NON_COPYABLE(BillboardRenderer);
     MG_MAKE_NON_MOVABLE(BillboardRenderer);
 
-    void
-    render(const ICamera& camera, const BillboardRenderList& render_list, const Material& material);
+    void render(const IRenderTarget& render_target,
+                const ICamera& camera,
+                const BillboardRenderList& render_list,
+                const Material& material);
 
     void drop_shaders() noexcept;
 };
