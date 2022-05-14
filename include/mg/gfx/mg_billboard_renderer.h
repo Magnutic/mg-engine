@@ -11,7 +11,7 @@
 #pragma once
 
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_simple_pimpl.h"
+#include "mg/utils/mg_impl_ptr.h"
 
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
@@ -68,9 +68,7 @@ private:
     std::vector<Billboard> m_billboards;
 };
 
-struct BillboardRendererData;
-
-class BillboardRenderer : PImplMixin<BillboardRendererData> {
+class BillboardRenderer {
 public:
     BillboardRenderer();
     ~BillboardRenderer();
@@ -84,6 +82,10 @@ public:
                 const Material& material);
 
     void drop_shaders() noexcept;
+
+    struct Impl;
+private:
+    ImplPtr<Impl> m_impl;
 };
 
 } // namespace Mg::gfx

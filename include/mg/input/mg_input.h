@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -14,7 +14,7 @@
 
 #include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_simple_pimpl.h"
+#include "mg/utils/mg_impl_ptr.h"
 
 namespace Mg::input {
 
@@ -64,10 +64,8 @@ protected:
 
 //--------------------------------------------------------------------------------------------------
 
-struct InputMapData;
-
 /** InputMap provides a mapping from a set of Identifiers to InputSources. */
-class InputMap : PImplMixin<InputMapData> {
+class InputMap {
 public:
     explicit InputMap();
     ~InputMap();
@@ -116,6 +114,10 @@ public:
 
     /** Returns whether button assigned to identifier was just released. */
     bool was_released(Identifier command) const;
+
+private:
+    struct Impl;
+    ImplPtr<Impl> m_impl;
 };
 
 } // namespace Mg::input

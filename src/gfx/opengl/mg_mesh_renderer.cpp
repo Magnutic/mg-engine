@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -198,8 +198,8 @@ PipelinePool make_mesh_pipeline_pool(const MeshPipelinePoolKind kind,
 } // namespace
 
 /** MeshRenderer's state. */
-struct MeshRendererData {
-    MeshRendererData(const LightGridConfig& light_grid_config)
+struct MeshRenderer::Impl {
+    Impl(const LightGridConfig& light_grid_config)
         : static_mesh_pipeline_pool(
               make_mesh_pipeline_pool(MeshPipelinePoolKind::Static, light_grid_config))
         , animated_mesh_pipeline_pool(
@@ -223,7 +223,7 @@ struct MeshRendererData {
 
 namespace {
 
-void bind_shared_inputs(MeshRendererData& data, const ICamera& cam, RenderParameters params)
+void bind_shared_inputs(MeshRenderer::Impl& data, const ICamera& cam, RenderParameters params)
 {
     // Upload frame-global uniforms
     const auto frame_block = make_frame_block(cam,
@@ -270,7 +270,7 @@ void set_matrix_index(uint32_t index) noexcept
 }
 
 // Upload the next batch of transformation matrices.
-size_t upload_next_matrix_batch(MeshRendererData& data,
+size_t upload_next_matrix_batch(MeshRenderer::Impl& data,
                                 const RenderCommandList& command_list,
                                 const size_t starting_command_index) noexcept
 {
@@ -287,10 +287,8 @@ size_t upload_next_matrix_batch(MeshRendererData& data,
 // MeshRenderer implementation
 //--------------------------------------------------------------------------------------------------
 
-MeshRenderer::MeshRenderer(const LightGridConfig& light_grid_config) : PImplMixin(light_grid_config)
+MeshRenderer::MeshRenderer(const LightGridConfig& light_grid_config) : m_impl(light_grid_config)
 {}
-
-MeshRenderer::~MeshRenderer() = default;
 
 void MeshRenderer::render(const ICamera& cam,
                           const RenderCommandList& command_list,
@@ -299,15 +297,14 @@ void MeshRenderer::render(const ICamera& cam,
                           RenderParameters params)
 {
     MG_GFX_DEBUG_GROUP("Mesh_renderer::renderer")
-    MeshRendererData& data = impl();
 
     // Upload the data buffers used for lighting.
-    data.light_buffers.update(lights, cam);
+    m_impl->light_buffers.update(lights, cam);
 
     // Set up shared pipeline context and input bindings, to reduce amount of state changes during
     // the render loop.
     PipelineBindingContext binding_context;
-    bind_shared_inputs(data, cam, params);
+    bind_shared_inputs(*m_impl, cam, params);
 
     Opt<Pipeline::Settings> previous_pipeline_settings;
 
@@ -321,14 +318,14 @@ void MeshRenderer::render(const ICamera& cam,
     for (size_t i = 0; i < render_commands.size(); ++i) {
         // If we have consumed all matrices uploaded to GPU, then upload the next batch.
         if (matrix_upload_countdown == 0) {
-            matrix_upload_countdown = upload_next_matrix_batch(data, command_list, i);
+            matrix_upload_countdown = upload_next_matrix_batch(*m_impl, command_list, i);
         }
         --matrix_upload_countdown;
 
         const RenderCommand& command = render_commands[i];
         const bool is_skinned_mesh = command.num_skinning_matrices > 0;
-        auto* pipeline_pool = is_skinned_mesh ? &data.animated_mesh_pipeline_pool
-                                              : &data.static_mesh_pipeline_pool;
+        auto* pipeline_pool = is_skinned_mesh ? &m_impl->animated_mesh_pipeline_pool
+                                              : &m_impl->static_mesh_pipeline_pool;
 
         MG_ASSERT_DEBUG(command.material != nullptr);
 
@@ -353,7 +350,7 @@ void MeshRenderer::render(const ICamera& cam,
 
         // If render command is a skinned mesh, also upload skinning matrices.
         if (command.num_skinning_matrices > 0) {
-            data.skinning_matrix_uniform_handler.set_matrix_array(
+            m_impl->skinning_matrix_uniform_handler.set_matrix_array(
                 command_list.skinning_matrices().subspan(command.skinning_matrices_begin,
                                                          command.num_skinning_matrices));
         }
@@ -371,18 +368,18 @@ void MeshRenderer::prepare_shader(const Material& material,
                                   const bool prepare_for_animated_mesh)
 {
     if (prepare_for_static_mesh) {
-        impl().static_mesh_pipeline_pool.prepare_material_pipeline(material);
+        m_impl->static_mesh_pipeline_pool.prepare_material_pipeline(material);
     }
     if (prepare_for_animated_mesh) {
-        impl().animated_mesh_pipeline_pool.prepare_material_pipeline(material);
+        m_impl->animated_mesh_pipeline_pool.prepare_material_pipeline(material);
     }
 }
 
 void MeshRenderer::drop_shaders()
 {
     MG_GFX_DEBUG_GROUP("Mesh_renderer::drop_shaders")
-    impl().static_mesh_pipeline_pool.drop_pipelines();
-    impl().animated_mesh_pipeline_pool.drop_pipelines();
+    m_impl->static_mesh_pipeline_pool.drop_pipelines();
+    m_impl->animated_mesh_pipeline_pool.drop_pipelines();
 }
 
 } // namespace Mg::gfx

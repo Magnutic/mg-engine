@@ -15,7 +15,7 @@
 #include "mg/gfx/mg_mesh_handle.h"
 #include "mg/mg_bounding_volumes.h"
 #include "mg/utils/mg_gsl.h"
-#include "mg/utils/mg_simple_pimpl.h"
+#include "mg/utils/mg_impl_ptr.h"
 
 #include <glm/mat4x4.hpp>
 
@@ -124,10 +124,8 @@ private:
     const uint16_t m_start_index;
 };
 
-struct RenderCommandProducerData;
-
 /** Interface for producing RenderCommandList. */
-class RenderCommandProducer : PImplMixin<RenderCommandProducerData> {
+class RenderCommandProducer {
 public:
     explicit RenderCommandProducer();
     ~RenderCommandProducer();
@@ -179,6 +177,11 @@ public:
 
     /** Number of enqueued RenderCommand instances. */
     size_t size() const noexcept;
+
+    struct Impl;
+
+private:
+    ImplPtr<Impl> m_impl;
 };
 
 } // namespace Mg::gfx

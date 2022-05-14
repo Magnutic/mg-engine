@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -115,8 +115,8 @@ size_t clusters_buffer_size(const LightGridConfig& grid_config)
 
 //--------------------------------------------------------------------------------------------------
 
-struct LightBuffersData {
-    explicit LightBuffersData(const LightGridConfig& config)
+struct LightBuffers::Impl {
+    explicit Impl(const LightGridConfig& config)
         : light_index_array(num_clusters(config) * config.max_lights_per_cluster)
         , clusters(num_clusters(config))
         , light_grid(config)
@@ -133,26 +133,23 @@ struct LightBuffersData {
 };
 
 LightBuffers::LightBuffers(const LightGridConfig& grid_config)
-    : PImplMixin(grid_config)
-    , light_block_buffer{ light_block_buffer_size(grid_config) }
+    : light_block_buffer{ light_block_buffer_size(grid_config) }
     , light_index_texture{ light_index_buffer_texture_type(), light_index_buffer_size(grid_config) }
     , clusters_texture{ clusters_buffer_texture_type(), clusters_buffer_size(grid_config) }
+    , m_impl(grid_config)
 {}
-
-LightBuffers::~LightBuffers() = default;
 
 void LightBuffers::update(span<const Light> lights, const ICamera& cam)
 {
     MG_GFX_DEBUG_GROUP("update_light_data(LightBuffers&, ...)");
-    LightBuffersData& m = impl();
 
-    const LightGridConfig& grid_config = m.light_grid.config();
+    const LightGridConfig& grid_config = m_impl->light_grid.config();
     const glm::mat4 V = cam.view_matrix();
 
-    m.light_grid.set_projection_matrix(cam.proj_matrix());
+    m_impl->light_grid.set_projection_matrix(cam.proj_matrix());
 
     // Clear working data from previous updates.
-    for (ClusterWorkingDatum& datum : m.cluster_working_data) {
+    for (ClusterWorkingDatum& datum : m_impl->cluster_working_data) {
         datum.light_indices.clear();
     }
 
@@ -177,16 +174,16 @@ void LightBuffers::update(span<const Light> lights, const ICamera& cam)
             continue;
         }
 
-        const auto [min, max] = m.light_grid.tile_extents(light_pos_view, l.range_sqr);
-        const auto [min_z, max_z] = m.light_grid.depth_extents(-light_pos_view.z,
-                                                               glm::fastSqrt(l.range_sqr));
+        const auto [min, max] = m_impl->light_grid.tile_extents(light_pos_view, l.range_sqr);
+        const auto [min_z, max_z] = m_impl->light_grid.depth_extents(-light_pos_view.z,
+                                                                     glm::fastSqrt(l.range_sqr));
 
         for (auto z = min_z; z < max_z; ++z) {
             for (auto y = min.y; y < max.y; ++y) {
                 for (auto x = min.x; x < max.x; ++x) {
                     ClusterWorkingDatum& datum =
                         get_working_datum_for_cluster({ x, y, z },
-                                                      m.cluster_working_data,
+                                                      m_impl->cluster_working_data,
                                                       grid_config);
                     if (datum.light_indices.size() < grid_config.max_lights_per_cluster) {
                         datum.light_indices.push_back(as<uint16_t>(light_index));
@@ -201,42 +198,42 @@ void LightBuffers::update(span<const Light> lights, const ICamera& cam)
     }
 
     // Clear buffers.
-    const auto light_index_array_bytes = span(m.light_index_array).size_bytes();
-    const auto tile_data_bytes = span(m.clusters).size_bytes();
-    std::memset(m.light_index_array.data(), 0, light_index_array_bytes);
-    std::memset(m.clusters.data(), 0, tile_data_bytes);
+    const auto light_index_array_bytes = span(m_impl->light_index_array).size_bytes();
+    const auto tile_data_bytes = span(m_impl->clusters).size_bytes();
+    std::memset(m_impl->light_index_array.data(), 0, light_index_array_bytes);
+    std::memset(m_impl->clusters.data(), 0, tile_data_bytes);
 
     // Prepare cluster and light_index buffers to uploading to GPU.
-    MG_ASSERT(m.cluster_working_data.size() == m.clusters.size());
+    MG_ASSERT(m_impl->cluster_working_data.size() == m_impl->clusters.size());
     uint32_t current_light_index_buffer_index = 0;
-    for (size_t cluster_index = 0; cluster_index < m.clusters.size(); ++cluster_index) {
-        const ClusterWorkingDatum& datum = m.cluster_working_data[cluster_index];
-        Cluster& cluster = m.clusters[cluster_index];
+    for (size_t cluster_index = 0; cluster_index < m_impl->clusters.size(); ++cluster_index) {
+        const ClusterWorkingDatum& datum = m_impl->cluster_working_data[cluster_index];
+        Cluster& cluster = m_impl->clusters[cluster_index];
 
         // Write the offset into the LightIndex array for this cluster.
         cluster.offset_in_light_index_array = current_light_index_buffer_index;
         cluster.num_lights_in_cluster = as<uint32_t>(datum.light_indices.size());
 
         for (LightIndex light_index : datum.light_indices) {
-            m.light_index_array[current_light_index_buffer_index] = light_index;
+            m_impl->light_index_array[current_light_index_buffer_index] = light_index;
             ++current_light_index_buffer_index;
         }
     }
 
     // Upload to GPU.
     light_block_buffer.set_data(lights.as_bytes());
-    clusters_texture.set_data(as_bytes(span(m.clusters)));
-    light_index_texture.set_data(as_bytes(span(m.light_index_array)));
+    clusters_texture.set_data(as_bytes(span(m_impl->clusters)));
+    light_index_texture.set_data(as_bytes(span(m_impl->light_index_array)));
 }
 
 const LightGridConfig& LightBuffers::config() const
 {
-    return impl().light_grid.config();
+    return m_impl->light_grid.config();
 }
 
 LightGrid& LightBuffers::grid()
 {
-    return impl().light_grid;
+    return m_impl->light_grid;
 }
 
 } // namespace Mg::gfx

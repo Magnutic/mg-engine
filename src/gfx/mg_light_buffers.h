@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -12,7 +12,7 @@
 
 #include "mg/gfx/mg_buffer_texture.h"
 #include "mg/gfx/mg_uniform_buffer.h"
-#include "mg/utils/mg_simple_pimpl.h"
+#include "mg/utils/mg_impl_ptr.h"
 
 namespace Mg::gfx {
 
@@ -21,16 +21,10 @@ struct LightGridConfig;
 class ICamera;
 class LightGrid;
 
-struct LightBuffersData;
-
 /* Collection of GPU data structures holding information on lights. Used by renderers. */
-class LightBuffers : PImplMixin<LightBuffersData> {
+class LightBuffers {
 public:
     explicit LightBuffers(const LightGridConfig& grid_config);
-    ~LightBuffers();
-
-    MG_MAKE_DEFAULT_MOVABLE(LightBuffers);
-    MG_MAKE_NON_COPYABLE(LightBuffers);
 
     void update(span<const Light> lights, const ICamera& cam);
 
@@ -41,6 +35,10 @@ public:
     UniformBuffer light_block_buffer;
     BufferTexture light_index_texture;
     BufferTexture clusters_texture;
+
+private:
+    struct Impl;
+    ImplPtr<Impl> m_impl;
 };
 
 

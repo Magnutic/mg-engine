@@ -219,8 +219,7 @@ mat4 make_transform_matrix(const UIPlacement& placement,
 
 } // namespace
 
-namespace detail {
-struct UIRendererData {
+struct UIRenderer::Impl {
     PipelinePool pipeline_pool = make_ui_pipeline_factory();
 
     UniformBuffer draw_params_ubo{ sizeof(DrawParamsBlock) };
@@ -233,16 +232,13 @@ struct UIRendererData {
 
     Pipeline text_pipeline = make_text_pipeline();
 };
-} // namespace detail
-
-using detail::UIRendererData;
 
 UIRenderer::UIRenderer(const ivec2 resolution, const float scaling_factor)
 {
     MG_GFX_DEBUG_GROUP("init UIRenderer")
 
-    impl().resolution = resolution;
-    impl().scaling_factor = scaling_factor;
+    m_impl->resolution = resolution;
+    m_impl->scaling_factor = scaling_factor;
 
     GLuint quad_vao_id = 0;
     GLuint quad_vbo_id = 0;
@@ -256,15 +252,15 @@ UIRenderer::UIRenderer(const ivec2 resolution, const float scaling_factor)
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, nullptr); // position
     glEnableVertexAttribArray(0);
 
-    impl().quad_vao.set(quad_vao_id);
-    impl().quad_vbo.set(quad_vbo_id);
+    m_impl->quad_vao.set(quad_vao_id);
+    m_impl->quad_vbo.set(quad_vbo_id);
 }
 
 UIRenderer::~UIRenderer()
 {
     MG_GFX_DEBUG_GROUP("~UIRenderer")
-    const auto quad_vbo_id = impl().quad_vbo.as_gl_id();
-    const auto quad_vao_id = impl().quad_vao.as_gl_id();
+    const auto quad_vbo_id = m_impl->quad_vbo.as_gl_id();
+    const auto quad_vao_id = m_impl->quad_vao.as_gl_id();
 
     glDeleteBuffers(1, &quad_vbo_id);
     glDeleteVertexArrays(1, &quad_vao_id);
@@ -272,25 +268,25 @@ UIRenderer::~UIRenderer()
 
 void UIRenderer::resolution(const ivec2 resolution)
 {
-    impl().resolution = resolution;
+    m_impl->resolution = resolution;
 }
 ivec2 UIRenderer::resolution() const
 {
-    return impl().resolution;
+    return m_impl->resolution;
 }
 
 void UIRenderer::scaling_factor(const float scaling_factor)
 {
-    impl().scaling_factor = scaling_factor;
+    m_impl->scaling_factor = scaling_factor;
 }
 float UIRenderer::scaling_factor() const
 {
-    return impl().scaling_factor;
+    return m_impl->scaling_factor;
 }
 
 namespace {
 
-void setup_material_pipeline(UIRendererData& data,
+void setup_material_pipeline(UIRenderer::Impl& data,
                              const mat4& M,
                              const Material& material,
                              Opt<BlendMode> blend_mode)
@@ -318,10 +314,10 @@ void UIRenderer::draw_rectangle(const UIPlacement& placement,
 {
     MG_GFX_DEBUG_GROUP("UIRenderer::draw_rectangle");
 
-    const mat4 M = make_transform_matrix(placement, size, impl().resolution, impl().scaling_factor);
-    setup_material_pipeline(impl(), M, material, blend_mode);
+    const mat4 M = make_transform_matrix(placement, size, m_impl->resolution, m_impl->scaling_factor);
+    setup_material_pipeline(*m_impl, M, material, blend_mode);
 
-    const auto quad_vao_id = impl().quad_vao.as_gl_id();
+    const auto quad_vao_id = m_impl->quad_vao.as_gl_id();
 
     glBindVertexArray(quad_vao_id);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -329,7 +325,7 @@ void UIRenderer::draw_rectangle(const UIPlacement& placement,
 
 namespace {
 
-void setup_text_pipeline(UIRendererData& data,
+void setup_text_pipeline(UIRenderer::Impl& data,
                          const IRenderTarget& render_target,
                          const PreparedText::GpuData& text_gpu_data,
                          const mat4& M,
@@ -373,10 +369,10 @@ void UIRenderer::draw_text(const IRenderTarget& render_target,
 
     const mat4 M = make_transform_matrix(placement,
                                          { scale * text.width(), scale * text.height() },
-                                         impl().resolution,
-                                         impl().scaling_factor);
+                                         m_impl->resolution,
+                                         m_impl->scaling_factor);
 
-    setup_text_pipeline(impl(), render_target, text.gpu_data(), M, blend_mode);
+    setup_text_pipeline(*m_impl, render_target, text.gpu_data(), M, blend_mode);
 
     glDrawArrays(GL_TRIANGLES, 0, as<GLsizei>(verts_per_char * text.num_glyphs()));
 }
@@ -384,7 +380,7 @@ void UIRenderer::draw_text(const IRenderTarget& render_target,
 void UIRenderer::drop_shaders() noexcept
 {
     MG_GFX_DEBUG_GROUP("UIRenderer::drop_shaders")
-    impl().pipeline_pool.drop_pipelines();
+    m_impl->pipeline_pool.drop_pipelines();
 }
 
 } // namespace Mg::gfx

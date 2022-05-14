@@ -11,7 +11,7 @@
 #pragma once
 
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_simple_pimpl.h"
+#include "mg/utils/mg_impl_ptr.h"
 
 #include <LinearMath/btIDebugDraw.h>
 

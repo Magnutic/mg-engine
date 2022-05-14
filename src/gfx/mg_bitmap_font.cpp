@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -90,7 +90,7 @@ using namespace Mg::stb;
 
 namespace Mg::gfx {
 
-struct BitmapFontData {
+struct BitmapFont::Impl {
     // Texture with packed glyph rasters.
     TextureHandle::Owner texture;
     int texture_width = 0;
@@ -119,7 +119,7 @@ constexpr int k_initial_font_texture_height = 128;
 // Character to substitute when trying to display an unsupported codepoint.
 constexpr char32_t k_substitution_character = U'\U0000FFFD';
 
-Opt<int32_t> get_packedchar_index(const BitmapFontData& font, char32_t codepoint)
+Opt<int32_t> get_packedchar_index(const BitmapFont::Impl& font, char32_t codepoint)
 {
     int32_t result = 0;
     for (const UnicodeRange& range : font.unicode_ranges) {
@@ -138,7 +138,7 @@ public:
     void pack(ResourceHandle<FontResource> font_resource,
               span<const UnicodeRange> unicode_ranges,
               const int font_size_pixels,
-              BitmapFontData& font)
+              BitmapFont::Impl& font)
     {
         // Set initial texture size.
         m_texture_width = k_initial_font_texture_width;
@@ -175,7 +175,7 @@ private:
     void pack_impl(const span<const std::byte>& font_data,
                    const span<const UnicodeRange>& unicode_ranges,
                    const int font_size_pixels,
-                   BitmapFontData& font)
+                   BitmapFont::Impl& font)
     {
         {
             auto texture_data =
@@ -204,7 +204,7 @@ private:
                                      stride_in_bytes,
                                      padding,
                                      alloc_context)) {
-                throw RuntimeError{"Failed to initiate STBTT font packing context."};
+                throw RuntimeError{ "Failed to initiate STBTT font packing context." };
             }
 
             const auto font_index = 0;
@@ -301,9 +301,9 @@ BitmapFont::BitmapFont(ResourceHandle<FontResource> font,
                        const int font_size_pixels,
                        span<const UnicodeRange> unicode_ranges)
 {
-    impl().font_size_pixels = font_size_pixels;
+    m_impl->font_size_pixels = font_size_pixels;
     FontPacker packer;
-    packer.pack(font, unicode_ranges, font_size_pixels, impl());
+    packer.pack(font, unicode_ranges, font_size_pixels, *m_impl);
 }
 
 BitmapFont::~BitmapFont() = default;
@@ -451,7 +451,7 @@ PreparedText BitmapFont::prepare_text(std::string_view text_utf8,
     const auto line_height = static_cast<float>(font_size_pixels());
 
     // Get texture for font.
-    MG_ASSERT(impl().texture.handle != TextureHandle::null_handle());
+    MG_ASSERT(m_impl->texture.handle != TextureHandle::null_handle());
 
     // Get quads for each codepoint in the string.
     auto char_quads = Array<stbtt_aligned_quad>::make_for_overwrite(text_codepoints.size());
@@ -470,13 +470,13 @@ PreparedText BitmapFont::prepare_text(std::string_view text_utf8,
             // Get index of packedchar corresponding to codepoint, or that of the substituition if
             // not present.
             const auto packedchar_index =
-                get_packedchar_index(impl(), codepoint)
-                    .value_or(get_packedchar_index(impl(), k_substitution_character).value());
+                get_packedchar_index(*m_impl, codepoint)
+                    .value_or(get_packedchar_index(*m_impl, k_substitution_character).value());
 
             constexpr int align_to_integer = 0;
-            stbtt_GetPackedQuad(impl().packed_chars.data(),
-                                impl().texture_width,
-                                impl().texture_height,
+            stbtt_GetPackedQuad(m_impl->packed_chars.data(),
+                                m_impl->texture_width,
+                                m_impl->texture_height,
                                 packedchar_index,
                                 &x,
                                 &y,
@@ -553,7 +553,7 @@ PreparedText BitmapFont::prepare_text(std::string_view text_utf8,
     glBindVertexArray(0);
 
     PreparedText::GpuData gpu_data;
-    gpu_data.texture = impl().texture.handle;
+    gpu_data.texture = m_impl->texture.handle;
     gpu_data.vertex_buffer = BufferHandle(gl_buffer_id);
     gpu_data.vertex_array = VertexArrayHandle(gl_vertex_array_id);
     return PreparedText(gpu_data, width, height, text_codepoints.size());
@@ -561,12 +561,12 @@ PreparedText BitmapFont::prepare_text(std::string_view text_utf8,
 
 span<const UnicodeRange> BitmapFont::contained_ranges() const
 {
-    return impl().unicode_ranges;
+    return m_impl->unicode_ranges;
 }
 
 int BitmapFont::font_size_pixels() const
 {
-    return impl().font_size_pixels;
+    return m_impl->font_size_pixels;
 }
 
 } // namespace Mg::gfx

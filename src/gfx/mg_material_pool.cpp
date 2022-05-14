@@ -21,21 +21,19 @@
 
 namespace Mg::gfx {
 
-struct MaterialPoolData {
+struct MaterialPool::Impl {
     std::shared_ptr<TexturePool> texture_pool;
     plf::colony<Material> materials;
 };
 
 MaterialPool::MaterialPool(std::shared_ptr<TexturePool> texture_pool)
 {
-    impl().texture_pool = std::move(texture_pool);
+    m_impl->texture_pool = std::move(texture_pool);
 }
-
-MaterialPool::~MaterialPool() = default;
 
 Material* MaterialPool::create(Identifier id, ResourceHandle<ShaderResource> shader_resource_handle)
 {
-    const auto it = impl().materials.emplace(Material{ id, shader_resource_handle });
+    const auto it = m_impl->materials.emplace(Material{ id, shader_resource_handle });
     return &(*it);
 }
 
@@ -77,7 +75,7 @@ Material* MaterialPool::create(const MaterialResource& material_resource)
     auto shader_resource = material_resource.shader_resource();
     const Identifier id = material_resource.resource_id();
     Material* material = create(id, shader_resource);
-    init_material_from_resource(*material, material_resource, *impl().texture_pool);
+    init_material_from_resource(*material, material_resource, *m_impl->texture_pool);
     return material;
 }
 
@@ -99,7 +97,7 @@ void MaterialPool::update(const MaterialResource& material_resource)
 
         // Create new Material.
         new_material.emplace(material_resource.resource_id(), shader_resource);
-        init_material_from_resource(*new_material, material_resource, *impl().texture_pool);
+        init_material_from_resource(*new_material, material_resource, *m_impl->texture_pool);
     }
     catch (Mg::RuntimeError&) {
         log.warning("Failed to update Material '{}'.", material_id.str_view());
@@ -113,7 +111,7 @@ void MaterialPool::update(const MaterialResource& material_resource)
 void MaterialPool::destroy(const Material* handle)
 {
     Material* non_const_ptr = const_cast<Material*>(handle); // NOLINT
-    impl().materials.erase(impl().materials.get_iterator_from_pointer(non_const_ptr));
+    m_impl->materials.erase(m_impl->materials.get_iterator_from_pointer(non_const_ptr));
 }
 
 template<typename MaterialsT> auto find_impl(MaterialsT& materials, Identifier id)
@@ -124,11 +122,11 @@ template<typename MaterialsT> auto find_impl(MaterialsT& materials, Identifier i
 
 Material* MaterialPool::find(Identifier id)
 {
-    return find_impl(impl().materials, id);
+    return find_impl(m_impl->materials, id);
 }
 const Material* MaterialPool::find(Identifier id) const
 {
-    return find_impl(impl().materials, id);
+    return find_impl(m_impl->materials, id);
 }
 
 template<typename MaterialsT> auto get_all_materials_impl(MaterialsT& materials)
@@ -145,12 +143,12 @@ template<typename MaterialsT> auto get_all_materials_impl(MaterialsT& materials)
 
 Array<Material*> MaterialPool::get_all_materials()
 {
-    return get_all_materials_impl(impl().materials);
+    return get_all_materials_impl(m_impl->materials);
 }
 
 Array<const Material*> MaterialPool::get_all_materials() const
 {
-    return get_all_materials_impl(impl().materials);
+    return get_all_materials_impl(m_impl->materials);
 }
 
 } // namespace Mg::gfx

@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2021, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -791,7 +791,7 @@ struct CollisionById {
 
 } // namespace
 
-struct WorldData {
+struct World::Impl {
     // It is important that the data below is stored in containers that do not re-allocate or move
     // elements. Pointers to these objects must remain valid until the object in question is
     // destroyed, partially due to Bullet internally storing pointers between objects and partially
@@ -835,7 +835,7 @@ struct WorldData {
 
 namespace {
 
-void init_physics(WorldData& world)
+void init_physics(World::Impl& world)
 {
     world.collision_configuration = std::make_unique<btDefaultCollisionConfiguration>();
     world.dispatcher = std::make_unique<btCollisionDispatcher>(world.collision_configuration.get());
@@ -855,7 +855,7 @@ void init_physics(WorldData& world)
 
 World::World()
 {
-    init_physics(impl());
+    init_physics(*m_impl);
     gravity(vec3(0.0f, 0.0f, -9.82f));
 }
 
@@ -863,59 +863,57 @@ World::~World() = default;
 
 void World::gravity(const vec3& gravity)
 {
-    impl().dynamics_world->setGravity(convert_vector(gravity));
+    m_impl->dynamics_world->setGravity(convert_vector(gravity));
 }
 
 Shape* World::create_box_shape(const vec3& extents)
 {
-    return &*impl().box_shapes.emplace(extents);
+    return &*m_impl->box_shapes.emplace(extents);
 }
 
 Shape* World::create_capsule_shape(const float radius, const float height)
 {
-    return &*impl().capsule_shapes.emplace(radius, height);
+    return &*m_impl->capsule_shapes.emplace(radius, height);
 }
 
 Shape* World::create_cylinder_shape(const vec3& extents)
 {
-    return &*impl().cylinder_shapes.emplace(extents);
+    return &*m_impl->cylinder_shapes.emplace(extents);
 }
 
 Shape* World::create_sphere_shape(const float radius)
 {
-    return &*impl().sphere_shapes.emplace(radius);
+    return &*m_impl->sphere_shapes.emplace(radius);
 }
 
 Shape* World::create_cone_shape(const float radius, const float height)
 {
-    return &*impl().cone_shapes.emplace(radius, height);
+    return &*m_impl->cone_shapes.emplace(radius, height);
 }
 
 Shape* World::create_mesh_shape(const gfx::Mesh::MeshDataView& mesh_data)
 {
-    return &*impl().mesh_shapes.emplace(mesh_data);
+    return &*m_impl->mesh_shapes.emplace(mesh_data);
 }
 
 Shape* World::create_convex_hull(const span<const gfx::Mesh::Vertex> vertices,
                                  const vec3& centre_of_mass,
                                  const vec3& scale)
 {
-    return &*impl().convex_hull_shapes.emplace(vertices, centre_of_mass, scale);
+    return &*m_impl->convex_hull_shapes.emplace(vertices, centre_of_mass, scale);
 }
 
 Shape* World::create_compound_shape(span<Shape*> parts, span<const mat4> part_transforms)
 {
-    return &*impl().compound_shapes.emplace(parts, part_transforms);
+    return &*m_impl->compound_shapes.emplace(parts, part_transforms);
 }
 
 
 StaticBodyHandle
 World::create_static_body(const Identifier& id, Shape& shape, const mat4& transform)
 {
-    WorldData& data = impl();
-
     // Create Bullet rigid body object and metadata.
-    StaticBody& sb = *data.static_bodies.emplace(id, shape_base_cast(shape), transform);
+    StaticBody& sb = *m_impl->static_bodies.emplace(id, shape_base_cast(shape), transform);
 
     // Disable debug rendering for static meshes. Too slow and also not really useful; it makes the
     // screen too crowded.
@@ -924,7 +922,7 @@ World::create_static_body(const Identifier& id, Shape& shape, const mat4& transf
                                   btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT);
     }
 
-    data.dynamics_world->addCollisionObject(&sb.body);
+    m_impl->dynamics_world->addCollisionObject(&sb.body);
     return PhysicsBodyHandle{ &sb }.as_static_body().value();
 }
 
@@ -936,28 +934,24 @@ DynamicBodyHandle World::create_dynamic_body(const Identifier& id,
     MG_ASSERT(shape.type() != Shape::Type::Mesh &&
               "Mesh Shape cannot be used in a DynamicBody. Use a ConvexHull instead.");
 
-    WorldData& data = impl();
-
     // Create Bullet rigid body object and metadata.
     DynamicBody& rb =
-        *data.dynamic_bodies.emplace(id, shape_base_cast(shape), parameters, transform);
+        *m_impl->dynamic_bodies.emplace(id, shape_base_cast(shape), parameters, transform);
 
-    data.dynamics_world->addRigidBody(&rb.body);
+    m_impl->dynamics_world->addRigidBody(&rb.body);
     return PhysicsBodyHandle{ &rb }.as_dynamic_body().value();
 }
 
 GhostObjectHandle
 World::create_ghost_object(const Identifier& id, Shape& shape, const mat4& transform)
 {
-    WorldData& data = impl();
-
     // Create Bullet collision body object and metadata.
-    GhostObject& go = *data.ghost_objects.emplace(id, shape_base_cast(shape), transform);
+    GhostObject& go = *m_impl->ghost_objects.emplace(id, shape_base_cast(shape), transform);
 
     // TODO: look into the filters passed in these construction functions.
-    data.dynamics_world->addCollisionObject(&go.object,
-                                            btBroadphaseProxy::KinematicFilter,
-                                            btBroadphaseProxy::AllFilter);
+    m_impl->dynamics_world->addCollisionObject(&go.object,
+                                               btBroadphaseProxy::KinematicFilter,
+                                               btBroadphaseProxy::AllFilter);
     return PhysicsBodyHandle{ &go }.as_ghost_body().value();
 }
 
@@ -996,44 +990,43 @@ void contact_manifold_to_collisions(const btPersistentManifold& contact_manifold
 
 vec3 World::gravity() const
 {
-    return convert_vector(impl().dynamics_world->getGravity());
+    return convert_vector(m_impl->dynamics_world->getGravity());
 }
 
 void World::update(const float time_step)
 {
-    WorldData& data = impl();
     constexpr int max_sub_steps = 0; // Disable interpolation, we do that ourselves instead.
-    data.dynamics_world->stepSimulation(time_step, max_sub_steps);
+    m_impl->dynamics_world->stepSimulation(time_step, max_sub_steps);
 
     // TODO: these loops should be parallelisable
 
-    for (DynamicBody& rb : data.dynamic_bodies) {
+    for (DynamicBody& rb : m_impl->dynamic_bodies) {
         rb.previous_transform = rb.transform;
         rb.transform = convert_transform(rb.body.getWorldTransform());
     }
 
-    data.collisions.clear();
+    m_impl->collisions.clear();
 
     // Get all collisions that occurred.
-    const int num_manifolds = data.dispatcher->getNumManifolds();
+    const int num_manifolds = m_impl->dispatcher->getNumManifolds();
 
     for (int i = 0; i < num_manifolds; ++i) {
         const btPersistentManifold& contact_manifold =
-            *data.dispatcher->getManifoldByIndexInternal(i);
-        contact_manifold_to_collisions(contact_manifold, data.collisions);
+            *m_impl->dispatcher->getManifoldByIndexInternal(i);
+        contact_manifold_to_collisions(contact_manifold, m_impl->collisions);
     }
 
     // For each collision, make it efficiently accessible by id of either involved object.
-    data.collisions_by_id.clear();
-    for (const Collision& collision : data.collisions) {
-        data.collisions_by_id.push_back(CollisionById{ collision.object_a.id(), &collision });
-        data.collisions_by_id.push_back(CollisionById{ collision.object_b.id(), &collision });
+    m_impl->collisions_by_id.clear();
+    for (const Collision& collision : m_impl->collisions) {
+        m_impl->collisions_by_id.push_back(CollisionById{ collision.object_a.id(), &collision });
+        m_impl->collisions_by_id.push_back(CollisionById{ collision.object_b.id(), &collision });
     }
 
     // Collisions by id must be sorted for `find_collisions_for` to work, as it uses binary search.
-    sort(data.collisions_by_id);
+    sort(m_impl->collisions_by_id);
 
-    for (GhostObject& ghost_object : data.ghost_objects) {
+    for (GhostObject& ghost_object : m_impl->ghost_objects) {
         // Remove collisions from last update.
         ghost_object.collisions.clear();
 
@@ -1044,10 +1037,8 @@ void World::update(const float time_step)
 
 void World::interpolate(const float factor)
 {
-    WorldData& data = impl();
-
     // TODO: should be parallelisable
-    for (DynamicBody& rbd : data.dynamic_bodies) {
+    for (DynamicBody& rbd : m_impl->dynamic_bodies) {
         rbd.interpolated_transform =
             interpolate_transforms(rbd.previous_transform, rbd.transform, factor);
     }
@@ -1055,35 +1046,33 @@ void World::interpolate(const float factor)
 
 void World::collect_garbage()
 {
-    WorldData& data = impl();
-
     // Delete bodies. Bodies have pointers into the collision shapes, so they must be deleted before
     // shapes.
     {
-        for (auto it = data.dynamic_bodies.begin(); it != data.dynamic_bodies.end();) {
+        for (auto it = m_impl->dynamic_bodies.begin(); it != m_impl->dynamic_bodies.end();) {
             if (it->ref_count == 0) {
-                data.dynamics_world->removeRigidBody(&it->body);
-                it = data.dynamic_bodies.erase(it);
+                m_impl->dynamics_world->removeRigidBody(&it->body);
+                it = m_impl->dynamic_bodies.erase(it);
             }
             else {
                 ++it;
             }
         }
 
-        for (auto it = data.static_bodies.begin(); it != data.static_bodies.end();) {
+        for (auto it = m_impl->static_bodies.begin(); it != m_impl->static_bodies.end();) {
             if (it->ref_count == 0) {
-                data.dynamics_world->removeCollisionObject(&it->body);
-                it = data.static_bodies.erase(it);
+                m_impl->dynamics_world->removeCollisionObject(&it->body);
+                it = m_impl->static_bodies.erase(it);
             }
             else {
                 ++it;
             }
         }
 
-        for (auto it = data.ghost_objects.begin(); it != data.ghost_objects.end();) {
+        for (auto it = m_impl->ghost_objects.begin(); it != m_impl->ghost_objects.end();) {
             if (it->ref_count == 0) {
-                data.dynamics_world->removeCollisionObject(&it->object);
-                it = data.ghost_objects.erase(it);
+                m_impl->dynamics_world->removeCollisionObject(&it->object);
+                it = m_impl->ghost_objects.erase(it);
             }
             else {
                 ++it;
@@ -1109,14 +1098,14 @@ void World::collect_garbage()
             ++num_containers_handled;
         };
 
-        delete_unused_shapes(data.box_shapes);
-        delete_unused_shapes(data.capsule_shapes);
-        delete_unused_shapes(data.cone_shapes);
-        delete_unused_shapes(data.cylinder_shapes);
-        delete_unused_shapes(data.sphere_shapes);
-        delete_unused_shapes(data.mesh_shapes);
-        delete_unused_shapes(data.convex_hull_shapes);
-        delete_unused_shapes(data.compound_shapes);
+        delete_unused_shapes(m_impl->box_shapes);
+        delete_unused_shapes(m_impl->capsule_shapes);
+        delete_unused_shapes(m_impl->cone_shapes);
+        delete_unused_shapes(m_impl->cylinder_shapes);
+        delete_unused_shapes(m_impl->sphere_shapes);
+        delete_unused_shapes(m_impl->mesh_shapes);
+        delete_unused_shapes(m_impl->convex_hull_shapes);
+        delete_unused_shapes(m_impl->compound_shapes);
 
         // Check so that we will not forget to update this code if we add more shape types.
         MG_ASSERT(num_containers_handled == static_cast<int>(Shape::Type::NumEnumValues_));
@@ -1125,12 +1114,12 @@ void World::collect_garbage()
 
 span<const Collision> World::collisions() const
 {
-    return impl().collisions;
+    return m_impl->collisions;
 }
 
 void World::find_collisions_for(Identifier id, std::vector<const Collision*>& out) const
 {
-    const auto& by_id = impl().collisions_by_id;
+    const auto& by_id = m_impl->collisions_by_id;
     auto [it, end] = std::equal_range(by_id.begin(), by_id.end(), id);
     while (it != end) {
         out.push_back(it->collision);
@@ -1141,7 +1130,7 @@ void World::find_collisions_for(Identifier id, std::vector<const Collision*>& ou
 void World::calculate_collisions_for(const GhostObjectHandle& ghost_object_handle,
                                      std::vector<Collision>& out)
 {
-    btCollisionWorld& collision_world = *impl().dynamics_world;
+    btCollisionWorld& collision_world = *m_impl->dynamics_world;
     btPairCachingGhostObject& ghost_object =
         static_cast<GhostObject*>(ghost_object_handle.m_data)->object; // NOLINT
 
@@ -1280,7 +1269,7 @@ size_t World::raycast(const vec3& start,
                       std::vector<RayHit>& out)
 {
     RayCallback callback(start, end, filter_mask, out);
-    impl().dynamics_world->rayTest(convert_vector(start), convert_vector(end), callback);
+    m_impl->dynamics_world->rayTest(convert_vector(start), convert_vector(end), callback);
     return callback.num_hits();
 }
 
@@ -1304,13 +1293,13 @@ size_t World::convex_sweep(Shape& shape,
     end_transform.setOrigin(convert_vector(end));
 
     const float allowed_ccd_penetration =
-        impl().dynamics_world->getDispatchInfo().m_allowedCcdPenetration;
+        m_impl->dynamics_world->getDispatchInfo().m_allowedCcdPenetration;
 
-    impl().dynamics_world->convexSweepTest(bt_convex_shape,
-                                           start_transform,
-                                           end_transform,
-                                           callback,
-                                           allowed_ccd_penetration);
+    m_impl->dynamics_world->convexSweepTest(bt_convex_shape,
+                                            start_transform,
+                                            end_transform,
+                                            callback,
+                                            allowed_ccd_penetration);
     return callback.num_hits();
 }
 
@@ -1322,10 +1311,10 @@ void World::draw_debug(const gfx::IRenderTarget& render_target,
     PhysicsDebugRenderer physics_debug_renderer{ render_target, debug_renderer, view_proj };
 
     // Tell Bullet to use the debug drawer until the end of this function.
-    auto reset_debug_drawer = finally([&] { impl().dynamics_world->setDebugDrawer(nullptr); });
-    impl().dynamics_world->setDebugDrawer(&physics_debug_renderer);
+    auto reset_debug_drawer = finally([&] { m_impl->dynamics_world->setDebugDrawer(nullptr); });
+    m_impl->dynamics_world->setDebugDrawer(&physics_debug_renderer);
 
-    impl().dynamics_world->debugDrawWorld();
+    m_impl->dynamics_world->debugDrawWorld();
 }
 
 } // namespace Mg::physics

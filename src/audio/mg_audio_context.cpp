@@ -260,7 +260,7 @@ public:
 // AudioContext implementation
 //--------------------------------------------------------------------------------------------------
 
-struct AudioContextData {
+struct AudioContext::Impl {
     plf::colony<SoundBuffer> sound_buffers;
 
     std::mutex sound_buffers_mutex;
@@ -289,7 +289,7 @@ AudioContext::generate_sound_buffer(span<const std::byte> sound_file_data)
     ALuint al_buffer_id = 0;
 
     { // Read sound data with mutex locked, since libsndfile is not thread-safe.
-        std::scoped_lock sndfile_lock{ impl().libsndfile_mutex };
+        std::scoped_lock sndfile_lock{ m_impl->libsndfile_mutex };
 
         SndFileReader reader(sound_file_data);
 
@@ -306,9 +306,9 @@ AudioContext::generate_sound_buffer(span<const std::byte> sound_file_data)
         al_buffer_id = opt_al_buffer_id.value();
     }
 
-    std::scoped_lock sound_buffers_lock{ impl().sound_buffers_mutex };
+    std::scoped_lock sound_buffers_lock{ m_impl->sound_buffers_mutex };
 
-    SoundBuffer& buffer = *impl().sound_buffers.emplace(al_buffer_id);
+    SoundBuffer& buffer = *m_impl->sound_buffers.emplace(al_buffer_id);
     return { SoundBufferHandle{ &buffer }, {} };
 }
 
@@ -372,9 +372,9 @@ void AudioContext::decrement_ref_count(SoundBuffer* ptr)
     const auto count = ptr->ref_count.fetch_sub(1);
 
     if (count == 1) {
-        auto it = impl().sound_buffers.get_iterator_from_pointer(ptr);
-        std::scoped_lock l{ impl().sound_buffers_mutex };
-        impl().sound_buffers.erase(it);
+        auto it = m_impl->sound_buffers.get_iterator_from_pointer(ptr);
+        std::scoped_lock l{ m_impl->sound_buffers_mutex };
+        m_impl->sound_buffers.erase(it);
     }
 }
 

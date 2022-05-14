@@ -13,8 +13,8 @@
 #include "mg/containers/mg_array.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_pipeline.h"
+#include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_simple_pimpl.h"
 
 #include <string>
 #include <vector>
@@ -52,12 +52,10 @@ struct PipelinePoolConfig {
     Array<PipelineInputDescriptor> shared_input_layout;
 };
 
-struct PipelinePoolData;
-
-class PipelinePool : PImplMixin<PipelinePoolData> {
+class PipelinePool {
 public:
     explicit PipelinePool(PipelinePoolConfig&& config);
-    ~PipelinePool();
+    ~PipelinePool() = default;
 
     MG_MAKE_NON_COPYABLE(PipelinePool);
     MG_MAKE_NON_MOVABLE(PipelinePool);
@@ -85,6 +83,11 @@ public:
 
     /** Drops stored pipeline for the given material, if it has been created. */
     void drop_pipeline(const Material& material) noexcept;
+
+    struct Impl;
+
+private:
+    ImplPtr<Impl> m_impl;
 };
 
 } // namespace Mg::gfx

@@ -13,7 +13,7 @@
 #include <mg/core/mg_curve.h>
 #include <mg/utils/mg_macros.h>
 #include <mg/utils/mg_optional.h>
-#include <mg/utils/mg_simple_pimpl.h>
+#include <mg/utils/mg_impl_ptr.h>
 
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
@@ -82,21 +82,18 @@ bool curve_editor_widget(const CurveEditorSettings& settings,
                          Curve& curve,
                          Opt<Curve::Index>& active_control_point_inout);
 
-class CurveEditorImpl;
-
 /** A stand-alone curve editor that provides its own ImGui window. If you want to draw a curve
  * editor in an existing ImGui window, you can directly use `curve_editor_widget` instead.
  */
-class CurveEditor : PImplMixin<CurveEditorImpl> {
+class CurveEditor {
 public:
     explicit CurveEditor(const Window& window, const CurveEditorSettings& settings);
 
-    ~CurveEditor();
-
-    MG_MAKE_NON_COPYABLE(CurveEditor);
-    MG_MAKE_DEFAULT_MOVABLE(CurveEditor);
-
     void update(Curve& curve);
+
+private:
+    class Impl;
+    ImplPtr<Impl> m_impl;
 };
 
 } // namespace Mg::editor

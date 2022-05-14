@@ -15,7 +15,7 @@
 #include "mg/utils/mg_angle.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_optional.h"
-#include "mg/utils/mg_simple_pimpl.h"
+#include "mg/utils/mg_impl_ptr.h"
 
 #include <glm/vec2.hpp>
 
@@ -27,10 +27,6 @@ class Material;
 class Texture2D;
 class PreparedText;
 class IRenderTarget;
-
-namespace detail {
-struct UIRendererData;
-}
 
 /** Defines how a UI item should be placed: where on the screen and rotated in what manner. */
 struct UIPlacement {
@@ -58,7 +54,7 @@ struct UIPlacement {
 };
 
 /** 2D user-interface renderer. */
-class UIRenderer : PImplMixin<detail::UIRendererData> {
+class UIRenderer {
 public:
     explicit UIRenderer(glm::ivec2 resolution, float scaling_factor = 1.0);
     ~UIRenderer();
@@ -84,6 +80,11 @@ public:
                    BlendMode blend_mode = blend_mode_constants::bm_alpha_premultiplied) noexcept;
 
     void drop_shaders() noexcept;
+
+    struct Impl;
+
+private:
+    ImplPtr<Impl> m_impl;
 };
 
 } // namespace Mg::gfx

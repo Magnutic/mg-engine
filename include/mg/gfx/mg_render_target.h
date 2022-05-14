@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -12,8 +12,8 @@
 
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_texture_related_types.h"
+#include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_simple_pimpl.h"
 
 #include <cstdint>
 #include <memory>
@@ -63,14 +63,12 @@ enum class ColourFormat {
     RGBA32F = 0x8814, /** Red/Green/Blue/Alpha channels of 32-bit float */
 };
 
-struct TextureRenderTargetData;
-
 /** Texture render targets are useful for various steps in the rendering pipeline, as they may be
  * used as texture input into later steps. A typical example is rendering to a HDR
  * TextureRenderTarget and then using the output as a texture into a post-processing step which
  * outputs to the default render target.
  */
-class TextureRenderTarget : public IRenderTarget, private PImplMixin<TextureRenderTargetData> {
+class TextureRenderTarget : public IRenderTarget {
     struct PrivateCtorKey {};
 
     // TODO: support multisampling, see
@@ -110,10 +108,6 @@ public:
 
     // Private default constructor using pass-key idiom to allow usage via make_unique.
     explicit TextureRenderTarget(PrivateCtorKey);
-    ~TextureRenderTarget() override;
-
-    MG_MAKE_NON_COPYABLE(TextureRenderTarget);
-    MG_MAKE_NON_MOVABLE(TextureRenderTarget);
 
     FrameBufferHandle handle() const override;
 
@@ -123,6 +117,10 @@ public:
 
     Texture2D* colour_target() const noexcept;
     Texture2D* depth_target() const noexcept;
+
+private:
+    struct Impl;
+    ImplPtr<Impl> m_impl;
 };
 
 } // namespace Mg::gfx

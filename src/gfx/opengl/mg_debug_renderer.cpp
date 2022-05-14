@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -303,7 +303,7 @@ public:
 // DebugRenderer implementation
 //--------------------------------------------------------------------------------------------------
 
-struct DebugRendererData {
+struct DebugRenderer::Impl {
     ShaderProgramOwner program = [] {
         ShaderOwner vs{ compile_vertex_shader(vs_code).value() };
         ShaderOwner fs{ compile_fragment_shader(fs_code).value() };
@@ -317,7 +317,6 @@ struct DebugRendererData {
 };
 
 DebugRenderer::DebugRenderer() = default;
-DebugRenderer::~DebugRenderer() = default;
 
 namespace {
 
@@ -404,23 +403,23 @@ void DebugRenderer::draw_box(const IRenderTarget& render_target,
                              const mat4& view_proj,
                              BoxDrawParams params)
 {
-    draw_primitive(render_target, impl().program, view_proj, impl().box, params);
+    draw_primitive(render_target, m_impl->program, view_proj, m_impl->box, params);
 }
 
 void DebugRenderer::draw_ellipsoid(const IRenderTarget& render_target,
                                    const mat4& view_proj,
                                    EllipsoidDrawParams params)
 {
-    auto it = impl().spheres.find(params.steps);
+    auto it = m_impl->spheres.find(params.steps);
 
     // If no sphere mesh with the required amount of steps was found, create it.
-    if (it == impl().spheres.end()) {
-        auto p = impl().spheres.insert({ params.steps, generate_ellipsoid_verts(params.steps) });
+    if (it == m_impl->spheres.end()) {
+        auto p = m_impl->spheres.insert({ params.steps, generate_ellipsoid_verts(params.steps) });
         it = p.first;
     }
 
     const Sphere& sphere = it->second;
-    draw_primitive(render_target, impl().program, view_proj, sphere.mesh, params);
+    draw_primitive(render_target, m_impl->program, view_proj, sphere.mesh, params);
 }
 
 void DebugRenderer::draw_line(const IRenderTarget& render_target,
@@ -430,8 +429,8 @@ void DebugRenderer::draw_line(const IRenderTarget& render_target,
                               const float width)
 {
     const auto indices = generate_line_vertex_indices(points.size());
-    update_mesh(impl().line, points, indices);
-    draw(render_target, impl().program, view_proj, impl().line, colour, false, true, width);
+    update_mesh(m_impl->line, points, indices);
+    draw(render_target, m_impl->program, view_proj, m_impl->line, colour, false, true, width);
 }
 
 void DebugRenderer::draw_bones(const IRenderTarget& render_target,
@@ -575,41 +574,40 @@ void DebugRenderer::draw_view_frustum(const IRenderTarget& render_target,
 using Job = std::function<
     void(const IRenderTarget& render_target, DebugRenderer& renderer, const glm::mat4& view_proj)>;
 
-struct DebugRenderQueueData {
+struct DebugRenderQueue::Impl {
     std::mutex mutex;
     std::vector<Job> jobs;
 };
 
 DebugRenderQueue::DebugRenderQueue() = default;
-DebugRenderQueue::~DebugRenderQueue() = default;
 
 void DebugRenderQueue::draw_box(DebugRenderer::BoxDrawParams params)
 {
-    std::lock_guard g{ impl().mutex };
+    std::lock_guard g{ m_impl->mutex };
 
-    impl().jobs.emplace_back([params](const IRenderTarget& render_target,
-                                      DebugRenderer& renderer,
-                                      const glm::mat4& view_proj) {
+    m_impl->jobs.emplace_back([params](const IRenderTarget& render_target,
+                                       DebugRenderer& renderer,
+                                       const glm::mat4& view_proj) {
         renderer.draw_box(render_target, view_proj, params);
     });
 }
 
 void DebugRenderQueue::draw_ellipsoid(DebugRenderer::EllipsoidDrawParams params)
 {
-    std::lock_guard g{ impl().mutex };
+    std::lock_guard g{ m_impl->mutex };
 
-    impl().jobs.emplace_back([params](const IRenderTarget& render_target,
-                                      DebugRenderer& renderer,
-                                      const glm::mat4& view_proj) {
+    m_impl->jobs.emplace_back([params](const IRenderTarget& render_target,
+                                       DebugRenderer& renderer,
+                                       const glm::mat4& view_proj) {
         renderer.draw_ellipsoid(render_target, view_proj, params);
     });
 }
 
 void DebugRenderQueue::draw_line(span<const glm::vec3> points, const glm::vec4& colour, float width)
 {
-    std::lock_guard g{ impl().mutex };
+    std::lock_guard g{ m_impl->mutex };
 
-    impl().jobs.emplace_back( //
+    m_impl->jobs.emplace_back( //
         [points = Array<glm::vec3>::make_copy(points),
          colour,
          width] //
@@ -622,17 +620,17 @@ void DebugRenderQueue::dispatch(const IRenderTarget& render_target,
                                 DebugRenderer& renderer,
                                 const glm::mat4& view_proj_matrix)
 {
-    std::lock_guard g{ impl().mutex };
+    std::lock_guard g{ m_impl->mutex };
 
-    for (Job& job : impl().jobs) {
+    for (Job& job : m_impl->jobs) {
         job(render_target, renderer, view_proj_matrix);
     }
 }
 
 void DebugRenderQueue::clear()
 {
-    std::lock_guard g{ impl().mutex };
-    impl().jobs.clear();
+    std::lock_guard g{ m_impl->mutex };
+    m_impl->jobs.clear();
 }
 
 } // namespace Mg::gfx

@@ -10,8 +10,8 @@
 
 #pragma once
 
+#include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_simple_pimpl.h"
 
 #include <memory>
 
@@ -26,9 +26,8 @@ namespace Mg::gfx {
 class Texture2D;
 struct TextureSettings;
 struct RenderTargetParams; // Defined in mg_texture_related_types.h
-struct TexturePoolData;
 
-class TexturePool : PImplMixin<TexturePoolData> {
+class TexturePool {
 public:
     explicit TexturePool(std::shared_ptr<ResourceCache> resource_cache);
     ~TexturePool();
@@ -55,6 +54,11 @@ public:
     enum class DefaultTexture { White, Black, Transparent, NormalsFlat, Checkerboard };
 
     Texture2D* get_default_texture(DefaultTexture type);
+
+    struct Impl;
+
+private:
+    ImplPtr<Impl> m_impl;
 };
 
 } // namespace Mg::gfx

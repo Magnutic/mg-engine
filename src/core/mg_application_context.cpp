@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2021, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -25,8 +25,8 @@ using namespace std::chrono;
 using Clock = std::chrono::high_resolution_clock;
 using namespace std::literals;
 
-struct ApplicationContextData {
-    ApplicationContextData(std::string_view config_file_path)
+struct ApplicationContext::Impl {
+    Impl(std::string_view config_file_path)
         : config(config_file_path)
         , window(Mg::Window::make(Mg::WindowSettings{}, "Mg Engine Test Scene"))
         , gfx_device(*window)
@@ -47,54 +47,51 @@ struct ApplicationContextData {
     PerformanceInfo performance_info = {};
 };
 
-ApplicationContext::ApplicationContext(std::string_view config_file_path)
-    : PImplMixin(config_file_path)
+ApplicationContext::ApplicationContext(std::string_view config_file_path) : m_impl(config_file_path)
 {}
-
-ApplicationContext::~ApplicationContext() = default;
 
 Window& ApplicationContext::window()
 {
-    return *impl().window;
+    return *m_impl->window;
 }
 const Window& ApplicationContext::window() const
 {
-    return *impl().window;
+    return *m_impl->window;
 }
 
 Config& ApplicationContext::config()
 {
-    return impl().config;
+    return m_impl->config;
 }
 const Config& ApplicationContext::config() const
 {
-    return impl().config;
+    return m_impl->config;
 }
 
 gfx::GfxDevice& ApplicationContext::gfx_device()
 {
-    return impl().gfx_device;
+    return m_impl->gfx_device;
 }
 const gfx::GfxDevice& ApplicationContext::gfx_device() const
 {
-    return impl().gfx_device;
+    return m_impl->gfx_device;
 }
 
 double ApplicationContext::time_since_init() noexcept
 {
     using seconds_double = duration<double, seconds::period>;
-    return seconds_double(Clock::now() - impl().start_time).count();
+    return seconds_double(Clock::now() - m_impl->start_time).count();
 }
 
 PerformanceInfo ApplicationContext::performance_info() const
 {
-    std::lock_guard g{ impl().performance_info_mutex };
-    return impl().performance_info;
+    std::lock_guard g{ m_impl->performance_info_mutex };
+    return m_impl->performance_info;
 };
 
 void ApplicationContext::run_main_loop(IApplication& application)
 {
-    if (impl().main_loop_is_running.exchange(true)) {
+    if (m_impl->main_loop_is_running.exchange(true)) {
         throw RuntimeError{ "ApplicationContext::run_main_loop: main loop already running." };
     }
 
@@ -115,10 +112,10 @@ void ApplicationContext::run_main_loop(IApplication& application)
     for (;;) {
         // Check if it is time to stop.
         {
-            // If stopped by impl().main_loop_should_stop, we also reset that variable.
+            // If stopped by m_impl->main_loop_should_stop, we also reset that variable.
             bool value_if_stopped = true;
             const bool was_stopped_from_outside =
-                impl().main_loop_should_stop.compare_exchange_weak(value_if_stopped, false);
+                m_impl->main_loop_should_stop.compare_exchange_weak(value_if_stopped, false);
 
             if (was_stopped_from_outside || application.should_exit()) {
                 break;
@@ -175,9 +172,9 @@ void ApplicationContext::run_main_loop(IApplication& application)
 
             // Update performance info.
             {
-                std::lock_guard g{ impl().performance_info_mutex };
-                impl().performance_info.last_frame_time_seconds = frame_time_delta;
-                impl().performance_info.frames_per_second =
+                std::lock_guard g{ m_impl->performance_info_mutex };
+                m_impl->performance_info.last_frame_time_seconds = frame_time_delta;
+                m_impl->performance_info.frames_per_second =
                     1.0 /
                     (std::accumulate(frame_time_samples.begin(), frame_time_samples.end(), 0.0) /
                      frame_time_samples.size());
@@ -200,7 +197,7 @@ void ApplicationContext::run_main_loop(IApplication& application)
     // Main loop is over. Revert status boolean.
     bool expected_main_loop_is_running = true;
     const bool reverted =
-        impl().main_loop_is_running.compare_exchange_weak(expected_main_loop_is_running, false);
+        m_impl->main_loop_is_running.compare_exchange_weak(expected_main_loop_is_running, false);
     MG_ASSERT(reverted);
 
     log.message("Exiting main loop.");
@@ -208,7 +205,7 @@ void ApplicationContext::run_main_loop(IApplication& application)
 
 void ApplicationContext::stop_main_loop()
 {
-    impl().main_loop_should_stop = true;
+    m_impl->main_loop_should_stop = true;
 }
 
 } // namespace Mg

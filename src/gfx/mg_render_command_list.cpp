@@ -49,7 +49,7 @@ struct SortKey {
 } // namespace
 
 // Private data for RenderCommandProducer.
-struct RenderCommandProducerData {
+struct RenderCommandProducer::Impl {
     RenderCommandList commands;
     std::vector<SortKey> keys;
     std::vector<RenderCommand> render_commands_unsorted;
@@ -82,8 +82,8 @@ void RenderCommandProducer::add_mesh(MeshHandle mesh_handle,
 
         // Write render command to command list
         {
-            impl().m_transforms_unsorted.emplace_back(transform);
-            RenderCommand& command = impl().render_commands_unsorted.emplace_back();
+            m_impl->m_transforms_unsorted.emplace_back(transform);
+            RenderCommand& command = m_impl->render_commands_unsorted.emplace_back();
 
             command.vertex_array = mesh.vertex_array;
             command.bounding_sphere = mesh.bounding_sphere;
@@ -100,7 +100,7 @@ void RenderCommandProducer::add_skinned_mesh(MeshHandle mesh,
                                              const SkinningMatrixPalette& skinning_matrix_palette)
 {
     add_mesh(mesh, transform, material_assignment);
-    RenderCommand& command = impl().render_commands_unsorted.back();
+    RenderCommand& command = m_impl->render_commands_unsorted.back();
 
     // Keep track of where the skinning matrix palette's data resides.
     command.skinning_matrices_begin = as<uint16_t>(skinning_matrix_palette.m_start_index);
@@ -111,28 +111,26 @@ void RenderCommandProducer::add_skinned_mesh(MeshHandle mesh,
 SkinningMatrixPalette
 RenderCommandProducer::allocate_skinning_matrix_palette(const uint16_t num_joints)
 {
-    const size_t skinning_matrices_begin = impl().commands.m_skinning_matrices.size();
-    impl().commands.m_skinning_matrices.resize(skinning_matrices_begin + num_joints);
+    const size_t skinning_matrices_begin = m_impl->commands.m_skinning_matrices.size();
+    m_impl->commands.m_skinning_matrices.resize(skinning_matrices_begin + num_joints);
 
     return SkinningMatrixPalette{
-        span(impl().commands.m_skinning_matrices).subspan(skinning_matrices_begin, num_joints),
+        span(m_impl->commands.m_skinning_matrices).subspan(skinning_matrices_begin, num_joints),
         as<uint16_t>(skinning_matrices_begin)
     };
 }
 
 void RenderCommandProducer::clear() noexcept
 {
-    RenderCommandProducerData& data = impl();
+    m_impl->keys.clear();
 
-    data.keys.clear();
+    m_impl->commands.m_render_commands.clear();
+    m_impl->commands.m_m_transforms.clear();
+    m_impl->commands.m_vp_transforms.clear();
+    m_impl->commands.m_skinning_matrices.clear();
 
-    data.commands.m_render_commands.clear();
-    data.commands.m_m_transforms.clear();
-    data.commands.m_vp_transforms.clear();
-    data.commands.m_skinning_matrices.clear();
-
-    data.render_commands_unsorted.clear();
-    data.m_transforms_unsorted.clear();
+    m_impl->render_commands_unsorted.clear();
+    m_impl->m_transforms_unsorted.clear();
 }
 
 namespace { // Helpers for RenderCommandList::finalize
@@ -170,7 +168,7 @@ uint32_t render_command_fingerpint(const RenderCommand& command) noexcept
     return (material_fingerprint << 8) | mesh_fingerprint;
 }
 
-SortKey create_sort_key(const RenderCommandProducerData& data,
+SortKey create_sort_key(const RenderCommandProducer::Impl& data,
                         const ICamera& camera,
                         const size_t unsorted_command_index)
 {
@@ -190,44 +188,42 @@ SortKey create_sort_key(const RenderCommandProducerData& data,
 const RenderCommandList& RenderCommandProducer::finalize(const ICamera& camera,
                                                          SortingMode sorting_mode)
 {
-    RenderCommandProducerData& data = impl();
-
     // Create sort key sequence
-    data.keys.clear();
+    m_impl->keys.clear();
     for (size_t i = 0; i < size(); ++i) {
-        data.keys.push_back(create_sort_key(data, camera, i));
+        m_impl->keys.push_back(create_sort_key(*m_impl, camera, i));
     }
 
-    MG_ASSERT(data.keys.size() == size());
+    MG_ASSERT(m_impl->keys.size() == size());
 
     // Sort sort-key sequence
     auto cmp = (sorting_mode == SortingMode::far_to_near) ? cmp_draw_call<true>
                                                           : cmp_draw_call<false>;
-    sort(data.keys, [&](const SortKey& lhs, const SortKey& rhs) { return cmp(lhs, rhs); });
+    sort(m_impl->keys, [&](const SortKey& lhs, const SortKey& rhs) { return cmp(lhs, rhs); });
 
-    // Write out sorted render commands to data.commands.
-    data.commands.m_render_commands.reserve(size());
-    data.commands.m_m_transforms.reserve(size());
-    data.commands.m_vp_transforms.reserve(size());
+    // Write out sorted render commands to m_impl->commands.
+    m_impl->commands.m_render_commands.reserve(size());
+    m_impl->commands.m_m_transforms.reserve(size());
+    m_impl->commands.m_vp_transforms.reserve(size());
 
     const auto VP = camera.view_proj_matrix();
 
-    for (const SortKey& key : data.keys) {
-        const RenderCommand& command = data.render_commands_unsorted[key.index];
-        const glm::mat4& M = data.m_transforms_unsorted[key.index];
+    for (const SortKey& key : m_impl->keys) {
+        const RenderCommand& command = m_impl->render_commands_unsorted[key.index];
+        const glm::mat4& M = m_impl->m_transforms_unsorted[key.index];
         if (in_view(VP * M, command.bounding_sphere)) {
-            data.commands.m_render_commands.emplace_back(data.render_commands_unsorted[key.index]);
-            data.commands.m_m_transforms.emplace_back(M);
-            data.commands.m_vp_transforms.emplace_back(VP);
+            m_impl->commands.m_render_commands.emplace_back(m_impl->render_commands_unsorted[key.index]);
+            m_impl->commands.m_m_transforms.emplace_back(M);
+            m_impl->commands.m_vp_transforms.emplace_back(VP);
         }
     }
 
-    return data.commands;
+    return m_impl->commands;
 }
 
 size_t RenderCommandProducer::size() const noexcept
 {
-    return impl().render_commands_unsorted.size();
+    return m_impl->render_commands_unsorted.size();
 }
 
 } // namespace Mg::gfx

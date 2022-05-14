@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -84,7 +84,7 @@ public:
 
 } // namespace
 
-struct TextureRenderTargetData {
+struct TextureRenderTarget::Impl {
     Texture2D* colour_target{};
     Texture2D* depth_target{};
 
@@ -102,8 +102,8 @@ void TextureRenderTarget::blit(const TextureRenderTarget& from,
     MG_GFX_DEBUG_GROUP("TextureRenderTarget::with_colour_target")
     FramebufferBindGuard guard;
 
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, from.impl().fbo.handle.as_gl_id());
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, to.impl().fbo.handle.as_gl_id());
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, from.m_impl->fbo.handle.as_gl_id());
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, to.m_impl->fbo.handle.as_gl_id());
 
     const GLuint flags = (settings.colour ? GL_COLOR_BUFFER_BIT : 0u) |
                          (settings.depth ? GL_DEPTH_BUFFER_BIT : 0u) |
@@ -125,18 +125,17 @@ TextureRenderTarget::with_colour_target(Texture2D* colour_target,
     MG_GFX_DEBUG_GROUP("TextureRenderTarget::with_colour_target")
 
     auto trt = std::make_unique<TextureRenderTarget>(PrivateCtorKey{});
-    TextureRenderTargetData& data = trt->impl();
 
-    data.colour_target = colour_target;
-    data.mip_level = mip_level;
+    trt->m_impl->colour_target = colour_target;
+    trt->m_impl->mip_level = mip_level;
 
     // Create frame buffer object (FBO)
     GLuint fbo_id = 0;
     glGenFramebuffers(1, &fbo_id);
-    data.fbo.handle.set(fbo_id);
+    trt->m_impl->fbo.handle.set(fbo_id);
 
     FramebufferBindGuard fbg;
-    glBindFramebuffer(GL_FRAMEBUFFER, data.fbo.handle.as_gl_id());
+    glBindFramebuffer(GL_FRAMEBUFFER, trt->m_impl->fbo.handle.as_gl_id());
 
     // Attach texture to FBO
     const auto gl_tex_id = colour_target->handle().as_gl_id();
@@ -154,7 +153,7 @@ TextureRenderTarget::with_colour_target(Texture2D* colour_target,
                                   GL_DEPTH_STENCIL_ATTACHMENT,
                                   GL_RENDERBUFFER,
                                   depth_buffer_id);
-        data.depth_buffer_id.set(depth_buffer_id);
+        trt->m_impl->depth_buffer_id.set(depth_buffer_id);
         break;
     }
     case DepthType::None:
@@ -189,18 +188,17 @@ TextureRenderTarget::with_colour_and_depth_targets(Texture2D* colour_target,
     }
 
     auto trt = std::make_unique<TextureRenderTarget>(PrivateCtorKey{});
-    TextureRenderTargetData& data = trt->impl();
-    data.colour_target = colour_target;
-    data.depth_target = depth_target;
-    data.mip_level = mip_level;
+    trt->m_impl->colour_target = colour_target;
+    trt->m_impl->depth_target = depth_target;
+    trt->m_impl->mip_level = mip_level;
 
     // Create frame buffer object (FBO)
     GLuint fbo_id = 0;
     glGenFramebuffers(1, &fbo_id);
-    data.fbo.handle.set(fbo_id);
+    trt->m_impl->fbo.handle.set(fbo_id);
 
     FramebufferBindGuard fbg;
-    glBindFramebuffer(GL_FRAMEBUFFER, data.fbo.handle.as_gl_id());
+    glBindFramebuffer(GL_FRAMEBUFFER, trt->m_impl->fbo.handle.as_gl_id());
 
     // Attach texture to FBO
     const auto colour_id = colour_target->handle().as_gl_id();
@@ -225,29 +223,27 @@ TextureRenderTarget::with_colour_and_depth_targets(Texture2D* colour_target,
 
 TextureRenderTarget::TextureRenderTarget(PrivateCtorKey) {}
 
-TextureRenderTarget::~TextureRenderTarget() = default;
-
 FrameBufferHandle TextureRenderTarget::handle() const
 {
-    return impl().fbo.handle;
+    return m_impl->fbo.handle;
 }
 
 ImageSize TextureRenderTarget::image_size() const
 {
-    ImageSize size = impl().colour_target->image_size();
-    size.width >>= impl().mip_level;
-    size.height >>= impl().mip_level;
+    ImageSize size = m_impl->colour_target->image_size();
+    size.width >>= m_impl->mip_level;
+    size.height >>= m_impl->mip_level;
     return size;
 }
 
 Texture2D* TextureRenderTarget::colour_target() const noexcept
 {
-    return impl().colour_target;
+    return m_impl->colour_target;
 }
 
 Texture2D* TextureRenderTarget::depth_target() const noexcept
 {
-    return impl().depth_target;
+    return m_impl->depth_target;
 }
 
 } // namespace Mg::gfx

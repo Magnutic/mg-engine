@@ -200,7 +200,7 @@ ShaderCode assemble_shader_code(const ShaderCode& preamble_shader_code, const Ma
 // PipelinePool implementation
 //--------------------------------------------------------------------------------------------------
 
-struct PipelinePoolData {
+struct PipelinePool::Impl {
     using PipelineMap = FlatMap<Material::PipelineId, Pipeline, MaterialPipelineIdCmp>;
 
     PipelinePoolConfig config;
@@ -296,7 +296,7 @@ Pipeline make_pipeline_for_material(const PipelinePoolConfig& config, const Mate
     return std::move(opt_pipeline.value());
 }
 
-Pipeline& get_or_make_pipeline(PipelinePoolData& data, const Material& material)
+Pipeline& get_or_make_pipeline(PipelinePool::Impl& data, const Material& material)
 {
     const Material::PipelineId key = material.pipeline_identifier();
 
@@ -316,9 +316,9 @@ Pipeline& get_or_make_pipeline(PipelinePoolData& data, const Material& material)
 
 PipelinePool::PipelinePool(PipelinePoolConfig&& config)
 {
-    impl().config = std::move(config);
+    m_impl->config = std::move(config);
 
-    for (auto& input_location : impl().config.shared_input_layout) {
+    for (auto& input_location : m_impl->config.shared_input_layout) {
         switch (input_location.type) {
         case PipelineInputType::BufferTexture:
             [[fallthrough]];
@@ -333,26 +333,24 @@ PipelinePool::PipelinePool(PipelinePoolConfig&& config)
     }
 }
 
-PipelinePool::~PipelinePool() = default;
-
 void PipelinePool::bind_material_pipeline(const Material& material,
                                           const Pipeline::Settings& settings,
                                           PipelineBindingContext& binding_context)
 {
     MG_GFX_DEBUG_GROUP("PipelinePool::bind_material_pipeline")
 
-    const Pipeline& pipeline = get_or_make_pipeline(impl(), material);
+    const Pipeline& pipeline = get_or_make_pipeline(*m_impl, material);
     binding_context.bind_pipeline(pipeline, settings);
 
     // Upload material parameter values to MaterialParams uniform buffer.
-    impl().material_params_ubo.set_data(material.material_params_buffer());
+    m_impl->material_params_ubo.set_data(material.material_params_buffer());
 
     // Set up input bindings for material parameters; one for the MaterialParams uniform buffer and
     // the material's up-to-eight samplers.
     small_vector<PipelineInputBinding, 9> material_input_bindings;
 
     material_input_bindings.push_back(
-        { impl().config.material_params_ubo_slot, impl().material_params_ubo });
+        { m_impl->config.material_params_ubo_slot, m_impl->material_params_ubo });
 
     for (const auto& [i, sampler] : enumerate<uint32_t>(material.samplers())) {
         material_input_bindings.push_back({ i, sampler.texture });
@@ -364,19 +362,19 @@ void PipelinePool::bind_material_pipeline(const Material& material,
 void PipelinePool::prepare_material_pipeline(const Material& material)
 {
     MG_GFX_DEBUG_GROUP("PipelinePool::prepare_material_pipeline")
-    get_or_make_pipeline(impl(), material);
+    get_or_make_pipeline(*m_impl, material);
 }
 
 void PipelinePool::drop_pipelines() noexcept
 {
-    impl().pipelines.clear();
+    m_impl->pipelines.clear();
 }
 
 void PipelinePool::drop_pipeline(const Material& material) noexcept
 {
-    const auto it = impl().pipelines.find(material.pipeline_identifier());
-    if (it != impl().pipelines.end()) {
-        impl().pipelines.erase(it);
+    const auto it = m_impl->pipelines.find(material.pipeline_identifier());
+    if (it != m_impl->pipelines.end()) {
+        m_impl->pipelines.erase(it);
     }
 }
 

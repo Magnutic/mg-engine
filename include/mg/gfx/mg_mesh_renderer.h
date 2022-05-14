@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -12,8 +12,8 @@
 
 #include "mg/gfx/mg_light_grid_config.h"
 #include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_simple_pimpl.h"
 
 namespace Mg::gfx {
 
@@ -23,20 +23,14 @@ class IRenderTarget;
 class RenderCommandList;
 class Material;
 
-struct MeshRendererData;
-
 struct RenderParameters {
     float current_time;
     float camera_exposure;
 };
 
-class MeshRenderer : PImplMixin<MeshRendererData> {
+class MeshRenderer {
 public:
     MeshRenderer(const LightGridConfig& light_grid_config);
-    ~MeshRenderer();
-
-    MG_MAKE_DEFAULT_MOVABLE(MeshRenderer);
-    MG_MAKE_NON_COPYABLE(MeshRenderer);
 
     /** Render the supplied list of meshes. */
     void render(const ICamera& cam,
@@ -71,6 +65,11 @@ public:
      * from source on the next use. This is useful for hot-reloading of shader assets.
      */
     void drop_shaders();
+
+    struct Impl;
+
+private:
+    ImplPtr<Impl> m_impl;
 };
 
 } // namespace Mg::gfx

@@ -81,7 +81,7 @@ Config::Config(std::string_view filepath)
     read_from_file(filepath);
 }
 
-struct ConfigData {
+struct Config::Impl {
     ConfigVariable* at(Identifier key)
     {
         auto it = m_values.find(key);
@@ -98,7 +98,7 @@ struct ConfigData {
 };
 
 // Generic implementation of Config::set_default_value
-template<typename T> void _set_default_value(ConfigData& impl, Identifier key, const T& value)
+template<typename T> void _set_default_value(Config::Impl& impl, Identifier key, const T& value)
 {
     auto p_cvar = impl.at(key);
     if (p_cvar == nullptr) impl.m_values[key].set(value);
@@ -106,16 +106,16 @@ template<typename T> void _set_default_value(ConfigData& impl, Identifier key, c
 
 void Config::set_default_value(Identifier key, std::string_view value)
 {
-    _set_default_value(impl(), key, value);
+    _set_default_value(*m_impl, key, value);
 }
 
 void Config::_set_default_value_numeric(Identifier key, double value)
 {
-    _set_default_value(impl(), key, value);
+    _set_default_value(*m_impl, key, value);
 }
 
 // Generic implementation of Config::set_value
-template<typename T> void _set_value(ConfigData& impl, Identifier key, const T& value)
+template<typename T> void _set_value(Config::Impl& impl, Identifier key, const T& value)
 {
     auto p_cvar = impl.at(key);
     if (p_cvar != nullptr) {
@@ -128,17 +128,17 @@ template<typename T> void _set_value(ConfigData& impl, Identifier key, const T& 
 
 void Config::set_value(Identifier key, std::string_view value)
 {
-    _set_value(impl(), key, value);
+    _set_value(*m_impl, key, value);
 }
 
 void Config::_set_value_numeric(Identifier key, double value)
 {
-    _set_value(impl(), key, value);
+    _set_value(*m_impl, key, value);
 }
 
 template<typename NumT> NumT Config::as(Identifier key) const
 {
-    const auto& v = impl().at(key);
+    const auto& v = m_impl->at(key);
     MG_ASSERT(v != nullptr);
 
     if constexpr (std::is_integral_v<NumT>) {
@@ -165,14 +165,14 @@ template double Config::as<double>(Identifier) const;
 
 std::string_view Config::as_string(Identifier key) const
 {
-    auto p_cvar = impl().at(key);
+    auto p_cvar = m_impl->at(key);
     MG_ASSERT(p_cvar != nullptr);
     return p_cvar->value().string;
 }
 
 std::string Config::format_assignment_line(Identifier key) const
 {
-    auto p_cvar = impl().at(key);
+    auto p_cvar = m_impl->at(key);
     MG_ASSERT(p_cvar != nullptr);
 
     std::string value = p_cvar->value().string;
@@ -311,7 +311,7 @@ void Config::write_to_file(std::string_view filepath) const
     std::vector<Line> new_lines;
 
     // Format new config lines
-    for (const auto& [key, value] : impl().m_values) {
+    for (const auto& [key, value] : m_impl->m_values) {
         new_lines.emplace_back(format_assignment_line(key));
     }
 

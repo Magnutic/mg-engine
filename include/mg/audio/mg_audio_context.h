@@ -12,8 +12,8 @@
 
 #include "mg/audio/mg_sound_buffer_handle.h"
 #include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_simple_pimpl.h"
 
 #include <glm/vec3.hpp>
 
@@ -34,10 +34,8 @@ struct ListenerState {
     glm::vec3 up = {};
 };
 
-struct AudioContextData;
-
 /** Initializes and owns audio system context. */
-class AudioContext : PImplMixin<AudioContextData> {
+class AudioContext {
     friend class SoundBufferHandle;
     friend class SoundSource;
     struct ConstructKey {};
@@ -71,6 +69,9 @@ public:
     void check_for_errors() const;
 
 private:
+    struct Impl;
+    ImplPtr<Impl> m_impl;
+
     // Used by SoundSource
     void link_buffer_to_source(uintptr_t sound_source_id, const SoundBufferHandle& buffer);
 

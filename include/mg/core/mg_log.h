@@ -11,8 +11,8 @@
 
 #pragma once
 
+#include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_simple_pimpl.h"
 
 #include <fmt/core.h>
 
@@ -28,10 +28,8 @@
 
 namespace Mg {
 
-class LogImpl;
-
 /** Outputs messages with different priorities to console and file. */
-class Log : PImplMixin<LogImpl> {
+class Log {
 public:
     /** Message priorities, decides which messages should be included in file
      * and console output.
@@ -119,6 +117,9 @@ public:
 private:
     /** Writes message with priority prio. */
     void write_impl(Prio prio, std::string msg);
+
+    class Impl;
+    ImplPtr<Impl> m_impl;
 };
 
 //--------------------------------------------------------------------------------------------------

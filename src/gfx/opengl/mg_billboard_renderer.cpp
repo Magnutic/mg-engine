@@ -175,7 +175,7 @@ void BillboardRenderList::sort_farthest_first(const ICamera& camera) noexcept
 //--------------------------------------------------------------------------------------------------
 
 /** Internal data for BillboardRenderer. */
-struct BillboardRendererData {
+struct BillboardRenderer::Impl {
     UniformBuffer camera_ubo{ sizeof(CameraBlock) };
 
     PipelinePool pipeline_pool = make_billboard_pipeline_factory();
@@ -190,7 +190,7 @@ struct BillboardRendererData {
 
 namespace {
 // Update vertex buffer to match the new set of billboards
-void update_buffer(BillboardRendererData& data, span<const Billboard> billboards)
+void update_buffer(BillboardRenderer::Impl& data, span<const Billboard> billboards)
 {
     glBindBuffer(GL_ARRAY_BUFFER, data.vbo.as_gl_id());
 
@@ -240,16 +240,16 @@ BillboardRenderer::BillboardRenderer()
 
     glBindVertexArray(0);
 
-    impl().vao.set(vao_id);
-    impl().vbo.set(vbo_id);
+    m_impl->vao.set(vao_id);
+    m_impl->vbo.set(vbo_id);
 }
 
 BillboardRenderer::~BillboardRenderer()
 {
     MG_GFX_DEBUG_GROUP("destroy BillboardRenderer")
 
-    const auto vao_id = impl().vao.as_gl_id();
-    const auto vbo_id = impl().vbo.as_gl_id();
+    const auto vao_id = m_impl->vao.as_gl_id();
+    const auto vbo_id = m_impl->vbo.as_gl_id();
     glDeleteVertexArrays(1, &vao_id);
     glDeleteBuffers(1, &vbo_id);
 }
@@ -266,7 +266,7 @@ void BillboardRenderer::render(const IRenderTarget& render_target,
     }
 
     const auto& billboards = render_list.view();
-    update_buffer(impl(), billboards);
+    update_buffer(*m_impl, billboards);
 
     {
         CameraBlock camera_block{};
@@ -275,19 +275,19 @@ void BillboardRenderer::render(const IRenderTarget& render_target,
         camera_block.cam_pos_xyz_aspect_ratio_w = glm::vec4(camera.get_position(),
                                                             camera.aspect_ratio());
 
-        impl().camera_ubo.set_data(byte_representation(camera_block));
+        m_impl->camera_ubo.set_data(byte_representation(camera_block));
     }
 
-    const std::array shared_inputs = { PipelineInputBinding(k_camera_ubo_slot, impl().camera_ubo) };
+    const std::array shared_inputs = { PipelineInputBinding(k_camera_ubo_slot, m_impl->camera_ubo) };
     Pipeline::bind_shared_inputs(shared_inputs);
 
     PipelineBindingContext binding_context;
 
     Pipeline::Settings pipeline_settings;
-    pipeline_settings.vertex_array = impl().vao;
+    pipeline_settings.vertex_array = m_impl->vao;
     pipeline_settings.target_framebuffer = render_target.handle();
     pipeline_settings.viewport_size = render_target.image_size();
-    impl().pipeline_pool.bind_material_pipeline(material, pipeline_settings, binding_context);
+    m_impl->pipeline_pool.bind_material_pipeline(material, pipeline_settings, binding_context);
 
     glDrawArrays(GL_POINTS, 0, as<GLint>(billboards.size()));
 }
@@ -295,7 +295,7 @@ void BillboardRenderer::render(const IRenderTarget& render_target,
 void BillboardRenderer::drop_shaders() noexcept
 {
     MG_GFX_DEBUG_GROUP("BillboardRenderer::drop_shaders")
-    impl().pipeline_pool.drop_pipelines();
+    m_impl->pipeline_pool.drop_pipelines();
 }
 
 } // namespace Mg::gfx

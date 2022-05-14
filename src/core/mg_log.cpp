@@ -71,9 +71,9 @@ std::string format_message(const LogItem& item, bool include_time_stamp)
 
 } // namespace
 
-class LogImpl {
+class Log::Impl {
 public:
-    LogImpl(std::string_view file_path_,
+    Impl(std::string_view file_path_,
             Log::Prio console_verbosity_,
             Log::Prio log_file_verbosity_,
             const size_t num_history_lines_)
@@ -99,15 +99,15 @@ public:
         m_log_thread = std::thread([this] { run_loop(); });
     }
 
-    ~LogImpl()
+    ~Impl()
     {
         m_is_exiting = true;
         m_queue_condvar.notify_one();
         m_log_thread.join();
     }
 
-    MG_MAKE_NON_COPYABLE(LogImpl);
-    MG_MAKE_NON_MOVABLE(LogImpl);
+    MG_MAKE_NON_COPYABLE(Impl);
+    MG_MAKE_NON_MOVABLE(Impl);
 
     void enqueue(LogItem&& log_item)
     {
@@ -219,7 +219,7 @@ Log::Log(std::string_view file_path,
          Prio console_verbosity,
          Prio log_file_verbosity,
          const size_t num_history_lines)
-    : PImplMixin(file_path, console_verbosity, log_file_verbosity, num_history_lines)
+    : m_impl(file_path, console_verbosity, log_file_verbosity, num_history_lines)
 {}
 
 Log::~Log() = default;
@@ -227,38 +227,38 @@ Log::~Log() = default;
 /** Set verbosity for console output */
 void Log::set_console_verbosity(Prio prio) noexcept
 {
-    impl().console_verbosity = prio;
+    m_impl->console_verbosity = prio;
 }
 
 /** Set verbosity for log file output */
 void Log::set_file_verbosity(Prio prio) noexcept
 {
-    impl().log_file_verbosity = prio;
+    m_impl->log_file_verbosity = prio;
 }
 
 Log::GetVerbosityReturn Log::get_verbosity() const noexcept
 {
-    return { impl().console_verbosity, impl().log_file_verbosity };
+    return { m_impl->console_verbosity, m_impl->log_file_verbosity };
 }
 
 void Log::flush()
 {
-    impl().flush();
+    m_impl->flush();
 }
 
 std::string_view Log::file_path() const noexcept
 {
-    return impl().file_path;
+    return m_impl->file_path;
 }
 
 std::vector<std::string> Log::get_history()
 {
     std::vector<std::string> result;
-    result.resize(impl().history.size());
+    result.resize(m_impl->history.size());
 
-    for (size_t i = 0; i < impl().history.size(); ++i) {
-        const size_t source_index = (impl().last_history_index + i) % impl().history.size();
-        result[i] = impl().history[source_index];
+    for (size_t i = 0; i < m_impl->history.size(); ++i) {
+        const size_t source_index = (m_impl->last_history_index + i) % m_impl->history.size();
+        result[i] = m_impl->history[source_index];
     }
 
     return result;
@@ -266,7 +266,7 @@ std::vector<std::string> Log::get_history()
 
 void Log::write_impl(Prio prio, std::string msg)
 {
-    impl().enqueue({ prio, std::move(msg) });
+    m_impl->enqueue({ prio, std::move(msg) });
 }
 
 //--------------------------------------------------------------------------------------------------

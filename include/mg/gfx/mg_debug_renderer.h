@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -12,8 +12,8 @@
 
 #include "mg/core/mg_rotation.h"
 #include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_simple_pimpl.h"
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
@@ -25,15 +25,13 @@ class IRenderTarget;
 class Skeleton;
 struct SkeletonPose;
 
-struct DebugRendererData;
-
 /** Renderer for drawing debug geometry.
  * This renderer is relatively inefficient and is intended for debugging visualization.
  */
-class DebugRenderer : PImplMixin<DebugRendererData> {
+class DebugRenderer {
 public:
     DebugRenderer();
-    ~DebugRenderer();
+    ~DebugRenderer() = default;
 
     MG_MAKE_NON_COPYABLE(DebugRenderer);
     MG_MAKE_NON_MOVABLE(DebugRenderer);
@@ -72,7 +70,7 @@ public:
                    const glm::vec4& colour,
                    const float width = 1.0f)
     {
-        draw_line(render_target, view_proj, {start, end}, colour, width);
+        draw_line(render_target, view_proj, { start, end }, colour, width);
     }
 
     void draw_bones(const IRenderTarget& render_target,
@@ -85,6 +83,10 @@ public:
                            const glm::mat4& view_projection,
                            const glm::mat4& view_projection_frustum,
                            float max_distance = 0.0f);
+
+private:
+    struct Impl;
+    ImplPtr<Impl> m_impl;
 };
 
 struct DebugRenderQueueData;
@@ -93,10 +95,10 @@ struct DebugRenderQueueData;
  * rendering pipeline. This makes it easier to set up debug rendering from different points in the
  * codebase.
  */
-class DebugRenderQueue : PImplMixin<DebugRenderQueueData> {
+class DebugRenderQueue {
 public:
     DebugRenderQueue();
-    ~DebugRenderQueue();
+    ~DebugRenderQueue() = default;
 
     MG_MAKE_NON_COPYABLE(DebugRenderQueue);
     MG_MAKE_NON_MOVABLE(DebugRenderQueue);
@@ -112,8 +114,7 @@ public:
                    const glm::vec4& colour,
                    const float width = 1.0f)
     {
-        std::array<glm::vec3, 2> points = { start, end };
-        draw_line(points, colour, width);
+        draw_line({ start, end }, colour, width);
     }
 
     void dispatch(const IRenderTarget& render_target,
@@ -121,6 +122,10 @@ public:
                   const glm::mat4& view_proj_matrix);
 
     void clear();
+
+private:
+    struct Impl;
+    ImplPtr<Impl> m_impl;
 };
 
 inline DebugRenderQueue& get_debug_render_queue()

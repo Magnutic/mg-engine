@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2021, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -12,8 +12,8 @@
 
 #pragma once
 
+#include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_simple_pimpl.h"
 
 #include <string_view>
 
@@ -93,17 +93,15 @@ struct PerformanceInfo {
     double last_frame_time_seconds = 0.0;
 };
 
-struct ApplicationContextData;
-
 /* The `ApplicationContext` is a framework for running an Mg Engine application, holding a window,
  * configuration, and handling the application update loops. It handles timing for logical time step
  * updates ("game ticks") and rendering events (frames).
  * @seealso IApplication
  */
-class ApplicationContext : PImplMixin<ApplicationContextData> {
+class ApplicationContext {
 public:
     explicit ApplicationContext(std::string_view config_file_path);
-    ~ApplicationContext();
+    ~ApplicationContext() = default;
 
     MG_MAKE_NON_COPYABLE(ApplicationContext);
     MG_MAKE_NON_MOVABLE(ApplicationContext);
@@ -126,6 +124,10 @@ public:
 
     /** May be called from another thread to stop a running loop. */
     void stop_main_loop();
+
+private:
+    struct Impl;
+    ImplPtr<Impl> m_impl;
 };
 
 } // namespace Mg

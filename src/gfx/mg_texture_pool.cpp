@@ -33,7 +33,7 @@ struct TextureNode {
 
 } // namespace
 
-struct TexturePoolData {
+struct TexturePool::Impl {
     // The resource cache from which we will load textures.
     std::shared_ptr<ResourceCache> resource_cache;
 
@@ -91,8 +91,8 @@ TextureSettings texture_settings_from_filename(const Identifier& id)
     return settings;
 }
 
-TexturePoolData::HandleMap::iterator try_insert_into_handle_map(TexturePoolData& data,
-                                                                Identifier key)
+TexturePool::Impl::HandleMap::iterator try_insert_into_handle_map(TexturePool::Impl& data,
+                                                                  Identifier key)
 {
     const auto [map_it, inserted] = data.texture_map.insert({ key, { nullptr, {} } });
     if (inserted) {
@@ -102,7 +102,7 @@ TexturePoolData::HandleMap::iterator try_insert_into_handle_map(TexturePoolData&
                         key.str_view() };
 }
 
-Texture2D* create_texture_impl(TexturePoolData& data,
+Texture2D* create_texture_impl(TexturePool::Impl& data,
                                const Identifier id,
                                const std::function<Texture2D()>& texture_create_func,
                                const TextureSettings& settings)
@@ -120,7 +120,7 @@ Texture2D* create_texture_impl(TexturePoolData& data,
 TexturePool::TexturePool(std::shared_ptr<ResourceCache> resource_cache)
 {
     MG_ASSERT(resource_cache != nullptr);
-    impl().resource_cache = std::move(resource_cache);
+    m_impl->resource_cache = std::move(resource_cache);
 }
 
 TexturePool::~TexturePool() = default;
@@ -131,7 +131,7 @@ Texture2D* TexturePool::load(const Identifier& texture_id)
         return result;
     }
 
-    auto access_guard = impl().resource_cache->access_resource<TextureResource>(texture_id);
+    auto access_guard = m_impl->resource_cache->access_resource<TextureResource>(texture_id);
     const auto settings = texture_settings_from_filename(texture_id);
     return from_resource(*access_guard, settings);
 }
@@ -143,20 +143,20 @@ Texture2D* TexturePool::from_resource(const TextureResource& resource,
     auto generate_texture = [&resource, &settings] {
         return Texture2D::from_texture_resource(resource, settings);
     };
-    return create_texture_impl(impl(), resource.resource_id(), generate_texture, settings);
+    return create_texture_impl(*m_impl, resource.resource_id(), generate_texture, settings);
 }
 
 Texture2D* TexturePool::create_render_target(const RenderTargetParams& params)
 {
     MG_GFX_DEBUG_GROUP("TexturePool::create_render_target")
     auto generate_texture = [&params] { return Texture2D::render_target(params); };
-    return create_texture_impl(impl(), params.render_target_id, generate_texture, {});
+    return create_texture_impl(*m_impl, params.render_target_id, generate_texture, {});
 }
 
 Texture2D* TexturePool::get(const Identifier& texture_id) const
 {
-    const auto it = impl().texture_map.find(texture_id);
-    if (it == impl().texture_map.end()) {
+    const auto it = m_impl->texture_map.find(texture_id);
+    if (it == m_impl->texture_map.end()) {
         return nullptr;
     }
     return it->second.instance;
@@ -166,10 +166,10 @@ void TexturePool::update(const TextureResource& resource)
 {
     MG_GFX_DEBUG_GROUP("TexturePool::update")
     const Identifier resource_id = resource.resource_id();
-    const auto it = impl().texture_map.find(resource_id);
+    const auto it = m_impl->texture_map.find(resource_id);
 
     // If not found, then we do not have a texture using the updated resource, so ignore.
-    if (it == impl().texture_map.end()) {
+    if (it == m_impl->texture_map.end()) {
         return;
     }
 
@@ -184,10 +184,10 @@ void TexturePool::update(const TextureResource& resource)
 void TexturePool::destroy(Texture2D* texture)
 {
     MG_GFX_DEBUG_GROUP("TexturePool::destroy")
-    const auto it = impl().textures.get_iterator_from_pointer(texture);
+    const auto it = m_impl->textures.get_iterator_from_pointer(texture);
     const Identifier texture_id = it->id();
-    impl().textures.erase(it);
-    impl().texture_map.erase(texture_id);
+    m_impl->textures.erase(it);
+    m_impl->texture_map.erase(texture_id);
 }
 
 namespace {
@@ -259,7 +259,7 @@ Texture2D* TexturePool::get_default_texture(DefaultTexture type)
         return Texture2D::from_rgba8_buffer(id, buffer, 2, 2, settings);
     };
 
-    return create_texture_impl(impl(), id, generate_texture, settings);
+    return create_texture_impl(*m_impl, id, generate_texture, settings);
 };
 
 } // namespace Mg::gfx

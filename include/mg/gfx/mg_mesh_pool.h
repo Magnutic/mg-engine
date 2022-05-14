@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -13,9 +13,9 @@
 #include "mg/gfx/mg_mesh_data.h"
 #include "mg/gfx/mg_mesh_handle.h"
 #include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_optional.h"
-#include "mg/utils/mg_simple_pimpl.h"
 
 #include <cstddef>
 
@@ -25,45 +25,7 @@ class MeshResource;
 
 namespace Mg::gfx {
 
-class MeshBufferImpl;
-
-/** MeshBuffer allows creating meshes within pre-allocated buffers on the GPU. This is useful for
- * performance reasons -- keeping meshes that are often used together in the same buffer may result
- * in better performance.
- *
- * Construct using Mg::MeshPool::new_mesh_buffer()
- */
-class MeshBuffer : PImplMixin<MeshBufferImpl> {
-public:
-    MG_MAKE_NON_COPYABLE(MeshBuffer);
-    MG_MAKE_DEFAULT_MOVABLE(MeshBuffer);
-    ~MeshBuffer();
-
-    enum class ReturnCode {
-        Success,
-        Vertex_buffer_full,
-        Index_buffer_full,
-        Influences_buffer_full
-    };
-
-    struct CreateReturn {
-        Opt<MeshHandle> opt_mesh;
-        ReturnCode return_code;
-    };
-
-    /** Try to create a new mesh in this buffer using the given mesh resource. */
-    CreateReturn create_in_buffer(const MeshResource& resource);
-
-    /** Try to create a new mesh in this buffer using the given mesh data. */
-    CreateReturn create_in_buffer(const Mesh::MeshDataView& mesh_data, Identifier name);
-
-
-private:
-    friend class MeshPool;
-    using PImplMixin::PImplMixin; // Constructor forwarding to pImpl class constructor.
-};
-
-//--------------------------------------------------------------------------------------------------
+class MeshBuffer;
 
 /** Strongly typed size type for vertex buffers, specified in number of bytes.
  * Can be cast to and from size_t using static_cast.
@@ -83,16 +45,10 @@ enum class IndexBufferSize : size_t;
  */
 enum class InfluencesBufferSize : size_t;
 
-class MeshPoolImpl;
-
 /** Creates, stores, and updates meshes. */
-class MeshPool : PImplMixin<MeshPoolImpl> {
+class MeshPool {
 public:
     MeshPool();
-    ~MeshPool();
-
-    MG_MAKE_NON_COPYABLE(MeshPool);
-    MG_MAKE_DEFAULT_MOVABLE(MeshPool);
 
     /** Create a new mesh using the given mesh resource. */
     MeshHandle create(const MeshResource& mesh_res);
@@ -121,6 +77,52 @@ public:
                                IndexBufferSize index_buffer_size,
                                InfluencesBufferSize influences_buffer_size = InfluencesBufferSize{
                                    0 });
+
+    class Impl;
+
+private:
+    ImplPtr<Impl> m_impl;
+};
+
+//--------------------------------------------------------------------------------------------------
+
+/** MeshBuffer allows creating meshes within pre-allocated buffers on the GPU. This is useful for
+ * performance reasons -- keeping meshes that are often used together in the same buffer may result
+ * in better performance.
+ *
+ * Construct using Mg::MeshPool::new_mesh_buffer()
+ */
+class MeshBuffer {
+public:
+    enum class ReturnCode {
+        Success,
+        Vertex_buffer_full,
+        Index_buffer_full,
+        Influences_buffer_full
+    };
+
+    struct CreateReturn {
+        Opt<MeshHandle> opt_mesh;
+        ReturnCode return_code;
+    };
+
+    /** Try to create a new mesh in this buffer using the given mesh resource. */
+    CreateReturn create_in_buffer(const MeshResource& resource);
+
+    /** Try to create a new mesh in this buffer using the given mesh data. */
+    CreateReturn create_in_buffer(const Mesh::MeshDataView& mesh_data, Identifier name);
+
+    class Impl;
+
+private:
+    friend class MeshPool;
+
+    MeshBuffer(MeshPool::Impl& mesh_pool,
+               VertexBufferSize vertex_buffer_size,
+               IndexBufferSize index_buffer_size,
+               InfluencesBufferSize influences_buffer_size);
+
+    ImplPtr<Impl> m_impl;
 };
 
 } // namespace Mg::gfx

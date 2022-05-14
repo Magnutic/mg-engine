@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2021, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -14,9 +14,9 @@
 #include "mg/gfx/mg_camera.h"
 #include "mg/gfx/mg_render_target.h"
 #include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_optional.h"
-#include "mg/utils/mg_simple_pimpl.h"
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
@@ -409,9 +409,7 @@ struct RayHit {
     float hit_fraction = 0.0f;
 };
 
-struct WorldData;
-
-class World : PImplMixin<WorldData> {
+class World {
 public:
     World();
     ~World();
@@ -520,6 +518,11 @@ public:
     void draw_debug(const gfx::IRenderTarget& render_target,
                     gfx::DebugRenderer& debug_renderer,
                     const glm::mat4& view_proj);
+
+    struct Impl;
+
+private:
+    ImplPtr<Impl> m_impl;
 };
 
 inline Opt<DynamicBodyHandle> PhysicsBodyHandle::as_dynamic_body() const

@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -33,7 +33,7 @@ float InputSource::state() const
     return m_device->state(m_id);
 }
 
-struct InputMapData {
+struct InputMap::Impl {
     std::unordered_map<Identifier, InputSource> commands;
     std::unordered_map<Identifier, State> command_states;
 };
@@ -44,14 +44,14 @@ InputMap::~InputMap() = default;
 
 void InputMap::bind(Identifier command, InputSource input_id)
 {
-    impl().commands.insert_or_assign(command, input_id);
-    impl().command_states.insert_or_assign(command, State{ 0.0f, 0.0f });
+    m_impl->commands.insert_or_assign(command, input_id);
+    m_impl->command_states.insert_or_assign(command, State{ 0.0f, 0.0f });
 }
 
 void InputMap::unbind(Identifier command)
 {
-    if (auto it = impl().commands.find(command); it != impl().commands.end()) {
-        impl().commands.erase(it);
+    if (auto it = m_impl->commands.find(command); it != m_impl->commands.end()) {
+        m_impl->commands.erase(it);
         return;
     }
 
@@ -63,15 +63,15 @@ void InputMap::unbind(Identifier command)
 
 InputSource InputMap::binding(Identifier command) const
 {
-    return impl().commands.at(command);
+    return m_impl->commands.at(command);
 }
 
 std::vector<Identifier> InputMap::commands() const
 {
     std::vector<Identifier> ret_val;
-    ret_val.reserve(impl().commands.size());
+    ret_val.reserve(m_impl->commands.size());
 
-    for (auto&& p : impl().commands) {
+    for (auto&& p : m_impl->commands) {
         ret_val.push_back(p.first);
     }
 
@@ -81,9 +81,9 @@ std::vector<Identifier> InputMap::commands() const
 void InputMap::update()
 {
     refresh();
-    for (auto& [id, state] : impl().command_states) {
+    for (auto& [id, state] : m_impl->command_states) {
         state.prev_state = state.current_state;
-        state.current_state = impl().commands.at(id).state();
+        state.current_state = m_impl->commands.at(id).state();
 
         // Check for missed states B when going from A -> B -> A in one update.
         // (This can only happen if `refresh` was called between `update`s).
@@ -99,8 +99,8 @@ void InputMap::update()
 
 void InputMap::refresh()
 {
-    for (auto& [id, state] : impl().command_states) {
-        const float new_state = impl().commands.at(id).state();
+    for (auto& [id, state] : m_impl->command_states) {
+        const float new_state = m_impl->commands.at(id).state();
         if (std::abs(new_state - state.current_state) > state.largest_diff) {
             state.largest_diff = new_state;
         }
@@ -109,12 +109,12 @@ void InputMap::refresh()
 
 float InputMap::state(Identifier command) const
 {
-    return impl().command_states.at(command).current_state;
+    return m_impl->command_states.at(command).current_state;
 }
 
 float InputMap::prev_state(Identifier command) const
 {
-    return impl().command_states.at(command).prev_state;
+    return m_impl->command_states.at(command).prev_state;
 }
 
 bool InputMap::is_held(Identifier command) const
@@ -124,14 +124,14 @@ bool InputMap::is_held(Identifier command) const
 
 bool InputMap::was_pressed(Identifier command) const
 {
-    auto& state = impl().command_states.at(command);
+    auto& state = m_impl->command_states.at(command);
     return std::abs(state.prev_state) < k_is_pressed_threshold &&
            std::abs(state.current_state) >= k_is_pressed_threshold;
 }
 
 bool InputMap::was_released(Identifier command) const
 {
-    auto& state = impl().command_states.at(command);
+    auto& state = m_impl->command_states.at(command);
     return std::abs(state.prev_state) >= k_is_pressed_threshold &&
            std::abs(state.current_state) < k_is_pressed_threshold;
 }

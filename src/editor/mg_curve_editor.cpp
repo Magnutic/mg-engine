@@ -357,9 +357,9 @@ bool curve_editor_widget(const CurveEditorSettings& settings,
     }
 }
 
-class CurveEditorImpl {
+class CurveEditor::Impl {
 public:
-    explicit CurveEditorImpl(const Window& window, const CurveEditorSettings& settings)
+    explicit Impl(const Window& window, const CurveEditorSettings& settings)
         : m_gui(window), m_settings(settings)
     {}
 
@@ -389,14 +389,12 @@ private:
 };
 
 CurveEditor::CurveEditor(const Window& window, const CurveEditorSettings& settings)
-    : PImplMixin(window, settings)
+    : m_impl(window, settings)
 {}
-
-CurveEditor::~CurveEditor() = default;
 
 void CurveEditor::update(Curve& curve)
 {
-    impl().update(curve);
+    m_impl->update(curve);
 }
 
 } // namespace Mg::editor

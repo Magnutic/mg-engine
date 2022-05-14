@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -15,9 +15,9 @@
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/resource_cache/mg_resource_handle.h"
 #include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_optional.h"
-#include "mg/utils/mg_simple_pimpl.h"
 
 #include <string_view>
 
@@ -80,9 +80,7 @@ private:
     size_t m_num_glyphs;
 };
 
-struct BitmapFontData;
-
-class BitmapFont : PImplMixin<BitmapFontData> {
+class BitmapFont {
 public:
     explicit BitmapFont(ResourceHandle<FontResource> font,
                         int font_size_pixels,
@@ -104,6 +102,11 @@ public:
     span<const UnicodeRange> contained_ranges() const;
 
     int font_size_pixels() const;
+
+    struct Impl;
+
+private:
+    ImplPtr<Impl> m_impl;
 };
 
 } // namespace Mg::gfx

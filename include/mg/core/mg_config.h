@@ -13,7 +13,7 @@
 
 #include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_simple_pimpl.h"
+#include "mg/utils/mg_impl_ptr.h"
 
 #include <cstdint>
 #include <string_view>
@@ -21,15 +21,13 @@
 
 namespace Mg {
 
-struct ConfigData;
-
 /** Config holds a collection of dynamically-typed configuration variables.
  * Configuration variables can be used as strings or numeric types.
  *
  * Config attempts to automatically convert between string and numeric values, but if conversion
  * from string to numeric fails, reading the value as numeric results in 0.
  */
-class Config : PImplMixin<ConfigData> {
+class Config {
 public:
     Config();
     ~Config();
@@ -96,7 +94,11 @@ public:
     /** Writes to the given config file. */
     void write_to_file(std::string_view filepath) const;
 
+    struct Impl;
+
 private:
+    ImplPtr<Impl> m_impl;
+
     void _set_default_value_numeric(Identifier key, double value);
     void _set_value_numeric(Identifier key, double value);
 };
