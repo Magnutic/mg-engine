@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2021, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -17,8 +17,6 @@
 #include <glm/vec3.hpp>
 
 namespace Mg::gfx::Mesh {
-
-// TODO store animation length, tick rate (or normalize timings on conversion)
 
 struct PositionKey {
     double time;
