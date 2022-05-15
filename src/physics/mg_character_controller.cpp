@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2021, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -444,6 +444,8 @@ void CharacterController::horizontal_step(const vec3& step)
 
 void CharacterController::step_down()
 {
+    m_velocity_added_by_moving_surface = glm::vec3(0.0f);
+
     if (!collision_enabled) {
         return;
     }
@@ -555,7 +557,6 @@ void CharacterController::step_down()
             m_velocity_added_by_moving_surface = dynamic_body->velocity() +
                                                  glm::cross(dynamic_body->angular_velocity(),
                                                             relative_position);
-            m_current_position += m_time_step * m_velocity_added_by_moving_surface;
         }
 
         m_vertical_velocity = 0.0f;
@@ -656,7 +657,6 @@ void CharacterController::update(const float time_step)
     m_last_position = m_current_position;
     m_current_position = collision_body().get_position();
     m_target_position = m_current_position;
-    m_velocity_added_by_moving_surface = vec3(0.0f);
 
     m_was_on_ground = is_on_ground();
 
@@ -668,7 +668,7 @@ void CharacterController::update(const float time_step)
     m_vertical_step = m_vertical_velocity * m_time_step;
 
     step_up();
-    horizontal_step(m_desired_velocity * m_time_step);
+    horizontal_step((m_desired_velocity + m_velocity_added_by_moving_surface) * m_time_step);
     step_down();
 
     recover_from_penetration();
