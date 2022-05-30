@@ -36,6 +36,7 @@
 #include <fmt/core.h>
 
 #include <numeric>
+#include <variant>
 
 namespace {
 
@@ -606,7 +607,23 @@ Model Scene::load_model(Mg::Identifier mesh_file,
     }
 
     // Assign materials to submeshes.
-    for (auto&& [submesh_index, material_fname] : material_files) {
+    for (auto&& [submesh_index_or_name, material_fname] : material_files) {
+        size_t submesh_index = 0;
+
+        if (std::holds_alternative<size_t>(submesh_index_or_name)) {
+            submesh_index = std::get<size_t>(submesh_index_or_name);
+        }
+        else {
+            const auto submesh_name = std::get<Mg::Identifier>(submesh_index_or_name);
+            submesh_index = access->get_submesh_index(submesh_name)
+                                .or_else([&] {
+                                    Mg::log.warning("No submesh named {} in mesh {}.",
+                                                    submesh_name.str_view(),
+                                                    mesh_file.str_view());
+                                })
+                                .value_or(0);
+        }
+
         model.material_assignments.push_back(
             { submesh_index, load_material(material_fname, options) });
     }
@@ -845,14 +862,14 @@ void Scene::load_models()
     using namespace Mg::literals;
 
     add_scene_model("meshes/misc/test_scene_2.mgm",
-                    { MaterialFileAssignment{ 0, "buildings/GreenBrick"_id },
-                      MaterialFileAssignment{ 1, "buildings/W31_1"_id },
-                      MaterialFileAssignment{ 2, "buildings/BigWhiteBricks"_id },
-                      MaterialFileAssignment{ 3, "buildings/GreenBrick"_id } },
+                    { MaterialFileAssignment{ size_t{ 0 }, "buildings/GreenBrick"_id },
+                      MaterialFileAssignment{ size_t{ 1 }, "buildings/W31_1"_id },
+                      MaterialFileAssignment{ size_t{ 2 }, "buildings/BigWhiteBricks"_id },
+                      MaterialFileAssignment{ size_t{ 3 }, "buildings/GreenBrick"_id } },
                     { "PARALLAX"_id });
 
     add_dynamic_model("meshes/Fox.mgm",
-                      { MaterialFileAssignment{ 0, "actors/fox"_id } },
+                      { MaterialFileAssignment{ "fox1", "actors/fox"_id } },
                       { "RIM_LIGHT"_id },
                       { 2.0f, 0.0f, 0.0f },
                       Mg::Rotation(),
@@ -860,7 +877,7 @@ void Scene::load_models()
                       false);
 
     add_dynamic_model("meshes/misc/hestdraugr.mgm"_id,
-                      { MaterialFileAssignment{ 0, "actors/HestDraugr"_id } },
+                      { MaterialFileAssignment{ size_t{ 0 }, "actors/HestDraugr"_id } },
                       { "RIM_LIGHT"_id },
                       { -2.0f, 2.0f, 1.0f },
                       Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
@@ -868,7 +885,7 @@ void Scene::load_models()
                       true);
 
     add_dynamic_model("meshes/box.mgm",
-                      { MaterialFileAssignment{ 0, "crate"_id } },
+                      { MaterialFileAssignment{ size_t{ 0 }, "crate"_id } },
                       { "PARALLAX"_id },
                       { 0.0f, 0.0f, 10.0f },
                       Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),

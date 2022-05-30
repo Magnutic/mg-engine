@@ -33,6 +33,8 @@
 #include <mg/resource_cache/mg_resource_cache.h>
 #include <mg/utils/mg_optional.h>
 
+#include <variant>
+
 struct Model {
     Model();
     ~Model();
@@ -58,7 +60,7 @@ struct Model {
 };
 
 struct MaterialFileAssignment {
-    size_t submesh_index = 0;
+    std::variant<size_t, Mg::Identifier> submesh_index_or_name = size_t(0);
     Mg::Identifier material_fname = "";
 };
 
