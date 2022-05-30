@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -15,6 +15,7 @@
 #include "mg/mg_bounding_volumes.h"
 #include "mg/resource_cache/mg_base_resource.h"
 #include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_optional.h"
 
 #include <memory>
 
@@ -49,6 +50,8 @@ public:
     span<const gfx::Mesh::Influences> influences() const noexcept;
     span<const gfx::Mesh::Joint> joints() const noexcept;
     span<const gfx::Mesh::AnimationClip> animation_clips() const noexcept;
+
+    Opt<size_t> get_submesh_index(const Identifier& submesh_name) const noexcept;
 
     const glm::mat4& skeleton_root_transform() const noexcept;
 

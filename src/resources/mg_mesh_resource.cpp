@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -10,6 +10,7 @@
 #include "mg/gfx/mg_mesh_data.h"
 #include "mg/resource_cache/mg_resource_loading_input.h"
 #include "mg/resources/mg_mesh_resource_data.h"
+#include "mg/utils/mg_stl_helpers.h"
 
 #include <fmt/core.h>
 
@@ -295,6 +296,20 @@ span<const Joint> MeshResource::joints() const noexcept
 span<const AnimationClip> MeshResource::animation_clips() const noexcept
 {
     return m_data ? m_data->animation_clips : span<const AnimationClip>{};
+}
+
+Opt<size_t> MeshResource::get_submesh_index(const Identifier& submesh_name) const noexcept
+{
+    if (!m_data) {
+        return nullopt;
+    }
+
+    auto has_matching_name = [&](const gfx::Mesh::Submesh& submesh) {
+        return submesh.name == submesh_name;
+    };
+    const auto [found, index] = index_where(m_data->submeshes, has_matching_name);
+
+    return found ? Opt<size_t>(index) : nullopt;
 }
 
 const glm::mat4& MeshResource::skeleton_root_transform() const noexcept
