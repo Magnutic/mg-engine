@@ -901,10 +901,6 @@ void Scene::load_materials()
     ui_material = material_pool.create("ui_material", ui_handle);
     ui_material->set_sampler("sampler_colour",
                              load_texture("textures/ui/book_open_da.dds", true)->handle());
-
-    for (Mg::gfx::Material* material : material_pool.get_all_materials()) {
-        Mg::log.message(material->serialize());
-    }
 }
 
 // Create a lot of random lights
