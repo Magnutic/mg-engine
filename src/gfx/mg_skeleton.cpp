@@ -9,6 +9,7 @@
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_transform.h"
 #include "mg/gfx/mg_animation.h"
+#include "mg/utils/mg_iteration_utils.h"
 
 #include <glm/mat3x3.hpp>
 #include <glm/mat4x4.hpp>
@@ -265,6 +266,33 @@ void animate_skeleton(const Mesh::AnimationClip& clip, SkeletonPose& pose, doubl
 
     for (size_t i = 0; i < pose.joint_poses.size(); ++i) {
         animate_joint(clip.channels[i], time_seconds, pose.joint_poses[i]);
+    }
+}
+
+void blend_joint_poses(const JointPose& first,
+                       const JointPose& second,
+                       JointPose& result,
+                       double blend_factor)
+{
+    result.rotation = Rotation::mix(first.rotation, second.rotation, float(blend_factor));
+    result.scale = glm::mix(first.scale, second.scale, blend_factor);
+    result.translation = glm::mix(first.translation, second.translation, blend_factor);
+}
+
+void blend_skeleton_poses(const SkeletonPose& first,
+                          const SkeletonPose& second,
+                          SkeletonPose& result,
+                          const double blend_factor)
+{
+    MG_ASSERT(first.skeleton_id == second.skeleton_id);
+    MG_ASSERT(first.joint_poses.size() == second.joint_poses.size());
+
+    const auto num_joints = first.joint_poses.size();
+    for (size_t i = 0; i < num_joints; ++i) {
+        blend_joint_poses(first.joint_poses[i],
+                          second.joint_poses[i],
+                          result.joint_poses[i],
+                          blend_factor);
     }
 }
 

@@ -111,4 +111,14 @@ void animate_joint(const Mesh::AnimationChannel& animation_channel,
 
 void animate_skeleton(const Mesh::AnimationClip& clip, SkeletonPose& pose, double time_seconds);
 
+void blend_joint_poses(const JointPose& first,
+                       const JointPose& second,
+                       JointPose& result,
+                       double blend_factor);
+
+void blend_skeleton_poses(const SkeletonPose& first,
+                          const SkeletonPose& second,
+                          SkeletonPose& result,
+                          double blend_factor);
+
 } // namespace Mg::gfx
