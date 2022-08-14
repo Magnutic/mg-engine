@@ -1,7 +1,7 @@
 # Borrowed from https://github.com/kcat/openal-soft
 # LGPL license
-# Modified target name to SndFile::sndfile (instead of SndFile::sndfile) to match what libsndfile's
-# own configuration.
+# Modified target name to SndFile::sndfile (instead of SndFile::SndFile) to match libsndfile's own
+# configuration.
 
 # - Try to find SndFile
 # Once done this will define

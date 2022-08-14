@@ -43,10 +43,15 @@ function(add_public_header_only_library LIBRARY INCLUDE_DIR SUB_DIR_TO_INSTALL)
     install(TARGETS ${LIBRARY} EXPORT mg_engine_targets DESTINATION "${MG_LIB_INSTALL_PATH}")
 endfunction()
 
-# These functions prevent CMake from linking debug libraries to RelWithDebInfo/MinSizeRel builds,
-# which fails to compile under MSVC.
-set(CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL Release)
-set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO Release)
+# These mappings prevent CMake from linking debug libraries in RelWithDebInfo/MinSizeRel builds,
+# which fails to compile under MSVC, and which would give misleading results if using RelWithDebInfo
+# builds for profiling.
+#
+# Note that we map to empty string _and_ Release: this allows CMake to use IMPORTED targets that
+# only set the generic IMPORTED_LOCATION property (as opposed to IMPORTED_LOCATION_<CONFIGURATION>
+# for all configurations). See point 4 here: https://gitlab.kitware.com/cmake/cmake/-/issues/20440
+set(CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL "" Release)
+set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO "" Release)
 
 #---------------------------------------------------------------------------------------------------
 
