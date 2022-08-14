@@ -29,6 +29,9 @@ public:
     MG_MAKE_NON_COPYABLE(ImguiOverlay);
     MG_MAKE_NON_MOVABLE(ImguiOverlay);
 
+    /** Render a ImGui scene given by the function.
+     * @param imgui_function Function containing calls to ImGui for rendering widgets.
+     */
     void render(const std::function<void()>& imgui_function);
 };
 
