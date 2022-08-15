@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.11)
 
-find_package(Git REQUIRED)
-
 if (DEFINED CMAKE_SCRIPT_MODE_FILE)
     get_filename_component(THIS_SCRIPT_DIR "${CMAKE_SCRIPT_MODE_FILE}" DIRECTORY)
     set(MG_SOURCE_DIR "${THIS_SCRIPT_DIR}/..")
@@ -9,8 +7,6 @@ if (DEFINED CMAKE_SCRIPT_MODE_FILE)
     set(MG_DEPENDENCIES_ARCHIVE "${MG_SOURCE_DIR}/external/mg_dependencies_src.zip")
 endif()
 
-file(GLOB DEPENDENCY_SUBMODULES "${MG_SOURCE_DIR}/external/submodules/*")
-message("----- Generating ${MG_DEPENDENCIES_ARCHIVE} from submodules: ${DEPENDENCY_SUBMODULES} -----")
 include("${THIS_SCRIPT_DIR}/init_submodules.cmake")
 
 message("Compressing archive ${MG_DEPENDENCIES_ARCHIVE}")

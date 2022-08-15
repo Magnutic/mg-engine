@@ -49,17 +49,21 @@ set(MG_DEPENDENCIES_INSTALL_DIR "${MG_SOURCE_DIR}/external/mg_dependencies")
 if(NOT EXISTS "${MG_DEPENDENCIES_SOURCE_DIR}")
     message("----- NOTE: Getting dependencies -----")
 
-    # Check if there is a bundled dependencies archive. If so, use it.
-    if(EXISTS "${MG_DEPENDENCIES_ARCHIVE}")
-        file(MAKE_DIRECTORY "${MG_DEPENDENCIES_SOURCE_DIR}")
-        message("${MG_DEPENDENCIES_ARCHIVE} found. Extracting...")
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E tar xf "${MG_DEPENDENCIES_ARCHIVE}" --format=zip
-            WORKING_DIRECTORY "${MG_DEPENDENCIES_SOURCE_DIR}"
-            RESULT_VARIABLE EXTRACT_RESULT
-        )
-        if(NOT ${EXTRACT_RESULT} EQUAL 0)
-            message(FATAL_ERROR "Failed to extract ${MG_DEPENDENCIES_ARCHIVE} to ${MG_DEPENDENCIES_SOURCE_DIR}")
+    # Use bundled dependencies archive if instructed to.
+    if (${MG_USE_VENDORED_DEPENDENCIES_ARCHIVE})
+        if(EXISTS "${MG_DEPENDENCIES_ARCHIVE}")
+            file(MAKE_DIRECTORY "${MG_DEPENDENCIES_SOURCE_DIR}")
+            message("${MG_DEPENDENCIES_ARCHIVE} found. Extracting...")
+            execute_process(
+                COMMAND ${CMAKE_COMMAND} -E tar xf "${MG_DEPENDENCIES_ARCHIVE}" --format=zip
+                WORKING_DIRECTORY "${MG_DEPENDENCIES_SOURCE_DIR}"
+                RESULT_VARIABLE EXTRACT_RESULT
+            )
+            if(NOT ${EXTRACT_RESULT} EQUAL 0)
+                message(FATAL_ERROR "Failed to extract ${MG_DEPENDENCIES_ARCHIVE} to ${MG_DEPENDENCIES_SOURCE_DIR}")
+            endif()
+        else()
+            message(FATAL_ERROR "MG_USE_VENDORED_DEPENDENCIES_ARCHIVE is enabled but there is no archive at ${MG_DEPENDENCIES_ARCHIVE}")
         endif()
 
     else()
@@ -67,12 +71,6 @@ if(NOT EXISTS "${MG_DEPENDENCIES_SOURCE_DIR}")
         # No dependency archive. Use submodules instead. Note that we set MG_DEPENDENCIES_SOURCE_DIR
         # to point to the submodules directory instead.
         message("${MG_DEPENDENCIES_ARCHIVE} does not exist. Using git submodules to get header-only dependencies...")
-        file(GLOB SUBMODULES_GLOB_RESULTS "${MG_SOURCE_DIR}/external/submodules/*")
-        foreach(SUBMODULES_GLOB_RESULT ${SUBMODULES_GLOB_RESULTS})
-            if(IS_DIRECTORY "${SUBMODULES_GLOB_RESULT}")
-                list(APPEND DEPENDENCY_SUBMODULES "${SUBMODULES_GLOB_RESULT}")
-            endif()
-        endforeach()
         include("${MG_SOURCE_DIR}/cmake/init_submodules.cmake")
         set(MG_DEPENDENCIES_SOURCE_DIR "${MG_SOURCE_DIR}/external/submodules")
 

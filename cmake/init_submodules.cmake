@@ -1,8 +1,15 @@
 cmake_minimum_required(VERSION 3.11)
 find_package(Git REQUIRED)
 
-if(NOT DEFINED DEPENDENCY_SUBMODULES)
-    message(FATAL_ERROR "init_submodules.cmake called without DEPENDENCY_SUBMODULES defined.")
+file(GLOB SUBMODULES_GLOB_RESULTS "${MG_SOURCE_DIR}/external/submodules/*")
+foreach(SUBMODULES_GLOB_RESULT ${SUBMODULES_GLOB_RESULTS})
+    if(IS_DIRECTORY "${SUBMODULES_GLOB_RESULT}")
+        list(APPEND DEPENDENCY_SUBMODULES "${SUBMODULES_GLOB_RESULT}")
+    endif()
+endforeach()
+
+if(NOT DEFINED MG_SOURCE_DIR)
+    message(FATAL_ERROR "init_submodules.cmake called without MG_SOURCE_DIR defined.")
 endif()
 
 set(SUBMODULES_DIR "${MG_SOURCE_DIR}/external/submodules")
