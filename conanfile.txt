@@ -1,11 +1,12 @@
 [requires]
-glfw/3.3.3
+glfw/3.3.8
 glm/0.9.9.5
-libzip/1.7.3
-fmt/7.1.3
-assimp/5.0.1
-openal/1.21.0
-libsndfile/1.0.30
+libzip/1.8.0
+fmt/9.0.0
+assimp/5.2.2
+openal/1.22.2
+libsndfile/1.0.31
+bullet3/3.24
 
 [generators]
 cmake_find_package_multi

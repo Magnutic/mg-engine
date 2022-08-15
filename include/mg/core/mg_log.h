@@ -19,6 +19,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #if MG_ENABLE_DEBUG_LOGGING
 #    define MG_LOG_DEBUG(...) ::Mg::log.write(::Mg::Log::Prio::Debug, __VA_ARGS__)

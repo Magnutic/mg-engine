@@ -184,7 +184,7 @@ void TexturePool::update(const TextureResource& resource)
 void TexturePool::destroy(Texture2D* texture)
 {
     MG_GFX_DEBUG_GROUP("TexturePool::destroy")
-    const auto it = m_impl->textures.get_iterator_from_pointer(texture);
+    const auto it = m_impl->textures.get_iterator(texture);
     const Identifier texture_id = it->id();
     m_impl->textures.erase(it);
     m_impl->texture_map.erase(texture_id);

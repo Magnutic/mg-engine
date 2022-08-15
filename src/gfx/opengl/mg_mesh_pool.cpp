@@ -186,7 +186,7 @@ void MeshPool::Impl::destroy(MeshHandle handle)
     MeshInternal* p_mesh = &get_mesh(handle);
     const Identifier name = p_mesh->name;
 
-    const auto it = m_mesh_data.get_iterator_from_pointer(p_mesh);
+    const auto it = m_mesh_data.get_iterator(p_mesh);
     _clear_mesh(*p_mesh);
     m_mesh_data.erase(it);
 
@@ -368,7 +368,7 @@ void MeshPool::Impl::_clear_mesh(MeshInternal& mesh)
         if (buffer && --buffer->num_users == 0) {
             const auto buffer_id = buffer->handle.as_gl_id();
             glDeleteBuffers(1, &buffer_id);
-            const auto it = buffer_container.get_iterator_from_pointer(buffer);
+            const auto it = buffer_container.get_iterator(buffer);
             buffer_container.erase(it);
         }
     };

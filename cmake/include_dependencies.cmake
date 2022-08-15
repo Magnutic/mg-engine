@@ -78,7 +78,7 @@ find_package(fmt 7.1 REQUIRED)
 
 # GLFW
 # Window and input library.
-find_package(glfw3 3.3.3 REQUIRED)
+find_package(glfw3 3.3.8 REQUIRED)
 
 # GLM
 # GL Mathematics library.
@@ -146,7 +146,6 @@ target_include_directories(imgui SYSTEM PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 target_link_libraries(imgui PUBLIC glfw glad)
-target_compile_definitions(imgui PRIVATE "IMGUI_IMPL_OPENGL_LOADER_CUSTOM=\"${MG_SOURCE_DIR}/src/gfx/opengl/mg_glad.h\"")
 install(
     FILES "${MG_IMGUI_DIR}/imgui.h" "${MG_IMGUI_DIR}/imconfig.h"
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"

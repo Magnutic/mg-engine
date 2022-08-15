@@ -9,6 +9,8 @@
 #include "mg/core/mg_log.h"
 #include "mg/gfx/mg_debug_renderer.h"
 
+#include <array>
+
 namespace Mg::physics {
 
 namespace {

@@ -111,7 +111,7 @@ void MaterialPool::update(const MaterialResource& material_resource)
 void MaterialPool::destroy(const Material* handle)
 {
     Material* non_const_ptr = const_cast<Material*>(handle); // NOLINT
-    m_impl->materials.erase(m_impl->materials.get_iterator_from_pointer(non_const_ptr));
+    m_impl->materials.erase(m_impl->materials.get_iterator(non_const_ptr));
 }
 
 template<typename MaterialsT> auto find_impl(MaterialsT& materials, Identifier id)

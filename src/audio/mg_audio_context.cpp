@@ -372,7 +372,7 @@ void AudioContext::decrement_ref_count(SoundBuffer* ptr)
     const auto count = ptr->ref_count.fetch_sub(1);
 
     if (count == 1) {
-        auto it = m_impl->sound_buffers.get_iterator_from_pointer(ptr);
+        auto it = m_impl->sound_buffers.get_iterator(ptr);
         std::scoped_lock l{ m_impl->sound_buffers_mutex };
         m_impl->sound_buffers.erase(it);
     }
