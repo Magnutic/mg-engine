@@ -3,8 +3,8 @@
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-message("-- Mg-Engine is looking for its dependencies:")
-message("-- CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+message(STATUS "Mg-Engine is looking for its dependencies:")
+message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
 
 # Prefer CMake config files to find modules in find_package. This is for example needed to prefer
 # conan-generated config files to system packages found via CMake's bundled find modules.
@@ -14,7 +14,7 @@ set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
 # Params: LIBRARY: name of target to generate
 # INCLUDE_DIR: include directory for target
 function(add_private_header_only_library LIBRARY INCLUDE_DIR)
-    message("-- Using ${LIBRARY} at ${INCLUDE_DIR}")
+    message(STATUS "Using ${LIBRARY} at ${INCLUDE_DIR}")
     add_library(${LIBRARY} INTERFACE)
     target_include_directories(${LIBRARY} SYSTEM INTERFACE
         $<BUILD_INTERFACE:${INCLUDE_DIR}>
@@ -30,7 +30,7 @@ endfunction()
 # INCLUDE_DIR: include directory for target
 # SUB_DIR_TO_INSTALL: subdirectory under INCLUDE_DIR to be installed. May be empty.
 function(add_public_header_only_library LIBRARY INCLUDE_DIR SUB_DIR_TO_INSTALL)
-    message("-- Using ${LIBRARY} at ${INCLUDE_DIR}")
+    message(STATUS "Using ${LIBRARY} at ${INCLUDE_DIR}")
     add_library(${LIBRARY} INTERFACE)
     target_include_directories(${LIBRARY} SYSTEM INTERFACE
         $<BUILD_INTERFACE:${INCLUDE_DIR}>
@@ -131,7 +131,7 @@ target_link_libraries(bullet::bullet INTERFACE "${BULLET_LIBRARIES}")
 # Immediate mode GUI
 # Does not come with any build files, so we have to set up the target ourselves.
 set(MG_IMGUI_DIR "${MG_HEADER_ONLY_DEPENDENCIES_DIR}/imgui")
-message("-- Using imgui at ${MG_IMGUI_DIR}")
+message(STATUS "Using imgui at ${MG_IMGUI_DIR}")
 add_library(imgui STATIC 
     "${MG_IMGUI_DIR}/imgui.cpp"
     "${MG_IMGUI_DIR}/imgui_demo.cpp"

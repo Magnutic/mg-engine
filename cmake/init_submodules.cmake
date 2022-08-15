@@ -15,7 +15,7 @@ endif()
 set(SUBMODULES_DIR "${MG_SOURCE_DIR}/external/submodules")
 
 foreach(SUBMODULE ${DEPENDENCY_SUBMODULES})
-    message("Initializing submodule ${SUBMODULE}")
+    message(STATUS "Initializing submodule ${SUBMODULE}")
     file(RELATIVE_PATH SUBMODULE_NAME ${SUBMODULES_DIR} ${SUBMODULE})
     execute_process(
         COMMAND ${GIT_EXECUTABLE} submodule update --init "${SUBMODULE}"

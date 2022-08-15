@@ -9,14 +9,14 @@ endif()
 
 include("${THIS_SCRIPT_DIR}/init_submodules.cmake")
 
-message("Compressing archive ${MG_DEPENDENCIES_ARCHIVE}")
+message(STATUS "Compressing archive ${MG_DEPENDENCIES_ARCHIVE}")
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E tar cf "${MG_DEPENDENCIES_ARCHIVE}" --format=zip -- ${DEPENDENCY_SUBMODULES}
     WORKING_DIRECTORY "${SUBMODULES_DIR}"
     RESULT_VARIABLE COMPRESS_RESULT
 )
 if (COMPRESS_RESULT EQUAL 0)
-    message("Successfully created ${MG_DEPENDENCIES_ARCHIVE}.")
+    message(STATUS "Successfully created ${MG_DEPENDENCIES_ARCHIVE}.")
 else()
     message(FATAL_ERROR "Failed to create ${MG_DEPENDENCIES_ARCHIVE}")
 endif()

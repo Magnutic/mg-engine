@@ -34,7 +34,7 @@ if (MG_USE_VENDORED_DEPENDENCIES)
     # it otherwise causes conflicts with system-provided library.
     find_package(SndFile QUIET)
     if(NOT SndFile_FOUND)
-        message("----- NOTE: System libsndfile not found. Building bundled libsndfile instead. -----")
+        message(STATUS "\n-- **NOTE**: System libsndfile not found. Building bundled libsndfile instead.")
         list(APPEND MG_DEPENDENCIES_TO_BUILD ogg vorbis libsndfile)
     endif()
 endif()
@@ -47,13 +47,13 @@ set(MG_DEPENDENCIES_INSTALL_DIR "${MG_SOURCE_DIR}/external/mg_dependencies")
 
 # Get dependencies, either from archive or from submodules.
 if(NOT EXISTS "${MG_DEPENDENCIES_SOURCE_DIR}")
-    message("----- NOTE: Getting dependencies -----")
+    message(STATUS "\n-- **NOTE**: Getting dependencies for Mg Engine")
 
     # Use bundled dependencies archive if instructed to.
     if (${MG_USE_VENDORED_DEPENDENCIES_ARCHIVE})
         if(EXISTS "${MG_DEPENDENCIES_ARCHIVE}")
             file(MAKE_DIRECTORY "${MG_DEPENDENCIES_SOURCE_DIR}")
-            message("${MG_DEPENDENCIES_ARCHIVE} found. Extracting...")
+            message(STATUS "\n-- **NOTE**: Using dependencies in archive ${MG_DEPENDENCIES_ARCHIVE}. Extracting...")
             execute_process(
                 COMMAND ${CMAKE_COMMAND} -E tar xf "${MG_DEPENDENCIES_ARCHIVE}" --format=zip
                 WORKING_DIRECTORY "${MG_DEPENDENCIES_SOURCE_DIR}"
@@ -70,7 +70,7 @@ if(NOT EXISTS "${MG_DEPENDENCIES_SOURCE_DIR}")
 
         # No dependency archive. Use submodules instead. Note that we set MG_DEPENDENCIES_SOURCE_DIR
         # to point to the submodules directory instead.
-        message("${MG_DEPENDENCIES_ARCHIVE} does not exist. Using git submodules to get header-only dependencies...")
+        message(STATUS "\n-- **NOTE**: Using git submodules to get dependencies for Mg Engine...")
         include("${MG_SOURCE_DIR}/cmake/init_submodules.cmake")
         set(MG_DEPENDENCIES_SOURCE_DIR "${MG_SOURCE_DIR}/external/submodules")
 
@@ -79,8 +79,6 @@ endif()
 
 # If using vendored dependencies, build those.
 if (MG_USE_VENDORED_DEPENDENCIES)
-    message("----- NOTE: building dependencies -----")
-
     if (NOT IS_DIRECTORY "${MG_DEPENDENCIES_BUILD_DIR}")
         file(MAKE_DIRECTORY "${MG_DEPENDENCIES_BUILD_DIR}")
     endif()
@@ -94,7 +92,7 @@ if (MG_USE_VENDORED_DEPENDENCIES)
     # unlike with more advanced dependency-management frameworks.
 
     # Get absolute path of install directory.
-    message("----- NOTE: building dependencies and installing to ${MG_DEPENDENCIES_INSTALL_DIR} ----")
+    message(STATUS "\n-- **NOTE**: building dependencies and installing to ${MG_DEPENDENCIES_INSTALL_DIR}")
 
     function(build_dependency DEPENDENCY BUILD_CONFIG)
         set(DEPENDENCY_SOURCE_DIR "${MG_DEPENDENCIES_SOURCE_DIR}/${DEPENDENCY}")
@@ -110,12 +108,12 @@ if (MG_USE_VENDORED_DEPENDENCIES)
                 RESULT_VARIABLE REVISIONS_EQUAL
             )
             if(REVISIONS_EQUAL EQUAL 0)
-                message("Found dependency ${DEPENDENCY} already up-to-date for configuration ${BUILD_CONFIG} at ${DEPENDENCY_BUILD_DIR}")
+                message(STATUS "Found dependency ${DEPENDENCY} already up-to-date for configuration ${BUILD_CONFIG} at ${DEPENDENCY_BUILD_DIR}")
                 return()
             endif()
         endif()
 
-        message("----- NOTE: building ${DEPENDENCY} in configuration ${BUILD_CONFIG} with CMake parameters [${${DEPENDENCY}_EXTRA_BUILD_PARAMS}] -----")
+        message(STATUS "\n-- **NOTE**: building ${DEPENDENCY} in configuration ${BUILD_CONFIG} with CMake parameters [${${DEPENDENCY}_EXTRA_BUILD_PARAMS}]")
 
         # Configure
         execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${DEPENDENCY_BUILD_DIR}")
@@ -129,7 +127,7 @@ if (MG_USE_VENDORED_DEPENDENCIES)
             RESULT_VARIABLE CONFIGURE_RESULT
         )
         if(NOT CONFIGURE_RESULT EQUAL 0)
-            message(FATAL_ERROR "----- ERROR configuring dependency ${DEPENDENCY} -----")
+            message(FATAL_ERROR "**ERROR** configuring dependency ${DEPENDENCY}")
         endif()
 
         # Build
@@ -139,18 +137,18 @@ if (MG_USE_VENDORED_DEPENDENCIES)
             RESULT_VARIABLE BUILD_RESULT
         )
         if(NOT BUILD_RESULT EQUAL 0)
-            message(FATAL_ERROR "----- ERROR building dependency ${DEPENDENCY} -----")
+            message(FATAL_ERROR "**ERROR** building dependency ${DEPENDENCY}")
         endif()
 
         # Install
-        message("----- NOTE: installing ${DEPENDENCY} in configuration ${BUILD_CONFIG} from ${DEPENDENCY_BUILD_DIR} to ${MG_DEPENDENCIES_INSTALL_DIR} -----")
+        message(STATUS "\n-- **NOTE**: installing ${DEPENDENCY} in configuration ${BUILD_CONFIG} from ${DEPENDENCY_BUILD_DIR} to ${MG_DEPENDENCIES_INSTALL_DIR}")
         execute_process(
             COMMAND "${CMAKE_COMMAND}" --install . --config ${BUILD_CONFIG}
             WORKING_DIRECTORY ${DEPENDENCY_BUILD_DIR}
             RESULT_VARIABLE INSTALL_RESULT
         )
         if(NOT INSTALL_RESULT EQUAL 0)
-            message(FATAL_ERROR "----- ERROR installing dependency ${DEPENDENCY} -----")
+            message(FATAL_ERROR "**ERROR** installing dependency ${DEPENDENCY}")
         else()
             # Copy revision file to build directory, so as to not build unnecessarily next time.
             if (EXISTS "${DEPENDENCY_SOURCE_REVISION_FILE}")
@@ -165,12 +163,12 @@ if (MG_USE_VENDORED_DEPENDENCIES)
         build_dependency(${DEPENDENCY} "Release")
     endforeach()
 
-    message("Finished building dependencies.")
+    message(STATUS "Finished building dependencies.")
 endif()
 
 # Prepare header-only dependencies
 foreach(DEPENDENCY ${MG_HEADER_ONLY_DEPENDENCIES})
-    message("-- Copying header-only depencency ${DEPENDENCY} from ${MG_DEPENDENCIES_SOURCE_DIR}/${DEPENDENCY} to ${MG_DEPENDENCIES_INSTALL_DIR}")
+    message(STATUS "Copying header-only dependency ${DEPENDENCY} from ${MG_DEPENDENCIES_SOURCE_DIR}/${DEPENDENCY} to ${MG_DEPENDENCIES_INSTALL_DIR}")
     file(COPY "${MG_DEPENDENCIES_SOURCE_DIR}/${DEPENDENCY}" DESTINATION "${MG_DEPENDENCIES_INSTALL_DIR}")
 endforeach()
 
