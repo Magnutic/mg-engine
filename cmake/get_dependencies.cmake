@@ -67,7 +67,12 @@ if(NOT EXISTS "${MG_DEPENDENCIES_SOURCE_DIR}")
         # No dependency archive. Use submodules instead. Note that we set MG_DEPENDENCIES_SOURCE_DIR
         # to point to the submodules directory instead.
         message("${MG_DEPENDENCIES_ARCHIVE} does not exist. Using git submodules to get header-only dependencies...")
-        file(GLOB DEPENDENCY_SUBMODULES "${MG_SOURCE_DIR}/external/submodules/*")
+        file(GLOB SUBMODULES_GLOB_RESULTS "${MG_SOURCE_DIR}/external/submodules/*")
+        foreach(SUBMODULES_GLOB_RESULT ${SUBMODULES_GLOB_RESULTS})
+            if(IS_DIRECTORY "${SUBMODULES_GLOB_RESULT}")
+                list(APPEND DEPENDENCY_SUBMODULES "${SUBMODULES_GLOB_RESULT}")
+            endif()
+        endforeach()
         include("${MG_SOURCE_DIR}/cmake/init_submodules.cmake")
         set(MG_DEPENDENCIES_SOURCE_DIR "${MG_SOURCE_DIR}/external/submodules")
 
@@ -78,11 +83,13 @@ endif()
 if (MG_USE_VENDORED_DEPENDENCIES)
     message("----- NOTE: building dependencies -----")
 
-    file(REMOVE_RECURSE "${MG_DEPENDENCIES_BUILD_DIR}")
-    file(MAKE_DIRECTORY "${MG_DEPENDENCIES_BUILD_DIR}")
+    if (NOT IS_DIRECTORY "${MG_DEPENDENCIES_BUILD_DIR}")
+        file(MAKE_DIRECTORY "${MG_DEPENDENCIES_BUILD_DIR}")
+    endif()
 
-    file(REMOVE_RECURSE "${MG_DEPENDENCIES_INSTALL_DIR}")
-    file(MAKE_DIRECTORY "${MG_DEPENDENCIES_INSTALL_DIR}")
+    if (NOT IS_DIRECTORY "${MG_DEPENDENCIES_INSTALL_DIR}")
+        file(MAKE_DIRECTORY "${MG_DEPENDENCIES_INSTALL_DIR}")
+    endif()
 
     # Build and install dependencies by invoking CMake externally on them. This ad-hoc approach may be
     # an unusual method, but importantly, I can understand how it works and reason about what happens
@@ -94,6 +101,21 @@ if (MG_USE_VENDORED_DEPENDENCIES)
     function(build_dependency DEPENDENCY BUILD_CONFIG)
         set(DEPENDENCY_SOURCE_DIR "${MG_DEPENDENCIES_SOURCE_DIR}/${DEPENDENCY}")
         set(DEPENDENCY_BUILD_DIR "${MG_DEPENDENCIES_BUILD_DIR}/${BUILD_CONFIG}/${DEPENDENCY}")
+        set(DEPENDENCY_SOURCE_REVISION_FILE "${MG_DEPENDENCIES_SOURCE_DIR}/${DEPENDENCY}_revision")
+        set(DEPENDENCY_INSTALL_REVISION_FILE "${MG_DEPENDENCIES_INSTALL_DIR}/${DEPENDENCY}_revision_${BUILD_CONFIG}")
+
+        if (EXISTS "${DEPENDENCY_SOURCE_REVISION_FILE}" AND EXISTS "${DEPENDENCY_INSTALL_REVISION_FILE}")
+            execute_process(
+                COMMAND ${CMAKE_COMMAND} -E compare_files
+                "${DEPENDENCY_INSTALL_REVISION_FILE}"
+                "${DEPENDENCY_SOURCE_REVISION_FILE}"
+                RESULT_VARIABLE REVISIONS_EQUAL
+            )
+            if(REVISIONS_EQUAL EQUAL 0)
+                message("Found dependency ${DEPENDENCY} already up-to-date for configuration ${BUILD_CONFIG} at ${DEPENDENCY_BUILD_DIR}")
+                return()
+            endif()
+        endif()
 
         message("----- NOTE: building ${DEPENDENCY} in configuration ${BUILD_CONFIG} with CMake parameters [${${DEPENDENCY}_EXTRA_BUILD_PARAMS}] -----")
 
@@ -131,6 +153,11 @@ if (MG_USE_VENDORED_DEPENDENCIES)
         )
         if(NOT INSTALL_RESULT EQUAL 0)
             message(FATAL_ERROR "----- ERROR installing dependency ${DEPENDENCY} -----")
+        else()
+            # Copy revision file to build directory, so as to not build unnecessarily next time.
+            if (EXISTS "${DEPENDENCY_SOURCE_REVISION_FILE}")
+                execute_process(COMMAND "${CMAKE_COMMAND}" -E copy "${DEPENDENCY_SOURCE_REVISION_FILE}" "${DEPENDENCY_INSTALL_REVISION_FILE}")
+            endif()
         endif()
     endfunction()
 

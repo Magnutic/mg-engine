@@ -47,9 +47,7 @@ set(MG_CONFIG_INSTALL_PATH "${CMAKE_INSTALL_LIBDIR}/cmake/mg_engine-${mg_engine_
 #---------------------------------------------------------------------------------------------------
 
 if(MG_USE_VENDORED_DEPENDENCIES OR MG_USE_VENDORED_HEADER_ONLY_DEPENDENCIES)
-    if(NOT EXISTS "${MG_DEPENDENCIES_DIR}")
-        include(cmake/get_dependencies.cmake)
-    endif()
+    include(cmake/get_dependencies.cmake)
 
     # Add to prefix path, so that find_package() calls will find the dependencies.
     list(APPEND CMAKE_PREFIX_PATH ${MG_DEPENDENCIES_DIR})
