@@ -46,7 +46,7 @@ struct ParameterDeclaration {
 
 struct OptionDeclaration {
     Identifier name;
-    bool value;
+    bool value{};
 };
 
 struct MaterialParseResult {

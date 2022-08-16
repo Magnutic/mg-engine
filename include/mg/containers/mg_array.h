@@ -156,7 +156,9 @@ public:
 protected:
     void reset() noexcept
     {
-        static_assert(sizeof(T) != 0); // Ensure type is complete before deleting.
+        // Ensure type is complete before deleting.
+        static_assert(sizeof(T) != 0); // NOLINT(bugprone-sizeof-expression) T can be a pointer,
+                                       // which is not a problem here.
         if (m_ptr != nullptr) {
             destroy_array(m_ptr);
             m_ptr = nullptr;
