@@ -1,0 +1,10 @@
+# Dummy clang-tidy file to disable analysis in external code.
+# At least one check is enabled, so set one that will never trigger.
+# (No headers will have extensions .x, so the one check that is enabled will never be used.)
+
+---
+Checks: '-*,misc-definitions-in-headers'
+CheckOptions:
+  - key: HeaderFileExtensions
+    value: 'x'
+...
