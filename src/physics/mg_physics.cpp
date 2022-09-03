@@ -283,7 +283,11 @@ private:
         bt_indexed_mesh.m_numTriangles = Mg::as<int>(m_indices.size() / 3);
         bt_indexed_mesh.m_triangleIndexBase = reinterpret_cast<const uint8_t*>(m_indices.data());
 
-        m_bt_triangle_mesh.addIndexedMesh(bt_indexed_mesh, PHY_SHORT);
+        static_assert(std::is_same_v<gfx::Mesh::Index, uint32_t>,
+                      "Vertex index type must match enum value below.");
+        constexpr auto bt_index_type = PHY_INTEGER;
+
+        m_bt_triangle_mesh.addIndexedMesh(bt_indexed_mesh, bt_index_type);
         return btBvhTriangleMeshShape{ &m_bt_triangle_mesh, true, true };
     }
 };

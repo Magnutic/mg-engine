@@ -616,7 +616,7 @@ void MeshData::visit(const aiMesh& mesh)
     submesh.name = m_string_data->store(mesh.mName);
     submesh.material =
         m_string_data->store(m_scene->mMaterials[mesh.mMaterialIndex]->GetName()); // NOLINT
-    submesh.begin = uint16_t(submesh_begin);
+    submesh.begin = uint32_t(submesh_begin);
     submesh.num_indices = uint32_t(3 * mesh.mNumFaces);
 }
 

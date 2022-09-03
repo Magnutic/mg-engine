@@ -30,7 +30,7 @@
 namespace Mg::gfx {
 
 namespace Mesh {
-using Index = uint16_t;
+using Index = uint32_t;
 }
 
 namespace { // internal linkage
@@ -257,9 +257,14 @@ Pipeline::Settings make_pipeline_settings(const IRenderTarget& render_target,
 void draw_elements(size_t num_elements, size_t starting_element) noexcept
 {
     const uintptr_t begin = starting_element * sizeof(Mesh::Index);
+
+    static_assert(std::is_same_v<gfx::Mesh::Index, uint32_t>,
+                  "Vertex index type must match enum value below.");
+    constexpr GLenum gl_index_type = GL_UNSIGNED_INT;
+
     glDrawElements(GL_TRIANGLES,
                    as<int32_t>(num_elements),
-                   GL_UNSIGNED_SHORT,
+                   gl_index_type,
                    reinterpret_cast<GLvoid*>(begin));
 }
 
@@ -287,8 +292,7 @@ size_t upload_next_matrix_batch(MeshRenderer::Impl& data,
 // MeshRenderer implementation
 //--------------------------------------------------------------------------------------------------
 
-MeshRenderer::MeshRenderer(const LightGridConfig& light_grid_config) : m_impl(light_grid_config)
-{}
+MeshRenderer::MeshRenderer(const LightGridConfig& light_grid_config) : m_impl(light_grid_config) {}
 
 void MeshRenderer::render(const ICamera& cam,
                           const RenderCommandList& command_list,

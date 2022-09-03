@@ -26,7 +26,7 @@ struct Submesh;
 struct Joint;
 struct Influences;
 struct MeshDataView;
-using Index = uint16_t;
+using Index = uint32_t;
 } // namespace Mg::gfx::Mesh
 
 namespace Mg {

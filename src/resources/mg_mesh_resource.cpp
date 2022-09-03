@@ -55,30 +55,53 @@ const uint8_t* as_uint8_t_ptr(const std::byte* byte_ptr)
     return reinterpret_cast<const uint8_t*>(byte_ptr); // NOLINT
 }
 
+// Sizeof that returns 0 if T is void.
+template<typename T> constexpr size_t safe_sizeof()
+{
+    return sizeof(T);
+}
+template<> constexpr size_t safe_sizeof<void>()
+{
+    return 0;
+}
+
 // Load bytestream data into arrays. Array size controls number of elements to read.
 // Returns number of bytes read, if successful, otherwise 0.
-// Advances bytestream.
-template<typename T>
-size_t load_to_array(span<const std::byte> bytestream,
-                     T& array_out,
-                     Opt<ElemSize> elem_size = {},
-                     Opt<Stride> stride = {})
+template<typename InputT = void, typename T>
+size_t load_to_array(span<const std::byte> bytestream, T& array_out, Opt<Stride> stride = {})
 {
-    using TargetT = std::decay_t<decltype(array_out[0])>;
-    const auto size = elem_size ? size_t(*elem_size) : sizeof(TargetT);
-    const auto stride_value = stride ? size_t(*stride) : size;
+    using TargetT = typename T::value_type;
+    constexpr bool needs_type_conversion = !std::is_void_v<InputT> &&
+                                           !std::is_same_v<InputT, TargetT>;
+
+    constexpr auto output_size = sizeof(TargetT);
+    constexpr auto input_size = needs_type_conversion ? safe_sizeof<InputT>() : output_size;
+    const auto stride_value = stride ? size_t(*stride) : input_size;
 
     // Sanity check
+    static_assert(std::is_void_v<InputT> || std::is_trivially_copyable_v<InputT>);
     static_assert(std::is_trivially_copyable_v<TargetT>);
-    MG_ASSERT(size <= sizeof(TargetT));
+    MG_ASSERT(stride_value >= input_size);
 
     size_t read_offset = 0;
     for (TargetT& elem : array_out) {
-        if (read_offset + size > bytestream.size()) {
+        if (read_offset + input_size > bytestream.size()) {
             return 0;
         }
 
-        std::memcpy(&elem, as_uint8_t_ptr(&bytestream[read_offset]), size);
+        if constexpr (!std::is_void_v<InputT> && needs_type_conversion) {
+            // Different types. Copy value to stack and cast to target type and write resulting
+            // value to target buffer.
+            InputT input_elem{};
+            std::memcpy(&input_elem, as_uint8_t_ptr(&bytestream[read_offset]), input_size);
+            elem = static_cast<TargetT>(input_elem);
+        }
+        else {
+            // Same type. Copy directly to target buffer.
+            static_assert(input_size == output_size);
+            std::memcpy(&elem, as_uint8_t_ptr(&bytestream[read_offset]), input_size);
+        }
+
         read_offset += stride_value;
     }
 
@@ -131,8 +154,7 @@ std::string_view read_string(span<const std::byte> bytestream, FileDataRange ran
         return {};
     }
 
-    return std::string_view(reinterpret_cast<const char*>(&bytestream[range.begin]),
-                            range_length_bytes);
+    return { reinterpret_cast<const char*>(&bytestream[range.begin]), range_length_bytes };
 }
 
 LoadResult load_version_1(ResourceLoadingInput& input)
@@ -166,14 +188,13 @@ LoadResult load_version_1(ResourceLoadingInput& input)
     result.data->bounding_sphere.radius = header.radius;
 
     pos +=
-        load_to_array(bytestream.subspan(pos), result.data->submeshes, ElemSize{ 8 }, Stride{ 12 });
+        load_to_array<SubmeshRange>(bytestream.subspan(pos), result.data->submeshes, Stride{ 12 });
 
-    pos += load_to_array(bytestream.subspan(pos),
-                         result.data->vertices,
-                         ElemSize{ sizeof(Vertex) },
-                         Stride{ 60 });
+    pos += load_to_array(bytestream.subspan(pos), result.data->vertices, Stride{ 60 });
 
-    const bool success = load_to_array(bytestream.subspan(pos), result.data->indices) > 0;
+    using OldIndexT = uint16_t;
+    const bool success = load_to_array<OldIndexT>(bytestream.subspan(pos), result.data->indices) >
+                         0;
 
     if (!success) {
         result.data.reset();

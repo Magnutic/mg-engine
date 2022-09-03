@@ -31,7 +31,7 @@ namespace Mg::gfx::Mesh {
 //--------------------------------------------------------------------------------------------------
 
 /** Unsigned integer type used to represent mesh-vertex indices. */
-using Index = uint16_t;
+using Index = uint32_t;
 
 /** Limitation: meshes cannot have more vertices than is representable by Index. */
 constexpr auto max_vertices_per_mesh = std::numeric_limits<Index>::max();
@@ -87,6 +87,11 @@ struct SubmeshRange {
 struct Submesh {
     SubmeshRange index_range = {};
     Identifier name{ "" };
+
+    Submesh() = default;
+
+    // Conversion from simple range, for compatibility.
+    explicit Submesh(const SubmeshRange& range) : index_range(range) {}
 };
 
 /** Non-owning view over the data required to define a mesh. */
