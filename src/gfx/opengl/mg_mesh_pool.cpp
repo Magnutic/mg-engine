@@ -487,6 +487,12 @@ void MeshPool::destroy(MeshHandle handle)
     m_impl->destroy(handle);
 }
 
+bool MeshPool::update(const Mesh::MeshDataView& mesh_data, Identifier name)
+{
+    MG_GFX_DEBUG_GROUP("MeshPool::update")
+    return m_impl->update(name, mesh_data);
+}
+
 bool MeshPool::update(const MeshResource& mesh_res)
 {
     MG_GFX_DEBUG_GROUP("MeshPool::update")

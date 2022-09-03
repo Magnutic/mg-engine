@@ -50,12 +50,17 @@ class MeshPool {
 public:
     MeshPool();
 
-    /** Create a new mesh using the given mesh resource. */
+    /** Create a new mesh using the given mesh resource. Expects that no mesh with the same
+     * identifier already exists -- if one does, use update() instead.
+     */
     MeshHandle create(const MeshResource& mesh_res);
 
-    /** Create a new mesh using the given mesh data. */
+    /** Create a new mesh using the given mesh data. Expects that no mesh with the same
+     * identifier already exists -- if one does, use update() instead.
+     */
     MeshHandle create(const Mesh::MeshDataView& mesh_data, Identifier name);
 
+    /** Get the mesh with the given name, if such a mesh exists. Otherwise, returns nullopt. */
     Opt<MeshHandle> get(Identifier name) const;
 
     /** Destroy the given mesh. Unless another mesh uses the same GPU data buffers (as would be the
@@ -63,6 +68,11 @@ public:
      * be freed.
      */
     void destroy(MeshHandle handle);
+
+    /** Update an existing mesh using the given mesh data.
+     * Returns true if a mesh was updated; false if no matching mesh existed in the repository.
+     */
+    bool update(const Mesh::MeshDataView& mesh_data, Identifier name);
 
     /** Update the mesh that was created from resource.
      * Used for hot-reloading of mesh files.
