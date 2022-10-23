@@ -335,16 +335,14 @@ PipelineBindingContext::~PipelineBindingContext()
 void PipelineBindingContext::bind_pipeline(const Pipeline& pipeline,
                                            const Pipeline::Settings& settings)
 {
-    if (pipeline.handle() == m_bound_handle) {
-        return;
-    }
-
     MG_GFX_DEBUG_GROUP("PipelineBindingContext::bind_pipeline")
 
-    apply_pipeline_settings(settings, m_bound_settings);
-    opengl::use_program(pipeline.handle());
+    if (pipeline.handle() != m_bound_handle) {
+        opengl::use_program(pipeline.handle());
+        m_bound_handle = pipeline.handle();
+    }
 
-    m_bound_handle = pipeline.handle();
+    apply_pipeline_settings(settings, m_bound_settings);
     m_bound_settings = settings;
 }
 
