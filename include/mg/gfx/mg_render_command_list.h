@@ -33,7 +33,7 @@ class Skeleton;
 class SkeletonPose;
 
 /** Function for sorting draw calls */
-enum class SortingMode { near_to_far, far_to_near };
+enum class SortingMode { unsorted, near_to_far, far_to_near };
 
 /** Description of an individual draw call. */
 struct RenderCommand {

@@ -68,6 +68,8 @@ void RenderCommandProducer::add_mesh(MeshHandle mesh_handle,
                                      const glm::mat4& transform,
                                      span<const MaterialAssignment> material_assignment)
 {
+    MG_ASSERT(m_impl->m_transforms_unsorted.size() == m_impl->render_commands_unsorted.size());
+
     const MeshInternal& mesh = get_mesh(mesh_handle);
 
     for (size_t i = 0; i < mesh.submeshes.size(); ++i) {
@@ -197,9 +199,11 @@ const RenderCommandList& RenderCommandProducer::finalize(const ICamera& camera,
     MG_ASSERT(m_impl->keys.size() == size());
 
     // Sort sort-key sequence
-    auto cmp = (sorting_mode == SortingMode::far_to_near) ? cmp_draw_call<true>
-                                                          : cmp_draw_call<false>;
-    sort(m_impl->keys, [&](const SortKey& lhs, const SortKey& rhs) { return cmp(lhs, rhs); });
+    if (sorting_mode != SortingMode::unsorted) {
+        auto cmp = (sorting_mode == SortingMode::far_to_near) ? cmp_draw_call<true>
+                                                              : cmp_draw_call<false>;
+        sort(m_impl->keys, [&](const SortKey& lhs, const SortKey& rhs) { return cmp(lhs, rhs); });
+    }
 
     // Write out sorted render commands to m_impl->commands.
     m_impl->commands.m_render_commands.reserve(size());
@@ -209,13 +213,16 @@ const RenderCommandList& RenderCommandProducer::finalize(const ICamera& camera,
     const auto VP = camera.view_proj_matrix();
 
     for (const SortKey& key : m_impl->keys) {
-        const RenderCommand& command = m_impl->render_commands_unsorted[key.index];
+        const RenderCommand& render_command = m_impl->render_commands_unsorted[key.index];
         const glm::mat4& M = m_impl->m_transforms_unsorted[key.index];
-        if (in_view(VP * M, command.bounding_sphere)) {
-            m_impl->commands.m_render_commands.emplace_back(m_impl->render_commands_unsorted[key.index]);
-            m_impl->commands.m_m_transforms.emplace_back(M);
-            m_impl->commands.m_vp_transforms.emplace_back(VP);
+
+        if (!in_view(VP * M, render_command.bounding_sphere)) {
+            continue;
         }
+
+        m_impl->commands.m_render_commands.emplace_back(render_command);
+        m_impl->commands.m_m_transforms.emplace_back(M);
+        m_impl->commands.m_vp_transforms.emplace_back(VP);
     }
 
     return m_impl->commands;
