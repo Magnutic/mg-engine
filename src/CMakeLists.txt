@@ -72,6 +72,7 @@ add_library(mg_engine
     resources/mg_texture_resource.cpp
     utils/mg_file_io.cpp
     utils/mg_file_time_helper.cpp
+    utils/mg_geometric_functions.cpp
     utils/mg_rand.cpp
     utils/mg_string_utils.cpp
 )
