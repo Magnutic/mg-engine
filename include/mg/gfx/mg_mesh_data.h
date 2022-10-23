@@ -88,10 +88,14 @@ struct Submesh {
     SubmeshRange index_range = {};
     Identifier name{ "" };
 
-    Submesh() = default;
-
     // Conversion from simple range, for compatibility.
     explicit Submesh(const SubmeshRange& range) : index_range(range) {}
+
+    Submesh() = default;
+
+    Submesh(const SubmeshRange& range, const Identifier name_)
+        : index_range(range), name(name_)
+    {}
 };
 
 /** Non-owning view over the data required to define a mesh. */
