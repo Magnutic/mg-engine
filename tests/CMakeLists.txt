@@ -69,3 +69,5 @@ add_mg_test(gsl_test)
 add_mg_test(observer_test)
 
 add_mg_test(unicode_test)
+
+add_mg_test(enum_map_test)
