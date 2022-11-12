@@ -240,24 +240,6 @@ bool curve_editor_widget(const CurveEditorSettings& settings,
                 hovered_control_point = i;
             }
 
-            if (active_control_point_inout == i && ImGui::IsMouseDragging(0)) {
-                auto new_point = from_screenspace(ImGui::GetMousePos());
-
-                // Always round to two decimals.
-                new_point.x = std::round(new_point.x * 100.0f) / 100.0f;
-                new_point.y = std::round(new_point.y * 100.0f) / 100.0f;
-
-                // Round to grid unless shift is held.
-                if (!io.KeyShift) {
-                    new_point.y = std::round(new_point.y / settings.grid_spacing_y) *
-                                  settings.grid_spacing_y;
-                }
-
-                curve.set_x(i, new_point.x);
-                curve.set_y(i, new_point.y);
-                interacted = true;
-            }
-
             if (active_control_point_inout == i) {
                 const auto left_handle_button_id =
                     fmt::format("{}##left_handle_{}", settings.label, i);
@@ -297,6 +279,25 @@ bool curve_editor_widget(const CurveEditorSettings& settings,
                     ImGui::SetTooltip("%s", s.c_str());
                 }
             }
+
+            if (!interacted && active_control_point_inout == i && ImGui::IsMouseDragging(0)) {
+                auto new_point = from_screenspace(ImGui::GetMousePos());
+
+                // Always round to two decimals.
+                new_point.x = std::round(new_point.x * 100.0f) / 100.0f;
+                new_point.y = std::round(new_point.y * 100.0f) / 100.0f;
+
+                // Round to grid unless shift is held.
+                if (!io.KeyShift) {
+                    new_point.y = std::round(new_point.y / settings.grid_spacing_y) *
+                                  settings.grid_spacing_y;
+                }
+
+                curve.set_x(i, new_point.x);
+                curve.set_y(i, new_point.y);
+                interacted = true;
+            }
+
         }
 
         if (io.MouseClicked[0] && !interacted) {
