@@ -1,11 +1,11 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2021, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
 /** @file mg_bounding_primitives.h
- * Definitions representing mesh data.
+ * Type definitions and functions for calculating bounding primitives.
  */
 
 #pragma once
