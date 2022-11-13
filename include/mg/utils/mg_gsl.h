@@ -69,6 +69,8 @@ template<typename To, typename From> constexpr To narrow(From value)
 {
     auto ret_val = narrow_cast<To>(value);
     MG_ASSERT(static_cast<From>(ret_val) == value && "conversion resulted in changed value.");
+    MG_ASSERT(std::is_signed_v<To> == std::is_signed_v<From> ||
+              (ret_val < To{}) == (value < From{}));
     return ret_val;
 }
 
