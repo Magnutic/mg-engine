@@ -13,7 +13,6 @@
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 
-#include <algorithm>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -40,15 +39,25 @@ constexpr bool is_ascii(char codepoint)
 }
 
 /** Is character an ASCII white-space character? */
-bool is_whitespace(char32_t c) noexcept;
-inline bool is_whitespace(char c) noexcept
+constexpr bool is_whitespace(char32_t c) noexcept
+{
+    if (!is_ascii(c)) return false;
+    for (char w : k_white_space) {
+        if (to_char32(w) == c) return true;
+    }
+    return false;
+}
+constexpr bool is_whitespace(char c) noexcept
 {
     return is_whitespace(to_char32(c));
 }
 
 /** Is character not an ASCII white-space character? */
-bool is_not_whitespace(char32_t c) noexcept;
-inline bool is_not_whitespace(char c) noexcept
+constexpr bool is_not_whitespace(char32_t c) noexcept
+{
+    return !is_whitespace(c);
+}
+constexpr bool is_not_whitespace(char c) noexcept
 {
     return is_not_whitespace(to_char32(c));
 }

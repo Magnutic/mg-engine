@@ -14,16 +14,6 @@
 #include <cstring> // memcpy
 
 namespace Mg {
-bool is_whitespace(char32_t c) noexcept
-{
-    return is_ascii(c) &&
-           std::find(k_white_space.begin(), k_white_space.end(), c) != k_white_space.end();
-}
-bool is_not_whitespace(char32_t c) noexcept
-{
-    return !is_ascii(c) ||
-           std::find(k_white_space.begin(), k_white_space.end(), c) == k_white_space.end();
-}
 
 /** Tokenize string by delimiter, returns tokens in vector. */
 std::vector<std::string_view> tokenize_string(std::string_view s, std::string_view delims) noexcept
