@@ -14,6 +14,7 @@
 #include "mg/gfx/mg_blend_modes.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_texture_related_types.h"
+#include "mg/utils/mg_enum.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_optional.h"
 
@@ -27,24 +28,16 @@ class IRenderTarget;
 class UniformBuffer;
 
 /** How polygons should be rasterized. */
-enum class PolygonMode : unsigned { point = 0, line = 1, fill = 2 };
+MG_ENUM(PolygonMode, (point, line, fill))
 
 /** Condition for letting a fragment pass through depth-testing against the depth buffer. */
-enum class DepthTestCondition : unsigned {
-    less = 0,
-    equal = 1,
-    less_equal = 2,
-    greater = 3,
-    not_equal = 4,
-    greater_equal = 5,
-    always = 6
-};
+MG_ENUM(DepthTestCondition, (less, equal, less_equal, greater, not_equal, greater_equal, always))
 
 /** Which side of polygons to cull. */
-enum class CullingMode : unsigned { none = 0, front = 1, back = 2 };
+MG_ENUM(CullingMode, (none, front, back))
 
 /** The type of an input to a rendering pipeline. */
-enum class PipelineInputType : unsigned { BufferTexture, Sampler2D, UniformBuffer };
+MG_ENUM(PipelineInputType, (BufferTexture, Sampler2D, UniformBuffer))
 
 /** Describes an input to a pipeline: the input's type, name, and its binding location. */
 struct PipelineInputDescriptor {

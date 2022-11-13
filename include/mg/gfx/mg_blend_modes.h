@@ -10,23 +10,24 @@
 
 #pragma once
 
+#include <mg/utils/mg_enum.h>
+
 /** Pre-defined blend modes. */
 namespace Mg::gfx {
 
-enum class BlendFactor {
-    zero = 0,
-    one = 1,
-    src_colour = 2,
-    one_minus_src_colour = 3,
-    src_alpha = 4,
-    one_minus_src_alpha = 5,
-    dst_alpha = 6,
-    one_minus_dst_alpha = 7,
-    dst_colour = 8,
-    one_minus_dst_colour = 9
-};
+MG_ENUM(BlendFactor,
+        (zero,
+         one,
+         src_colour,
+         one_minus_src_colour,
+         src_alpha,
+         one_minus_src_alpha,
+         dst_alpha,
+         one_minus_dst_alpha,
+         dst_colour,
+         one_minus_dst_colour))
 
-enum class BlendOp { add = 0, subtract = 1, reverse_subtract = 2, min = 3, max = 4 };
+MG_ENUM(BlendOp, (add, subtract, reverse_subtract, min, max))
 
 struct BlendMode {
     BlendOp colour_blend_op : 3;

@@ -165,20 +165,30 @@ Pipeline::~Pipeline()
 
 namespace /* OpenGL helpers. */ {
 
-GLenum gl_polygon_mode(PolygonMode mode)
+constexpr GLenum gl_polygon_mode(PolygonMode mode)
 {
-    static constexpr std::array<GLenum, 3> values{ GL_POINT, GL_LINE, GL_FILL };
-    return values.at(static_cast<size_t>(mode));
+    constexpr enum_utils::Map<PolygonMode, GLenum> values{
+        { PolygonMode::point, GL_POINT },
+        { PolygonMode::line, GL_LINE },
+        { PolygonMode::fill, GL_FILL },
+    };
+    return values[mode];
 }
 
-GLenum gl_depth_mode(DepthTestCondition mode)
+constexpr GLenum gl_depth_mode(DepthTestCondition mode)
 {
-    static constexpr std::array<GLenum, 6> values{ GL_LESS,    GL_EQUAL,    GL_LEQUAL,
-                                                   GL_GREATER, GL_NOTEQUAL, GL_GEQUAL };
-    return values.at(static_cast<size_t>(mode));
+    constexpr enum_utils::Map<DepthTestCondition, GLenum> values{
+        { DepthTestCondition::less, GL_LESS },
+        { DepthTestCondition::equal, GL_EQUAL },
+        { DepthTestCondition::less_equal, GL_LEQUAL },
+        { DepthTestCondition::greater, GL_GREATER },
+        { DepthTestCondition::not_equal, GL_NOTEQUAL },
+        { DepthTestCondition::greater_equal, GL_GEQUAL },
+    };
+    return values[mode];
 }
 
-Opt<GLenum> gl_culling_mode(CullingMode mode)
+constexpr Opt<GLenum> gl_culling_mode(CullingMode mode)
 {
     if (mode == CullingMode::front) {
         return GLenum{ GL_FRONT };
@@ -189,22 +199,33 @@ Opt<GLenum> gl_culling_mode(CullingMode mode)
     return nullopt;
 }
 
-GLenum gl_blend_op(BlendOp op)
+constexpr GLenum gl_blend_op(BlendOp op)
 {
-    static constexpr std::array<GLenum, 6> values{
-        GL_FUNC_ADD, GL_FUNC_SUBTRACT, GL_FUNC_REVERSE_SUBTRACT, GL_MIN, GL_MAX
+    constexpr enum_utils::Map<BlendOp, GLenum> values{
+        { BlendOp::add, GL_FUNC_ADD },
+        { BlendOp::subtract, GL_FUNC_SUBTRACT },
+        { BlendOp::reverse_subtract, GL_FUNC_REVERSE_SUBTRACT },
+        { BlendOp::min, GL_MIN },
+        { BlendOp::max, GL_MAX },
     };
-    return values.at(static_cast<size_t>(op));
+    return values[op];
 }
 
-GLenum gl_blend_factor(BlendFactor factor)
+constexpr GLenum gl_blend_factor(BlendFactor factor)
 {
-    static constexpr std::array<GLenum, 10> values{ GL_ZERO,      GL_ONE,
-                                                    GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR,
-                                                    GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA,
-                                                    GL_DST_ALPHA, GL_ONE_MINUS_DST_ALPHA,
-                                                    GL_DST_COLOR, GL_ONE_MINUS_DST_COLOR };
-    return values.at(static_cast<size_t>(factor));
+    constexpr enum_utils::Map<BlendFactor, GLenum> values{
+        { BlendFactor::zero, GL_ZERO },
+        { BlendFactor::one, GL_ONE },
+        { BlendFactor::src_colour, GL_SRC_COLOR },
+        { BlendFactor::one_minus_src_colour, GL_ONE_MINUS_SRC_COLOR },
+        { BlendFactor::src_alpha, GL_SRC_ALPHA },
+        { BlendFactor::one_minus_src_alpha, GL_ONE_MINUS_SRC_ALPHA },
+        { BlendFactor::dst_alpha, GL_DST_ALPHA },
+        { BlendFactor::one_minus_dst_alpha, GL_ONE_MINUS_DST_ALPHA },
+        { BlendFactor::dst_colour, GL_DST_COLOR },
+        { BlendFactor::one_minus_dst_colour, GL_ONE_MINUS_DST_COLOR },
+    };
+    return values[factor];
 }
 
 void apply_pipeline_settings(const Pipeline::Settings settings,
