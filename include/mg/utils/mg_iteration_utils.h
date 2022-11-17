@@ -22,6 +22,9 @@ template<typename ContT>
 using ContainerIt = std::
     conditional_t<std::is_const_v<ContT>, typename ContT::const_iterator, typename ContT::iterator>;
 
+// Type-dependent false value used to defer static_assert evaluation until template instantiation.
+template<typename T> constexpr bool iter_utils_dependent_false = false;
+
 } // namespace detail
 
 template<typename It> class IterateAdjacentRange;
@@ -44,7 +47,7 @@ auto iterate_adjacent(ContT&) -> IterateAdjacentRange<detail::ContainerIt<ContT>
 template<typename ContT>
 auto iterate_adjacent(ContT&&) -> IterateAdjacentRange<detail::ContainerIt<ContT>>
 {
-    static_assert((sizeof(ContT), false),
+    static_assert(detail::iter_utils_dependent_false<ContT>,
                   "iterate_adjacent may not be used with a container rvalue. Instead, please "
                   "declare a variable to hold the container first, then call iterate_adjacent with "
                   "that variable. This avoids risks of lifetime issues with temporary values.");
@@ -69,7 +72,7 @@ auto enumerate(ContT&, NumT counter_start = 0) -> EnumerateRange<NumT, detail::C
 template<typename NumT, typename ContT>
 auto enumerate(ContT&&, NumT = 0) -> EnumerateRange<NumT, detail::ContainerIt<ContT>>
 {
-    static_assert((sizeof(ContT), false),
+    static_assert(detail::iter_utils_dependent_false<ContT>,
                   "enumerate may not be used with a container rvalue. Instead, please declare a "
                   "variable to hold the container first, then call enumerate with that variable. "
                   "This avoids risks of lifetime issues with temporary values.");
@@ -94,7 +97,7 @@ template<typename ContT_T, typename ContT_U>
 auto zip(ContT_T&&, ContT_U&)
     -> ZipRange<detail::ContainerIt<ContT_T>, detail::ContainerIt<ContT_U>>
 {
-    static_assert((sizeof(ContT_T), false),
+    static_assert(detail::iter_utils_dependent_false<ContT_T>,
                   "zip may not be used with a container rvalue. Instead, please declare a "
                   "variable to hold the container first, then call zip with that variable. "
                   "This avoids risks of lifetime issues with temporary values.");
@@ -105,7 +108,7 @@ template<typename ContT_T, typename ContT_U>
 auto zip(ContT_T&, ContT_U&&)
     -> ZipRange<detail::ContainerIt<ContT_T>, detail::ContainerIt<ContT_U>>
 {
-    static_assert((sizeof(ContT_U), false),
+    static_assert(detail::iter_utils_dependent_false<ContT_U>,
                   "zip may not be used with a container rvalue. Instead, please declare a "
                   "variable to hold the container first, then call zip with that variable. "
                   "This avoids risks of lifetime issues with temporary values.");
@@ -116,7 +119,7 @@ template<typename ContT_T, typename ContT_U>
 auto zip(ContT_T&&, ContT_U&&)
     -> ZipRange<detail::ContainerIt<ContT_T>, detail::ContainerIt<ContT_U>>
 {
-    static_assert((sizeof(ContT_U), false),
+    static_assert(detail::iter_utils_dependent_false<ContT_U>,
                   "zip may not be used with a container rvalue. Instead, please declare a "
                   "variable to hold the container first, then call zip with that variable. "
                   "This avoids risks of lifetime issues with temporary values.");
