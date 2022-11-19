@@ -4,20 +4,36 @@ cmake_minimum_required(VERSION 3.8.2)
 # Find / download Catch 2
 set(CATCH_HEADER "${CMAKE_CURRENT_LIST_DIR}/catch.hpp")
 
-if (NOT EXISTS ${CATCH_HEADER})
-    message("-- Catch2 header (${CATCH_HEADER}) not found, downloading...")
-    file(
-        DOWNLOAD "https://github.com/catchorg/Catch2/releases/download/v2.7.2/catch.hpp" ${CATCH_HEADER}
-        EXPECTED_HASH SHA256=725a002a3837e343056ead2c2ffad6c1d9680b675635e81d53e7fd765be27909)
+set(CATCH_URL "https://github.com/catchorg/Catch2/releases/download/v2.13.10/catch.hpp")
+set(CATCH_HASH_EXPECTED "3725c0f0a75f376a5005dde31ead0feb8f7da7507644c201b814443de8355170")
+
+if (EXISTS ${CATCH_HEADER})
+    file(SHA256 ${CATCH_HEADER} CATCH_HASH)
 endif()
+
+if (NOT EXISTS ${CATCH_HEADER} OR NOT ${CATCH_HASH} STREQUAL ${CATCH_HASH_EXPECTED})
+    message(STATUS "Catch2 header (${CATCH_HEADER}) not found, downloading...")
+    file(
+        DOWNLOAD ${CATCH_URL} ${CATCH_HEADER}
+        EXPECTED_HASH "SHA256=${CATCH_HASH_EXPECTED}")
+endif()
+
+if (NOT EXISTS ${CATCH_HEADER} OR NOT ${CATCH_HASH} STREQUAL ${CATCH_HASH_EXPECTED})
+    message(STATUS "CATCH_HEADER: ${CATCH_HEADER}")
+    message(STATUS "CATCH_HASH: ${CATCH_HASH}")
+    message(STATUS "CATCH_HASH_EXPECTED: ${CATCH_HASH_EXPECTED}")
+    message(FATAL_ERROR "Failed to download Catch2 header.")
+endif()
+
+message(STATUS "Using Catch2 at ${CATCH_HEADER}")
 
 # Catch main
 add_library(catch_main catch_main.cpp)
 
 if (MSVC)
-    target_compile_options(catch_main PUBLIC /std:c++17 /permissive-)
+    target_compile_options(catch_main PUBLIC /std:c++20 /permissive-)
 else()
-    target_compile_options(catch_main PUBLIC -std=c++17)
+    target_compile_options(catch_main PUBLIC -std=c++20)
 endif()
 
 # Tests
