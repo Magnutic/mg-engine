@@ -22,7 +22,7 @@ namespace Mg {
 class RuntimeError {
 public:
     template<typename... Ts>
-    explicit RuntimeError(std::string_view message, Ts&&... format_args)
+    explicit RuntimeError(fmt::format_string<Ts...> message, Ts&&... format_args)
         : m_message(fmt::format(message, std::forward<Ts>(format_args)...))
     {
         log.error(m_message);

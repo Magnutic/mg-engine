@@ -40,13 +40,10 @@ void glfw_error_callback(int error, const char* reason)
 {
     std::string error_message;
     if (error == GLFW_VERSION_UNAVAILABLE || error == GLFW_API_UNAVAILABLE) {
-        error_message = fmt::format(opengl_create_fail_msg, reason);
-    }
-    else {
-        error_message = fmt::format("GLFW error {}:\n%s", error, reason);
+        throw RuntimeError{ opengl_create_fail_msg, reason };
     }
 
-    throw RuntimeError{ error_message };
+    throw RuntimeError{ "GLFW error {}:\n%s", error, reason };
 }
 
 // GLFW callbacks provide the GLFW window handle, but we must forward to the appropriate instance

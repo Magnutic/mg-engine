@@ -62,7 +62,7 @@ public:
     void write(Prio prio, std::string msg) { write_impl(prio, std::move(msg)); }
 
     template<typename T, typename... Ts>
-    void write(Prio prio, std::string_view msg, T&& arg, Ts&&... args)
+    void write(Prio prio, fmt::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
     {
         write_impl(prio, fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
     }
@@ -80,27 +80,31 @@ public:
     void verbose(std::string msg) { write_impl(Prio::Verbose, std::move(msg)); }
 
     /** Formats and writes a message with priority Error */
-    template<typename T, typename... Ts> void error(std::string_view msg, T&& arg, Ts&&... args)
+    template<typename T, typename... Ts>
+    void error(fmt::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
     {
         write_impl(Prio::Error, fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
     }
 
     /** Formats and writes a message with priority Warning */
-    template<typename T, typename... Ts> void warning(std::string_view msg, T&& arg, Ts&&... args)
+    template<typename T, typename... Ts>
+    void warning(fmt::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
     {
         write_impl(Prio::Warning,
                    fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
     }
 
     /** Formats and writes a message with priority Message */
-    template<typename T, typename... Ts> void message(std::string_view msg, T&& arg, Ts&&... args)
+    template<typename T, typename... Ts>
+    void message(fmt::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
     {
         write_impl(Prio::Message,
                    fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
     }
 
     /** Formats and writes a message with priority Verbose */
-    template<typename T, typename... Ts> void verbose(std::string_view msg, T&& arg, Ts&&... args)
+    template<typename T, typename... Ts>
+    void verbose(fmt::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
     {
         write_impl(Prio::Verbose,
                    fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));

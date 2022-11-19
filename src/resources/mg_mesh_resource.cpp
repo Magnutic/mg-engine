@@ -395,7 +395,7 @@ LoadResourceResult MeshResource::load_resource_impl(ResourceLoadingInput& input)
 bool MeshResource::validate() const
 {
     bool status = true;
-    const auto mesh_error = [&](std::string_view msg, auto&&... args) {
+    const auto mesh_error = [&]<typename... Ts>(fmt::format_string<Ts...> msg, Ts&&... args) {
         log.warning("MeshResource::validate() for {}: {}",
                     resource_id().str_view(),
                     fmt::format(msg, std::forward<decltype(args)>(args)...));
