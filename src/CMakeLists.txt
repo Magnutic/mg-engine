@@ -77,8 +77,8 @@ add_library(mg_engine
     utils/mg_string_utils.cpp
 )
 
-# Compile using standard C++17
-target_compile_features(mg_engine PUBLIC cxx_std_17)
+# Compile using standard C++20
+target_compile_features(mg_engine PUBLIC cxx_std_20)
 set_target_properties(mg_engine PROPERTIES CXX_EXTENSIONS OFF)
 
 # Put resulting libraries under libs/
@@ -100,8 +100,8 @@ if(MSVC)
          message(FATAL_ERROR "Mg Engine requires Visual Studio 17 (v15.7.5) or higher.")
     endif()
 
-    # Use c++17
-    target_compile_options(mg_engine PUBLIC /permissive-)
+    # Use C++20
+    target_compile_options(mg_engine PUBLIC /permissive- /std:c++20)
 
     # Enable multi-core compilation and high warning level with MSVC
     # Ignore warnings about nameless struct/union (ubiquitous in GLM)

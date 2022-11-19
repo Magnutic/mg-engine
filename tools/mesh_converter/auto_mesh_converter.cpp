@@ -2,6 +2,7 @@
 
 #include "mg/utils/mg_stl_helpers.h"
 #include "mg/utils/mg_string_utils.h"
+#include "mg/utils/mg_u8string_to_string.h"
 
 #include <algorithm>
 #include <chrono>
@@ -26,7 +27,8 @@ bool convert(const fs::path& filename, const bool debug_logging)
     out_filename.replace_extension(".mgm");
 
     if (!convert_mesh(filename, out_filename, debug_logging)) {
-        std::cerr << "Failed to convert file '" << filename.u8string() << "'." << std::endl;
+        std::cerr << "Failed to convert file '" << u8string_view_to_string_view(filename.u8string())
+                  << "'." << std::endl;
         return true;
     }
 
@@ -119,7 +121,9 @@ void add_files_to_list(const std::vector<std::string_view>& extensions,
         directory, fs::directory_options::follow_directory_symlink);
 
     auto has_sought_extension = [&extensions](const fs::path& filepath) {
-        const auto file_extension = to_lower(filepath.extension().generic_u8string());
+        const auto file_extension =
+            to_lower(u8string_view_to_string_view(filepath.extension().generic_u8string()));
+
         return any_of(extensions, [&](const std::string_view& extension) {
             return extension == file_extension;
         });

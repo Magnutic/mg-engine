@@ -35,6 +35,7 @@
 #include "mg/utils/mg_file_io.h"
 #include "mg/utils/mg_file_time_helper.h"
 #include "mg/utils/mg_string_utils.h"
+#include "mg/utils/mg_u8string_to_string.h"
 
 #include <zip.h>
 
@@ -68,7 +69,7 @@ Array<FileRecord> BasicFileLoader::available_files()
         // directory.
         // N.B. MSVC implementation of generic_u8string is documented as converting backslash path
         // separators to forward slashes.
-        std::string filepath = file.path().generic_u8string();
+        std::string filepath = u8string_to_string(file.path().generic_u8string());
         filepath.erase(0, root_dir.generic_u8string().length() + 1);
 
         index.push_back({ Identifier::from_runtime_string(filepath), last_write_time });
@@ -109,17 +110,21 @@ void BasicFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
     const auto fname = file.str_view();
     const auto path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
 
-    const bool file_is_under_directory = is_prefix_of(m_directory, path.generic_u8string());
+    const bool file_is_under_directory =
+        is_prefix_of(m_directory, u8string_view_to_string_view(path.generic_u8string()));
+
     if (!file_is_under_directory) {
         throw RuntimeError{
             "BasicFileLoader: trying to load file which is outside file loader's directory."
         };
     }
 
-    Opt<std::ifstream> istream = io::make_input_filestream(path.generic_u8string(),
-                                                           io::Mode::binary);
+    Opt<std::ifstream> istream =
+        io::make_input_filestream(u8string_view_to_string_view(path.generic_u8string()),
+                                  io::Mode::binary);
     if (!istream) {
-        throw RuntimeError{ "Could not read file '{}'", path.generic_u8string() };
+        throw RuntimeError{ "Could not read file '{}'",
+                            u8string_view_to_string_view(path.generic_u8string()) };
     }
 
     const auto size = io::file_size(*istream);

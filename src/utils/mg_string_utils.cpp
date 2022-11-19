@@ -115,7 +115,7 @@ size_t find_any_of(std::string_view str, std::string_view chars) noexcept
 std::string to_lower(std::string_view str) noexcept
 {
     std::string ret_val{ str };
-    utf8lwr(ret_val.data());
+    utf8lwr(reinterpret_cast<char8_t*>(ret_val.data()));
     return ret_val;
 }
 
@@ -123,7 +123,7 @@ std::string to_lower(std::string_view str) noexcept
 std::string to_upper(std::string_view str) noexcept
 {
     std::string ret_val{ str };
-    utf8upr(ret_val.data());
+    utf8upr(reinterpret_cast<char8_t*>(ret_val.data()));
     return ret_val;
 }
 

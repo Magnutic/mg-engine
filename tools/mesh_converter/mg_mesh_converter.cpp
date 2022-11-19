@@ -5,6 +5,8 @@
 
 #include <mg/resources/mg_mesh_resource_data.h>
 #include <mg/utils/mg_assert.h>
+#include <mg/utils/mg_optional.h>
+#include <mg/utils/mg_u8string_to_string.h>
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/transform.hpp>
@@ -514,14 +516,14 @@ private:
 
 // If any influences have weight less than the given weight, return the one index of the one with
 // the smallest weight.
-std::optional<size_t> get_influence_index_to_use(const Influences& bindings, const float weight)
+Opt<size_t> get_influence_index_to_use(const Influences& bindings, const float weight)
 {
     const auto normalized_weight = normalize<JointWeights::value_type>(weight);
     auto it = std::min_element(bindings.weights.begin(), bindings.weights.end());
     if (*it < normalized_weight) {
         return size_t(std::distance(bindings.weights.begin(), it));
     }
-    return std::nullopt;
+    return nullopt;
 }
 
 void MeshData::visit(const aiMesh& mesh)
@@ -588,7 +590,7 @@ void MeshData::visit(const aiMesh& mesh)
                 const float weight = bone.mWeights[wi].mWeight; // NOLINT
                 Influences& influences = m_influences[vertex_index];
 
-                if (std::optional<size_t> index = get_influence_index_to_use(influences, weight);
+                if (Opt<size_t> index = get_influence_index_to_use(influences, weight);
                     index.has_value()) {
                     influences.ids[index.value()] = m_joint_data->get_joint_id(bone);
                     influences.weights[index.value()] = normalize<JointWeights::value_type>(weight);
@@ -792,7 +794,7 @@ const aiScene* load_file(Assimp::Importer& importer, const std::filesystem::path
         scene = importer.ReadFile(file_path, static_model_flags);
     }
 
-    notify("Loaded file '", file_path.u8string(), "'.");
+    notify("Loaded file '", u8string_view_to_string_view(file_path.u8string()), "'.");
     return scene;
 }
 
@@ -875,7 +877,7 @@ bool write_file(const std::filesystem::path& file_path,
 
     const bool success = writer.write(file_path);
     if (success) {
-        notify("Wrote file '", file_path.u8string(), "'.");
+        notify("Wrote file '", u8string_view_to_string_view(file_path.u8string()), "'.");
     }
 
     return success;
@@ -925,7 +927,7 @@ bool convert_mesh(const std::filesystem::path& path_in,
         return write_file(path_out, mesh_data, joint_data, animation_data, string_data);
     }
     catch (const std::exception& e) {
-        error("Failed to process '", path_in.u8string(), "': ", e.what());
+        error("Failed to process '", u8string_to_string(path_in.u8string()), "': ", e.what());
         return false;
     }
 }

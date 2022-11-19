@@ -13,6 +13,7 @@
 #pragma once
 
 #include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_u8string_to_string.h"
 
 #include <cstdint>
 #include <string_view>
@@ -72,7 +73,11 @@ public:
     /** Constructs an Identifier from a dynamic string: this is slower as it requires run-time
      * hashing and potentially storing a copy of the dynamic string.
      */
-    static Identifier from_runtime_string(std::string_view str) { return Identifier(str); }
+    static Identifier from_runtime_string(std::string_view str) { return { str }; }
+    static Identifier from_runtime_string(std::u8string_view str)
+    {
+        return { u8string_view_to_string_view(str) };
+    }
 
     /** Default constructor, empty string. */
     Identifier() : Identifier("") {}
@@ -133,7 +138,7 @@ private:
 namespace literals {
 MG_INLINE constexpr Identifier operator""_id(const char* str, size_t len)
 {
-    return Identifier(str, hash_fnv1a({ str, len }));
+    return { str, hash_fnv1a({ str, len }) };
 }
 } // namespace literals
 

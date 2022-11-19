@@ -320,7 +320,7 @@ void write_crash_log()
 
     const auto outpath = out_directory / log_filename;
 
-    log.message("Saving crash log '{}'", fs::absolute(outpath).generic_u8string());
+    log.message("Saving crash log '{}'", fs::absolute(outpath).string());
     log.flush();
 
     fs::copy(log_path, outpath);

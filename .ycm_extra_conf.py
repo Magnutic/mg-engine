@@ -7,7 +7,7 @@ flags = [
     '-Wshadow',
     '-Wnon-virtual-dtor',
     '-Wconversion',
-    '-std=c++17',
+    '-std=c++20',
     '-x', 'c++',
     '-I', './external/mg_dependencies/include',
     '-I', './external/mg_dependencies/include/bullet',

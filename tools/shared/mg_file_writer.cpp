@@ -41,7 +41,7 @@ bool FileWriter::write(const std::filesystem::path& out_path)
     out_file.open(tmp_path, std::ios::out | std::ios::binary | std::ios::trunc);
 
     if (!out_file.is_open() || !out_file.good()) {
-        log.error("Failed to write file '{}': could not open for writing.", tmp_path.u8string());
+        log.error("Failed to write file '{}': could not open for writing.", tmp_path.string());
         return false;
     }
 
@@ -58,11 +58,11 @@ bool FileWriter::write(const std::filesystem::path& out_path)
     std::filesystem::rename(tmp_path, out_path, ec);
 
     if (ec) {
-        log.error("Failed to write file '{}': {}", out_path.u8string(), ec.message());
+        log.error("Failed to write file '{}': {}", out_path.string(), ec.message());
         return false;
     }
 
-    log.message("Wrote file '{}'.", out_path.u8string());
+    log.message("Wrote file '{}'.", out_path.string());
     return true;
 }
 

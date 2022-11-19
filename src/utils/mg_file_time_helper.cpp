@@ -12,6 +12,7 @@
 
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
+#include "mg/utils/mg_u8string_to_string.h"
 
 #include <fmt/core.h>
 
@@ -28,13 +29,11 @@ namespace Mg {
 
 namespace {
 constexpr auto msg_failed_to_read = "Could not read time stamp of file '{}'";
-constexpr auto msg_failed_to_convert = "Could not read time stamp of file '{}'";
+[[maybe_unused]] constexpr auto msg_failed_to_convert = "Could not read time stamp of file '{}'";
 } // namespace
 
 // TODO C++20: Replace with using std::filesystem::last_write_time and std::chrono::clock_cast.
 
-// Get last write time of file as time_t (more portable than the unspecified time type guaranteed by
-// C++17 standard).
 std::time_t last_write_time_t(const std::filesystem::path& file)
 {
 #ifdef _WIN32
@@ -50,7 +49,8 @@ std::time_t last_write_time_t(const std::filesystem::path& file)
     const bool gotTime = GetFileTime(handle, nullptr, nullptr, &ft);
 
     if (!gotTime) {
-        throw RuntimeError{ msg_failed_to_read, file.generic_u8string() };
+        throw RuntimeError{ msg_failed_to_read,
+                            u8string_view_to_string_view(file.generic_u8string()) };
     }
 
     SYSTEMTIME st;
@@ -77,7 +77,7 @@ std::time_t last_write_time_t(const std::filesystem::path& file)
         return result.st_mtime;
     }
 
-    throw RuntimeError{ msg_failed_to_read, file.generic_u8string() };
+    throw RuntimeError{ msg_failed_to_read, u8string_view_to_string_view(file.generic_u8string()) };
 #endif // _WIN32
 }
 
