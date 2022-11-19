@@ -308,7 +308,7 @@ void write_crash_log()
     const time_t crash_time = time(nullptr);
     const tm& t = *localtime(&crash_time);
 
-    auto out_directory_name = fmt::format("crashlog_{:%F}_{:%T}", t);
+    auto out_directory_name = fmt::format("crashlog_{:%T}", t);
 
     const auto fp = log.file_path();
     const auto log_path = fs::u8path(fp.begin(), fp.end());
