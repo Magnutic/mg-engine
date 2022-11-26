@@ -40,6 +40,12 @@ enum class IntValueMeaning {
 
 /** Vertex attributes describe how vertex data is to be interpreted. */
 struct VertexAttribute {
+    // Identifier for this attribute
+    const char* identifier = "";
+
+    // Binding location. Must match location specified in shader code.
+    uint32_t binding_location = 0;
+
     // Number of elements for attribute (e.g. 3 for a vec3)
     uint32_t num_elements = 0;
 

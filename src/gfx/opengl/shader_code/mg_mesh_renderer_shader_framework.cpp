@@ -5,7 +5,11 @@
 //**************************************************************************************************
 
 #include "mg_mesh_renderer_shader_framework.h"
+#include "mg/gfx/mg_joint.h"
+#include "mg/gfx/mg_mesh_data.h"
+#include "mg/utils/mg_string_utils.h"
 
+#include <algorithm>
 #include <string_view>
 
 using namespace std::literals;
@@ -34,15 +38,15 @@ layout(std140) uniform FrameBlock {
 )";
 
 constexpr const auto vertex_framework_code = R"(
-layout(location = 0) in vec3 vert_position;
-layout(location = 1) in vec2 vert_tex_coord;
-layout(location = 2) in vec3 vert_normal;
-layout(location = 3) in vec3 vert_tangent;
-layout(location = 4) in vec3 vert_bitangent;
-layout(location = 5) in vec4 vert_influences;
-layout(location = 6) in vec4 vert_joint_weights;
+layout(location = POSITION_BINDING_LOCATION) in vec3 vert_position;
+layout(location = TEX_COORD_BINDING_LOCATION) in vec2 vert_tex_coord;
+layout(location = NORMAL_BINDING_LOCATION) in vec3 vert_normal;
+layout(location = TANGENT_BINDING_LOCATION) in vec3 vert_tangent;
+layout(location = BITANGENT_BINDING_LOCATION) in vec3 vert_bitangent;
+layout(location = JOINT_INFLUENCES_BINDING_LOCATION) in vec4 vert_joint_influences;
+layout(location = JOINT_WEIGHTS_BINDING_LOCATION) in vec4 vert_joint_weights;
 
-layout(location = 8) in uint _matrix_index;
+layout(location = MATRIX_INDEX_BINDING_LOCATION) in uint _matrix_index;
 
 layout(std140) uniform MatrixBlock {
     mat4 m_matrices[MATRIX_ARRAY_SIZE];
@@ -127,25 +131,25 @@ void main()
     // Loop manually unrolled as work around for glitches appearing on Intel HD Graphics 530 on Linux.
 
     // Note: MATRIX_M is already multiplied into the skinning matrices.
-    position        += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_influences[0])) * vec4(POSITION,  1.0)).xyz;
-    tangent         += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_influences[0])) * vec4(TANGENT,   0.0)).xyz;
-    bitangent       += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_influences[0])) * vec4(BITANGENT, 0.0)).xyz;
-    vert_out.normal += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_influences[0])) * vec4(NORMAL,    0.0)).xyz;
+    position        += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_joint_influences[0])) * vec4(POSITION,  1.0)).xyz;
+    tangent         += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_joint_influences[0])) * vec4(TANGENT,   0.0)).xyz;
+    bitangent       += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_joint_influences[0])) * vec4(BITANGENT, 0.0)).xyz;
+    vert_out.normal += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_joint_influences[0])) * vec4(NORMAL,    0.0)).xyz;
 
-    position        += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_influences[1])) * vec4(POSITION,  1.0)).xyz;
-    tangent         += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_influences[1])) * vec4(TANGENT,   0.0)).xyz;
-    bitangent       += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_influences[1])) * vec4(BITANGENT, 0.0)).xyz;
-    vert_out.normal += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_influences[1])) * vec4(NORMAL,    0.0)).xyz;
+    position        += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_joint_influences[1])) * vec4(POSITION,  1.0)).xyz;
+    tangent         += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_joint_influences[1])) * vec4(TANGENT,   0.0)).xyz;
+    bitangent       += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_joint_influences[1])) * vec4(BITANGENT, 0.0)).xyz;
+    vert_out.normal += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_joint_influences[1])) * vec4(NORMAL,    0.0)).xyz;
 
-    position        += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_influences[2])) * vec4(POSITION,  1.0)).xyz;
-    tangent         += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_influences[2])) * vec4(TANGENT,   0.0)).xyz;
-    bitangent       += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_influences[2])) * vec4(BITANGENT, 0.0)).xyz;
-    vert_out.normal += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_influences[2])) * vec4(NORMAL,    0.0)).xyz;
+    position        += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_joint_influences[2])) * vec4(POSITION,  1.0)).xyz;
+    tangent         += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_joint_influences[2])) * vec4(TANGENT,   0.0)).xyz;
+    bitangent       += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_joint_influences[2])) * vec4(BITANGENT, 0.0)).xyz;
+    vert_out.normal += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_joint_influences[2])) * vec4(NORMAL,    0.0)).xyz;
 
-    position        += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_influences[3])) * vec4(POSITION,  1.0)).xyz;
-    tangent         += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_influences[3])) * vec4(TANGENT,   0.0)).xyz;
-    bitangent       += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_influences[3])) * vec4(BITANGENT, 0.0)).xyz;
-    vert_out.normal += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_influences[3])) * vec4(NORMAL,    0.0)).xyz;
+    position        += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_joint_influences[3])) * vec4(POSITION,  1.0)).xyz;
+    tangent         += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_joint_influences[3])) * vec4(TANGENT,   0.0)).xyz;
+    bitangent       += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_joint_influences[3])) * vec4(BITANGENT, 0.0)).xyz;
+    vert_out.normal += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_joint_influences[3])) * vec4(NORMAL,    0.0)).xyz;
 
 #else
 
@@ -308,6 +312,51 @@ void add_define(std::string& string, const std::string_view define_name, const s
     string += '\n';
 }
 
+struct VertexAttributeBinding {
+    const char* identifier;
+    uint32_t location;
+};
+
+VertexAttributeBinding from_vertex_attribute(const VertexAttribute& attribute)
+{
+    return { .identifier = attribute.identifier, .location = attribute.binding_location };
+}
+
+// Add #defines that configure the shader to match the vertex format.
+void add_vertex_attribute_binding_defines(std::string& string,
+                                          std::vector<VertexAttributeBinding> bindings)
+{
+    // Check for duplicate binding locations.
+    {
+        auto compare_binding_location = [](const auto& l, const auto& r) {
+            return l.location < r.location;
+        };
+        std::ranges::sort(bindings, compare_binding_location);
+
+        auto same_binding_location = [](const auto& l, const auto& r) {
+            return l.location == r.location;
+        };
+        auto it = std::ranges::adjacent_find(bindings, same_binding_location);
+        const bool has_duplicate_binding_locations = it != bindings.end();
+
+        if (has_duplicate_binding_locations) {
+            const auto& [identifier_1, location_1] = *it;
+            const auto& [identifier_2, location_2] = *std::next(it);
+            throw RuntimeError{
+                "Duplicate vertex attribute binding locations: attributes '{}' and '{}' both have "
+                "binding location {}",
+                identifier_1,
+                identifier_2,
+                location_1
+            };
+        }
+    }
+
+    for (const auto& [identifier, location] : bindings) {
+        add_define(string, to_upper(identifier) + "_BINDING_LOCATION", location);
+    }
+}
+
 } // namespace
 
 std::string
@@ -324,6 +373,19 @@ mesh_renderer_vertex_shader_framework_code(const MeshRendererFrameworkShaderPara
         add_define(result, "SKELETAL_ANIMATION_ENABLED", 1);
     }
 
+    // Add #defines for vertex attribute binding locations.
+    {
+        std::vector<VertexAttributeBinding> bindings;
+        std::ranges::transform(Mesh::vertex_attributes,
+                               std::back_inserter(bindings),
+                               from_vertex_attribute);
+        std::ranges::transform(Mesh::influences_attributes,
+                               std::back_inserter(bindings),
+                               from_vertex_attribute);
+        bindings.push_back({ "MATRIX_INDEX", params.matrix_index_vertex_attrib_binding_location });
+        add_vertex_attribute_binding_defines(result, bindings);
+    }
+
     result += vertex_framework_code;
 
     return result;
@@ -337,6 +399,8 @@ mesh_renderer_fragment_shader_framework_code(const MeshRendererFrameworkShaderPa
 
     result += "#version 330 core\n";
     result += vertex_fragment_common_code;
+
+    // Defines that configure the shader to match the given params.
     add_define(result, "MAX_NUM_LIGHTS", params.light_grid_config.max_num_lights);
     add_define(result, "LIGHT_GRID_WIDTH", params.light_grid_config.grid_width);
     add_define(result, "LIGHT_GRID_HEIGHT", params.light_grid_config.grid_height);

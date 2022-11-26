@@ -25,6 +25,9 @@ struct MeshRendererFrameworkShaderParams {
     // Size of array of skinning matrices for animated meshes. If 0, skinning animation is disabled.
     size_t skinning_matrix_array_size = {};
 
+    /** Binding location of '_matrix_index' vertex attribute in shader code. */
+    uint32_t matrix_index_vertex_attrib_binding_location = {};
+
     // Configuration relating to the light grid.
     LightGridConfig light_grid_config;
 };

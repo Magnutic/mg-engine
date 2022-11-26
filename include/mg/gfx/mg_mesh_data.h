@@ -48,27 +48,39 @@ struct Vertex {
 };
 
 /** Attribute array corresponding to Vertex. Describes the data layout of a vertex. */
-constexpr std::array<VertexAttribute, 5> mesh_vertex_attributes = {
-    VertexAttribute{ 3, sizeof(Vertex::position), VertexAttributeType::f32 },
+constexpr std::array<VertexAttribute, 5> vertex_attributes = {
+    VertexAttribute{ .identifier = "position",
+                     .binding_location = 0,
+                     .num_elements = 3,
+                     .size = sizeof(Vertex::position),
+                     .type = VertexAttributeType::f32 },
 
-    VertexAttribute{ 2,
-                     sizeof(Vertex::tex_coord) + sizeof(Vertex::padding),
-                     VertexAttributeType::f32 },
+    VertexAttribute{ .identifier = "tex_coord",
+                     .binding_location = 1,
+                     .num_elements = 2,
+                     .size = sizeof(Vertex::tex_coord) + sizeof(Vertex::padding),
+                     .type = VertexAttributeType::f32 },
 
-    VertexAttribute{ 3,
-                     sizeof(Vertex::normal),
-                     VertexAttributeType::i16,
-                     IntValueMeaning::Normalize },
+    VertexAttribute{ .identifier = "normal",
+                     .binding_location = 2,
+                     .num_elements = 3,
+                     .size = sizeof(Vertex::normal),
+                     .type = VertexAttributeType::i16,
+                     .int_value_meaning = IntValueMeaning::Normalize },
 
-    VertexAttribute{ 3,
-                     sizeof(Vertex::tangent),
-                     VertexAttributeType::i16,
-                     IntValueMeaning::Normalize },
+    VertexAttribute{ .identifier = "tangent",
+                     .binding_location = 3,
+                     .num_elements = 3,
+                     .size = sizeof(Vertex::tangent),
+                     .type = VertexAttributeType::i16,
+                     .int_value_meaning = IntValueMeaning::Normalize },
 
-    VertexAttribute{ 3,
-                     sizeof(Vertex::bitangent),
-                     VertexAttributeType::i16,
-                     IntValueMeaning::Normalize }
+    VertexAttribute{ .identifier = "bitangent",
+                     .binding_location = 4,
+                     .num_elements = 3,
+                     .size = sizeof(Vertex::bitangent),
+                     .type = VertexAttributeType::i16,
+                     .int_value_meaning = IntValueMeaning::Normalize }
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -93,9 +105,7 @@ struct Submesh {
 
     Submesh() = default;
 
-    Submesh(const SubmeshRange& range, const Identifier name_)
-        : index_range(range), name(name_)
-    {}
+    Submesh(const SubmeshRange& range, const Identifier name_) : index_range(range), name(name_) {}
 };
 
 /** Non-owning view over the data required to define a mesh. */

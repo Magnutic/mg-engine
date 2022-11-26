@@ -133,12 +133,13 @@ enum class MeshPipelinePoolKind { Static, Animated };
 PipelinePool make_mesh_pipeline_pool(const MeshPipelinePoolKind kind,
                                      const LightGridConfig& light_grid_config)
 {
-    internal::MeshRendererFrameworkShaderParams params = {};
-    params.matrix_array_size = k_matrix_ubo_array_size;
-    params.light_grid_config = light_grid_config;
-    params.skinning_matrix_array_size = kind == MeshPipelinePoolKind::Animated
-                                            ? k_skinning_matrix_ubo_array_size
-                                            : 0;
+    internal::MeshRendererFrameworkShaderParams params = {
+        .matrix_array_size = k_matrix_ubo_array_size,
+        .skinning_matrix_array_size =
+            kind == MeshPipelinePoolKind::Animated ? k_skinning_matrix_ubo_array_size : 0,
+        .matrix_index_vertex_attrib_binding_location = k_matrix_index_vertex_attrib_location,
+        .light_grid_config = light_grid_config
+    };
 
     const std::string framework_vertex_code =
         internal::mesh_renderer_vertex_shader_framework_code(params);

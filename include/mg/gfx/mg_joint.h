@@ -47,12 +47,19 @@ struct Influences {
  * influences.
  */
 constexpr std::array<VertexAttribute, 2> influences_attributes = {
-    VertexAttribute{ 4, sizeof(Influences::ids), VertexAttributeType::u8 },
+    VertexAttribute{ .identifier = "joint_influences",
+                     .binding_location = 5,
+                     .num_elements = 4,
+                     .size = sizeof(Influences::ids),
+                     .type = VertexAttributeType::u8,
+                     .int_value_meaning = IntValueMeaning::RegularInt },
 
-    VertexAttribute{ 4,
-                     sizeof(Influences::weights),
-                     VertexAttributeType::u16,
-                     IntValueMeaning::Normalize }
+    VertexAttribute{ .identifier = "joint_weights",
+                     .binding_location = 6,
+                     .num_elements = 4,
+                     .size = sizeof(Influences::weights),
+                     .type = VertexAttributeType::u16,
+                     .int_value_meaning = IntValueMeaning::Normalize }
 };
 
 struct Joint {

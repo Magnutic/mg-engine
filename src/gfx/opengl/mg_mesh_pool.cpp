@@ -225,46 +225,34 @@ SharedBuffer* MeshPool::Impl::_make_index_buffer(size_t size)
 
 namespace {
 
-void setup_vertex_attribute(const uint32_t attribute_index,
-                            const VertexAttribute& attribute,
+void setup_vertex_attribute(const VertexAttribute& attribute,
                             const int32_t stride,
                             const size_t offset)
 {
     const bool is_normalized = attribute.int_value_meaning == IntValueMeaning::Normalize;
 
-    glVertexAttribPointer(attribute_index,
+    glVertexAttribPointer(attribute.binding_location,
                           as<GLint>(attribute.num_elements),
                           static_cast<GLuint>(attribute.type),
                           static_cast<GLboolean>(is_normalized),
                           stride,
                           reinterpret_cast<GLvoid*>(offset)); // NOLINT
 
-    glEnableVertexAttribArray(attribute_index);
+    glEnableVertexAttribArray(attribute.binding_location);
 }
 
 // Set up vertex attributes (how OpenGL is to interpret the vertex data).
-void setup_opengl_mesh_vertex_attributes()
+void setup_vertex_attributes(span<const VertexAttribute> vertex_attributes)
 {
-    const uint32_t stride = sizeof(Mesh::Vertex);
-    uintptr_t offset = 0;
-    uint32_t i = 0;
-
-    for (const VertexAttribute& vertex_attribute : Mesh::mesh_vertex_attributes) {
-        const uint32_t attribute_index = i++;
-        setup_vertex_attribute(attribute_index, vertex_attribute, stride, offset);
-        offset += vertex_attribute.size;
+    int32_t stride = 0;
+    for (const VertexAttribute& vertex_attribute : vertex_attributes) {
+        stride += as<int>(vertex_attribute.size);
     }
-}
 
-void setup_opengl_influences_attributes()
-{
-    const uint32_t stride = sizeof(Mesh::Influences);
     uintptr_t offset = 0;
-    uint32_t i = Mesh::mesh_vertex_attributes.size();
 
-    for (const VertexAttribute& vertex_attribute : Mesh::influences_attributes) {
-        const uint32_t attribute_index = i++;
-        setup_vertex_attribute(attribute_index, vertex_attribute, stride, offset);
+    for (const VertexAttribute& vertex_attribute : vertex_attributes) {
+        setup_vertex_attribute(vertex_attribute, stride, offset);
         offset += vertex_attribute.size;
     }
 }
@@ -307,7 +295,7 @@ void MeshPool::Impl::_make_mesh_at(MeshInternal& mesh,
                         as<GLsizeiptr>(vertex_data.size()),
                         vertex_data.data());
 
-        setup_opengl_mesh_vertex_attributes();
+        setup_vertex_attributes(Mesh::vertex_attributes);
     }
 
     { // Upload index data to GPU
@@ -341,7 +329,7 @@ void MeshPool::Impl::_make_mesh_at(MeshInternal& mesh,
                         as<GLsizeiptr>(influences_data.size()),
                         influences_data.data());
 
-        setup_opengl_influences_attributes();
+        setup_vertex_attributes(Mesh::influences_attributes);
     }
 
     glBindVertexArray(0);
