@@ -278,12 +278,14 @@ void BillboardRenderer::render(const IRenderTarget& render_target,
         m_impl->camera_ubo.set_data(byte_representation(camera_block));
     }
 
-    const std::array shared_inputs = { PipelineInputBinding(k_camera_ubo_slot, m_impl->camera_ubo) };
+    const std::array shared_inputs = { PipelineInputBinding(k_camera_ubo_slot,
+                                                            m_impl->camera_ubo) };
     Pipeline::bind_shared_inputs(shared_inputs);
 
     PipelineBindingContext binding_context;
 
     Pipeline::Settings pipeline_settings;
+    pipeline_settings.culling_mode = CullingMode::none;
     pipeline_settings.vertex_array = m_impl->vao;
     pipeline_settings.target_framebuffer = render_target.handle();
     pipeline_settings.viewport_size = render_target.image_size();
