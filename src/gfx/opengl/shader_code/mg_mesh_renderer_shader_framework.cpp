@@ -124,16 +124,28 @@ void main()
     vec3 tangent = vec3(0.0);
     vec3 bitangent = vec3(0.0);
 
-    for (uint i = 0u; i < 4u; ++i) {
-        uint joint_index = uint(vert_influences[i]);
-        float weight = vert_joint_weights[i];
+    // Loop manually unrolled as work around for glitches appearing on Intel HD Graphics 530 on Linux.
 
-        // Note: MATRIX_M is already multiplied into the skinning matrices.
-        position        += (weight * SKINNING_MATRIX(joint_index) * vec4(POSITION,  1.0)).xyz;
-        tangent         += (weight * SKINNING_MATRIX(joint_index) * vec4(TANGENT,   0.0)).xyz;
-        bitangent       += (weight * SKINNING_MATRIX(joint_index) * vec4(BITANGENT, 0.0)).xyz;
-        vert_out.normal += (weight * SKINNING_MATRIX(joint_index) * vec4(NORMAL,    0.0)).xyz;
-    }
+    // Note: MATRIX_M is already multiplied into the skinning matrices.
+    position        += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_influences[0])) * vec4(POSITION,  1.0)).xyz;
+    tangent         += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_influences[0])) * vec4(TANGENT,   0.0)).xyz;
+    bitangent       += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_influences[0])) * vec4(BITANGENT, 0.0)).xyz;
+    vert_out.normal += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_influences[0])) * vec4(NORMAL,    0.0)).xyz;
+
+    position        += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_influences[1])) * vec4(POSITION,  1.0)).xyz;
+    tangent         += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_influences[1])) * vec4(TANGENT,   0.0)).xyz;
+    bitangent       += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_influences[1])) * vec4(BITANGENT, 0.0)).xyz;
+    vert_out.normal += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_influences[1])) * vec4(NORMAL,    0.0)).xyz;
+
+    position        += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_influences[2])) * vec4(POSITION,  1.0)).xyz;
+    tangent         += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_influences[2])) * vec4(TANGENT,   0.0)).xyz;
+    bitangent       += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_influences[2])) * vec4(BITANGENT, 0.0)).xyz;
+    vert_out.normal += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_influences[2])) * vec4(NORMAL,    0.0)).xyz;
+
+    position        += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_influences[3])) * vec4(POSITION,  1.0)).xyz;
+    tangent         += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_influences[3])) * vec4(TANGENT,   0.0)).xyz;
+    bitangent       += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_influences[3])) * vec4(BITANGENT, 0.0)).xyz;
+    vert_out.normal += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_influences[3])) * vec4(NORMAL,    0.0)).xyz;
 
 #else
 
