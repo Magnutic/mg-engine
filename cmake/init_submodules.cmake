@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.11)
 find_package(Git REQUIRED)
 
+list(APPEND assimp_PATCHES "${MG_SOURCE_DIR}/external/patches/assimp/remove-werror.patch")
+
 file(GLOB SUBMODULES_GLOB_RESULTS "${MG_SOURCE_DIR}/external/submodules/*")
 foreach(SUBMODULES_GLOB_RESULT ${SUBMODULES_GLOB_RESULTS})
     if(IS_DIRECTORY "${SUBMODULES_GLOB_RESULT}")
@@ -18,7 +20,12 @@ foreach(SUBMODULE ${DEPENDENCY_SUBMODULES})
     message(STATUS "Initializing submodule ${SUBMODULE}")
     file(RELATIVE_PATH SUBMODULE_NAME ${SUBMODULES_DIR} ${SUBMODULE})
     execute_process(
-        COMMAND ${GIT_EXECUTABLE} submodule update --init "${SUBMODULE}"
+        COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive "${SUBMODULE}"
+        WORKING_DIRECTORY "${SUBMODULES_DIR}"
+        RESULT_VARIABLE SUCCESS
+    )
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} -C "${SUBMODULE}" checkout
         WORKING_DIRECTORY "${SUBMODULES_DIR}"
         RESULT_VARIABLE SUCCESS
     )
@@ -28,6 +35,19 @@ foreach(SUBMODULE ${DEPENDENCY_SUBMODULES})
         # repository is still checked out, but not known to Git.
         message(WARNING "Failed to init submodule ${SUBMODULE}.")
     else()
+        # Apply patches, if any.
+        file(GLOB PATCHES "${MG_SOURCE_DIR}/external/patches/${SUBMODULE_NAME}/*.patch")
+        foreach(PATCH ${PATCHES})
+            message(STATUS "Applying patch ${PATCH}...")
+            execute_process(
+                COMMAND ${GIT_EXECUTABLE} -C "${SUBMODULE}" apply "${PATCH}"
+                RESULT_VARIABLE PATCH_RESULT
+            )
+            if(NOT PATCH_RESULT EQUAL 0)
+                message(FATAL_ERROR "**ERROR** failed to apply patch ${PATCH} to dependency ${DEPENDENCY}")
+            endif()
+        endforeach()
+
         # Write commit id to a file.
         execute_process(
             COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
