@@ -368,18 +368,6 @@ void MeshRenderer::render(const ICamera& cam,
     MG_CHECK_GL_ERROR();
 }
 
-void MeshRenderer::prepare_shader(const Material& material,
-                                  const bool prepare_for_static_mesh,
-                                  const bool prepare_for_animated_mesh)
-{
-    if (prepare_for_static_mesh) {
-        m_impl->static_mesh_pipeline_pool.prepare_material_pipeline(material);
-    }
-    if (prepare_for_animated_mesh) {
-        m_impl->animated_mesh_pipeline_pool.prepare_material_pipeline(material);
-    }
-}
-
 void MeshRenderer::drop_shaders()
 {
     MG_GFX_DEBUG_GROUP("Mesh_renderer::drop_shaders")

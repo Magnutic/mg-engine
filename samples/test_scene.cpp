@@ -544,8 +544,6 @@ Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::
     m->set_sampler("sampler_diffuse", diffuse_texture->handle());
     m->set_sampler("sampler_normal", normal_texture->handle());
 
-    mesh_renderer.prepare_shader(*m, true, true);
-
     return m;
 #else
     auto material_access =

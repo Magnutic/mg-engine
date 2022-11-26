@@ -39,28 +39,6 @@ public:
                 const IRenderTarget& render_target,
                 RenderParameters params);
 
-    // TODO prepare_shader does not really work, because the driver will not compile the shaders
-    // until first use anyway. I need some way to issue dummy draw calls to force the driver to
-    // compile the shaders.
-
-    /** Prepare shader needed for rendering with `material`. This is not strictly necessary as
-     * shaders will be compiled as needed on first use. Using this function, however, can reduce
-     * stuttering by ensuring shaders are compiled in advance.
-     *
-     * Static and animated meshes use different shaders, which means that for the same material to
-     * be used for an animated and for a static mesh, two shaders must be compiled. The bool
-     * parameters control which of these shaders should be prepared.
-     *
-     * @param material Which material to prepare shaders for.
-     * @param prepare_for_static_mesh Whether shader should be prepared for rendering static
-     * (non-animated) meshes.
-     * @param prepare_for_static_mesh Whether shader should be prepared for rendering animated
-     * (skinned) meshes.
-     */
-    void prepare_shader(const Material& material,
-                        bool prepare_for_static_mesh,
-                        bool prepare_for_animated_mesh);
-
     /** Drop all shaders generated for this renderer. This means that each shader will be recompiled
      * from source on the next use. This is useful for hot-reloading of shader assets.
      */

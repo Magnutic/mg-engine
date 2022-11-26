@@ -359,12 +359,6 @@ void PipelinePool::bind_material_pipeline(const Material& material,
     Pipeline::bind_material_inputs(material_input_bindings);
 }
 
-void PipelinePool::prepare_material_pipeline(const Material& material)
-{
-    MG_GFX_DEBUG_GROUP("PipelinePool::prepare_material_pipeline")
-    get_or_make_pipeline(*m_impl, material);
-}
-
 void PipelinePool::drop_pipelines() noexcept
 {
     m_impl->pipelines.clear();
