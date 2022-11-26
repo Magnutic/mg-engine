@@ -25,11 +25,11 @@ foreach(SUBMODULE ${DEPENDENCY_SUBMODULES})
         RESULT_VARIABLE SUCCESS
     )
     execute_process(
-        COMMAND ${GIT_EXECUTABLE} -C "${SUBMODULE}" checkout
+        COMMAND ${GIT_EXECUTABLE} -C "${SUBMODULE}" checkout .
         WORKING_DIRECTORY "${SUBMODULES_DIR}"
-        RESULT_VARIABLE SUCCESS
+        RESULT_VARIABLE SUCCESS_CHECKOUT
     )
-    if(NOT SUCCESS EQUAL 0)
+    if(NOT SUCCESS EQUAL 0 OR NOT SUCCESS_CHECKOUT EQUAL 0)
         # Warn rather than error, since this can happen if you are working on different branches
         # where one branch added a new submodule -- when switching to the other, the submodule
         # repository is still checked out, but not known to Git.
