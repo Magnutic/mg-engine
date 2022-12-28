@@ -267,6 +267,11 @@ std::vector<std::string> Log::get_history()
 void Log::write_impl(Prio prio, std::string msg)
 {
     m_impl->enqueue({ prio, std::move(msg) });
+
+    // Flush on error messages, since a crash could be imminent.
+    if (prio == Prio::Error) {
+        flush();
+    }
 }
 
 //--------------------------------------------------------------------------------------------------

@@ -100,7 +100,9 @@ struct PerformanceInfo {
  */
 class ApplicationContext {
 public:
-    explicit ApplicationContext(std::string_view config_file_path);
+    explicit ApplicationContext(std::string_view config_file_path,
+                                std::string_view initial_window_title);
+
     ~ApplicationContext() = default;
 
     MG_MAKE_NON_COPYABLE(ApplicationContext);

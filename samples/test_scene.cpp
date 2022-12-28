@@ -43,6 +43,7 @@ namespace {
 using namespace Mg::literals;
 
 constexpr auto config_file = "mg_engine.cfg";
+constexpr auto window_title = "Mg Engine Test Scene";
 
 constexpr int k_steps_per_second = 60.0;
 constexpr size_t k_num_lights = 128;
@@ -126,7 +127,7 @@ void Actor::update(glm::vec3 acceleration, float jump_impulse)
                               (character_controller.get_is_standing() ? 1.0f : 0.5f));
 }
 
-Scene::Scene() : app(config_file) {}
+Scene::Scene() : app(config_file, window_title) {}
 
 Scene::~Scene()
 {

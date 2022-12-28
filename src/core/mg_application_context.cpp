@@ -25,10 +25,19 @@ using namespace std::chrono;
 using Clock = std::chrono::high_resolution_clock;
 using namespace std::literals;
 
+inline std::unique_ptr<Window> make_window(std::string_view initial_window_title)
+{
+    auto window = Window::make(Mg::WindowSettings{}, "Mg Engine Test Scene");
+    if (!window) {
+        throw RuntimeError("Failed to create window '{}'.", initial_window_title);
+    }
+    return window;
+}
+
 struct ApplicationContext::Impl {
-    Impl(std::string_view config_file_path)
+    Impl(std::string_view config_file_path, std::string_view initial_window_title)
         : config(config_file_path)
-        , window(Mg::Window::make(Mg::WindowSettings{}, "Mg Engine Test Scene"))
+        , window(make_window(initial_window_title))
         , gfx_device(*window)
         , start_time(Clock::now())
     {}
@@ -47,7 +56,9 @@ struct ApplicationContext::Impl {
     PerformanceInfo performance_info = {};
 };
 
-ApplicationContext::ApplicationContext(std::string_view config_file_path) : m_impl(config_file_path)
+ApplicationContext::ApplicationContext(std::string_view config_file_path,
+                                       std::string_view initial_window_title)
+    : m_impl(config_file_path, initial_window_title)
 {}
 
 Window& ApplicationContext::window()

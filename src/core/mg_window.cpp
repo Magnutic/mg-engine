@@ -38,12 +38,11 @@ constexpr auto opengl_create_fail_msg =
 
 void glfw_error_callback(int error, const char* reason)
 {
-    std::string error_message;
     if (error == GLFW_VERSION_UNAVAILABLE || error == GLFW_API_UNAVAILABLE) {
         throw RuntimeError{ opengl_create_fail_msg, reason };
     }
 
-    throw RuntimeError{ "GLFW error {}:\n%s", error, reason };
+    throw RuntimeError{ "GLFW error {}:\n{}", error, reason };
 }
 
 // GLFW callbacks provide the GLFW window handle, but we must forward to the appropriate instance
@@ -160,6 +159,8 @@ Array<VideoMode> find_available_video_modes()
 
 std::unique_ptr<Window> Window::make(WindowSettings settings, std::string title)
 {
+    glfwSetErrorCallback(glfw_error_callback);
+
     // glfwInit() may be called multiple times
     if (glfwInit() == GLFW_FALSE) {
         log.error("Window::make(): failed to initialize GLFW.");
@@ -167,8 +168,6 @@ std::unique_ptr<Window> Window::make(WindowSettings settings, std::string title)
     }
 
     settings = sanitize_settings(settings);
-
-    glfwSetErrorCallback(glfw_error_callback);
 
     GLFWwindow* window = create_window();
 

@@ -10,7 +10,9 @@ Mg::editor::CurveEditorSettings get_settings()
 
 class CurveEditorApp : public Mg::IApplication {
 public:
-    explicit CurveEditorApp() : m_app("curve_editor.cfg"), m_editor(m_app.window(), get_settings())
+    explicit CurveEditorApp()
+        : m_app("curve_editor.cfg", "Mg Engine Curve Editor")
+        , m_editor(m_app.window(), get_settings())
     {
         Mg::WindowSettings settings = {};
         settings.fullscreen = false;
