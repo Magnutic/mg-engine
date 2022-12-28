@@ -51,6 +51,10 @@ void UniformBuffer::set_data(span<const std::byte> data, size_t dest_offset)
 {
     MG_GFX_DEBUG_GROUP("UniformBuffer::set_data")
 
+    if (data.empty()) {
+        return;
+    }
+
     const auto ubo_id = m_handle.as_gl_id();
 
     if (ubo_id == 0) {
