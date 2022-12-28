@@ -315,6 +315,7 @@ void MeshRenderer::render(const ICamera& cam,
 
     const auto render_commands = command_list.render_commands();
     const Material* previous_material = nullptr;
+    bool previous_was_skinned_mesh = false;
 
     // Number of iterations until we have consumed the transformation matrices so far uploaded to
     // the CPU.
@@ -337,7 +338,7 @@ void MeshRenderer::render(const ICamera& cam,
         const bool should_switch_pipeline = //
             !previous_pipeline_settings.has_value() ||
             command.vertex_array != previous_pipeline_settings->vertex_array ||
-            command.material != previous_material;
+            command.material != previous_material || previous_was_skinned_mesh != is_skinned_mesh;
 
         if (should_switch_pipeline) {
             Pipeline::Settings pipeline_settings = make_pipeline_settings(render_target,
@@ -348,6 +349,7 @@ void MeshRenderer::render(const ICamera& cam,
 
             previous_pipeline_settings = pipeline_settings;
             previous_material = command.material;
+            previous_was_skinned_mesh = is_skinned_mesh;
         }
 
         // Set up mesh transform matrix index.
