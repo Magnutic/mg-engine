@@ -206,6 +206,8 @@ private:
     void render_skeleton_debug_geometry();
     void render_bloom();
 
+    void prepare_pipelines();
+
     using SceneModels = Mg::FlatMap<Mg::Identifier, Model, Mg::Identifier::HashCompare>;
 
     using DynamicModels = Mg::FlatMap<Mg::Identifier, Model, Mg::Identifier::HashCompare>;
