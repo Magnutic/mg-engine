@@ -10,7 +10,7 @@ list(APPEND MG_HEADER_ONLY_DEPENDENCIES function2 plf_colony optional stb imgui 
 if (MG_USE_VENDORED_DEPENDENCIES)
     # List of dependencies to build. These names corresponds to submodules in external/submodules.
     # They have to be explicitly listed since order matters due to dependencies between them.
-    list(APPEND MG_DEPENDENCIES_TO_BUILD zlib libzip fmt glfw glm openal-soft assimp bullet3)
+    list(APPEND MG_DEPENDENCIES_TO_BUILD zlib libzip fmt glfw glm openal-soft assimp bullet3 hjson-cpp)
 
     # Some extra params passed into each build-configuration.
     set(fmt_EXTRA_BUILD_PARAMS "-DFMT_TEST=0")
@@ -29,6 +29,7 @@ if (MG_USE_VENDORED_DEPENDENCIES)
     set(bullet3_EXTRA_BUILD_PARAMS "-DBUILD_CPU_DEMOS=0" "-DUSE_GLUT=0" "-DBUILD_ENET=0"
         "-DBUILD_CLSOCKET=0" "-DBUILD_OPENGL3_DEMOS=0" "-DBUILD_BULLET2_DEMOS=0" "-DBUILD_EXTRAS=0"
         "-DBUILD_UNIT_TESTS=0")
+    set(hjson-cpp_EXTRA_BUILD_PARAMS "-DHJSON_ENABLE_INSTALL=1")
 
     # Only build bundled libsndfile if system libsndfile is not available -- prefer system version since
     # it otherwise causes conflicts with system-provided library.

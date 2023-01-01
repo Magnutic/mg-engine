@@ -175,6 +175,7 @@ target_link_libraries(mg_engine
         utf8.h
         SndFile::sndfile
         OpenAL::OpenAL
+        hjson
 )
 
 # Add '_d' suffix to debug builds (i.e. (lib)mg_engine_d.{so,dll,lib})

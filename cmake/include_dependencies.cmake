@@ -156,6 +156,10 @@ install(TARGETS imgui EXPORT mg_engine_targets DESTINATION "${MG_LIB_INSTALL_PAT
 # UTF-8 handling functions with API similar to string.h.
 add_private_header_only_library(utf8.h "${MG_HEADER_ONLY_DEPENDENCIES_DIR}/utf8.h" "")
 
+# hjson-cpp
+# JSON superset for more human-editable files.
+find_package(hjson REQUIRED)
+
 #---------------------------------------------------------------------------------------------------
 # Dependencies for tools
 #---------------------------------------------------------------------------------------------------

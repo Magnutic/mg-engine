@@ -49,3 +49,6 @@
 [submodule "external/submodules/utf8.h"]
 	path = external/submodules/utf8.h
 	url = https://github.com/sheredom/utf8.h
+[submodule "external/submodules/hjson-cpp"]
+	path = external/submodules/hjson-cpp
+	url = https://github.com/hjson/hjson-cpp
