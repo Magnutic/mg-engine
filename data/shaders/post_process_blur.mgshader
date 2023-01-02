@@ -1,5 +1,0 @@
-TAGS {}
-OPTIONS { HORIZONTAL = true; }
-PARAMETERS { int source_mip_level = 0; int destination_mip_level = 0; }
-VERTEX_CODE {}
-FRAGMENT_CODE { #include "blur.glsl" }

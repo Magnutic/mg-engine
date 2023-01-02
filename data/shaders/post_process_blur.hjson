@@ -1,0 +1,13 @@
+tags: []
+
+options: { HORIZONTAL: true }
+
+parameters: {
+    source_mip_level: { type: "int", default_value: 0 }
+    destination_mip_level: { type: "int", default_value: 0 }
+}
+
+fragment_code:
+    '''
+    #include "blur.glsl"
+    '''

@@ -1,18 +1,18 @@
-TAGS {
+tags: []
+
+options: {
+    A_TEST: true
+    FIXED_SIZE: false
+    FADE_WHEN_CLOSE: false
+    SHRINK_WHEN_CLOSE: true
 }
 
-OPTIONS {
-    A_TEST = true;
-    FIXED_SIZE = false;
-    FADE_WHEN_CLOSE = false;
-    SHRINK_WHEN_CLOSE = true;
+parameters: {
+    sampler_diffuse: { type: "sampler2D" }
 }
 
-PARAMETERS {
-    sampler2D sampler_diffuse;
-}
-
-VERTEX_CODE {
+vertex_code:
+    '''
     void main() {
         vs_out_colour = v_colour;
         float radius = v_radius;
@@ -40,9 +40,10 @@ VERTEX_CODE {
         vs_out_size = (P * vec4(radius, radius, 0.0, 1.0)).xy;
     #endif
     }
-}
+    '''
 
-FRAGMENT_CODE {
+fragment_code:
+    '''
     void main() {
        frag_out = fs_in_colour * texture2D(sampler_diffuse, tex_coord);
 
@@ -52,4 +53,4 @@ FRAGMENT_CODE {
        if (frag_out.a == 0.0) { discard; }
     #endif
     }
-}
+    '''

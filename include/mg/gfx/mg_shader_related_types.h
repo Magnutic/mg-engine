@@ -46,6 +46,20 @@ inline Opt<SamplerType> string_to_sampler_type(std::string_view str) noexcept
 
 enum class ParameterType { Int, Float, Vec2, Vec4 }; // Order matters, used for sorting
 
+inline size_t parameter_type_num_elements(ParameterType type) noexcept
+{
+    switch (type) {
+    case ParameterType::Int:
+    case ParameterType::Float:
+        return 1;
+    case ParameterType::Vec2:
+        return 2;
+    case ParameterType::Vec4:
+        return 4;
+    }
+    MG_ASSERT(false && "unreachable");
+}
+
 inline std::string_view parameter_type_to_string(ParameterType type) noexcept
 {
     switch (type) {
@@ -79,13 +93,30 @@ inline Opt<ParameterType> string_to_parameter_type(std::string_view str) noexcep
 }
 
 enum class Tag : uint32_t {
-    OPAQUE = 1 << 0,
-    UNLIT = 1 << 1,
-    DEFINES_VERTEX_PREPROCESS = 1 << 2,
-    DEFINES_LIGHT_MODEL = 1 << 3
+    opaque = 1 << 0,
+    unlit = 1 << 1,
+    defines_vertex_preprocess = 1 << 2,
+    defines_light_model = 1 << 3
 };
 
 MG_DEFINE_BITMASK_OPERATORS(Tag);
+
+inline Opt<Tag> string_to_tag(std::string_view str) noexcept
+{
+    if (str == "opaque") {
+        return Tag::opaque;
+    }
+    if (str == "unlit") {
+        return Tag::unlit;
+    }
+    if (str == "defines_vertex_preprocess") {
+        return Tag::defines_vertex_preprocess;
+    }
+    if (str == "defines_light_model") {
+        return Tag::defines_light_model;
+    }
+    return nullopt;
+}
 
 struct Sampler {
     Identifier name{ "" };

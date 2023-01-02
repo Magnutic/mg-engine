@@ -1,17 +1,13 @@
-TAGS {
-}
+tags: []
+options: {}
+parameters: {}
 
-OPTIONS {
-}
-
-PARAMETERS {
-}
-
-FRAGMENT_CODE {
+fragment_code:
+    '''
     #include "lotte_tonemap.glsl"
 
     void main() {
         vec3 colour = texture(sampler_colour, tex_coord).rgb;
         frag_out = vec4(lotteTonemap(colour), 1.0);
     }
-}
+    '''

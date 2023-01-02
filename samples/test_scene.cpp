@@ -529,13 +529,13 @@ Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::
     Mg::gfx::Material* m = nullptr;
     if (use_metallic_workflow) {
         auto handle = resource_cache->resource_handle<Mg::ShaderResource>(
-            "shaders/default_metallic_workflow.mgshader");
+            "shaders/default_metallic_workflow.hjson");
         m = material_pool.create(file, handle);
         m->set_sampler("sampler_ao_roughness_metallic", ao_roughness_metallic_texture->handle());
     }
     else {
         auto handle = resource_cache->resource_handle<Mg::ShaderResource>(
-            "shaders/default_specular_workflow.mgshader");
+            "shaders/default_specular_workflow.hjson");
         m = material_pool.create(file, handle);
         m->set_sampler("sampler_specular", specular_texture->handle());
     }
@@ -946,16 +946,16 @@ void Scene::load_materials()
 {
     // Create post-process materials
     const auto bloom_handle =
-        resource_cache->resource_handle<Mg::ShaderResource>("shaders/post_process_bloom.mgshader");
+        resource_cache->resource_handle<Mg::ShaderResource>("shaders/post_process_bloom.hjson");
     auto const blur_handle =
-        resource_cache->resource_handle<Mg::ShaderResource>("shaders/post_process_blur.mgshader");
+        resource_cache->resource_handle<Mg::ShaderResource>("shaders/post_process_blur.hjson");
 
     bloom_material = material_pool.create("bloom_material", bloom_handle);
     blur_material = material_pool.create("blur_material", blur_handle);
 
     // Create billboard material
     const auto billboard_handle =
-        resource_cache->resource_handle<Mg::ShaderResource>("shaders/simple_billboard.mgshader");
+        resource_cache->resource_handle<Mg::ShaderResource>("shaders/simple_billboard.hjson");
 
     billboard_material = material_pool.create("billboard_material", billboard_handle);
     billboard_material->set_sampler("sampler_diffuse",
@@ -963,7 +963,7 @@ void Scene::load_materials()
 
     // Create UI material
     const auto ui_handle =
-        resource_cache->resource_handle<Mg::ShaderResource>("shaders/ui_render_test.mgshader");
+        resource_cache->resource_handle<Mg::ShaderResource>("shaders/ui_render_test.hjson");
     ui_material = material_pool.create("ui_material", ui_handle);
     ui_material->set_sampler("sampler_colour",
                              load_texture("textures/ui/book_open_da.dds", true)->handle());

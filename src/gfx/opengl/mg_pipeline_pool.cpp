@@ -183,7 +183,7 @@ ShaderCode assemble_shader_code(const ShaderCode& preamble_shader_code, const Ma
         ResourceAccessGuard shader_resource_access(material.shader());
 
         // If there is a vertex-preprocess function, then include the corresponding #define
-        if ((shader_resource_access->tags() & shader::Tag::DEFINES_VERTEX_PREPROCESS) != 0) {
+        if ((shader_resource_access->tags() & shader::Tag::defines_vertex_preprocess) != 0) {
             code.vertex.code += "#define VERTEX_PREPROCESS_ENABLED 1\n";
         }
 

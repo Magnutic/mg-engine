@@ -6,6 +6,7 @@
 
 #include "mg/parser/mg_parser.h"
 
+#include "mg/gfx/mg_shader_related_types.h"
 #include "mg_lexer.h"
 
 #include "mg/core/mg_log.h"
@@ -13,10 +14,12 @@
 #include "mg/utils/mg_math_utils.h"
 #include "mg/utils/mg_string_utils.h"
 
-#include "fmt/core.h"
-#include "glm/vec2.hpp"
-#include "glm/vec3.hpp"
-#include "glm/vec4.hpp"
+#include <fmt/core.h>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+
+#include <hjson/hjson.h>
 
 namespace Mg::parser {
 
@@ -325,103 +328,6 @@ private:
     MaterialParseResult m_result;
 };
 
-class ShaderParser {
-public:
-    explicit ShaderParser(std::string_view resource_definition) : m_stream(resource_definition)
-    {
-        parse_outer_scope();
-    }
-
-    void parse_outer_scope()
-    {
-        auto&& t = m_stream.next_token();
-        switch (t.type) {
-        case TokenType::TAGS:
-            parse_tags_block();
-            break;
-        case TokenType::PARAMETERS:
-            parse_parameters_block();
-            break;
-        case TokenType::OPTIONS:
-            parse_options_block();
-            break;
-        case TokenType::VERTEX_CODE:
-            m_result.vertex_code = string_value(t);
-            break;
-        case TokenType::FRAGMENT_CODE:
-            m_result.fragment_code = string_value(t);
-            break;
-        case TokenType::END_OF_FILE:
-            return;
-        default:
-            parse_error("Unexpected token at global scope.", t);
-        }
-
-        MG_ASSERT(m_stream.has_more());
-        parse_outer_scope();
-    }
-
-    void parse_tags_block()
-    {
-        const auto parse_tag = [this](TokenStream& stream) {
-            auto& tag_token = stream.next_token();
-            switch (tag_token.type) {
-            case TokenType::UNLIT:
-                m_result.tags |= shader::Tag::UNLIT;
-                break;
-            case TokenType::OPAQUE:
-                m_result.tags |= shader::Tag::OPAQUE;
-                break;
-            case TokenType::DEFINES_LIGHT_MODEL:
-                m_result.tags |= shader::Tag::DEFINES_LIGHT_MODEL;
-                break;
-            case TokenType::DEFINES_VERTEX_PREPROCESS:
-                m_result.tags |= shader::Tag::DEFINES_VERTEX_PREPROCESS;
-                break;
-            default:
-                parse_error("Unexpected tag.", tag_token);
-                break;
-            }
-
-            stream.expect_next(TokenType::SEMICOLON);
-        };
-
-        parse_block(m_stream, parse_tag);
-    }
-
-    void parse_sampler_or_parameter_declaration()
-    {
-        auto& type_token = m_stream.peek_token();
-        const bool parameter_is_sampler = type_token.type == TokenType::SAMPLER2D ||
-                                          type_token.type == TokenType::SAMPLERCUBE;
-
-        if (parameter_is_sampler) {
-            m_result.samplers.push_back(parse_sampler_declaration(m_stream, false));
-        }
-        else {
-            m_result.parameters.push_back(parse_parameter_declaration(m_stream));
-        }
-    }
-
-    void parse_parameters_block()
-    {
-        parse_block(m_stream, [this](TokenStream&) { parse_sampler_or_parameter_declaration(); });
-    }
-
-    void parse_options_block()
-    {
-        parse_block(m_stream, [&](TokenStream& stream) {
-            m_result.options.push_back(parse_option_declaration(stream));
-        });
-    }
-
-    ShaderParseResult take_result() noexcept { return std::move(m_result); }
-
-private:
-    TokenStream m_stream;
-    ShaderParseResult m_result;
-};
-
 } // namespace
 
 bool parse(std::string_view definition, int& out)
@@ -479,9 +385,204 @@ MaterialParseResult parse_material(std::string_view material_resource_definition
     return MaterialParser{ material_resource_definition }.take_result();
 }
 
+namespace {
+
+void parse_error(std::string_view key, std::string_view reason)
+{
+    throw RuntimeError{ "Error parsing key '{}': {}", key, reason };
+}
+
+std::string_view hjson_type_to_string(Hjson::Type type)
+{
+    using enum Hjson::Type;
+
+    switch (type) {
+    case Undefined:
+        return "Undefined";
+    case Null:
+        return "Null";
+    case Bool:
+        return "Bool";
+    case Double:
+        return "Double";
+    case Int64:
+        return "Int64";
+    case String:
+        return "String";
+    case Vector:
+        return "Vector";
+    case Map:
+        return "Map";
+    }
+
+    MG_ASSERT(false && "unexpected Hjson::Type");
+}
+
+// Returns default value, or nullopt and error reason.
+std::pair<Opt<glm::vec4>, std::string>
+convert_default_value_property(const Hjson::Value& default_value_property, size_t num_elements)
+{
+    using enum Hjson::Type;
+
+    MG_ASSERT(num_elements <= 4);
+    static constexpr auto wrong_size_error_message = "Expected array of {} numeric values.";
+    static constexpr auto wrong_type_error_message = "Expected numeric parameter value.";
+
+    switch (default_value_property.type()) {
+    case Undefined:
+        return { glm::vec4(0.0f, 0.0f, 0.0f, 0.0f), "" };
+
+    case Double:
+    case Int64:
+        if (num_elements == 1) {
+            const auto value = narrow_cast<float>(default_value_property.to_double());
+            return { glm::vec4(value, 0.0f, 0.0f, 0.0f), "" };
+        }
+        else {
+            return { nullopt, fmt::format(wrong_size_error_message, num_elements) };
+        }
+
+    case Vector: {
+        glm::vec4 result{ 0.0f, 0.0f, 0.0f, 0.0f };
+        const size_t len = default_value_property.size();
+        if (len != num_elements) {
+            return { nullopt, fmt::format(wrong_size_error_message, num_elements) };
+        }
+
+        MG_ASSERT(len <= result.length());
+        for (int i = 0; i < as<int>(len); ++i) {
+            const auto& element = default_value_property[i];
+            if (!element.is_numeric()) {
+                return { nullopt, wrong_type_error_message };
+            }
+            result[i] = narrow_cast<float>(element.to_double());
+        }
+        return { result, "" };
+    }
+
+    default:
+        return { nullopt, wrong_type_error_message };
+    }
+}
+
+} // namespace
+
 ShaderParseResult parse_shader(std::string_view shader_resource_definition)
 {
-    return ShaderParser{ shader_resource_definition }.take_result();
+    Hjson::Value root = Hjson::Unmarshal(shader_resource_definition.data(),
+                                         shader_resource_definition.size());
+
+    auto get_property = [](const Hjson::Value& value,
+                           const char* key,
+                           const Hjson::Type expected_type,
+                           const bool mandatory = false) {
+        const Hjson::Value& property = value[key];
+        if (property.defined() && property.type() != expected_type) {
+            parse_error(key,
+                        fmt::format("Unexpected type. Expected: {}. Was: {}.",
+                                    hjson_type_to_string(expected_type),
+                                    hjson_type_to_string(property.type())));
+        }
+        if (mandatory && !property.defined()) {
+            parse_error(key,
+                        fmt::format("Missing value of (expected type {}).",
+                                    hjson_type_to_string(expected_type)));
+        }
+        return property;
+    };
+
+    const Hjson::Value& vertex_code = get_property(root, "vertex_code", Hjson::Type::String);
+    const Hjson::Value& fragment_code = get_property(root, "fragment_code", Hjson::Type::String);
+    const Hjson::Value& parameters = get_property(root, "parameters", Hjson::Type::Map);
+    const Hjson::Value& options = get_property(root, "options", Hjson::Type::Map);
+    const Hjson::Value& tags = get_property(root, "tags", Hjson::Type::Vector);
+
+    ShaderParseResult result;
+    result.vertex_code = vertex_code.to_string();
+    result.fragment_code = fragment_code.to_string();
+
+    // Parse parameter and samplers.
+    if (parameters.defined()) {
+        for (const auto& [parameter_name, parameter_properties] : parameters) {
+            const Hjson::Value& type =
+                get_property(parameter_properties, "type", Hjson::Type::String, true);
+            const auto parameter_type = shader::string_to_parameter_type(type.to_string());
+            const auto sampler_type = shader::string_to_sampler_type(type.to_string());
+
+            if (parameter_type) {
+                ParameterDeclaration& parameter_declaration = result.parameters.emplace_back();
+                parameter_declaration.name = Identifier::from_runtime_string(parameter_name);
+                parameter_declaration.type = parameter_type.value();
+                const size_t num_elements =
+                    shader::parameter_type_num_elements(parameter_type.value());
+
+                const Hjson::Value& default_value_property = parameter_properties["default_value"];
+                const auto [default_value, error_reason] =
+                    convert_default_value_property(default_value_property, num_elements);
+
+                if (!default_value) {
+                    throw RuntimeError("Failed to get default_value for parameter {}: {}",
+                                       parameter_name,
+                                       error_reason);
+                }
+
+                switch (num_elements) {
+                case 1:
+                    parameter_declaration.value = default_value.value().x;
+                    break;
+                case 2:
+                    parameter_declaration.value = glm::vec2(default_value.value());
+                    break;
+                case 4:
+                    parameter_declaration.value = default_value.value();
+                    break;
+                default:
+                    MG_ASSERT(false && "Unexpected num_elements.");
+                }
+            }
+            else if (sampler_type) {
+                SamplerDeclaration& sampler_declaration = result.samplers.emplace_back();
+                sampler_declaration.name = Identifier::from_runtime_string(parameter_name);
+                sampler_declaration.type = sampler_type.value();
+            }
+            else {
+                throw RuntimeError("Unexpected type {} for parameter {}.",
+                                   type.to_string(),
+                                   parameter_name);
+            }
+        }
+    }
+
+    // Parse options.
+    if (options.defined()) {
+        for (const auto& [option_name, option_default_enabled] : options) {
+            if (option_default_enabled.type() != Hjson::Type::Bool) {
+                parse_error("options." + option_name, "Expected boolean value.");
+            }
+            OptionDeclaration& option_declaration = result.options.emplace_back();
+            option_declaration.name = Identifier::from_runtime_string(option_name);
+            option_declaration.value = option_default_enabled.to_int64() != 0;
+        }
+    }
+
+    // Parse tags.
+    if (tags.defined()) {
+        const auto len = tags.size();
+        for (int i = 0; i < as<int>(len); ++i) {
+            if (tags[i].type() != Hjson::Type::String) {
+                throw RuntimeError("Unexpected type {} for element in tags.",
+                                   hjson_type_to_string(tags[i].type()));
+            }
+            const auto& tag_name = tags[i].to_string();
+            Opt<shader::Tag> tag_value = shader::string_to_tag(tag_name);
+            if (!tag_value) {
+                throw RuntimeError("Unexpected tag {}.", tag_name);
+            }
+            result.tags |= tag_value.value();
+        }
+    }
+
+    return result;
 }
 
 } // namespace Mg::parser

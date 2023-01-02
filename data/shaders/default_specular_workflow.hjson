@@ -1,0 +1,30 @@
+// Tags tell the engine about how to interpret the shader.
+tags: [ "opaque" ]
+
+// Options are #defines in shader code and may be used via '#if OPTION_NAME', etc
+options: {
+    RIM_LIGHT: false
+    PARALLAX: false
+}
+
+// Input parameters. All non-sampler parameters may specify a default_value. Valid types are float,
+// vec2, and vec4 (vec3 is currently unsupported -- use vec4).
+// Samplers may be of type sampler2D or samplerCube.
+parameters: {
+    sampler_diffuse: { type: "sampler2D" }
+    sampler_normal: { type: "sampler2D" }
+    sampler_specular: { type: "sampler2D" }
+
+    rim_intensity: { type: "float", default_value: 10.0 }
+    rim_power: { type: "float", default_value: 2.0 }
+
+    ambient_colour: { type: "vec4", default_value: [0.75, 1.07, 1.5, 1.0] }
+}
+
+fragment_code:
+    '''
+    #include <shader_stdlib.glsl>
+    #include <default_light_model.glsl>
+    #include <get_material_values_specular_workflow.glsl>
+    #include <default_surface.glsl>
+    '''
