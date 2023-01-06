@@ -4,8 +4,8 @@ options: {}
 
 parameters: {
     sampler_colour: { type: "sampler2D" }
-    colour: { type: "vec4", default_value: [ 1.0, 1.0, 1.0, 1.0 ] }
-    opacity: { type: "float", default_value: 1.0 }
+    colour: { type: "vec4", default: [ 1.0, 1.0, 1.0, 1.0 ] }
+    opacity: { type: "float", default: 1.0 }
 }
 
 fragment_code:

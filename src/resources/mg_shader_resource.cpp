@@ -200,7 +200,7 @@ LoadResourceResult ShaderResource::load_resource_impl(ResourceLoadingInput& inpu
             shader::Parameter& parameter = m_parameters.emplace_back();
             parameter.name = declaration.name;
             parameter.type = declaration.type;
-            declaration.value.write_binary_data(parameter.value);
+            declaration.default_value.write_binary_data(parameter.value);
         }
 
         for (parser::SamplerDeclaration& declaration : parse_result.samplers) {

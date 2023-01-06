@@ -105,12 +105,7 @@ public:
     void set_parameter(Identifier name, const glm::vec4& param);
     void set_parameter(Identifier name, const Value& value);
 
-    Opt<int> get_parameter_int(Identifier name) const;
-    Opt<float> get_parameter_float(Identifier name) const;
-    Opt<glm::vec2> get_parameter_vec2(Identifier name) const;
-    Opt<glm::vec4> get_parameter_vec4(Identifier name) const;
-
-    Opt<shader::ParameterType> get_parameter_type(Identifier name) const;
+    Opt<Value> get_parameter(Identifier name) const;
 
     Identifier id() const noexcept { return m_id; }
 
@@ -123,6 +118,7 @@ public:
 
     ResourceHandle<ShaderResource> shader() const noexcept { return m_shader_resource; }
 
+    /** Serialize to a string, which can then be deserialized to a MaterialResource. */
     [[nodiscard]] std::string serialize() const;
 
     /** Get material parameter values as a raw byte buffer. This is then passed into shaders as a
@@ -140,9 +136,7 @@ private:
                              span<const std::byte> param_value,
                              shader::ParameterType param_type);
 
-    Opt<glm::vec4> _get_parameter_impl(Identifier name, shader::ParameterType param_type) const;
-
-    std::string _parameter_value_as_string(Identifier name) const;
+    Opt<std::pair<glm::vec4, shader::ParameterType>> _extract_parameter_data(Identifier name) const;
 
     Samplers m_samplers{};
     Parameters m_params{};

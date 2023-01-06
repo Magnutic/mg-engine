@@ -43,21 +43,20 @@ void init_material_from_resource(Material& material,
                                  TexturePool& texture_pool)
 {
     try {
-        // Init options
         for (const auto& [option, enabled] : material_resource.options()) {
             material.set_option(option, enabled);
         }
 
-        // Init parameters
-        for (const material::Parameter& parameter : material_resource.parameters()) {
-            material.set_parameter(parameter.name, parameter.value);
+        for (const auto& parameter : material_resource.parameters()) {
+            material.set_parameter(parameter.name, parameter.default_value);
         }
 
-        // Init samplers
-        for (const material::Sampler& sampler : material_resource.samplers()) {
-            Texture2D* texture = texture_pool.load(sampler.texture_resource_id);
-            MG_ASSERT(texture);
-            material.set_sampler(sampler.name, texture->handle(), sampler.texture_resource_id);
+        for (const auto& sampler : material_resource.samplers()) {
+            if (sampler.texture_resource_id) {
+                Texture2D* texture = texture_pool.load(*sampler.texture_resource_id);
+                MG_ASSERT(texture);
+                material.set_sampler(sampler.name, texture->handle(), sampler.texture_resource_id);
+            }
         }
     }
     catch (const RuntimeError&) {

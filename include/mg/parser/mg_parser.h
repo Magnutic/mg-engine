@@ -22,16 +22,6 @@
 
 namespace Mg::parser {
 
-bool parse(std::string_view definition, int& out);
-
-bool parse(std::string_view definition, float& out);
-
-bool parse(std::string_view definition, glm::vec2& out);
-
-bool parse(std::string_view definition, glm::vec3& out);
-
-bool parse(std::string_view definition, glm::vec4& out);
-
 struct SamplerDeclaration {
     Identifier name;
     shader::SamplerType type{};
@@ -41,7 +31,7 @@ struct SamplerDeclaration {
 struct ParameterDeclaration {
     Identifier name;
     shader::ParameterType type{};
-    Mg::Value value;
+    Mg::Value default_value;
 };
 
 struct OptionDeclaration {

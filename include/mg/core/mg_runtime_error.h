@@ -21,6 +21,11 @@ namespace Mg {
 
 class RuntimeError {
 public:
+    explicit RuntimeError(std::string message) : m_message(std::move(message))
+    {
+        log.error(m_message);
+    }
+
     template<typename... Ts>
     explicit RuntimeError(fmt::format_string<Ts...> message, Ts&&... format_args)
         : m_message(fmt::format(message, std::forward<Ts>(format_args)...))
