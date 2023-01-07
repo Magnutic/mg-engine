@@ -33,6 +33,9 @@ MaterialPool::MaterialPool(std::shared_ptr<TexturePool> texture_pool)
 
 Material* MaterialPool::create(Identifier id, ResourceHandle<ShaderResource> shader_resource_handle)
 {
+    if (find(id) != nullptr) {
+        throw RuntimeError{ "A material with id '{}' already exists.", id.str_view() };
+    }
     const auto it = m_impl->materials.emplace(Material{ id, shader_resource_handle });
     return &(*it);
 }
