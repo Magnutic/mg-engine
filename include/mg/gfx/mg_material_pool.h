@@ -35,7 +35,9 @@ public:
     MG_MAKE_NON_COPYABLE(MaterialPool);
 
     Material* create(Identifier id, ResourceHandle<ShaderResource> shader_resource_handle);
-    Material* create(const MaterialResource& material_resource);
+    const Material* get_or_create(const MaterialResource& material_resource);
+
+    Material* copy(Identifier id, const Material* source);
 
     void update(const MaterialResource& material_resource);
 

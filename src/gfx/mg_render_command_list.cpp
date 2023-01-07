@@ -22,7 +22,8 @@ namespace Mg::gfx {
 
 namespace {
 
-Material* material_for_submesh(span<const MaterialAssignment> assignment, size_t sub_mesh_index)
+const Material* material_for_submesh(span<const MaterialAssignment> assignment,
+                                     size_t sub_mesh_index)
 {
     auto it = find_if(assignment, [&](const MaterialAssignment& mb) {
         return mb.sub_mesh_index == sub_mesh_index;

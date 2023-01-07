@@ -481,7 +481,8 @@ Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file, const bool sRGB)
     return nullptr;
 }
 
-Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::Identifier> options)
+const Mg::gfx::Material* Scene::load_material(Mg::Identifier file,
+                                              Mg::span<const Mg::Identifier> options)
 {
 #if 1
     const std::string diffuse_filename = fmt::format("textures/{}_da.dds", file.str_view());
@@ -550,8 +551,8 @@ Mg::gfx::Material* Scene::load_material(Mg::Identifier file, Mg::span<const Mg::
     return m;
 #else
     auto material_access =
-        resource_cache->access_resource<Mg::MaterialResource>("materials/default.mgmaterial");
-    return material_pool.create(*material_access);
+        resource_cache->access_resource<Mg::MaterialResource>("materials/default.hjson");
+    return material_pool.get_or_create(*material_access);
 #endif
 }
 

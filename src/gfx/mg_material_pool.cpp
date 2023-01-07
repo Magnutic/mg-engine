@@ -69,13 +69,24 @@ void init_material_from_resource(Material& material,
 }
 } // namespace
 
-Material* MaterialPool::create(const MaterialResource& material_resource)
+const Material* MaterialPool::get_or_create(const MaterialResource& material_resource)
 {
     auto shader_resource = material_resource.shader_resource();
     const Identifier id = material_resource.resource_id();
+    if (Material* preexisting = find(id); preexisting) {
+        return preexisting;
+    }
     Material* material = create(id, shader_resource);
     init_material_from_resource(*material, material_resource, *m_impl->texture_pool);
     return material;
+}
+
+Material* MaterialPool::copy(Identifier id, const Material* source)
+{
+    MG_ASSERT(source != nullptr);
+    auto it = m_impl->materials.emplace(*source);
+    it->set_id(id);
+    return &(*it);
 }
 
 void MaterialPool::update(const MaterialResource& material_resource)

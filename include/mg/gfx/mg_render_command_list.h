@@ -60,7 +60,7 @@ struct RenderCommand {
 /** Tells which material to use for a given submesh (by numeric index). */
 struct MaterialAssignment {
     size_t sub_mesh_index = 0;
-    Material* material{};
+    const Material* material{};
 };
 
 class ICamera;
