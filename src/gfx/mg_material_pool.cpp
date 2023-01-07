@@ -26,6 +26,12 @@ struct MaterialPool::Impl {
     plf::colony<Material> materials;
 };
 
+template<typename MaterialsT> auto find_impl(MaterialsT& materials, Identifier id)
+{
+    auto it = find_if(materials, [&](const Material& m) { return m.id() == id; });
+    return it == materials.end() ? nullptr : &*it;
+}
+
 MaterialPool::MaterialPool(std::shared_ptr<TexturePool> texture_pool)
 {
     m_impl->texture_pool = std::move(texture_pool);
@@ -59,7 +65,7 @@ void init_material_from_resource(Material& material,
             if (sampler.texture_resource_id) {
                 Texture2D* texture = texture_pool.load(*sampler.texture_resource_id);
                 MG_ASSERT(texture);
-                material.set_sampler(sampler.name, texture->handle(), sampler.texture_resource_id);
+                material.set_sampler(sampler.name, texture);
             }
         }
     }
@@ -78,7 +84,7 @@ const Material* MaterialPool::get_or_create(const MaterialResource& material_res
 {
     auto shader_resource = material_resource.shader_resource();
     const Identifier id = material_resource.resource_id();
-    if (Material* preexisting = find(id); preexisting) {
+    if (const Material* preexisting = find(id); preexisting) {
         return preexisting;
     }
     Material* material = create(id, shader_resource);
@@ -97,7 +103,7 @@ Material* MaterialPool::copy(Identifier id, const Material* source)
 void MaterialPool::update(const MaterialResource& material_resource)
 {
     const Identifier material_id = material_resource.resource_id();
-    Material* destination = find(material_id);
+    Material* destination = find_impl(m_impl->materials, material_id);
 
     if (!destination) {
         // No Material has been created from this resource, so there is nothing to update.
@@ -129,16 +135,6 @@ void MaterialPool::destroy(const Material* handle)
     m_impl->materials.erase(m_impl->materials.get_iterator(non_const_ptr));
 }
 
-template<typename MaterialsT> auto find_impl(MaterialsT& materials, Identifier id)
-{
-    auto it = find_if(materials, [&](const Material& m) { return m.id() == id; });
-    return it == materials.end() ? nullptr : &*it;
-}
-
-Material* MaterialPool::find(Identifier id)
-{
-    return find_impl(m_impl->materials, id);
-}
 const Material* MaterialPool::find(Identifier id) const
 {
     return find_impl(m_impl->materials, id);

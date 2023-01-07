@@ -11,6 +11,8 @@
 #include "mg/core/mg_runtime_error.h"
 #include "mg/core/mg_value.h"
 #include "mg/gfx/mg_shader_related_types.h"
+#include "mg/gfx/mg_texture2d.h"
+#include "mg/gfx/mg_texture_pool.h"
 #include "mg/mg_defs.h"
 #include "mg/resource_cache/mg_resource_access_guard.h"
 #include "mg/resources/mg_shader_resource.h"
@@ -51,21 +53,25 @@ Material::Material(Identifier material_id, ResourceHandle<ShaderResource> shader
     }
 }
 
-void Material::set_sampler(Identifier name,
-                           TextureHandle texture,
-                           Opt<Identifier> texture_resource_id)
+void Material::set_sampler(Identifier sampler_name, const Texture2D* texture)
 {
-    auto opt_index = sampler_index(name);
-
+    auto opt_index = sampler_index(sampler_name);
     if (!opt_index.has_value()) {
         throw RuntimeError{ "Material '{}': set_sampler(\"{}\", ...): shader has no such sampler.",
                             m_id.str_view(),
-                            name.str_view() };
+                            sampler_name.str_view() };
     }
 
-    m_samplers[*opt_index].name = name;
-    m_samplers[*opt_index].texture = texture;
-    m_samplers[*opt_index].texture_resource_id = texture_resource_id;
+    auto& sampler = m_samplers[*opt_index];
+
+    if (texture) {
+        sampler.texture_id = texture->id();
+        sampler.texture = texture->handle();
+    }
+    else {
+        sampler.texture_id = "";
+        sampler.texture = {};
+    }
 }
 
 void Material::set_option(Option option, bool enabled)
@@ -309,7 +315,7 @@ std::string Material::serialize() const
     for (const Sampler& s : samplers()) {
         Hjson::Value param_value_map;
         param_value_map["type"] = std::string(shader::sampler_type_to_string(s.type));
-        param_value_map["value"] = s.texture_resource_id.value_or("").c_str();
+        param_value_map["value"] = s.texture_id.c_str();
         root["parameters"][s.name.c_str()] = param_value_map;
     }
 

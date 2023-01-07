@@ -35,6 +35,9 @@ class MaterialResource;
 
 namespace Mg::gfx {
 
+class Texture2D;
+class TexturePool;
+
 /** Material defining rendering parameters, such as which shader to use, which textures, and all
  * configurable inputs to the shader.
  */
@@ -45,8 +48,8 @@ public:
     struct Sampler {
         Identifier name;
         shader::SamplerType type{};
+        Identifier texture_id;
         TextureHandle texture{};
-        Opt<Identifier> texture_resource_id;
     };
 
     struct Parameter {
@@ -95,11 +98,11 @@ public:
     /** Returns whether the given option is enabled. Throws if the option does not exist. */
     bool get_option(Option option) const;
 
-    void set_sampler(Identifier name,
-                     TextureHandle texture,
-                     Opt<Identifier> texture_resource_id = nullopt);
+    /** Assign a texture to a sampler. */
+    void set_sampler(Identifier sampler_name, const Texture2D* texture);
 
-    Opt<size_t> sampler_index(Identifier name);
+    /** Get index of the sampler with the given name, if such a sampler exists. */
+    Opt<size_t> sampler_index(Identifier sampler_name);
 
     void set_parameter(Identifier name, int param);
     void set_parameter(Identifier name, float param);
@@ -109,6 +112,7 @@ public:
 
     Opt<Value> get_parameter(Identifier name) const;
 
+    /** Get identifier of this Material. */
     Identifier id() const noexcept { return m_id; }
 
     void set_id(Identifier id) noexcept { m_id = id; }
@@ -118,6 +122,7 @@ public:
      */
     Material::PipelineId pipeline_identifier() const noexcept;
 
+    /** Get the ShaderResource on which this Material is based. */
     ResourceHandle<ShaderResource> shader() const noexcept { return m_shader_resource; }
 
     /** Serialize to a string, which can then be deserialized to a MaterialResource. */

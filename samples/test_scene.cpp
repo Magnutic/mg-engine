@@ -341,8 +341,7 @@ void Scene::render(const double lerp_factor)
     {
         app.gfx_device().clear(app.window().render_target);
 
-        bloom_material->set_sampler("sampler_bloom",
-                                    blur_targets.vert_pass_target_texture->handle());
+        bloom_material->set_sampler("sampler_bloom", blur_targets.vert_pass_target_texture);
 
         post_renderer.post_process(post_renderer.make_context(),
                                    *bloom_material,
@@ -485,6 +484,10 @@ const Mg::gfx::Material* Scene::load_material(Mg::Identifier file,
                                               Mg::span<const Mg::Identifier> options)
 {
 #if 1
+    if (const Mg::gfx::Material* preexisting = material_pool.find(file); preexisting != nullptr) {
+        return preexisting;
+    }
+
     const std::string diffuse_filename = fmt::format("textures/{}_da.dds", file.str_view());
     const std::string diffuse_filename_alt = fmt::format("textures/{}_d.dds", file.str_view());
     const std::string normal_filename = fmt::format("textures/{}_n.dds", file.str_view());
@@ -532,21 +535,21 @@ const Mg::gfx::Material* Scene::load_material(Mg::Identifier file,
         auto handle = resource_cache->resource_handle<Mg::ShaderResource>(
             "shaders/default_metallic_workflow.hjson");
         m = material_pool.create(file, handle);
-        m->set_sampler("sampler_ao_roughness_metallic", ao_roughness_metallic_texture->handle());
+        m->set_sampler("sampler_ao_roughness_metallic", ao_roughness_metallic_texture);
     }
     else {
         auto handle = resource_cache->resource_handle<Mg::ShaderResource>(
             "shaders/default_specular_workflow.hjson");
         m = material_pool.create(file, handle);
-        m->set_sampler("sampler_specular", specular_texture->handle());
+        m->set_sampler("sampler_specular", specular_texture);
     }
 
     for (auto o : options) {
         m->set_option(o, true);
     }
 
-    m->set_sampler("sampler_diffuse", diffuse_texture->handle());
-    m->set_sampler("sampler_normal", normal_texture->handle());
+    m->set_sampler("sampler_diffuse", diffuse_texture);
+    m->set_sampler("sampler_normal", normal_texture);
 
     return m;
 #else
@@ -733,8 +736,8 @@ void Scene::make_blur_targets(Mg::VideoMode video_mode)
     params.height = video_mode.height >> 2;
     params.num_mip_levels = k_num_mip_levels;
     params.texture_format = Mg::gfx::RenderTargetParams::Format::RGBA16F;
-
     params.render_target_id = "Blur_horizontal";
+
     blur_targets.hor_pass_target_texture = texture_pool->create_render_target(params);
 
     params.render_target_id = "Blur_vertical";
@@ -959,15 +962,13 @@ void Scene::load_materials()
         resource_cache->resource_handle<Mg::ShaderResource>("shaders/simple_billboard.hjson");
 
     billboard_material = material_pool.create("billboard_material", billboard_handle);
-    billboard_material->set_sampler("sampler_diffuse",
-                                    load_texture("textures/light_t.dds", true)->handle());
+    billboard_material->set_sampler("sampler_diffuse", load_texture("textures/light_t.dds", true));
 
     // Create UI material
     const auto ui_handle =
         resource_cache->resource_handle<Mg::ShaderResource>("shaders/ui_render_test.hjson");
     ui_material = material_pool.create("ui_material", ui_handle);
-    ui_material->set_sampler("sampler_colour",
-                             load_texture("textures/ui/book_open_da.dds", true)->handle());
+    ui_material->set_sampler("sampler_colour", load_texture("textures/ui/book_open_da.dds", true));
 }
 
 // Create a lot of random lights

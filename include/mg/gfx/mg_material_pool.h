@@ -53,7 +53,6 @@ public:
 
     void destroy(const Material* handle);
 
-    Material* find(Identifier id);
     const Material* find(Identifier id) const;
 
     Array<Material*> get_all_materials();
