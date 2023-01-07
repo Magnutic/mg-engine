@@ -7,7 +7,6 @@
 #include "mg/parser/mg_parser.h"
 
 #include "mg/gfx/mg_shader_related_types.h"
-#include "mg_lexer.h"
 
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
