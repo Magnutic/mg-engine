@@ -38,6 +38,7 @@ Material* MaterialPool::create(Identifier id, ResourceHandle<ShaderResource> sha
 }
 
 namespace {
+
 void init_material_from_resource(Material& material,
                                  const MaterialResource& material_resource,
                                  TexturePool& texture_pool)
@@ -67,6 +68,7 @@ void init_material_from_resource(Material& material,
         throw;
     }
 }
+
 } // namespace
 
 const Material* MaterialPool::get_or_create(const MaterialResource& material_resource)

@@ -35,7 +35,9 @@ class MaterialResource;
 
 namespace Mg::gfx {
 
-/** Material for rendering meshes. */
+/** Material defining rendering parameters, such as which shader to use, which textures, and all
+ * configurable inputs to the shader.
+ */
 class Material {
 public:
     explicit Material(Identifier material_id, ResourceHandle<ShaderResource> shader_resource);
