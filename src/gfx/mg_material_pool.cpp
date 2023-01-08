@@ -70,7 +70,7 @@ void init_material_from_resource(Material& material,
         }
     }
     catch (const RuntimeError&) {
-        log.message(
+        log.error(
             "Error initializing Material from MaterialResource '{}'. Is there a mismatch between "
             "the paramaters of the shader and the values defined in the material resource file?",
             material_resource.resource_id().str_view());
@@ -121,7 +121,7 @@ void MaterialPool::update(const MaterialResource& material_resource)
         init_material_from_resource(*new_material, material_resource, *m_impl->texture_pool);
     }
     catch (Mg::RuntimeError&) {
-        log.warning("Failed to update Material '{}'.", material_id.str_view());
+        log.error("Failed to update Material '{}'.", material_id.str_view());
     }
 
     // Swap into place.
