@@ -146,17 +146,6 @@ struct Pipeline::Params {
 
 /** Pipeline settings controlling blending, rasterization, etc. */
 struct Pipeline::Settings {
-    Settings()
-        : blend_mode(blend_mode_constants::bm_default)
-        , blending_enabled(false)
-        , depth_test_condition(DepthTestCondition::less)
-        , polygon_mode(PolygonMode::fill)
-        , culling_mode(CullingMode::back)
-        , colour_write_enabled(true)
-        , alpha_write_enabled(true)
-        , depth_write_enabled(true)
-    {}
-
     /** Vertex array -- the geometry to draw. */
     VertexArrayHandle vertex_array{};
 
@@ -169,29 +158,29 @@ struct Pipeline::Settings {
     /** Whether, and if so how, the colour resulting from this pipeline should be blended with
      *  previous result in render target.
      */
-    BlendMode blend_mode;
+    BlendMode blend_mode = blend_mode_constants::bm_default;
 
-    bool blending_enabled : 1;
+    bool blending_enabled : 1 = false;
 
     /** Whether -- and if so, by which condition -- to discard fragments based on depth-test
      * against existing fragments in render target's depth buffer.
      */
-    DepthTestCondition depth_test_condition : 3;
+    DepthTestCondition depth_test_condition : 3 = DepthTestCondition::less;
 
     /** How polygons should be rasterized by this pipeline. */
-    PolygonMode polygon_mode : 2;
+    PolygonMode polygon_mode : 2 = PolygonMode::fill;
 
     /** Which if any faces of polygons should be culled away. */
-    CullingMode culling_mode : 2;
+    CullingMode culling_mode : 2 = CullingMode::back;
 
     /** Whether to enable writing colour result of pipeline to render target. */
-    bool colour_write_enabled : 1;
+    bool colour_write_enabled : 1 = true;
 
     /** Whether to enable writing alpha-channel result of pipeline to render target. */
-    bool alpha_write_enabled : 1;
+    bool alpha_write_enabled : 1 = true;
 
     /** Whether to enable writing depth result of pipeline to render target's depth buffer. */
-    bool depth_write_enabled : 1;
+    bool depth_write_enabled : 1 = true;
 };
 
 /** A `PipelineBindingContext` is an object which sets up the state required to bind `Pipelines`.
