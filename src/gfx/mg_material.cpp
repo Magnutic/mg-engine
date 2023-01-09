@@ -308,6 +308,8 @@ std::string Material::serialize() const
 
     root["shader"] = m_shader_resource.resource_id().c_str();
 
+    root["blend_mode"] = BlendMode::serialize(blend_mode);
+
     for (const Option& o : options()) {
         root["options"][o.c_str()] = get_option(o);
     }

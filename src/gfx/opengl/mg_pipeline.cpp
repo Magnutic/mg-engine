@@ -228,8 +228,8 @@ constexpr GLenum gl_blend_factor(BlendFactor factor)
     return values[factor];
 }
 
-void apply_pipeline_settings(const Pipeline::Settings settings,
-                             const Opt<Pipeline::Settings> prev_settings)
+void apply_pipeline_settings(const Pipeline::Settings& settings,
+                             const Opt<Pipeline::Settings>& prev_settings)
 {
     const bool change_vertex_array = !prev_settings ||
                                      (prev_settings->vertex_array != settings.vertex_array);

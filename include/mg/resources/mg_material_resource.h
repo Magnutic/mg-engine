@@ -31,6 +31,8 @@ class MaterialResource : public BaseResource {
 public:
     using BaseResource::BaseResource;
 
+    gfx::BlendMode blend_mode() const noexcept { return m_blend_mode; }
+
     span<const parser::SamplerDeclaration> samplers() const noexcept { return m_samplers; }
     span<const parser::ParameterDeclaration> parameters() const noexcept { return m_parameters; }
     span<const parser::OptionDeclaration> options() const noexcept { return m_options; }
@@ -44,6 +46,7 @@ protected:
     LoadResourceResult load_resource_impl(ResourceLoadingInput& input) override;
 
 private:
+    gfx::BlendMode m_blend_mode;
     std::vector<parser::ParameterDeclaration> m_parameters;
     std::vector<parser::SamplerDeclaration> m_samplers;
     std::vector<parser::OptionDeclaration> m_options;

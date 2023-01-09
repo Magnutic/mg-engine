@@ -13,9 +13,9 @@
 #include "mg/gfx/mg_blend_modes.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/utils/mg_angle.h"
+#include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_optional.h"
-#include "mg/utils/mg_impl_ptr.h"
 
 #include <glm/vec2.hpp>
 
@@ -68,10 +68,8 @@ public:
     void scaling_factor(float scaling_factor);
     float scaling_factor() const;
 
-    void draw_rectangle(const UIPlacement& placement,
-                        glm::vec2 size,
-                        const Material& material,
-                        Opt<BlendMode> blend_mode) noexcept;
+    void
+    draw_rectangle(const UIPlacement& placement, glm::vec2 size, const Material& material) noexcept;
 
     void draw_text(const IRenderTarget& render_target,
                    const UIPlacement& placement,

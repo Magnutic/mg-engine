@@ -10,6 +10,7 @@
 
 #include "mg/containers/mg_flat_map.h"
 #include "mg/core/mg_log.h"
+#include "mg/gfx/mg_blend_modes.h"
 #include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_material.h"
 #include "mg/gfx/mg_pipeline.h"
@@ -334,13 +335,25 @@ PipelinePool::PipelinePool(PipelinePoolConfig&& config)
 }
 
 void PipelinePool::bind_material_pipeline(const Material& material,
-                                          const Pipeline::Settings& settings,
+                                          const BindMaterialPipelineSettings& settings,
                                           PipelineBindingContext& binding_context)
 {
     MG_GFX_DEBUG_GROUP("PipelinePool::bind_material_pipeline")
 
     const Pipeline& pipeline = get_or_make_pipeline(*m_impl, material);
-    binding_context.bind_pipeline(pipeline, settings);
+    Pipeline::Settings pipeline_settings{ .vertex_array = settings.vertex_array,
+                                          .target_framebuffer = settings.target_framebuffer,
+                                          .viewport_size = settings.viewport_size,
+                                          .blend_mode = material.blend_mode,
+                                          .blending_enabled = material.blend_mode !=
+                                                              blend_mode_constants::bm_default,
+                                          .depth_test_condition = settings.depth_test_condition,
+                                          .polygon_mode = settings.polygon_mode,
+                                          .culling_mode = settings.culling_mode,
+                                          .colour_write_enabled = settings.colour_write_enabled,
+                                          .alpha_write_enabled = settings.alpha_write_enabled,
+                                          .depth_write_enabled = settings.depth_write_enabled };
+    binding_context.bind_pipeline(pipeline, pipeline_settings);
 
     // Upload material parameter values to MaterialParams uniform buffer.
     m_impl->material_params_ubo.set_data(material.material_params_buffer());

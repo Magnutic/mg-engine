@@ -284,12 +284,12 @@ void BillboardRenderer::render(const IRenderTarget& render_target,
 
     PipelineBindingContext binding_context;
 
-    Pipeline::Settings pipeline_settings;
-    pipeline_settings.culling_mode = CullingMode::none;
-    pipeline_settings.vertex_array = m_impl->vao;
-    pipeline_settings.target_framebuffer = render_target.handle();
-    pipeline_settings.viewport_size = render_target.image_size();
-    m_impl->pipeline_pool.bind_material_pipeline(material, pipeline_settings, binding_context);
+    BindMaterialPipelineSettings settings;
+    settings.culling_mode = CullingMode::none;
+    settings.vertex_array = m_impl->vao;
+    settings.target_framebuffer = render_target.handle();
+    settings.viewport_size = render_target.image_size();
+    m_impl->pipeline_pool.bind_material_pipeline(material, settings, binding_context);
 
     glDrawArrays(GL_POINTS, 0, as<GLint>(billboards.size()));
 }

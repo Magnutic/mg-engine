@@ -53,6 +53,8 @@ void init_material_from_resource(Material& material,
                                  TexturePool& texture_pool)
 {
     try {
+        material.blend_mode = material_resource.blend_mode();
+
         for (const auto& [option, enabled] : material_resource.options()) {
             material.set_option(option, enabled);
         }

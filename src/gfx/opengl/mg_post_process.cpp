@@ -120,10 +120,10 @@ PipelinePool make_post_process_pipeline_pool()
     return PipelinePool(std::move(config));
 }
 
-Pipeline::Settings pipeline_settings(const IRenderTarget& render_target,
+BindMaterialPipelineSettings pipeline_settings(const IRenderTarget& render_target,
                                      VertexArrayHandle vertex_array)
 {
-    Pipeline::Settings settings;
+    BindMaterialPipelineSettings settings;
     settings.depth_test_condition = DepthTestCondition::always;
     settings.depth_write_enabled = false;
     settings.target_framebuffer = render_target.handle();

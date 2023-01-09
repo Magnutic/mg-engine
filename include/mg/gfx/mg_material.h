@@ -12,6 +12,7 @@
 
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_identifier.h"
+#include "mg/gfx/mg_blend_modes.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_shader_related_types.h"
 #include "mg/resource_cache/mg_resource_handle.h"
@@ -70,6 +71,11 @@ public:
         Identifier shader_resource_id;
         Material::OptionFlags material_option_flags;
     };
+
+    /** Whether, and if so how, the colour resulting from this pipeline should be blended with
+     *  previous result in render target.
+     */
+    BlendMode blend_mode = blend_mode_constants::bm_default;
 
     /** Get the list of samplers (texture inputs) for this material. */
     const Samplers& samplers() const noexcept { return m_samplers; }

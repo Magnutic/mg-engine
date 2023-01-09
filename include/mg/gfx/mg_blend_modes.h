@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2023, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -11,6 +11,12 @@
 #pragma once
 
 #include <mg/utils/mg_enum.h>
+
+#include <compare>
+
+namespace Hjson {
+class Value;
+}
 
 /** Pre-defined blend modes. */
 namespace Mg::gfx {
@@ -36,45 +42,65 @@ struct BlendMode {
     BlendFactor dst_colour_factor : 6;
     BlendFactor src_alpha_factor : 6;
     BlendFactor dst_alpha_factor : 6;
+
+    static Hjson::Value serialize(const BlendMode& blend_mode);
+    static BlendMode deserialize(const Hjson::Value& v);
+
+    friend std::strong_ordering operator<=>(const BlendMode& l, const BlendMode& r) = default;
 };
-
-inline bool operator==(BlendMode l, BlendMode r)
-{
-    return l.colour_blend_op == r.colour_blend_op && l.alpha_blend_op == r.alpha_blend_op &&
-           l.src_colour_factor == r.src_colour_factor &&
-           l.dst_colour_factor == r.dst_colour_factor && l.src_alpha_factor == r.src_alpha_factor &&
-           l.dst_alpha_factor == r.dst_alpha_factor;
-}
-
-inline bool operator!=(BlendMode l, BlendMode r)
-{
-    return !(l == r);
-}
 
 } // namespace Mg::gfx
 
 namespace Mg::gfx::blend_mode_constants {
 
 /** Default BlendMode */
-constexpr BlendMode bm_default{ BlendOp::add,      BlendOp::add,     BlendFactor::one,
-                                BlendFactor::zero, BlendFactor::one, BlendFactor::zero };
+[[maybe_unused]] constexpr BlendMode bm_default{
+    .colour_blend_op = BlendOp::add,
+    .alpha_blend_op = BlendOp::add,
+    .src_colour_factor = BlendFactor::one,
+    .dst_colour_factor = BlendFactor::zero,
+    .src_alpha_factor = BlendFactor::one,
+    .dst_alpha_factor = BlendFactor::zero,
+};
 
 /** Alpha BlendMode */
-constexpr BlendMode bm_alpha{ BlendOp::add,           BlendOp::add,
-                              BlendFactor::src_alpha, BlendFactor::one_minus_src_alpha,
-                              BlendFactor::one,       BlendFactor::one };
+[[maybe_unused]] constexpr BlendMode bm_alpha{
+    .colour_blend_op = BlendOp::add,
+    .alpha_blend_op = BlendOp::add,
+    .src_colour_factor = BlendFactor::src_alpha,
+    .dst_colour_factor = BlendFactor::one_minus_src_alpha,
+    .src_alpha_factor = BlendFactor::one,
+    .dst_alpha_factor = BlendFactor::one,
+};
 
 /** Premultiplied alpha BlendMode */
-constexpr BlendMode bm_alpha_premultiplied{ BlendOp::add,     BlendOp::add,
-                                            BlendFactor::one, BlendFactor::one_minus_src_alpha,
-                                            BlendFactor::one, BlendFactor::one };
+[[maybe_unused]] constexpr BlendMode bm_alpha_premultiplied{
+    .colour_blend_op = BlendOp::add,
+    .alpha_blend_op = BlendOp::add,
+    .src_colour_factor = BlendFactor::one,
+    .dst_colour_factor = BlendFactor::one_minus_src_alpha,
+    .src_alpha_factor = BlendFactor::one,
+    .dst_alpha_factor = BlendFactor::one,
+};
 
 /** Additive BlendMode */
-constexpr BlendMode bm_add{ BlendOp::add,     BlendOp::add,     BlendFactor::src_alpha,
-                            BlendFactor::one, BlendFactor::one, BlendFactor::one };
+[[maybe_unused]] constexpr BlendMode bm_add{
+    .colour_blend_op = BlendOp::add,
+    .alpha_blend_op = BlendOp::add,
+    .src_colour_factor = BlendFactor::src_alpha,
+    .dst_colour_factor = BlendFactor::one,
+    .src_alpha_factor = BlendFactor::one,
+    .dst_alpha_factor = BlendFactor::one,
+};
 
 /** Premultiplied additive BlendMode */
-constexpr BlendMode bm_add_premultiplied{ BlendOp::add,     BlendOp::add,     BlendFactor::one,
-                                          BlendFactor::one, BlendFactor::one, BlendFactor::one };
+[[maybe_unused]] constexpr BlendMode bm_add_premultiplied{
+    .colour_blend_op = BlendOp::add,
+    .alpha_blend_op = BlendOp::add,
+    .src_colour_factor = BlendFactor::one,
+    .dst_colour_factor = BlendFactor::one,
+    .src_alpha_factor = BlendFactor::one,
+    .dst_alpha_factor = BlendFactor::one,
+};
 
 } // namespace Mg::gfx::blend_mode_constants

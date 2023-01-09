@@ -52,6 +52,39 @@ struct PipelinePoolConfig {
     Array<PipelineInputDescriptor> shared_input_layout;
 };
 
+struct BindMaterialPipelineSettings {
+    /** Vertex array -- the geometry to draw. */
+    VertexArrayHandle vertex_array{};
+
+    /** Which framebuffer to render onto. */
+    FrameBufferHandle target_framebuffer{ 0 };
+
+    /** Size of the rendering viewport. */
+    ImageSize viewport_size = {};
+
+    /** Whether -- and if so, by which condition -- to discard fragments based on depth-test
+     * against existing fragments in render target's depth buffer.
+     */
+    DepthTestCondition depth_test_condition : 3 = DepthTestCondition::less;
+
+    /** How polygons should be rasterized by this pipeline. */
+    PolygonMode polygon_mode : 2 = PolygonMode::fill;
+
+    /** Which if any faces of polygons should be culled away. */
+    CullingMode culling_mode : 2 = CullingMode::back;
+
+    /** Whether to enable writing colour result of pipeline to render target. */
+    bool colour_write_enabled : 1 = true;
+
+    /** Whether to enable writing alpha-channel result of pipeline to render target. */
+    bool alpha_write_enabled : 1 = true;
+
+    /** Whether to enable writing depth result of pipeline to render target's depth buffer. */
+    bool depth_write_enabled : 1 = true;
+};
+
+static constexpr auto s = sizeof(BindMaterialPipelineSettings);
+
 class PipelinePool {
 public:
     explicit PipelinePool(PipelinePoolConfig&& config);
@@ -64,7 +97,7 @@ public:
      * that you create a `PipelineBindingContext` first.
      */
     void bind_material_pipeline(const Material& material,
-                                const Pipeline::Settings& settings,
+                                const BindMaterialPipelineSettings& settings,
                                 PipelineBindingContext& binding_context);
 
     /** Drops all stored pipelines, releasing resources. This can be used to enable hot reloading of

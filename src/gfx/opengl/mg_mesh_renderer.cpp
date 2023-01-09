@@ -245,10 +245,10 @@ void bind_shared_inputs(MeshRenderer::Impl& data, const ICamera& cam, RenderPara
     Pipeline::bind_shared_inputs(shared_bindings);
 }
 
-Pipeline::Settings make_pipeline_settings(const IRenderTarget& render_target,
-                                          VertexArrayHandle vertex_array)
+BindMaterialPipelineSettings make_pipeline_settings(const IRenderTarget& render_target,
+                                                    VertexArrayHandle vertex_array)
 {
-    Pipeline::Settings settings;
+    BindMaterialPipelineSettings settings;
     settings.target_framebuffer = render_target.handle();
     settings.viewport_size = render_target.image_size();
     settings.vertex_array = vertex_array;
@@ -311,7 +311,7 @@ void MeshRenderer::render(const ICamera& cam,
     PipelineBindingContext binding_context;
     bind_shared_inputs(*m_impl, cam, params);
 
-    Opt<Pipeline::Settings> previous_pipeline_settings;
+    Opt<BindMaterialPipelineSettings> previous_pipeline_settings;
 
     const auto render_commands = command_list.render_commands();
     const Material* previous_material = nullptr;
@@ -341,8 +341,7 @@ void MeshRenderer::render(const ICamera& cam,
             command.material != previous_material || previous_was_skinned_mesh != is_skinned_mesh;
 
         if (should_switch_pipeline) {
-            Pipeline::Settings pipeline_settings = make_pipeline_settings(render_target,
-                                                                          command.vertex_array);
+            auto pipeline_settings = make_pipeline_settings(render_target, command.vertex_array);
             pipeline_pool->bind_material_pipeline(*command.material,
                                                   pipeline_settings,
                                                   binding_context);

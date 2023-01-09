@@ -11,6 +11,7 @@
 #pragma once
 
 #include "mg/core/mg_value.h"
+#include "mg/gfx/mg_blend_modes.h"
 #include "mg/gfx/mg_shader_related_types.h"
 #include "mg/utils/mg_gsl.h"
 
@@ -40,6 +41,8 @@ struct OptionDeclaration {
 };
 
 struct MaterialParseResult {
+    gfx::BlendMode blend_mode;
+
     std::vector<SamplerDeclaration> samplers;
     std::vector<ParameterDeclaration> parameters;
     std::vector<OptionDeclaration> options;

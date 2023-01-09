@@ -33,6 +33,8 @@ LoadResourceResult MaterialResource::load_resource_impl(ResourceLoadingInput& in
     try {
         parser::MaterialParseResult parse_result = parser::parse_material(resource_definition);
 
+        m_blend_mode = parse_result.blend_mode;
+
         m_parameters = std::move(parse_result.parameters);
         m_samplers = std::move(parse_result.samplers);
         m_options = std::move(parse_result.options);

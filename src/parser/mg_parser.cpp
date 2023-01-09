@@ -6,6 +6,7 @@
 
 #include "mg/parser/mg_parser.h"
 
+#include "mg/gfx/mg_blend_modes.h"
 #include "mg/gfx/mg_shader_related_types.h"
 
 #include "mg/core/mg_log.h"
@@ -223,8 +224,13 @@ MaterialParseResult parse_material(std::string_view material_resource_definition
 
     const Hjson::Value& parameters = get_property(root, "parameters", Hjson::Type::Map);
     const Hjson::Value& options = get_property(root, "options", Hjson::Type::Map);
+    const Hjson::Value& blend_mode = get_property(root, "blend_mode", Hjson::Type::Map);
 
     MaterialParseResult result;
+
+    if (blend_mode.defined()) {
+        result.blend_mode = gfx::BlendMode::deserialize(root["blend_mode"]);
+    }
 
     if (parameters.defined()) {
         parse_parameters(

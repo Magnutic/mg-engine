@@ -20,6 +20,7 @@ add_library(mg_engine
     ecs/mg_entity.cpp
     editor/mg_curve_editor.cpp
     gfx/mg_bitmap_font.cpp
+    gfx/mg_blend_modes.cpp
     gfx/mg_gfx_object_handles.cpp
     gfx/mg_light_buffers.cpp
     gfx/mg_light_grid.cpp

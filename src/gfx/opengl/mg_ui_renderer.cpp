@@ -108,24 +108,6 @@ void main() {
 
 //--------------------------------------------------------------------------------------------------
 
-Pipeline::Settings pipeline_settings(Opt<BlendMode> blend_mode)
-{
-    Pipeline::Settings settings;
-    settings.depth_test_condition = DepthTestCondition::always;
-    settings.blending_enabled = true;
-    settings.depth_write_enabled = false;
-
-    if (blend_mode) {
-        settings.blend_mode = blend_mode.value();
-        settings.blending_enabled = true;
-    }
-    else {
-        settings.blending_enabled = false;
-    }
-
-    return settings;
-}
-
 PipelinePool make_ui_pipeline_factory()
 {
     PipelinePoolConfig config = {};
@@ -286,10 +268,7 @@ float UIRenderer::scaling_factor() const
 
 namespace {
 
-void setup_material_pipeline(UIRenderer::Impl& data,
-                             const mat4& M,
-                             const Material& material,
-                             Opt<BlendMode> blend_mode)
+void setup_material_pipeline(UIRenderer::Impl& data, const mat4& M, const Material& material)
 {
     DrawParamsBlock block = {};
     block.M = M;
@@ -299,23 +278,25 @@ void setup_material_pipeline(UIRenderer::Impl& data,
                                                        data.draw_params_ubo) };
     Pipeline::bind_shared_inputs(input_bindings);
 
+    BindMaterialPipelineSettings settings;
+    settings.depth_test_condition = DepthTestCondition::always;
+    settings.depth_write_enabled = false;
+
     PipelineBindingContext binding_context;
-    data.pipeline_pool.bind_material_pipeline(material,
-                                              pipeline_settings(blend_mode),
-                                              binding_context);
+    data.pipeline_pool.bind_material_pipeline(material, settings, binding_context);
 }
 
 } // namespace
 
 void UIRenderer::draw_rectangle(const UIPlacement& placement,
                                 const vec2 size,
-                                const Material& material,
-                                Opt<BlendMode> blend_mode) noexcept
+                                const Material& material) noexcept
 {
     MG_GFX_DEBUG_GROUP("UIRenderer::draw_rectangle");
 
-    const mat4 M = make_transform_matrix(placement, size, m_impl->resolution, m_impl->scaling_factor);
-    setup_material_pipeline(*m_impl, M, material, blend_mode);
+    const mat4 M =
+        make_transform_matrix(placement, size, m_impl->resolution, m_impl->scaling_factor);
+    setup_material_pipeline(*m_impl, M, material);
 
     const auto quad_vao_id = m_impl->quad_vao.as_gl_id();
 
