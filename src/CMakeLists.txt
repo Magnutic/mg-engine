@@ -147,6 +147,10 @@ if((${CMAKE_COMPILER_IS_GNUCXX}) OR (${CMAKE_CXX_COMPILER_ID} MATCHES Clang))
         # Enable minimal optimizations for debug builds
         # target_compile_options(mg_engine PRIVATE -Og)
     endif()
+
+    if(MG_STDLIB_ASSERTIONS)
+        target_compile_options(mg_engine PUBLIC "-D_GLIBCXX_ASSERTIONS=1")
+    endif()
 endif()
 
 target_include_directories(mg_engine

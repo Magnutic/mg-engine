@@ -28,6 +28,7 @@ shift 3
 
 BUILD_TYPE=RelWithDebInfo
 USE_SANITIZERS=0
+USE_STDLIB_ASSERTIONS=0
 USE_GFX_DEBUG_GROUPS=0
 CLANG_TIDY_COMMAND=""
 GENERATOR=""
@@ -47,6 +48,10 @@ do
         ;;
         --use-sanitizers|--use-sanitizers)
         USE_SANITIZERS=1
+        shift
+        ;;
+        --use-stdlib-assertions)
+        USE_STDLIB_ASSERTIONS=1
         shift
         ;;
         --use-gfx-debug-groups)
@@ -77,6 +82,7 @@ fi
 echo "Configuring '$CONFNAME' with C compiler '$C_COMPILER' and C++ compiler '$CXX_COMPILER'"
 echo "Build type: $BUILD_TYPE."
 echo "Sanitizers enabled: $USE_SANITIZERS"
+echo "C++ standard library assertions enabled: $USE_STDLIB_ASSERTIONS"
 echo "Use gfx debug groups: $USE_GFX_DEBUG_GROUPS"
 if [[ $CLANG_TIDY_COMMAND != "" ]]; then
     echo "Clang-tidy enabled with command: $CLANG_TIDY_COMMAND"
@@ -94,6 +100,7 @@ mkdir "$BUILD_ROOT/$CONFNAME" || exit 1
 (cd "$BUILD_ROOT/$CONFNAME" &&
 cmake "$SRC_ROOT" -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
     -DCMAKE_C_COMPILER="$C_COMPILER" -DCMAKE_CXX_COMPILER="$CXX_COMPILER" -DMG_DEBUG_SANITIZERS=$USE_SANITIZERS \
+    -DMG_STDLIB_ASSERTIONS=$USE_STDLIB_ASSERTIONS \
     -DMG_ENABLE_GFX_DEBUG_GROUPS=$USE_GFX_DEBUG_GROUPS \
     -DCMAKE_CXX_CLANG_TIDY="$CLANG_TIDY_COMMAND" \
     $GENERATOR_PART)

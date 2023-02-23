@@ -16,6 +16,7 @@ option(MG_BUILD_TOOLS "Build Mg Engine tools." ON)
 # Sanitizers disabled by default to avoid compiler compatibility issues.
 # (e.g. building the library with GCC then linking to an application built with Clang).
 option(MG_DEBUG_SANITIZERS "Enable sanitizers (ASan, UBSan) for debug builds." OFF)
+option(MG_STDLIB_ASSERTIONS "Enable C++ standard library assertions (e.g. out of range access)." OFF)
 option(MG_ENABLE_GFX_DEBUG_GROUPS "Enable the use of OpenGL debug groups to ease understanding of API traces" OFF)
 
 # Dependency-handling options.
