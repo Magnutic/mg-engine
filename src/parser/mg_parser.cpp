@@ -48,6 +48,7 @@ Value::Type corresponding_value_type(shader::ParameterType type) noexcept
     case shader::ParameterType::Vec4:
         return Value::Type::Vec4;
     }
+    MG_ASSERT(false && "unexpected shader::ParameterType");
 }
 
 std::string_view hjson_type_to_string(Hjson::Type type)
