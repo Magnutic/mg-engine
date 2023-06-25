@@ -8,6 +8,7 @@
 
 #include "mg/mg_defs.h"
 #include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_u8string_casts.h"
 
 #include <chrono>
 #include <fmt/chrono.h>
@@ -74,14 +75,14 @@ std::string format_message(const LogItem& item, bool include_time_stamp)
 class Log::Impl {
 public:
     Impl(std::string_view file_path_,
-            Log::Prio console_verbosity_,
-            Log::Prio log_file_verbosity_,
-            const size_t num_history_lines_)
+         Log::Prio console_verbosity_,
+         Log::Prio log_file_verbosity_,
+         const size_t num_history_lines_)
         : console_verbosity(console_verbosity_)
         , log_file_verbosity(log_file_verbosity_)
         , file_path(file_path_)
         , num_history_lines(num_history_lines_)
-        , m_writer(fs::u8path(file_path_), std::ios::trunc)
+        , m_writer(fs::path(cast_as_u8_unchecked(file_path_)), std::ios::trunc)
     {
         if (!m_writer) {
             std::cerr << "[ERROR]: "
@@ -313,14 +314,14 @@ void write_crash_log()
     const time_t crash_time = time(nullptr);
     const tm& t = *localtime(&crash_time);
 
-    auto out_directory_name = fmt::format("crashlog_{:%T}", t);
+    auto out_directory_name = cast_as_u8_unchecked(fmt::format("crashlog_{:%T}", t));
 
-    const auto fp = log.file_path();
-    const auto log_path = fs::u8path(fp.begin(), fp.end());
+    const auto fp = cast_as_u8_unchecked(log.file_path());
+    const auto log_path = fs::path(fp);
     const auto log_directory = log_path.parent_path();
     const auto log_filename = log_path.filename();
 
-    const auto out_directory = log_directory / fs::u8path(out_directory_name);
+    const auto out_directory = log_directory / fs::path(out_directory_name);
     fs::create_directory(out_directory);
 
     const auto outpath = out_directory / log_filename;

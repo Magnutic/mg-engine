@@ -135,8 +135,7 @@ std::pair<bool, std::string> get_include(const ResourceLoadingInput& input,
         }
 
         // Add origin-tracking comment (helps debugging shader)
-        result += fmt::format(k_delimiter_comment,
-                              u8string_view_to_string_view(file_path.generic_u8string()));
+        result += fmt::format(k_delimiter_comment, cast_u8_to_char(file_path.generic_u8string()));
 
         // Recursively assemble loaded code.
         result += assemble_shader_code(include_dirs_for_file(include_directories, file_path),
@@ -175,7 +174,7 @@ std::string assemble_shader_code(const std::vector<fs::path>& include_directorie
         if (!include_success) {
             throw RuntimeError{ "Could not find '{}' (#include directive in '{}'.)",
                                 include_path,
-                                u8string_view_to_string_view(source_file.generic_u8string()) };
+                                cast_u8_to_char(source_file.generic_u8string()) };
         }
         assembled_code += included_code;
     }

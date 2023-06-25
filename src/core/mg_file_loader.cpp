@@ -35,7 +35,7 @@
 #include "mg/utils/mg_file_io.h"
 #include "mg/utils/mg_file_time_helper.h"
 #include "mg/utils/mg_string_utils.h"
-#include "mg/utils/mg_u8string_to_string.h"
+#include "mg/utils/mg_u8string_casts.h"
 
 #include <zip.h>
 
@@ -69,7 +69,7 @@ Array<FileRecord> BasicFileLoader::available_files()
         // directory.
         // N.B. MSVC implementation of generic_u8string is documented as converting backslash path
         // separators to forward slashes.
-        std::string filepath = u8string_to_string(file.path().generic_u8string());
+        std::string filepath = cast_u8_to_char(file.path().generic_u8string());
         filepath.erase(0, root_dir.generic_u8string().length() + 1);
 
         index.push_back({ Identifier::from_runtime_string(filepath), last_write_time });
@@ -81,7 +81,8 @@ Array<FileRecord> BasicFileLoader::available_files()
 bool BasicFileLoader::file_exists(Identifier file)
 {
     const auto fname = file.str_view();
-    fs::path file_path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
+    fs::path file_path = fs::path(cast_as_u8_unchecked(m_directory)) /
+                         fs::path(cast_as_u8_unchecked(fname));
     return fs::exists(file_path);
 }
 
@@ -90,7 +91,8 @@ uintmax_t BasicFileLoader::file_size(Identifier file)
     MG_ASSERT(file_exists(file));
 
     const auto fname = file.str_view();
-    fs::path file_path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
+    fs::path file_path = fs::path(cast_as_u8_unchecked(m_directory)) /
+                         fs::path(cast_as_u8_unchecked(fname));
     return fs::file_size(file_path);
 }
 
@@ -99,7 +101,8 @@ std::time_t BasicFileLoader::file_time_stamp(Identifier file)
     MG_ASSERT(file_exists(file));
 
     const auto fname = file.str_view();
-    fs::path file_path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
+    fs::path file_path = fs::path(cast_as_u8_unchecked(m_directory)) /
+                         fs::path(cast_as_u8_unchecked(fname));
     return last_write_time_t(file_path);
 }
 
@@ -108,10 +111,10 @@ void BasicFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
     MG_ASSERT(target_buffer.size() >= file_size(file));
 
     const auto fname = file.str_view();
-    const auto path = fs::u8path(m_directory) / fs::u8path(fname.begin(), fname.end());
+    const auto path = fs::path(m_directory) / fs::path(fname);
 
-    const bool file_is_under_directory =
-        is_prefix_of(m_directory, u8string_view_to_string_view(path.generic_u8string()));
+    const bool file_is_under_directory = is_prefix_of(m_directory,
+                                                      cast_u8_to_char(path.generic_u8string()));
 
     if (!file_is_under_directory) {
         throw RuntimeError{
@@ -119,12 +122,10 @@ void BasicFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
         };
     }
 
-    Opt<std::ifstream> istream =
-        io::make_input_filestream(u8string_view_to_string_view(path.generic_u8string()),
-                                  io::Mode::binary);
+    Opt<std::ifstream> istream = io::make_input_filestream(cast_u8_to_char(path.generic_u8string()),
+                                                           io::Mode::binary);
     if (!istream) {
-        throw RuntimeError{ "Could not read file '{}'",
-                            u8string_view_to_string_view(path.generic_u8string()) };
+        throw RuntimeError{ "Could not read file '{}'", cast_u8_to_char(path.generic_u8string()) };
     }
 
     const auto size = io::file_size(*istream);

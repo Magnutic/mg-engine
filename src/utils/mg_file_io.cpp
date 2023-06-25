@@ -6,6 +6,8 @@
 
 #include "mg/utils/mg_file_io.h"
 
+#include "mg/utils/mg_u8string_casts.h"
+
 #include <filesystem>
 
 namespace Mg::io {
@@ -18,7 +20,8 @@ Opt<std::ofstream> make_output_filestream(std::string_view filepath, bool overwr
         open_mode |= std::ios::binary;
     }
 
-    auto writer = make_opt<std::ofstream>(std::filesystem::u8path(filepath), open_mode);
+    auto writer = make_opt<std::ofstream>(std::filesystem::path(cast_as_u8_unchecked(filepath)),
+                                          open_mode);
 
     if (!writer->good()) {
         return {};
@@ -35,7 +38,8 @@ Opt<std::ifstream> make_input_filestream(std::string_view filepath, Mode mode)
         open_mode |= std::ios::binary;
     }
 
-    auto writer = make_opt<std::ifstream>(std::filesystem::u8path(filepath), open_mode);
+    auto writer = make_opt<std::ifstream>(std::filesystem::path(cast_as_u8_unchecked(filepath)),
+                                          open_mode);
 
     if (!writer->good()) {
         return {};

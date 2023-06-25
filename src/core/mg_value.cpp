@@ -66,6 +66,9 @@ Value::FromHjsonResult Value::from_hjson(const Hjson::Value& value)
         default:
             return { nullopt, "Expected a vector of 2, 3, or 4 elements." };
         }
+
+    default:
+        MG_ASSERT(false && "Unexpected error: invalid Hjson::Type");
     }
 }
 

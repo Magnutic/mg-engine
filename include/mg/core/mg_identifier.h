@@ -13,7 +13,7 @@
 #pragma once
 
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_u8string_to_string.h"
+#include "mg/utils/mg_u8string_casts.h"
 
 #include <cstdint>
 #include <string_view>
@@ -76,7 +76,7 @@ public:
     static Identifier from_runtime_string(std::string_view str) { return { str }; }
     static Identifier from_runtime_string(std::u8string_view str)
     {
-        return { u8string_view_to_string_view(str) };
+        return { cast_u8_to_char(str) };
     }
 
     /** Default constructor, empty string. */

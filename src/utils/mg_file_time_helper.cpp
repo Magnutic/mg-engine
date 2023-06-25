@@ -12,7 +12,7 @@
 
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
-#include "mg/utils/mg_u8string_to_string.h"
+#include "mg/utils/mg_u8string_casts.h"
 
 #include <fmt/core.h>
 
@@ -77,7 +77,7 @@ std::time_t last_write_time_t(const std::filesystem::path& file)
         return result.st_mtime;
     }
 
-    throw RuntimeError{ msg_failed_to_read, u8string_view_to_string_view(file.generic_u8string()) };
+    throw RuntimeError{ msg_failed_to_read, cast_u8_to_char(file.generic_u8string()) };
 #endif // _WIN32
 }
 

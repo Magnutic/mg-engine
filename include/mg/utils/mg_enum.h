@@ -15,6 +15,7 @@
 #include <mg/utils/mg_string_utils.h>
 
 #include <array>
+#include <cstdint>
 #include <cstdlib>
 #include <string_view>
 
