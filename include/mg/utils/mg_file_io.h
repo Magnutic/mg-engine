@@ -66,9 +66,6 @@ inline void set_position(std::istream& stream, size_t new_position)
     stream.seekg(narrow<std::streamoff>(new_position));
 }
 
-// TODO C++20: see if the binary reading functions below can be made well-defined according to
-// the standard by using bit_cast.
-
 /** Read a value from the stream. It is the user's responsibility to avoid problems with alignment,
  * endianness, and padding bytes.
  * @param value_out Reference to target value.
@@ -77,8 +74,6 @@ inline void set_position(std::istream& stream, size_t new_position)
 template<typename T> void read_binary(std::istream& stream, T& value_out)
 {
     static_assert(std::is_trivially_copyable<T>::value, "Target type is not trivially copyable.");
-    // Note: reading directly into value_out is undefined behaviour according to the standard.
-    // "Correct" method would be to first read to buffer of char, then memcpy to value_out.
     stream.read(reinterpret_cast<char*>(&value_out), narrow<std::streamsize>(sizeof(T)));
 }
 
@@ -95,8 +90,6 @@ template<typename T> size_t read_binary_array(std::istream& stream, span<T> out)
     static_assert(std::is_trivially_copyable<T>::value, "Target type is not trivially copyable.");
 
     const auto before_position = position(stream);
-    // Note: reading directly into out is undefined behaviour according to the standard.
-    // "Correct" method would be to first read to buffer of char, then memcpy to value_out.
     stream.read(reinterpret_cast<char*>(out.data()), narrow<std::streamsize>(out.size_bytes()));
     const auto after_position = position(stream);
     return (after_position - before_position);
