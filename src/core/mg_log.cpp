@@ -56,17 +56,14 @@ constexpr const char* get_prefix(Log::Prio prio)
     }
 }
 
-std::string format_message(const LogItem& item, bool include_time_stamp)
+auto now_localtime()
 {
-    // Prepend message type
-    std::string message = fmt::format("{} {}", get_prefix(item.prio), item.message);
+    return fmt::localtime(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+}
 
-    if (include_time_stamp) {
-        const auto msg_time = std::chrono::system_clock::now();
-        message = fmt::format("{:%T}: {}", msg_time, message);
-    }
-
-    return message;
+std::string format_message(const LogItem& item)
+{
+    return fmt::format("{:%T}: {} {}", now_localtime(), get_prefix(item.prio), item.message);
 }
 
 } // namespace
@@ -91,7 +88,7 @@ public:
 
         history.reserve(num_history_lines);
 
-        m_writer << fmt::format("Log started at {}\n", std::chrono::system_clock::now());
+        m_writer << fmt::format("Log started at {}\n", now_localtime());
 
         m_log_thread = std::thread([this] { run_loop(); });
     }
@@ -183,7 +180,7 @@ private:
 
     void write_out(LogItem&& item)
     {
-        std::string formatted_message = format_message(item, true);
+        std::string formatted_message = format_message(item);
 
         // Write to terminal.
         std::cout << formatted_message << '\n';
@@ -307,8 +304,8 @@ detail::LogInitializer::~LogInitializer()
 
 void write_crash_log()
 {
-    auto out_directory_name = cast_as_u8_unchecked(
-        fmt::format("crashlog_{0:%F}_{0:%T}", std::chrono::system_clock::now()));
+    auto out_directory_name =
+        cast_as_u8_unchecked(fmt::format("crashlog_{0:%F}_{0:%T}", now_localtime()));
 
     const auto fp = cast_as_u8_unchecked(log.file_path());
     const auto log_path = fs::path(fp);
