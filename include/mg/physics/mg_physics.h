@@ -443,7 +443,8 @@ public:
                               const glm::vec3& centre_of_mass,
                               const glm::vec3& scale);
 
-    Shape* create_compound_shape(std::span<Shape*> parts, std::span<const glm::mat4> part_transforms);
+    Shape* create_compound_shape(std::span<Shape*> parts,
+                                 std::span<const glm::mat4> part_transforms);
 
     //----------------------------------------------------------------------------------------------
     // Body constructors
@@ -476,8 +477,8 @@ public:
     //----------------------------------------------------------------------------------------------
     // Collision detection
 
-    /** Get all collisions that occurred in the last update. The returned std::span is valid until next
-     * `update()`.
+    /** Get all collisions that occurred in the last update. The returned std::span is valid until
+     * next `update()`.
      */
     std::span<const Collision> collisions() const;
 

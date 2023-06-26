@@ -29,8 +29,8 @@ inline bool frustum_cull(const glm::mat4& mvp, const glm::vec3 centre, float rad
     glm::vec4 plane;
 
     const auto cull = [&]() {
-        const float magnitude = glm::fastSqrt(plane.x * plane.x + plane.y * plane.y +
-                                              plane.z * plane.z);
+        const float magnitude =
+            glm::fastSqrt(plane.x * plane.x + plane.y * plane.y + plane.z * plane.z);
 
         plane /= magnitude;
 

@@ -121,7 +121,7 @@ PipelinePool make_post_process_pipeline_pool()
 }
 
 BindMaterialPipelineSettings pipeline_settings(const IRenderTarget& render_target,
-                                     VertexArrayHandle vertex_array)
+                                               VertexArrayHandle vertex_array)
 {
     BindMaterialPipelineSettings settings;
     settings.depth_test_condition = DepthTestCondition::always;

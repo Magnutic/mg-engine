@@ -125,7 +125,8 @@ public:
 
 #define MG_VALUE_CONSTRUCTOR(_, data_type, ...)                      \
     /** One constructor from each of the alternative value types. */ \
-    Value(const data_type& value) : m_data(value) {}
+    Value(const data_type& value) : m_data(value)                    \
+    {}
 
     MG_FOR_EACH_VALUE_TYPE(MG_VALUE_CONSTRUCTOR)
 
@@ -139,7 +140,10 @@ public:
 
 #define MG_VALUE_GETTER(_, data_type, serialized_name) \
     /** Try to get value as a particular type. */      \
-    Opt<data_type> as_##serialized_name() const { return detail::get_as<data_type>(m_data); }
+    Opt<data_type> as_##serialized_name() const        \
+    {                                                  \
+        return detail::get_as<data_type>(m_data);      \
+    }
 
     MG_FOR_EACH_VALUE_TYPE(MG_VALUE_GETTER)
 
@@ -159,7 +163,10 @@ public:
 
 #define MG_VALUE_SETTER(enum_value, data_type, ...)                            \
     /** Set value stored in this Value, possibly changing the dynamic type. */ \
-    void set(const data_type& value) { m_data = value; }
+    void set(const data_type& value)                                           \
+    {                                                                          \
+        m_data = value;                                                        \
+    }
 
     MG_FOR_EACH_VALUE_TYPE(MG_VALUE_SETTER)
 

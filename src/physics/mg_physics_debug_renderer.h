@@ -10,8 +10,8 @@
 
 #pragma once
 
-#include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_impl_ptr.h"
+#include "mg/utils/mg_macros.h"
 
 #include <LinearMath/btIDebugDraw.h>
 

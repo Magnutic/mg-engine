@@ -107,7 +107,9 @@ DebugMesh generate_mesh(std::span<const vec3> positions, std::span<const uint16_
              as<GLsizei>(indices.size()) };
 }
 
-void update_mesh(DebugMesh& debug_mesh, std::span<const vec3> positions, std::span<const uint16_t> indices)
+void update_mesh(DebugMesh& debug_mesh,
+                 std::span<const vec3> positions,
+                 std::span<const uint16_t> indices)
 {
     glBindVertexArray(debug_mesh.vao.handle.as_gl_id());
 
@@ -603,7 +605,9 @@ void DebugRenderQueue::draw_ellipsoid(DebugRenderer::EllipsoidDrawParams params)
     });
 }
 
-void DebugRenderQueue::draw_line(std::span<const glm::vec3> points, const glm::vec4& colour, float width)
+void DebugRenderQueue::draw_line(std::span<const glm::vec3> points,
+                                 const glm::vec4& colour,
+                                 float width)
 {
     std::lock_guard g{ m_impl->mutex };
 

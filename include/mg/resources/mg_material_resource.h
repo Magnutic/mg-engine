@@ -34,7 +34,10 @@ public:
     gfx::BlendMode blend_mode() const noexcept { return m_blend_mode; }
 
     std::span<const parser::SamplerDeclaration> samplers() const noexcept { return m_samplers; }
-    std::span<const parser::ParameterDeclaration> parameters() const noexcept { return m_parameters; }
+    std::span<const parser::ParameterDeclaration> parameters() const noexcept
+    {
+        return m_parameters;
+    }
     std::span<const parser::OptionDeclaration> options() const noexcept { return m_options; }
     ResourceHandle<ShaderResource> shader_resource() const noexcept { return m_shader_resource; }
 

@@ -2,12 +2,10 @@
 
 #include <cstdint>
 
-namespace Mg
-{
+namespace Mg {
 
 /** Describes where to find a range of data within a binary file. */
-struct FileDataRange
-{
+struct FileDataRange {
     /** Begin byte offset. */
     uint32_t begin = 0;
 

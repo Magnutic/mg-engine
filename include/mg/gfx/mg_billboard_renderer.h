@@ -10,8 +10,8 @@
 
 #pragma once
 
-#include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_impl_ptr.h"
+#include "mg/utils/mg_macros.h"
 
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
@@ -84,6 +84,7 @@ public:
     void drop_shaders() noexcept;
 
     struct Impl;
+
 private:
     ImplPtr<Impl> m_impl;
 };

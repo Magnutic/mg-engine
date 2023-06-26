@@ -60,7 +60,7 @@ inline MeshHandle make_mesh_handle(const MeshInternal* p) noexcept
 {
     MeshHandle handle{};
     static_assert(sizeof(handle) >= sizeof(p)); // NOLINT(bugprone-sizeof-expression)
-    std::memcpy(&handle, &p, sizeof(p));     // NOLINT(bugprone-sizeof-expression)
+    std::memcpy(&handle, &p, sizeof(p));        // NOLINT(bugprone-sizeof-expression)
     return handle;
 }
 

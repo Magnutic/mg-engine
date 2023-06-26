@@ -70,7 +70,8 @@
     class_name& operator=(const class_name&) = delete; \
     class_name(class_name&&) = delete;                 \
     class_name& operator=(class_name&&) = delete;      \
-    virtual ~class_name() {}
+    virtual ~class_name()                              \
+    {}
 
 /** Generate the operators needed to use a scoped enum as a set of bit flags. */
 #define MG_DEFINE_BITMASK_OPERATORS(EnumT)                                            \

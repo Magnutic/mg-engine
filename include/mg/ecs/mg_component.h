@@ -108,4 +108,4 @@ private:
     Slot_map<C> m_data;
 };
 
-} // namespace Mg
+} // namespace Mg::ecs

@@ -35,7 +35,7 @@ struct O : public Mg::Observer<E> {
         ++num_notifications_for_this;
 
         if (e.value != expected) {
-            throw - 1;
+            throw -1;
         }
     }
 };

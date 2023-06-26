@@ -297,7 +297,6 @@ bool curve_editor_widget(const CurveEditorSettings& settings,
                 curve.set_y(i, new_point.y);
                 interacted = true;
             }
-
         }
 
         if (io.MouseClicked[0] && !interacted) {

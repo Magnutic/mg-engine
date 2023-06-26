@@ -97,10 +97,11 @@ void RenderCommandProducer::add_mesh(MeshHandle mesh_handle,
     }
 }
 
-void RenderCommandProducer::add_skinned_mesh(MeshHandle mesh,
-                                             const glm::mat4& transform,
-                                             std::span<const MaterialAssignment> material_assignment,
-                                             const SkinningMatrixPalette& skinning_matrix_palette)
+void RenderCommandProducer::add_skinned_mesh(
+    MeshHandle mesh,
+    const glm::mat4& transform,
+    std::span<const MaterialAssignment> material_assignment,
+    const SkinningMatrixPalette& skinning_matrix_palette)
 {
     add_mesh(mesh, transform, material_assignment);
     RenderCommand& command = m_impl->render_commands_unsorted.back();
@@ -117,10 +118,9 @@ RenderCommandProducer::allocate_skinning_matrix_palette(const uint16_t num_joint
     const size_t skinning_matrices_begin = m_impl->commands.m_skinning_matrices.size();
     m_impl->commands.m_skinning_matrices.resize(skinning_matrices_begin + num_joints);
 
-    return SkinningMatrixPalette{
-        std::span(m_impl->commands.m_skinning_matrices).subspan(skinning_matrices_begin, num_joints),
-        as<uint16_t>(skinning_matrices_begin)
-    };
+    return SkinningMatrixPalette{ std::span(m_impl->commands.m_skinning_matrices)
+                                      .subspan(skinning_matrices_begin, num_joints),
+                                  as<uint16_t>(skinning_matrices_begin) };
 }
 
 void RenderCommandProducer::clear() noexcept

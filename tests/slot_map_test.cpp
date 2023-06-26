@@ -424,17 +424,17 @@ TEST_CASE("Counting Slot_map test")
         REQUIRE(InstanceCounter<Type>::get_counter() == initial_size);
 
         // Check moved from (should be valid state)
-        REQUIRE(smap.empty()); // NOLINT
+        REQUIRE(smap.empty());         // NOLINT
         REQUIRE(smap.capacity() == 0); // NOLINT
-        smap.resize(initial_size); // NOLINT
-        smap.emplace(); // NOLINT
+        smap.resize(initial_size);     // NOLINT
+        smap.emplace();                // NOLINT
         REQUIRE(InstanceCounter<Type>::get_counter() == 26);
         REQUIRE(!smap.is_handle_valid(handle)); // NOLINT
 
-        REQUIRE(smap2.empty()); // NOLINT
+        REQUIRE(smap2.empty());         // NOLINT
         REQUIRE(smap2.capacity() == 0); // NOLINT
-        smap2.resize(initial_size); // NOLINT
-        smap2.emplace(); // NOLINT
+        smap2.resize(initial_size);     // NOLINT
+        smap2.emplace();                // NOLINT
         REQUIRE(InstanceCounter<Type>::get_counter() == 27);
     }
 

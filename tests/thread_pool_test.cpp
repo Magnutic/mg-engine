@@ -61,12 +61,11 @@ TEST_CASE("ThreadPool: many jobs")
     std::default_random_engine r(123);
     std::uniform_int_distribution<int> dist;
 
-    for (int i = 0; i < 1000; ++i)
-    {
+    for (int i = 0; i < 1000; ++i) {
         const auto result = dist(r);
         const auto wait_time_us = dist(r) % 10;
 
-        job_to_expected_result_map.insert({i, result});
+        job_to_expected_result_map.insert({ i, result });
 
         auto future = pool.add_job([result, wait_time_us] {
             std::this_thread::sleep_for(std::chrono::microseconds(wait_time_us));
@@ -76,8 +75,7 @@ TEST_CASE("ThreadPool: many jobs")
         job_to_future_map.insert({ i, std::move(future) });
     }
 
-    for (const auto& [job_index, expected_result] : job_to_expected_result_map)
-    {
+    for (const auto& [job_index, expected_result] : job_to_expected_result_map) {
         std::future<int>& future = job_to_future_map[job_index];
         REQUIRE(future.get() == expected_result);
     }

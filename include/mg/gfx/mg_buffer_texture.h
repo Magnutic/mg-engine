@@ -32,7 +32,8 @@ public:
 
     explicit BufferTexture(Type type, size_t buffer_size);
 
-    explicit BufferTexture(Type type, std::span<const std::byte> data) : BufferTexture(type, data.size())
+    explicit BufferTexture(Type type, std::span<const std::byte> data)
+        : BufferTexture(type, data.size())
     {
         set_data(data);
     }
