@@ -62,9 +62,8 @@ std::string format_message(const LogItem& item, bool include_time_stamp)
     std::string message = fmt::format("{} {}", get_prefix(item.prio), item.message);
 
     if (include_time_stamp) {
-        const time_t msg_time = time(nullptr);
-        const tm& t = *localtime(&msg_time);
-        message = fmt::format("{:%T}: {}", t, message);
+        const auto msg_time = std::chrono::system_clock::now();
+        message = fmt::format("{:%T}: {}", msg_time, message);
     }
 
     return message;
@@ -92,10 +91,7 @@ public:
 
         history.reserve(num_history_lines);
 
-        const time_t log_open_time = time(nullptr);
-        const tm& t = *localtime(&log_open_time);
-
-        m_writer << fmt::format("Log started at {0:%F}, {0:%T}\n", t);
+        m_writer << fmt::format("Log started at {}\n", std::chrono::system_clock::now());
 
         m_log_thread = std::thread([this] { run_loop(); });
     }
@@ -311,10 +307,8 @@ detail::LogInitializer::~LogInitializer()
 
 void write_crash_log()
 {
-    const time_t crash_time = time(nullptr);
-    const tm& t = *localtime(&crash_time);
-
-    auto out_directory_name = cast_as_u8_unchecked(fmt::format("crashlog_{:%T}", t));
+    auto out_directory_name = cast_as_u8_unchecked(
+        fmt::format("crashlog_{0:%F}_{0:%T}", std::chrono::system_clock::now()));
 
     const auto fp = cast_as_u8_unchecked(log.file_path());
     const auto log_path = fs::path(fp);
