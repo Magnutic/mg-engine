@@ -84,7 +84,7 @@ class BitmapFont {
 public:
     explicit BitmapFont(ResourceHandle<FontResource> font,
                         int font_size_pixels,
-                        span<const UnicodeRange> unicode_ranges);
+                        std::span<const UnicodeRange> unicode_ranges);
 
     ~BitmapFont();
 
@@ -99,7 +99,7 @@ public:
      */
     PreparedText prepare_text(std::string_view text_utf8, const TypeSetting& typesetting) const;
 
-    span<const UnicodeRange> contained_ranges() const;
+    std::span<const UnicodeRange> contained_ranges() const;
 
     int font_size_pixels() const;
 

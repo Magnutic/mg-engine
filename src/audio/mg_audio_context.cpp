@@ -86,11 +86,11 @@ void close_OpenAL()
 // Functions for creating sound buffers using libsndfile and OpenAL
 //--------------------------------------------------------------------------------------------------
 
-// 'Virtual file' interface for reading from span of bytes.
+// 'Virtual file' interface for reading from std::span of bytes.
 namespace {
 
 struct State {
-    span<const std::byte> data;
+    std::span<const std::byte> data;
     sf_count_t pos = 0;
 };
 
@@ -158,7 +158,7 @@ public:
     UniqueSndFile sndfile = { nullptr, &sf_close };
     std::string error_reason;
 
-    explicit SndFileReader(span<const std::byte> data)
+    explicit SndFileReader(std::span<const std::byte> data)
     {
         state.data = data;
 
@@ -284,7 +284,7 @@ AudioContext& AudioContext::get()
 }
 
 AudioContext::GenerateSoundBufferResult
-AudioContext::generate_sound_buffer(span<const std::byte> sound_file_data)
+AudioContext::generate_sound_buffer(std::span<const std::byte> sound_file_data)
 {
     ALuint al_buffer_id = 0;
 

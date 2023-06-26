@@ -242,7 +242,7 @@ void setup_vertex_attribute(const VertexAttribute& attribute,
 }
 
 // Set up vertex attributes (how OpenGL is to interpret the vertex data).
-void setup_vertex_attributes(span<const VertexAttribute> vertex_attributes)
+void setup_vertex_attributes(std::span<const VertexAttribute> vertex_attributes)
 {
     int32_t stride = 0;
     for (const VertexAttribute& vertex_attribute : vertex_attributes) {
@@ -286,7 +286,7 @@ void MeshPool::Impl::_make_mesh_at(MeshInternal& mesh,
         mesh.vertex_buffer = params.vertex_buffer;
         ++mesh.vertex_buffer->num_users;
 
-        const auto vertex_data = params.mesh_data.vertices.as_bytes();
+        const auto vertex_data = std::as_bytes(params.mesh_data.vertices);
         const auto vertex_buffer_id = mesh.vertex_buffer->handle.as_gl_id();
 
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
@@ -302,7 +302,7 @@ void MeshPool::Impl::_make_mesh_at(MeshInternal& mesh,
         mesh.index_buffer = params.index_buffer;
         ++mesh.index_buffer->num_users;
 
-        const auto index_buffer_data = params.mesh_data.indices.as_bytes();
+        const auto index_buffer_data = std::as_bytes(params.mesh_data.indices);
         const auto index_buffer_id = mesh.index_buffer->handle.as_gl_id();
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
@@ -320,7 +320,7 @@ void MeshPool::Impl::_make_mesh_at(MeshInternal& mesh,
         mesh.influences_buffer = params.influences_buffer;
         ++mesh.influences_buffer->num_users;
 
-        const auto influences_data = params.mesh_data.influences.as_bytes();
+        const auto influences_data = std::as_bytes(params.mesh_data.influences);
         const auto influences_buffer_id = mesh.influences_buffer->handle.as_gl_id();
 
         glBindBuffer(GL_ARRAY_BUFFER, influences_buffer_id);

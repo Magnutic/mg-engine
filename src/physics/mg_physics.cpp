@@ -228,7 +228,7 @@ private:
 
 class ConvexHullShape : public ShapeBase {
 public:
-    explicit ConvexHullShape(const span<const gfx::Mesh::Vertex> vertices,
+    explicit ConvexHullShape(const std::span<const gfx::Mesh::Vertex> vertices,
                              const vec3& centre_of_mass,
                              const vec3& scale)
     {
@@ -295,7 +295,7 @@ private:
 
 class CompoundShape : public ShapeBase {
 public:
-    explicit CompoundShape(span<Shape*> parts, span<const mat4> part_transforms)
+    explicit CompoundShape(std::span<Shape*> parts, std::span<const mat4> part_transforms)
     {
         MG_ASSERT(parts.size() == part_transforms.size());
 
@@ -749,7 +749,7 @@ void GhostObjectHandle::set_transform(const mat4& transform)
     data().transform = transform;
 }
 
-span<const Collision* const> GhostObjectHandle::collisions() const
+std::span<const Collision* const> GhostObjectHandle::collisions() const
 {
     return data().collisions;
 }
@@ -900,14 +900,14 @@ Shape* World::create_mesh_shape(const gfx::Mesh::MeshDataView& mesh_data)
     return &*m_impl->mesh_shapes.emplace(mesh_data);
 }
 
-Shape* World::create_convex_hull(const span<const gfx::Mesh::Vertex> vertices,
+Shape* World::create_convex_hull(const std::span<const gfx::Mesh::Vertex> vertices,
                                  const vec3& centre_of_mass,
                                  const vec3& scale)
 {
     return &*m_impl->convex_hull_shapes.emplace(vertices, centre_of_mass, scale);
 }
 
-Shape* World::create_compound_shape(span<Shape*> parts, span<const mat4> part_transforms)
+Shape* World::create_compound_shape(std::span<Shape*> parts, std::span<const mat4> part_transforms)
 {
     return &*m_impl->compound_shapes.emplace(parts, part_transforms);
 }
@@ -1116,7 +1116,7 @@ void World::collect_garbage()
     }
 }
 
-span<const Collision> World::collisions() const
+std::span<const Collision> World::collisions() const
 {
     return m_impl->collisions;
 }

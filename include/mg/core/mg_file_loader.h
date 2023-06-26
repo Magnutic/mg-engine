@@ -51,7 +51,7 @@ public:
     virtual std::time_t file_time_stamp(Identifier file) = 0;
 
     /** Load file. Throws if file is not available. */
-    virtual void load_file(Identifier file, span<std::byte> target_buffer) = 0;
+    virtual void load_file(Identifier file, std::span<std::byte> target_buffer) = 0;
 
     /** Returns a human-readable identifier for this file loader, e.g. path of directory or name of
      * zip archive. Mainly intended for logging.
@@ -72,7 +72,7 @@ public:
 
     std::time_t file_time_stamp(Identifier file) override;
 
-    void load_file(Identifier file, span<std::byte> target_buffer) override;
+    void load_file(Identifier file, std::span<std::byte> target_buffer) override;
 
     std::string_view name() const override { return m_directory; }
 
@@ -97,7 +97,7 @@ public:
 
     std::time_t file_time_stamp(Identifier file) override;
 
-    void load_file(Identifier file, span<std::byte> target_buffer) override;
+    void load_file(Identifier file, std::span<std::byte> target_buffer) override;
 
     std::string_view name() const override { return m_archive_name; }
 

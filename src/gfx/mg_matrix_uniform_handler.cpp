@@ -20,7 +20,7 @@ MatrixUniformHandler::MatrixUniformHandler(const size_t num_matrices_per_array,
 {}
 
 size_t
-MatrixUniformHandler::set_matrix_arrays(const span<const span<const glm::mat4>> matrix_arrays)
+MatrixUniformHandler::set_matrix_arrays(const std::span<const std::span<const glm::mat4>> matrix_arrays)
 {
     MG_ASSERT(matrix_arrays.size() == m_num_matrix_arrays);
 

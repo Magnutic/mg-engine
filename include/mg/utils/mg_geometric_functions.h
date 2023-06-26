@@ -24,8 +24,8 @@ namespace Mg {
 
 /** Non-owning view over data for a polygon. */
 struct PolygonDataView {
-    span<const gfx::Mesh::Vertex> vertices;
-    span<const gfx::Mesh::Index> polygon;
+    std::span<const gfx::Mesh::Vertex> vertices;
+    std::span<const gfx::Mesh::Index> polygon;
 };
 
 /** Get position for a vertex in the polygon. */

@@ -332,8 +332,8 @@ void setup_text_pipeline(UIRenderer::Impl& data,
     PipelineBindingContext binding_context;
     binding_context.bind_pipeline(data.text_pipeline, pipeline_settings);
 
-    Pipeline::bind_shared_inputs({ PipelineInputBinding(0, data.draw_params_ubo),
-                                   PipelineInputBinding(0, text_gpu_data.texture) });
+    Pipeline::bind_shared_inputs(std::array{ PipelineInputBinding(0, data.draw_params_ubo),
+                                             PipelineInputBinding(0, text_gpu_data.texture) });
 }
 
 } // namespace

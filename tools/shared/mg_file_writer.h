@@ -29,7 +29,7 @@ public:
     /** Enqueue a vector of data for writing.
      * @return A FileDataRange describing where in the file the data will be.
      */
-    template<typename T> FileDataRange enqueue_array(const span<T> items)
+    template<typename T> FileDataRange enqueue_array(const std::span<T> items)
     {
         static_assert(std::is_trivially_copyable_v<T>);
         return enqueue(reinterpret_cast<const char*>(items.data()), items.size_bytes());

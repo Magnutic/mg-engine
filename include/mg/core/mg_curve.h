@@ -56,7 +56,7 @@ public:
     // Returns new y, which might be different from requested if the movement was clamped.
     float set_y(Index index, float y);
 
-    span<const ControlPoint> control_points() const { return m_control_points; }
+    std::span<const ControlPoint> control_points() const { return m_control_points; }
 
     float evaluate(float x) const;
 

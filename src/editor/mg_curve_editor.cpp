@@ -202,7 +202,7 @@ bool curve_editor_widget(const CurveEditorSettings& settings,
         }
     }
 
-    const span control_points = curve.control_points();
+    const std::span control_points = curve.control_points();
     Opt<Curve::Index> hovered_control_point = nullopt;
 
     // Handle interaction

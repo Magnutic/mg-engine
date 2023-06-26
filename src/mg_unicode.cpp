@@ -179,7 +179,7 @@ std::vector<UnicodeRange> unicode_ranges_for(std::string_view text_utf8)
     return unicode_ranges_for(utf8_to_utf32(text_utf8));
 }
 
-std::vector<UnicodeRange> merge_overlapping_ranges(span<const UnicodeRange> unicode_ranges)
+std::vector<UnicodeRange> merge_overlapping_ranges(std::span<const UnicodeRange> unicode_ranges)
 {
     auto ranges_overlap = [](const UnicodeRange& a, const UnicodeRange& b) {
         return uint32_t(a.start) + a.length >= uint32_t(b.start);

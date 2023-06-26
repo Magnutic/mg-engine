@@ -30,8 +30,8 @@ struct AxisAlignedBoundingBox {
     glm::vec3 max_corner{ 0.0f };
 };
 
-AxisAlignedBoundingBox calculate_mesh_bounding_box(span<const gfx::Mesh::Vertex> vertices);
+AxisAlignedBoundingBox calculate_mesh_bounding_box(std::span<const gfx::Mesh::Vertex> vertices);
 
-BoundingSphere calculate_mesh_bounding_sphere(span<const gfx::Mesh::Vertex> vertices);
+BoundingSphere calculate_mesh_bounding_sphere(std::span<const gfx::Mesh::Vertex> vertices);
 
 } // namespace Mg

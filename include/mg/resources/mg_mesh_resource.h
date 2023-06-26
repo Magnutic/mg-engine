@@ -44,12 +44,12 @@ public:
 
     gfx::Mesh::MeshDataView data_view() const noexcept;
 
-    span<const gfx::Mesh::Vertex> vertices() const noexcept;
-    span<const gfx::Mesh::Index> indices() const noexcept;
-    span<const gfx::Mesh::Submesh> submeshes() const noexcept;
-    span<const gfx::Mesh::Influences> influences() const noexcept;
-    span<const gfx::Mesh::Joint> joints() const noexcept;
-    span<const gfx::Mesh::AnimationClip> animation_clips() const noexcept;
+    std::span<const gfx::Mesh::Vertex> vertices() const noexcept;
+    std::span<const gfx::Mesh::Index> indices() const noexcept;
+    std::span<const gfx::Mesh::Submesh> submeshes() const noexcept;
+    std::span<const gfx::Mesh::Influences> influences() const noexcept;
+    std::span<const gfx::Mesh::Joint> joints() const noexcept;
+    std::span<const gfx::Mesh::AnimationClip> animation_clips() const noexcept;
 
     Opt<size_t> get_submesh_index(const Identifier& submesh_name) const noexcept;
 

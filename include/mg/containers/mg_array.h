@@ -101,11 +101,11 @@ template<typename T> static void destroy_array(T* array_begin)
 template<typename T> class ArrayCopyGenerator {
 public:
     // NOLINTNEXTLINE false positive
-    explicit ArrayCopyGenerator(const span<const T> source) : m_source(source) {}
+    explicit ArrayCopyGenerator(const std::span<const T> source) : m_source(source) {}
     const T& operator()() { return m_source[m_index++]; }
 
 private:
-    span<const T> m_source;
+    std::span<const T> m_source;
     size_t m_index = 0;
 };
 
@@ -211,7 +211,7 @@ public:
         return ArrayUnknownSize(detail::make_array<T>(size, &gen), size);
     }
 
-    static ArrayUnknownSize make_copy(span<const T> data)
+    static ArrayUnknownSize make_copy(std::span<const T> data)
     {
         if (data.empty()) {
             return ArrayUnknownSize{};
@@ -305,7 +305,7 @@ public:
         return Array(detail::make_array<T>(size, &gen), size);
     }
 
-    static Array make_copy(span<const T> data)
+    static Array make_copy(std::span<const T> data)
     {
         if (data.empty()) {
             return Array{};

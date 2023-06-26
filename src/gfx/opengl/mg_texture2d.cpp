@@ -384,7 +384,7 @@ TextureHandle generate_gl_texture_from(const TextureResource& resource,
     return TextureHandle{ texture_id };
 }
 
-TextureHandle generate_gl_texture_from(span<const uint8_t> rgba8_buffer,
+TextureHandle generate_gl_texture_from(std::span<const uint8_t> rgba8_buffer,
                                        const int32_t width,
                                        const int32_t height,
                                        const TextureSettings& settings)
@@ -446,7 +446,7 @@ Texture2D Texture2D::render_target(const RenderTargetParams& params)
 }
 
 Texture2D Texture2D::from_rgba8_buffer(Identifier id,
-                                       span<const uint8_t> rgba8_buffer,
+                                       std::span<const uint8_t> rgba8_buffer,
                                        int32_t width,
                                        int32_t height,
                                        const TextureSettings& settings)

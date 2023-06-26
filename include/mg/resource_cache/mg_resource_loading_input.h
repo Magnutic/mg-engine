@@ -25,7 +25,7 @@ public:
         : m_data(std::move(data)), m_owning_cache(&owning_cache), m_resource_entry(&resource_entry)
     {}
 
-    span<const std::byte> resource_data() const noexcept { return m_data; }
+    std::span<const std::byte> resource_data() const noexcept { return m_data; }
     Array<std::byte> take_resource_data() noexcept { return std::move(m_data); }
 
     std::string_view resource_data_as_text() const noexcept

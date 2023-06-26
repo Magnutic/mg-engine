@@ -26,10 +26,10 @@ public:
     bool should_reload_on_file_change() const override { return true; }
 
     /** Access byte stream. */
-    span<std::byte> bytes() noexcept { return m_buffer; }
+    std::span<std::byte> bytes() noexcept { return m_buffer; }
 
     /** Access byte stream. */
-    span<const std::byte> bytes() const noexcept { return m_buffer; }
+    std::span<const std::byte> bytes() const noexcept { return m_buffer; }
 
     Identifier type_id() const override { return "RawResource"_id; }
 

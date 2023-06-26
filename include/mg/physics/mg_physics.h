@@ -385,7 +385,7 @@ public:
     /** Get all collisions involving this object during the most recent update. Pointers remain
      * valid until the next update.
      */
-    span<const Collision* const> collisions() const;
+    std::span<const Collision* const> collisions() const;
 
 private:
     explicit GhostObjectHandle(PhysicsBody* data) : PhysicsBodyHandle(data) {}
@@ -439,11 +439,11 @@ public:
     Shape* create_mesh_shape(const gfx::Mesh::MeshDataView& mesh_data);
 
     // TODO: generate convex hull in mesh converter.
-    Shape* create_convex_hull(span<const gfx::Mesh::Vertex> vertices,
+    Shape* create_convex_hull(std::span<const gfx::Mesh::Vertex> vertices,
                               const glm::vec3& centre_of_mass,
                               const glm::vec3& scale);
 
-    Shape* create_compound_shape(span<Shape*> parts, span<const glm::mat4> part_transforms);
+    Shape* create_compound_shape(std::span<Shape*> parts, std::span<const glm::mat4> part_transforms);
 
     //----------------------------------------------------------------------------------------------
     // Body constructors
@@ -476,10 +476,10 @@ public:
     //----------------------------------------------------------------------------------------------
     // Collision detection
 
-    /** Get all collisions that occurred in the last update. The returned span is valid until next
+    /** Get all collisions that occurred in the last update. The returned std::span is valid until next
      * `update()`.
      */
-    span<const Collision> collisions() const;
+    std::span<const Collision> collisions() const;
 
     /** Get all collisions involving the object with the given id that occurred in the last update.
      * Pointers are valid until next update.

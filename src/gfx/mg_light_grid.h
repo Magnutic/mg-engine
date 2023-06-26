@@ -64,7 +64,7 @@ public:
     };
 
     /** Gets a transformation matrix from clip space to a space that is similar to the clip space
-     * but that only spans a single tile.
+     * but that only std::spans a single tile.
      */
     static glm::mat4 clip_space_to_tile_space(const LightGridConfig& config,
                                               const glm::ivec2& tile);

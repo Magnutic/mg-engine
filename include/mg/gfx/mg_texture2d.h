@@ -39,7 +39,7 @@ public:
     /** Create a texture from RGBA8 buffer. */
     // TODO parameters, mipmaps, compression?
     static Texture2D from_rgba8_buffer(Identifier id,
-                                       span<const uint8_t> rgba8_buffer,
+                                       std::span<const uint8_t> rgba8_buffer,
                                        int32_t width,
                                        int32_t height,
                                        const TextureSettings& settings);

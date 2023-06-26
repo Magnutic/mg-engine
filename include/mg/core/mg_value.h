@@ -174,7 +174,7 @@ public:
     std::string serialize() const;
 
     /** Write raw bytes to destination. Throws if destination is too small. */
-    void write_binary_data(span<std::byte> destination);
+    void write_binary_data(std::span<std::byte> destination);
 
     /** Convert Value::Type enum to string. */
     static std::string type_to_string(const Type& type)

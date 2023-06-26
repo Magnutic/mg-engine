@@ -39,7 +39,7 @@ public:
     };
 
     struct MipLevelData {
-        span<const std::byte> data;
+        std::span<const std::byte> data;
         DimT width = 0;
         DimT height = 0;
     };

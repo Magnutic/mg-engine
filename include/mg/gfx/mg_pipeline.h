@@ -102,14 +102,14 @@ public:
      * PipelinePrototype::shared_input_layout of the PipelinePrototype used when creating this
      * Pipeline.
      */
-    static void bind_shared_inputs(span<const PipelineInputBinding> bindings);
+    static void bind_shared_inputs(std::span<const PipelineInputBinding> bindings);
 
     /** Bind the given pipeline input set.
      * The binding is invalidated when another Pipeline is bound.
      * @param bindings Bindings which must be compatible with the
      * Pipeline::Params::material_input_layout used when creating this Pipeline
      */
-    static void bind_material_inputs(span<const PipelineInputBinding> bindings);
+    static void bind_material_inputs(std::span<const PipelineInputBinding> bindings);
 
     MG_MAKE_DEFAULT_MOVABLE(Pipeline);
     MG_MAKE_NON_COPYABLE(Pipeline);
@@ -120,8 +120,8 @@ public:
 
 private:
     Pipeline(PipelineHandle internal_handle,
-             span<const PipelineInputDescriptor> shared_input_layout,
-             span<const PipelineInputDescriptor> material_input_layout);
+             std::span<const PipelineInputDescriptor> shared_input_layout,
+             std::span<const PipelineInputDescriptor> material_input_layout);
 
     PipelineHandle m_handle;
 };
@@ -138,10 +138,10 @@ struct Pipeline::Params {
     Opt<GeometryShaderHandle> geometry_shader;
 
     /** Input layout for shared input bindings. */
-    span<const PipelineInputDescriptor> shared_input_layout;
+    std::span<const PipelineInputDescriptor> shared_input_layout;
 
     /** Input layout for material parameters and samplers. */
-    span<const PipelineInputDescriptor> material_input_layout;
+    std::span<const PipelineInputDescriptor> material_input_layout;
 };
 
 /** Pipeline settings controlling blending, rasterization, etc. */

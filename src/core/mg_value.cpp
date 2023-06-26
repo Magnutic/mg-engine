@@ -103,7 +103,7 @@ std::string Value::serialize() const
     return Hjson::Marshal(to_hjson());
 }
 
-void Value::write_binary_data(span<std::byte> destination)
+void Value::write_binary_data(std::span<std::byte> destination)
 {
     std::visit(
         [&](const auto& value) {

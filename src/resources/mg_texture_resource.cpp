@@ -95,7 +95,7 @@ struct PixelFormatResult {
     gfx::PixelFormat format;
 };
 
-constexpr uint32_t make_fourcc(const span<const char> four_chars)
+constexpr uint32_t make_fourcc(const std::span<const char> four_chars)
 {
     MG_ASSERT(four_chars.size() == 4 || (four_chars.size() == 5 && four_chars.back() == '\0'));
     uint32_t out = 0u;
@@ -190,9 +190,9 @@ size_t num_blocks_by_img_size(TextureResource::DimT width, TextureResource::DimT
 
 LoadResourceResult TextureResource::load_resource_impl(ResourceLoadingInput& input)
 {
-    const span<const std::byte> dds_data = input.resource_data();
+    const std::span<const std::byte> dds_data = input.resource_data();
 
-    if (dds_data.length() < sizeof(DDS_HEADER)) {
+    if (dds_data.size() < sizeof(DDS_HEADER)) {
         return LoadResourceResult::data_error("DDS file corrupt, missing data.");
     }
 
@@ -220,8 +220,8 @@ LoadResourceResult TextureResource::load_resource_impl(ResourceLoadingInput& inp
 
     // Get location and size of pixel data
     const auto pixel_data_offset = sizeof(DDS_HEADER) + sizeof(four_cc);
-    MG_ASSERT_DEBUG(dds_data.length() > pixel_data_offset);
-    const auto size = dds_data.length() - pixel_data_offset;
+    MG_ASSERT_DEBUG(dds_data.size() > pixel_data_offset);
+    const auto size = dds_data.size() - pixel_data_offset;
 
     // Size sanity check
     const auto width = as<DimT>(header.dwWidth);
@@ -272,7 +272,7 @@ LoadResourceResult TextureResource::load_resource_impl(ResourceLoadingInput& inp
     }
 
     // Copy pixel data
-    span<const std::byte> data(&dds_data[pixel_data_offset], sane_size);
+    std::span<const std::byte> data(&dds_data[pixel_data_offset], sane_size);
     m_pixel_data = Array<std::byte>::make_copy(data);
 
     return LoadResourceResult::success();
@@ -294,7 +294,7 @@ TextureResource::MipLevelData TextureResource::pixel_data(MipIndexT mip_index) c
         size = num_blocks_by_img_size(width, height) * block_size;
     }
 
-    return MipLevelData{ span(m_pixel_data).subspan(offset, size), width, height };
+    return MipLevelData{ std::span(m_pixel_data).subspan(offset, size), width, height };
 }
 
 } // namespace Mg

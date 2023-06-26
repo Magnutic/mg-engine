@@ -35,7 +35,7 @@ public:
     /** Render the supplied list of meshes. */
     void render(const ICamera& cam,
                 const RenderCommandList& command_list,
-                span<const Light> lights,
+                std::span<const Light> lights,
                 const IRenderTarget& render_target,
                 RenderParameters params);
 

@@ -106,7 +106,7 @@ std::time_t BasicFileLoader::file_time_stamp(Identifier file)
     return last_write_time_t(file_path);
 }
 
-void BasicFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
+void BasicFileLoader::load_file(Identifier file, std::span<std::byte> target_buffer)
 {
     MG_ASSERT(target_buffer.size() >= file_size(file));
 
@@ -267,7 +267,7 @@ static auto make_zip_handle(zip_file_t* p) noexcept
     return std::unique_ptr<zip_file_t, decltype(&zip_fclose)>{ p, &zip_fclose };
 }
 
-void ZipFileLoader::load_file(Identifier file, span<std::byte> target_buffer)
+void ZipFileLoader::load_file(Identifier file, std::span<std::byte> target_buffer)
 {
     MG_ASSERT(file_size(file) <= target_buffer.size());
 

@@ -79,8 +79,6 @@ add_mg_test(resource_cache_test)
 add_mg_test(thread_pool_test)
 target_link_libraries(thread_pool_test function2)
 
-add_mg_test(gsl_test)
-
 add_mg_test(observer_test)
 
 add_mg_test(unicode_test)

@@ -243,7 +243,7 @@ FindParameterT find_parameter(Identifier name, const Material::Parameters& param
 } // namespace
 
 void Material::_set_parameter_impl(Identifier name,
-                                   span<const std::byte> param_value,
+                                   std::span<const std::byte> param_value,
                                    shader::ParameterType param_type)
 {
     auto [p_param, offset] = find_parameter(name, m_params);

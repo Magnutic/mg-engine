@@ -42,18 +42,18 @@ public:
     /** Set matrix UBO data to hold given transformation matrix arrays.
      * All matrix arrays should be equally long.
      * Note that UBO size may be limited -- in this case, as much of the input as possible is set.
-     * @param matrix_array span of spans of matrices; number of arrays should match
+     * @param matrix_array std::span of std::spans of matrices; number of arrays should match
      * num_matrix_arrays().
      * @return The number of matrices passed into the UBO.
      */
-    size_t set_matrix_arrays(span<const span<const glm::mat4>> matrix_arrays);
+    size_t set_matrix_arrays(std::span<const std::span<const glm::mat4>> matrix_arrays);
 
     /** Set matrix UBO data to hold given transformation matrix array.
      * Single-array overload for the case of num_matrix_arrays == 1.
      * Note that UBO size may be limited -- in this case, as much of the input as possible is set.
      * @return The number of matrices passed into the UBO.
      */
-    size_t set_matrix_array(span<const glm::mat4> matrix_array)
+    size_t set_matrix_array(std::span<const glm::mat4> matrix_array)
     {
         MG_ASSERT(m_num_matrix_arrays == 1);
         return set_matrix_arrays({ &matrix_array, 1 });

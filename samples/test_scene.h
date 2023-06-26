@@ -173,19 +173,19 @@ private:
     Mg::gfx::Texture2D* load_texture(Mg::Identifier file, bool sRGB);
 
     const Mg::gfx::Material* load_material(Mg::Identifier file,
-                                           Mg::span<const Mg::Identifier> options);
+                                           std::span<const Mg::Identifier> options);
 
     Model load_model(Mg::Identifier mesh_file,
-                     Mg::span<const MaterialFileAssignment> material_files,
-                     Mg::span<const Mg::Identifier> options);
+                     std::span<const MaterialFileAssignment> material_files,
+                     std::span<const Mg::Identifier> options);
 
     Model& add_scene_model(Mg::Identifier mesh_file,
-                           Mg::span<const MaterialFileAssignment> material_files,
-                           Mg::span<const Mg::Identifier> options);
+                           std::span<const MaterialFileAssignment> material_files,
+                           std::span<const Mg::Identifier> options);
 
     Model& add_dynamic_model(Mg::Identifier mesh_file,
-                             Mg::span<const MaterialFileAssignment> material_files,
-                             Mg::span<const Mg::Identifier> options,
+                             std::span<const MaterialFileAssignment> material_files,
+                             std::span<const Mg::Identifier> options,
                              glm::vec3 position,
                              Mg::Rotation rotation,
                              glm::vec3 scale,

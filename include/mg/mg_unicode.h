@@ -99,7 +99,7 @@ std::vector<UnicodeRange> unicode_ranges_for(std::u32string_view text);
 std::vector<UnicodeRange> unicode_ranges_for(std::string_view text_utf8);
 
 /** Merge UncodeRanges that overlap (or can be merged to one longer range). */
-std::vector<UnicodeRange> merge_overlapping_ranges(span<const UnicodeRange> unicode_ranges);
+std::vector<UnicodeRange> merge_overlapping_ranges(std::span<const UnicodeRange> unicode_ranges);
 
 /** Unicode block: each block corresponds to a range of codepoints. */
 enum class UnicodeBlock {

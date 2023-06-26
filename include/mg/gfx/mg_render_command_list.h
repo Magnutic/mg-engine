@@ -73,25 +73,25 @@ public:
     /** Sequence of render commands, containing references to the data that is reachable by the
      * other member functions on this class.
      */
-    span<const RenderCommand> render_commands() const noexcept { return m_render_commands; }
+    std::span<const RenderCommand> render_commands() const noexcept { return m_render_commands; }
 
     /** The model-to-world space transformation matrices for each render command. This array is
      * sorted in the same order as `render_commands`, i.e. the matrix for `render_commands()[i]` is
      * `m_transforms()[i]`
      */
-    span<const glm::mat4> m_transforms() const noexcept { return m_m_transforms; }
+    std::span<const glm::mat4> m_transforms() const noexcept { return m_m_transforms; }
 
     /** The view-perspective space transformation matrices for each render command. This array is
      * sorted in the same order as `render_commands`, i.e. the matrix for `render_commands()[i]` is
      * `m_transforms()[i]`
      */
-    span<const glm::mat4> vp_transforms() const noexcept { return m_vp_transforms; }
+    std::span<const glm::mat4> vp_transforms() const noexcept { return m_vp_transforms; }
 
     /** Skinning matrix palette for skinned (animated) meshes.
      * `RenderCommand::skinning_matrices_begin` and `RenderCommand::num_skinning_matrices` refer to
      * this array.
      */
-    span<const glm::mat4> skinning_matrices() const noexcept { return m_skinning_matrices; }
+    std::span<const glm::mat4> skinning_matrices() const noexcept { return m_skinning_matrices; }
 
 private:
     std::vector<RenderCommand> m_render_commands;
@@ -110,17 +110,17 @@ public:
     /** Access to the skinning_matrices. Write the appropriate data to this before rendering.
      * @see Mg::gfx::calculate_skinning_matrices
      */
-    span<glm::mat4> skinning_matrices() const noexcept { return m_skinning_matrices; }
+    std::span<glm::mat4> skinning_matrices() const noexcept { return m_skinning_matrices; }
 
 private:
     friend class RenderCommandProducer;
 
-    explicit SkinningMatrixPalette(const span<glm::mat4> skinning_matrices,
+    explicit SkinningMatrixPalette(const std::span<glm::mat4> skinning_matrices,
                                    const uint16_t start_index)
         : m_skinning_matrices(skinning_matrices), m_start_index(start_index)
     {}
 
-    span<glm::mat4> m_skinning_matrices;
+    std::span<glm::mat4> m_skinning_matrices;
     const uint16_t m_start_index;
 };
 
@@ -138,14 +138,14 @@ public:
      */
     void add_mesh(MeshHandle mesh,
                   const glm::mat4& transform,
-                  span<const MaterialAssignment> material_assignment);
+                  std::span<const MaterialAssignment> material_assignment);
 
     /** Add a skinned (animated) mesh to be rendered, with the given transformation and material
      * assignments.
      */
     void add_skinned_mesh(MeshHandle mesh,
                           const glm::mat4& transform,
-                          span<const MaterialAssignment> material_assignment,
+                          std::span<const MaterialAssignment> material_assignment,
                           const SkinningMatrixPalette& skinning_matrix_palette);
 
     /** Allocate space for a skinning matrix palette, for use with `add_skinned_mesh`. The matrix

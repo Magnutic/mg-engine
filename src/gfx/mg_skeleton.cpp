@@ -54,9 +54,9 @@ JointPose affine_matrix_to_pose(const glm::mat4x4 m)
 
 void calculate_pose_transformations_impl(const glm::mat4& parent_to_model,
                                          const Mesh::JointId current,
-                                         const span<const Mesh::Joint> joints,
-                                         const span<const JointPose> joint_poses,
-                                         const span<glm::mat4> matrices_out)
+                                         const std::span<const Mesh::Joint> joints,
+                                         const std::span<const JointPose> joint_poses,
+                                         const std::span<glm::mat4> matrices_out)
 {
     if (current == Mesh::joint_id_none) {
         return;
@@ -80,8 +80,8 @@ void calculate_pose_transformations_impl(const glm::mat4& parent_to_model,
 
 void get_bind_pose_impl(const glm::mat4& inverse_parent_transformation,
                         const Mesh::JointId current,
-                        const span<const Mesh::Joint> joints,
-                        const span<JointPose> joint_poses)
+                        const std::span<const Mesh::Joint> joints,
+                        const std::span<JointPose> joint_poses)
 {
     if (current == Mesh::joint_id_none) {
         return;
@@ -135,7 +135,7 @@ SkeletonPose Skeleton::get_bind_pose() const
 bool calculate_skinning_matrices(const glm::mat4& transform,
                                  const Skeleton& skeleton,
                                  const SkeletonPose& pose,
-                                 const span<glm::mat4> skinning_matrices_out)
+                                 const std::span<glm::mat4> skinning_matrices_out)
 {
     // First, get the joint transformations (joint-space to model-space).
     const bool success = calculate_pose_transformations(skeleton, pose, skinning_matrices_out);
@@ -143,7 +143,7 @@ bool calculate_skinning_matrices(const glm::mat4& transform,
         return false;
     }
 
-    const span<const Mesh::Joint> joints = skeleton.joints();
+    const std::span<const Mesh::Joint> joints = skeleton.joints();
 
     // At this point, skinning_matrices_out contains the accumulated pose (joint space to
     // model space) transformation, not the skinning (model space to model space) transformation.
@@ -160,7 +160,7 @@ bool calculate_skinning_matrices(const glm::mat4& transform,
 
 bool calculate_pose_transformations(const Skeleton& skeleton,
                                     const SkeletonPose& pose,
-                                    const span<glm::mat4> matrices_out)
+                                    const std::span<glm::mat4> matrices_out)
 {
     // Sanity checks.
     if (skeleton.id() != pose.skeleton_id) {

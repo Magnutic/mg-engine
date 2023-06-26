@@ -190,7 +190,7 @@ struct BillboardRenderer::Impl {
 
 namespace {
 // Update vertex buffer to match the new set of billboards
-void update_buffer(BillboardRenderer::Impl& data, span<const Billboard> billboards)
+void update_buffer(BillboardRenderer::Impl& data, std::span<const Billboard> billboards)
 {
     glBindBuffer(GL_ARRAY_BUFFER, data.vbo.as_gl_id());
 

@@ -32,7 +32,7 @@ public:
 
     explicit BufferTexture(Type type, size_t buffer_size);
 
-    explicit BufferTexture(Type type, span<const std::byte> data) : BufferTexture(type, data.size())
+    explicit BufferTexture(Type type, std::span<const std::byte> data) : BufferTexture(type, data.size())
     {
         set_data(data);
     }
@@ -42,7 +42,7 @@ public:
 
     ~BufferTexture();
 
-    void set_data(span<const std::byte> data) noexcept;
+    void set_data(std::span<const std::byte> data) noexcept;
 
     size_t size() const noexcept { return m_buffer_size; }
 

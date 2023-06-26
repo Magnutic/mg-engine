@@ -41,8 +41,8 @@ public:
 
     Identifier id() const { return m_id; }
 
-    span<Mesh::Joint> joints() { return m_joints; }
-    span<const Mesh::Joint> joints() const { return m_joints; }
+    std::span<Mesh::Joint> joints() { return m_joints; }
+    std::span<const Mesh::Joint> joints() const { return m_joints; }
 
     Opt<Mesh::JointId> find_joint(Identifier joint_name) const;
 
@@ -88,7 +88,7 @@ struct SkeletonPose {
 bool calculate_skinning_matrices(const glm::mat4& transform,
                                  const Skeleton& skeleton,
                                  const SkeletonPose& pose,
-                                 span<glm::mat4> skinning_matrices_out);
+                                 std::span<glm::mat4> skinning_matrices_out);
 
 /** Evaluate pose for a given skeleton and write the resulting joint transformation matrices
  * (joint space to parent-joint space) to matrices_out. This can fail if pose is impossible to apply
@@ -103,7 +103,7 @@ bool calculate_skinning_matrices(const glm::mat4& transform,
  */
 bool calculate_pose_transformations(const Skeleton& skeleton,
                                     const SkeletonPose& pose,
-                                    span<glm::mat4> matrices_out);
+                                    std::span<glm::mat4> matrices_out);
 
 void animate_joint(const Mesh::AnimationChannel& animation_channel,
                    double time_seconds,

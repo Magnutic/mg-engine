@@ -137,7 +137,7 @@ public:
     /** Get material parameter values as a raw byte buffer. This is then passed into shaders as a
      * uniform buffer.
      */
-    span<const std::byte> material_params_buffer() const noexcept
+    std::span<const std::byte> material_params_buffer() const noexcept
     {
         return byte_representation(m_parameter_data);
     }
@@ -146,7 +146,7 @@ private:
     using ParamsBuffer = std::array<uint8_t, defs::k_material_parameters_buffer_size>;
 
     void _set_parameter_impl(Identifier name,
-                             span<const std::byte> param_value,
+                             std::span<const std::byte> param_value,
                              shader::ParameterType param_type);
 
     Opt<std::pair<glm::vec4, shader::ParameterType>> _extract_parameter_data(Identifier name) const;

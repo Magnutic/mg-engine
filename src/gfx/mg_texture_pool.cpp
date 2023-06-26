@@ -255,7 +255,7 @@ Texture2D* TexturePool::get_default_texture(DefaultTexture type)
     }
 
     auto generate_texture = [&]() {
-        span<const uint8_t> buffer = default_texture_buffers.at(index);
+        std::span<const uint8_t> buffer = default_texture_buffers.at(index);
         return Texture2D::from_rgba8_buffer(id, buffer, 2, 2, settings);
     };
 

@@ -111,18 +111,18 @@ struct Submesh {
 /** Non-owning view over the data required to define a mesh. */
 struct MeshDataView {
     /** The vertices making up the mesh. */
-    span<const Vertex> vertices;
+    std::span<const Vertex> vertices;
 
     /** Indices into `vertices` buffer, defining triangle list. */
-    span<const Index> indices;
+    std::span<const Index> indices;
 
     /** Submeshes as defined by a range of `indices`. */
-    span<const Submesh> submeshes;
+    std::span<const Submesh> submeshes;
 
     /** Per-vertex influences of skeleton joints for animation. Should either be empty (for
      * non-animated meshes), or the same size as `MeshDataView::vertices`.
      */
-    span<const Influences> influences;
+    std::span<const Influences> influences;
 
     /** Optionally store bounding sphere here; otherwise, it will be calculated when needed. */
     Opt<BoundingSphere> bounding_sphere;

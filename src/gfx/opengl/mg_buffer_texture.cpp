@@ -214,7 +214,7 @@ BufferTexture::~BufferTexture()
     glDeleteBuffers(1, &buf_id);
 }
 
-void BufferTexture::set_data(span<const std::byte> data) noexcept
+void BufferTexture::set_data(std::span<const std::byte> data) noexcept
 {
     MG_GFX_DEBUG_GROUP("BufferTexture::set_data");
 

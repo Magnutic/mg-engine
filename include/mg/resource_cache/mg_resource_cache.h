@@ -155,7 +155,7 @@ public:
      */
     bool unload_unused(bool unload_all_unused = false) const;
 
-    span<const std::unique_ptr<IFileLoader>> file_loaders() const noexcept
+    std::span<const std::unique_ptr<IFileLoader>> file_loaders() const noexcept
     {
         // No need to lock, since m_file_loaders never changes after construction.
         return m_file_loaders;

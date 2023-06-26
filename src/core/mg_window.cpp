@@ -132,7 +132,7 @@ Array<VideoMode> find_available_video_modes()
 {
     small_vector<VideoMode, 20> res;
 
-    const auto vid_modes = []() -> span<const GLFWvidmode> {
+    const auto vid_modes = []() -> std::span<const GLFWvidmode> {
         int n_modes;
         auto p_modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &n_modes);
         return { p_modes, as<size_t>(n_modes) };

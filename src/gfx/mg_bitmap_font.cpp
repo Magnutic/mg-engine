@@ -136,7 +136,7 @@ Opt<int32_t> get_packedchar_index(const BitmapFont::Impl& font, char32_t codepoi
 class FontPacker {
 public:
     void pack(ResourceHandle<FontResource> font_resource,
-              span<const UnicodeRange> unicode_ranges,
+              std::span<const UnicodeRange> unicode_ranges,
               const int font_size_pixels,
               BitmapFont::Impl& font)
     {
@@ -172,8 +172,8 @@ public:
     }
 
 private:
-    void pack_impl(const span<const std::byte>& font_data,
-                   const span<const UnicodeRange>& unicode_ranges,
+    void pack_impl(const std::span<const std::byte>& font_data,
+                   const std::span<const UnicodeRange>& unicode_ranges,
                    const int font_size_pixels,
                    BitmapFont::Impl& font)
     {
@@ -299,7 +299,7 @@ PreparedText::~PreparedText()
 
 BitmapFont::BitmapFont(ResourceHandle<FontResource> font,
                        const int font_size_pixels,
-                       span<const UnicodeRange> unicode_ranges)
+                       std::span<const UnicodeRange> unicode_ranges)
 {
     m_impl->font_size_pixels = font_size_pixels;
     FontPacker packer;
@@ -322,7 +322,7 @@ struct BreakLinesResult {
 // Break text into multiple lines at '\n'-codepoints and wherever the line would exceed
 // `max_width_pixels`.
 BreakLinesResult break_lines(const std::u32string_view& text_codepoints,
-                             span<const stbtt_aligned_quad> single_line_quads,
+                             std::span<const stbtt_aligned_quad> single_line_quads,
                              const Opt<int32_t> max_width_pixels,
                              const float line_height,
                              const float line_spacing_factor)
@@ -559,7 +559,7 @@ PreparedText BitmapFont::prepare_text(std::string_view text_utf8,
     return PreparedText(gpu_data, width, height, text_codepoints.size());
 }
 
-span<const UnicodeRange> BitmapFont::contained_ranges() const
+std::span<const UnicodeRange> BitmapFont::contained_ranges() const
 {
     return m_impl->unicode_ranges;
 }

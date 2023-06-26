@@ -24,7 +24,7 @@ public:
     Identifier type_id() const override { return "FontResource"; }
 
     /** Access raw font data. */
-    span<const std::byte> data() const noexcept { return m_font_data; }
+    std::span<const std::byte> data() const noexcept { return m_font_data; }
 
 protected:
     LoadResourceResult load_resource_impl(ResourceLoadingInput& input) override;

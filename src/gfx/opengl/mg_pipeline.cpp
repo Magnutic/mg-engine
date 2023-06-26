@@ -61,7 +61,7 @@ Opt<Pipeline> Pipeline::make(const Params& params)
 namespace {
 
 // Shared implementation used for both pipeline-input binding functions in OpenGL.
-void bind_pipeline_input_set(span<const PipelineInputBinding> bindings)
+void bind_pipeline_input_set(std::span<const PipelineInputBinding> bindings)
 {
     for (const PipelineInputBinding& binding : bindings) {
         const auto gl_object_id = static_cast<GLuint>(binding.gfx_resource_handle());
@@ -124,21 +124,21 @@ void apply_input_descriptor(const opengl::ShaderProgramHandle& shader_handle,
 
 } // namespace
 
-void Pipeline::bind_shared_inputs(span<const PipelineInputBinding> bindings)
+void Pipeline::bind_shared_inputs(std::span<const PipelineInputBinding> bindings)
 {
     MG_GFX_DEBUG_GROUP("Pipeline::bind_shared_inputs")
     bind_pipeline_input_set(bindings);
 }
 
-void Pipeline::bind_material_inputs(span<const PipelineInputBinding> bindings)
+void Pipeline::bind_material_inputs(std::span<const PipelineInputBinding> bindings)
 {
     MG_GFX_DEBUG_GROUP("Pipeline::bind_material_inputs")
     bind_pipeline_input_set(bindings);
 }
 
 Pipeline::Pipeline(PipelineHandle internal_handle,
-                   span<const PipelineInputDescriptor> shared_input_layout,
-                   span<const PipelineInputDescriptor> material_input_layout)
+                   std::span<const PipelineInputDescriptor> shared_input_layout,
+                   std::span<const PipelineInputDescriptor> material_input_layout)
     : m_handle(internal_handle)
 {
     MG_GFX_DEBUG_GROUP("Create Pipeline")

@@ -68,7 +68,7 @@ template<> constexpr size_t safe_sizeof<void>()
 // Load bytestream data into arrays. Array size controls number of elements to read.
 // Returns number of bytes read, if successful, otherwise 0.
 template<typename InputT = void, typename T>
-size_t load_to_array(span<const std::byte> bytestream, T& array_out, Opt<Stride> stride = {})
+size_t load_to_array(std::span<const std::byte> bytestream, T& array_out, Opt<Stride> stride = {})
 {
     using TargetT = typename T::value_type;
     constexpr bool needs_type_conversion = !std::is_void_v<InputT> &&
@@ -108,7 +108,7 @@ size_t load_to_array(span<const std::byte> bytestream, T& array_out, Opt<Stride>
     return read_offset;
 }
 
-template<typename T> size_t load_to_struct(span<const std::byte> bytestream, T& out)
+template<typename T> size_t load_to_struct(std::span<const std::byte> bytestream, T& out)
 {
     static_assert(std::is_trivially_copyable_v<T>);
     if (bytestream.size() < sizeof(T)) {
@@ -124,7 +124,7 @@ struct LoadResult {
     std::string error_reason;
 };
 
-template<typename T> Array<T> read_range(span<const std::byte> bytestream, FileDataRange range)
+template<typename T> Array<T> read_range(std::span<const std::byte> bytestream, FileDataRange range)
 {
     const size_t elem_size = sizeof(T);
     const size_t range_length_bytes = range.end - range.begin;
@@ -147,7 +147,7 @@ template<typename T> Array<T> read_range(span<const std::byte> bytestream, FileD
     return result;
 }
 
-std::string_view read_string(span<const std::byte> bytestream, FileDataRange range)
+std::string_view read_string(std::span<const std::byte> bytestream, FileDataRange range)
 {
     const size_t range_length_bytes = range.end - range.begin;
     if (range.end <= range.begin || range.end > bytestream.size()) {
@@ -170,7 +170,7 @@ LoadResult load_version_1(ResourceLoadingInput& input)
         glm::vec3 abb_max = {};   // Axis-aligned bounding box
     };
 
-    const span<const std::byte> bytestream = input.resource_data();
+    const std::span<const std::byte> bytestream = input.resource_data();
     size_t pos = 0;
 
     Header header;
@@ -206,7 +206,7 @@ LoadResult load_version_1(ResourceLoadingInput& input)
 
 LoadResult load_version_2(ResourceLoadingInput& input, [[maybe_unused]] std::string_view meshname)
 {
-    const span<const std::byte> bytestream = input.resource_data();
+    const std::span<const std::byte> bytestream = input.resource_data();
 
     MeshResourceData::Header header = {};
     load_to_struct(bytestream, header);
@@ -294,29 +294,29 @@ MeshDataView MeshResource::data_view() const noexcept
     return { vertices(), indices(), submeshes(), influences(), bounding_sphere() };
 }
 
-span<const Vertex> MeshResource::vertices() const noexcept
+std::span<const Vertex> MeshResource::vertices() const noexcept
 {
-    return m_data ? m_data->vertices : span<const Vertex>{};
+    return m_data ? m_data->vertices : std::span<const Vertex>{};
 }
-span<const Index> MeshResource::indices() const noexcept
+std::span<const Index> MeshResource::indices() const noexcept
 {
-    return m_data ? m_data->indices : span<const Index>{};
+    return m_data ? m_data->indices : std::span<const Index>{};
 }
-span<const Submesh> MeshResource::submeshes() const noexcept
+std::span<const Submesh> MeshResource::submeshes() const noexcept
 {
-    return m_data ? m_data->submeshes : span<const Submesh>{};
+    return m_data ? m_data->submeshes : std::span<const Submesh>{};
 }
-span<const Influences> MeshResource::influences() const noexcept
+std::span<const Influences> MeshResource::influences() const noexcept
 {
-    return m_data ? m_data->influences : span<const Influences>{};
+    return m_data ? m_data->influences : std::span<const Influences>{};
 }
-span<const Joint> MeshResource::joints() const noexcept
+std::span<const Joint> MeshResource::joints() const noexcept
 {
-    return m_data ? m_data->joints : span<const Joint>{};
+    return m_data ? m_data->joints : std::span<const Joint>{};
 }
-span<const AnimationClip> MeshResource::animation_clips() const noexcept
+std::span<const AnimationClip> MeshResource::animation_clips() const noexcept
 {
-    return m_data ? m_data->animation_clips : span<const AnimationClip>{};
+    return m_data ? m_data->animation_clips : std::span<const AnimationClip>{};
 }
 
 Opt<size_t> MeshResource::get_submesh_index(const Identifier& submesh_name) const noexcept
@@ -350,7 +350,7 @@ AxisAlignedBoundingBox MeshResource::axis_aligned_bounding_box() const noexcept
 
 LoadResourceResult MeshResource::load_resource_impl(ResourceLoadingInput& input)
 {
-    span<const std::byte> bytestream = input.resource_data();
+    std::span<const std::byte> bytestream = input.resource_data();
     HeaderCommon header_common;
 
     if (load_to_struct(bytestream, header_common) < sizeof(HeaderCommon)) {

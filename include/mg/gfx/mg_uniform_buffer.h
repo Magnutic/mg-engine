@@ -35,7 +35,7 @@ public:
     MG_MAKE_DEFAULT_MOVABLE(UniformBuffer);
 
     /** Replace the buffer's data. */
-    void set_data(span<const std::byte> data, size_t dest_offset = 0);
+    void set_data(std::span<const std::byte> data, size_t dest_offset = 0);
 
     /** Get the buffer's size in bytes. */
     size_t size() const noexcept { return m_size; }

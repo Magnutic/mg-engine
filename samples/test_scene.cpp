@@ -2,6 +2,7 @@
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/resources/mg_material_resource.h"
 
+#include <initializer_list>
 #include <mg/core/mg_application_context.h>
 #include <mg/core/mg_config.h>
 #include <mg/core/mg_identifier.h>
@@ -481,7 +482,7 @@ Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file, const bool sRGB)
 }
 
 const Mg::gfx::Material* Scene::load_material(Mg::Identifier file,
-                                              Mg::span<const Mg::Identifier> options)
+                                              std::span<const Mg::Identifier> options)
 {
 #if 1
     if (const Mg::gfx::Material* preexisting = material_pool.find(file); preexisting != nullptr) {
@@ -575,8 +576,8 @@ void Model::update()
 }
 
 Model Scene::load_model(Mg::Identifier mesh_file,
-                        Mg::span<const MaterialFileAssignment> material_files,
-                        Mg::span<const Mg::Identifier> options)
+                        std::span<const MaterialFileAssignment> material_files,
+                        std::span<const Mg::Identifier> options)
 {
     Model model = {};
     model.id = mesh_file;
@@ -641,8 +642,8 @@ Model Scene::load_model(Mg::Identifier mesh_file,
 }
 
 Model& Scene::add_scene_model(Mg::Identifier mesh_file,
-                              Mg::span<const MaterialFileAssignment> material_files,
-                              Mg::span<const Mg::Identifier> options)
+                              std::span<const MaterialFileAssignment> material_files,
+                              std::span<const Mg::Identifier> options)
 {
     const auto [it, inserted] =
         scene_models.insert({ mesh_file, load_model(mesh_file, material_files, options) });
@@ -658,8 +659,8 @@ Model& Scene::add_scene_model(Mg::Identifier mesh_file,
 }
 
 Model& Scene::add_dynamic_model(Mg::Identifier mesh_file,
-                                Mg::span<const MaterialFileAssignment> material_files,
-                                Mg::span<const Mg::Identifier> options,
+                                std::span<const MaterialFileAssignment> material_files,
+                                std::span<const Mg::Identifier> options,
                                 glm::vec3 position,
                                 Mg::Rotation rotation,
                                 glm::vec3 scale,
@@ -870,7 +871,7 @@ void Scene::prepare_pipelines()
     app.gfx_device().clear(*hdr_target);
     mesh_renderer.render(dummy_camera,
                          dummy_render_command_list,
-                         { light },
+                         std::array{ light },
                          *hdr_target,
                          Mg::gfx::RenderParameters{});
     app.gfx_device().clear(*hdr_target);
@@ -915,31 +916,32 @@ void Scene::load_models()
     using namespace Mg::literals;
 
     add_scene_model("meshes/misc/test_scene_2.mgm",
-                    { MaterialFileAssignment{ size_t{ 0 }, "buildings/GreenBrick"_id },
-                      MaterialFileAssignment{ size_t{ 1 }, "buildings/W31_1"_id },
-                      MaterialFileAssignment{ size_t{ 2 }, "buildings/BigWhiteBricks"_id },
-                      MaterialFileAssignment{ size_t{ 3 }, "buildings/GreenBrick"_id } },
-                    { "PARALLAX"_id });
+                    std::array{
+                        MaterialFileAssignment{ size_t{ 0 }, "buildings/GreenBrick"_id },
+                        MaterialFileAssignment{ size_t{ 1 }, "buildings/W31_1"_id },
+                        MaterialFileAssignment{ size_t{ 2 }, "buildings/BigWhiteBricks"_id },
+                        MaterialFileAssignment{ size_t{ 3 }, "buildings/GreenBrick"_id } },
+                    std::array{ "PARALLAX"_id });
 
     add_dynamic_model("meshes/Fox.mgm",
-                      { MaterialFileAssignment{ "fox1", "actors/fox"_id } },
-                      { "RIM_LIGHT"_id },
+                      std::array{ MaterialFileAssignment{ "fox1", "actors/fox"_id } },
+                      std::array{ "RIM_LIGHT"_id },
                       { 2.0f, 0.0f, 0.0f },
                       Mg::Rotation(),
                       { 0.01f, 0.01f, 0.01f },
                       false);
 
     add_dynamic_model("meshes/misc/hestdraugr.mgm"_id,
-                      { MaterialFileAssignment{ size_t{ 0 }, "actors/HestDraugr"_id } },
-                      { "RIM_LIGHT"_id },
+                      std::array{ MaterialFileAssignment{ size_t{ 0 }, "actors/HestDraugr"_id } },
+                      std::array{ "RIM_LIGHT"_id },
                       { -2.0f, 2.0f, 1.0f },
                       Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
                       { 1.0f, 1.0f, 1.0f },
                       true);
 
     add_dynamic_model("meshes/box.mgm",
-                      { MaterialFileAssignment{ size_t{ 0 }, "crate"_id } },
-                      { "PARALLAX"_id },
+                      std::array{ MaterialFileAssignment{ size_t{ 0 }, "crate"_id } },
+                      std::array{ "PARALLAX"_id },
                       { 0.0f, 0.0f, 10.0f },
                       Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
                       { 1.0f, 1.0f, 1.0f },

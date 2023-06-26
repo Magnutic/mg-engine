@@ -58,7 +58,7 @@ public:
     /** Generate new sound buffer from sound file data.
      * @param sound_file_data Raw binary data from sound file (e.g. .wav, .ogg).
      */
-    GenerateSoundBufferResult generate_sound_buffer(span<const std::byte> sound_file_data);
+    GenerateSoundBufferResult generate_sound_buffer(std::span<const std::byte> sound_file_data);
 
     /** Set the master gain (volume) for the listener. */
     void set_gain(float gain);

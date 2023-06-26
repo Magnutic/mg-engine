@@ -193,7 +193,7 @@ public:
     }
 
     // Get all joints.
-    span<const Joint> joints() const { return m_joints; }
+    std::span<const Joint> joints() const { return m_joints; }
 
     // Transformation of the root node of the skeleton. This contains the accumulated
     // transformations of the scene nodes that are parent to the skeleton, but are not include as
@@ -379,7 +379,7 @@ public:
                            StringData& string_data,
                            bool is_gltf2);
 
-    span<const Clip> clips() const { return m_clips; }
+    std::span<const Clip> clips() const { return m_clips; }
 
 private:
     void add_animation_clip(const JointData& joint_data,
@@ -493,10 +493,10 @@ public:
         visit(*scene.mRootNode);
     }
 
-    span<const Submesh> submeshes() const { return m_submeshes; }
-    span<const Vertex> vertices() const { return m_vertices; }
-    span<const Index> indices() const { return m_indices; }
-    span<const Influences> influences() const { return m_influences; }
+    std::span<const Submesh> submeshes() const { return m_submeshes; }
+    std::span<const Vertex> vertices() const { return m_vertices; }
+    std::span<const Index> indices() const { return m_indices; }
+    std::span<const Influences> influences() const { return m_influences; }
 
 private:
     void visit(const aiMesh& mesh);
@@ -852,7 +852,7 @@ bool write_file(const std::filesystem::path& file_path,
             MG_ASSERT(scale_channels.size() == num_channels);
 
             channels_per_clip[clip_index].resize(num_channels);
-            const span<AnimationChannel> channels = channels_per_clip[clip_index];
+            const std::span<AnimationChannel> channels = channels_per_clip[clip_index];
 
             AnimationClip& animation_clip = animation_clips[clip_index];
             animation_clip.name = animation_data->clips()[clip_index].name;
@@ -860,15 +860,15 @@ bool write_file(const std::filesystem::path& file_path,
             animation_clip.channels = writer.enqueue_array(channels);
 
             for (size_t i = 0; i < position_channels.size(); ++i) {
-                channels[i].position_keys = writer.enqueue_array(span(position_channels[i]));
+                channels[i].position_keys = writer.enqueue_array(std::span(position_channels[i]));
             }
 
             for (size_t i = 0; i < rotation_channels.size(); ++i) {
-                channels[i].rotation_keys = writer.enqueue_array(span(rotation_channels[i]));
+                channels[i].rotation_keys = writer.enqueue_array(std::span(rotation_channels[i]));
             }
 
             for (size_t i = 0; i < scale_channels.size(); ++i) {
-                channels[i].scale_keys = writer.enqueue_array(span(scale_channels[i]));
+                channels[i].scale_keys = writer.enqueue_array(std::span(scale_channels[i]));
             }
         }
     }

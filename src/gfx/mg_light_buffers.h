@@ -26,7 +26,7 @@ class LightBuffers {
 public:
     explicit LightBuffers(const LightGridConfig& grid_config);
 
-    void update(span<const Light> lights, const ICamera& cam);
+    void update(std::span<const Light> lights, const ICamera& cam);
 
     const LightGridConfig& config() const;
 

@@ -79,10 +79,10 @@ template<typename T> void read_binary(std::istream& stream, T& value_out)
 
 /** Read an array of values from the file stream. It is the user's responsibility to avoid problems
  * with alignment, endianness, and padding bytes.
- * @param out span of values to fill.
+ * @param out std::span of values to fill.
  * @return Number of bytes that where successfully read.
  */
-template<typename T> size_t read_binary_array(std::istream& stream, span<T> out)
+template<typename T> size_t read_binary_array(std::istream& stream, std::span<T> out)
 {
     if (out.empty()) {
         return 0;
@@ -107,10 +107,10 @@ template<typename T> void write_binary(std::ostream& stream, const T& value)
 
 /** Writes an array of values to the file stream. It is the user's responsibility to avoid
  * problems with alignment, endianness, and padding bytes.
- * @param values span of values to write.
+ * @param values std::span of values to write.
  * @return Number of bytes that where successfully written.
  */
-template<typename T> size_t write_binary_array(std::ostream& stream, const span<T> values)
+template<typename T> size_t write_binary_array(std::ostream& stream, const std::span<T> values)
 {
     static_assert(std::is_trivially_copyable<T>::value, "Source type is not trivially copyable.");
 

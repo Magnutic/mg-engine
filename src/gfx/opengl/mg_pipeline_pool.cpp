@@ -212,8 +212,8 @@ struct PipelinePool::Impl {
 namespace {
 
 Opt<Pipeline> make_pipeline(const ShaderCompileResult& compiled_shader,
-                            span<const PipelineInputDescriptor> shared_input_layout,
-                            span<const PipelineInputDescriptor> material_input_layout)
+                            std::span<const PipelineInputDescriptor> shared_input_layout,
+                            std::span<const PipelineInputDescriptor> material_input_layout)
 {
     Pipeline::Params params = {};
     params.vertex_shader = compiled_shader.vs_handle.value();

@@ -14,7 +14,7 @@ namespace Mg {
 using namespace Mg::gfx::Mesh;
 
 namespace {
-float calculate_radius(const glm::vec3 centre, const span<const Vertex> vertices)
+float calculate_radius(const glm::vec3 centre, const std::span<const Vertex> vertices)
 {
     auto distance_to_centre = [&centre](const Vertex& lhs, const Vertex& rhs) {
         return glm::distance2(lhs.position, centre) < glm::distance2(rhs.position, centre);
@@ -24,7 +24,7 @@ float calculate_radius(const glm::vec3 centre, const span<const Vertex> vertices
 }
 } // namespace
 
-AxisAlignedBoundingBox calculate_mesh_bounding_box(const span<const Vertex> vertices)
+AxisAlignedBoundingBox calculate_mesh_bounding_box(const std::span<const Vertex> vertices)
 {
     if (vertices.empty()) {
         return {};
@@ -46,7 +46,7 @@ AxisAlignedBoundingBox calculate_mesh_bounding_box(const span<const Vertex> vert
     return { abb_min, abb_max };
 }
 
-BoundingSphere calculate_mesh_bounding_sphere(const span<const Vertex> vertices)
+BoundingSphere calculate_mesh_bounding_sphere(const std::span<const Vertex> vertices)
 {
     if (vertices.empty()) {
         return {};

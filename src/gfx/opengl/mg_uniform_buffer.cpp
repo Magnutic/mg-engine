@@ -47,7 +47,7 @@ UniformBuffer::~UniformBuffer()
     glDeleteBuffers(1, &ubo_id);
 }
 
-void UniformBuffer::set_data(span<const std::byte> data, size_t dest_offset)
+void UniformBuffer::set_data(std::span<const std::byte> data, size_t dest_offset)
 {
     MG_GFX_DEBUG_GROUP("UniformBuffer::set_data")
 

@@ -22,7 +22,7 @@ namespace Mg::gfx {
 
 namespace {
 
-const Material* material_for_submesh(span<const MaterialAssignment> assignment,
+const Material* material_for_submesh(std::span<const MaterialAssignment> assignment,
                                      size_t sub_mesh_index)
 {
     auto it = find_if(assignment, [&](const MaterialAssignment& mb) {
@@ -67,7 +67,7 @@ RenderCommandProducer::~RenderCommandProducer() = default;
 
 void RenderCommandProducer::add_mesh(MeshHandle mesh_handle,
                                      const glm::mat4& transform,
-                                     span<const MaterialAssignment> material_assignment)
+                                     std::span<const MaterialAssignment> material_assignment)
 {
     MG_ASSERT(m_impl->m_transforms_unsorted.size() == m_impl->render_commands_unsorted.size());
 
@@ -99,7 +99,7 @@ void RenderCommandProducer::add_mesh(MeshHandle mesh_handle,
 
 void RenderCommandProducer::add_skinned_mesh(MeshHandle mesh,
                                              const glm::mat4& transform,
-                                             span<const MaterialAssignment> material_assignment,
+                                             std::span<const MaterialAssignment> material_assignment,
                                              const SkinningMatrixPalette& skinning_matrix_palette)
 {
     add_mesh(mesh, transform, material_assignment);
@@ -118,7 +118,7 @@ RenderCommandProducer::allocate_skinning_matrix_palette(const uint16_t num_joint
     m_impl->commands.m_skinning_matrices.resize(skinning_matrices_begin + num_joints);
 
     return SkinningMatrixPalette{
-        span(m_impl->commands.m_skinning_matrices).subspan(skinning_matrices_begin, num_joints),
+        std::span(m_impl->commands.m_skinning_matrices).subspan(skinning_matrices_begin, num_joints),
         as<uint16_t>(skinning_matrices_begin)
     };
 }
