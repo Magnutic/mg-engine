@@ -87,13 +87,6 @@ TEST_CASE("sign")
 
     REQUIRE(sign(0.00001f) == 1);
     REQUIRE(sign(-0.0000000000001) == -1);
-
-    // The following checks fail when compiled with -ffast-math on GCC-6.2.0
-    // Is this a problem? TODO: investigate
-    /*
-     REQUIRE(sign(std::nextafter(0.0, 1.0)) == 1);
-     REQUIRE(sign(std::nextafter(0.0, -1.0)) == -1);
-     */
 }
 
 TEST_CASE("round_to_int")
