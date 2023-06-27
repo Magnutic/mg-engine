@@ -29,10 +29,10 @@ bool convert(const fs::path& filename, const bool debug_logging)
     if (!convert_mesh(filename, out_filename, debug_logging)) {
         std::cerr << "Failed to convert file '" << cast_u8_to_char(filename.u8string()) << "'."
                   << std::endl;
-        return true;
+        return false;
     }
 
-    return false;
+    return true;
 }
 
 int64_t compare_file_modified_times(const fs::path& file1, const fs::path& file2)
