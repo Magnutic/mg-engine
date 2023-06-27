@@ -157,6 +157,8 @@ public:
 
     bool draw_debug = false;
 
+    bool animate_skinned_meshes = true;
+
     void init();
     void simulation_step() override;
     void render(double lerp_factor) override;

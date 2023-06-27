@@ -63,11 +63,13 @@ std::array<float, 3> get_actor_acceleration(Mg::input::InputMap& input_map)
     return { forward_acc, right_acc, up_acc };
 }
 
-void add_to_render_list(const Model& model, Mg::gfx::RenderCommandProducer& renderlist)
+void add_to_render_list(const bool animate_skinned_meshes,
+                        const Model& model,
+                        Mg::gfx::RenderCommandProducer& renderlist)
 {
     const glm::mat4 transform = model.transform * model.vis_transform;
 
-    if (model.skeleton && model.pose) {
+    if (animate_skinned_meshes && model.skeleton && model.pose) {
         const auto num_joints = Mg::narrow<uint16_t>(model.skeleton->joints().size());
         auto palette = renderlist.allocate_skinning_matrix_palette(num_joints);
         Mg::gfx::calculate_skinning_matrices(transform,
@@ -203,6 +205,10 @@ void Scene::simulation_step()
         m_should_exit = true;
     }
 
+    if (input_map.was_pressed("toggle_animations")) {
+        animate_skinned_meshes = !animate_skinned_meshes;
+    }
+
     // Actor movement
     const bool is_jumping = input_map.was_pressed("jump") &&
                             actor->character_controller.is_on_ground();
@@ -315,11 +321,11 @@ void Scene::render(const double lerp_factor)
         render_command_producer.clear();
 
         for (auto&& [model_id, model] : scene_models) {
-            add_to_render_list(model, render_command_producer);
+            add_to_render_list(animate_skinned_meshes, model, render_command_producer);
         }
 
         for (auto&& [model_id, model] : dynamic_models) {
-            add_to_render_list(model, render_command_producer);
+            add_to_render_list(animate_skinned_meshes, model, render_command_producer);
         }
 
         app.gfx_device().clear(*hdr_target);
@@ -408,14 +414,22 @@ void Scene::render(const double lerp_factor)
     {
         Mg::gfx::animate_skeleton(fox.clips[1], fox.pose.value(), app.time_since_init());
     }
+    Model& cesium_man = dynamic_models["meshes/CesiumMan.mgm"];
+    {
+        Mg::gfx::animate_skeleton(cesium_man.clips[0],
+                                  cesium_man.pose.value(),
+                                  app.time_since_init());
+    }
 
     // Debug geometry
     if (draw_debug) {
         // render_light_debug_geometry();
-        // render_skeleton_debug_geometry();
+        render_skeleton_debug_geometry();
+        /*
         physics_world->draw_debug(app.window().render_target,
                                   debug_renderer,
                                   camera.view_proj_matrix());
+        */
         Mg::gfx::get_debug_render_queue().dispatch(app.window().render_target,
                                                    debug_renderer,
                                                    camera.view_proj_matrix());
@@ -710,17 +724,18 @@ void Scene::make_input_map()
     const auto& kb = app.window().keyboard;
 
     // clang-format off
-    input_map.bind("forward",          kb.key(Keyboard::Key::W));
-    input_map.bind("backward",         kb.key(Keyboard::Key::S));
-    input_map.bind("left",             kb.key(Keyboard::Key::A));
-    input_map.bind("right",            kb.key(Keyboard::Key::D));
-    input_map.bind("jump",             kb.key(Keyboard::Key::Space));
-    input_map.bind("crouch",           kb.key(Keyboard::Key::LeftControl));
-    input_map.bind("lock_camera",      kb.key(Keyboard::Key::E));
-    input_map.bind("fullscreen",       kb.key(Keyboard::Key::F4));
-    input_map.bind("exit",             kb.key(Keyboard::Key::Esc));
-    input_map.bind("toggle_debug_vis", kb.key(Keyboard::Key::F));
-    input_map.bind("reset",            kb.key(Keyboard::Key::R));
+    input_map.bind("forward",           kb.key(Keyboard::Key::W));
+    input_map.bind("backward",          kb.key(Keyboard::Key::S));
+    input_map.bind("left",              kb.key(Keyboard::Key::A));
+    input_map.bind("right",             kb.key(Keyboard::Key::D));
+    input_map.bind("jump",              kb.key(Keyboard::Key::Space));
+    input_map.bind("crouch",            kb.key(Keyboard::Key::LeftControl));
+    input_map.bind("lock_camera",       kb.key(Keyboard::Key::E));
+    input_map.bind("fullscreen",        kb.key(Keyboard::Key::F4));
+    input_map.bind("exit",              kb.key(Keyboard::Key::Esc));
+    input_map.bind("toggle_debug_vis",  kb.key(Keyboard::Key::F));
+    input_map.bind("toggle_animations", kb.key(Keyboard::Key::Tab));
+    input_map.bind("reset",             kb.key(Keyboard::Key::R));
     // clang-format on
 }
 
@@ -900,11 +915,11 @@ void Scene::render_skeleton_debug_geometry()
 {
     MG_GFX_DEBUG_GROUP("Scene::render_skeleton_debug_geometry")
 
-    for (const auto& [model_id, model] : scene_models) {
+    for (const auto& [model_id, model] : dynamic_models) {
         if (model.skeleton.has_value() && model.pose.has_value()) {
             debug_renderer.draw_bones(app.window().render_target,
                                       camera.view_proj_matrix(),
-                                      model.transform,
+                                      model.transform * model.vis_transform,
                                       *model.skeleton,
                                       *model.pose);
         }
@@ -923,10 +938,18 @@ void Scene::load_models()
                         MaterialFileAssignment{ size_t{ 3 }, "buildings/GreenBrick"_id } },
                     std::array{ "PARALLAX"_id });
 
+    add_dynamic_model("meshes/CesiumMan.mgm",
+                      std::array{ MaterialFileAssignment{ size_t{ 0 }, "actors/fox"_id } },
+                      std::array{ "RIM_LIGHT"_id },
+                      { 2.0f, 0.0f, 0.0f },
+                      Mg::Rotation(),
+                      { 1.0f, 1.0f, 1.0f },
+                      false);
+
     add_dynamic_model("meshes/Fox.mgm",
                       std::array{ MaterialFileAssignment{ "fox1", "actors/fox"_id } },
                       std::array{ "RIM_LIGHT"_id },
-                      { 2.0f, 0.0f, 0.0f },
+                      { 1.0f, 1.0f, 0.0f },
                       Mg::Rotation(),
                       { 0.01f, 0.01f, 0.01f },
                       false);
