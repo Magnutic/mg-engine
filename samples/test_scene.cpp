@@ -182,7 +182,7 @@ void Scene::init()
     generate_lights();
 
     const auto font_resource =
-        resource_cache->resource_handle<Mg::FontResource>("fonts/LiberationMono-Regular.ttf");
+        resource_cache->resource_handle<Mg::FontResource>("fonts/elstob/Elstob-Regular.ttf");
     std::vector<Mg::UnicodeRange> unicode_ranges = { Mg::get_unicode_range(
         Mg::UnicodeBlock::Basic_Latin) };
     font = std::make_unique<Mg::gfx::BitmapFont>(font_resource, 24, unicode_ranges);
@@ -375,7 +375,7 @@ void Scene::render(const double lerp_factor)
 #endif
     {
         Mg::gfx::UIPlacement placement = {};
-        placement.position = Mg::gfx::UIPlacement::top_left;
+        placement.position = Mg::gfx::UIPlacement::top_left + glm::vec2(0.01f, -0.01f);
         placement.anchor = Mg::gfx::UIPlacement::top_left;
 
         Mg::gfx::TypeSetting typesetting = {};
