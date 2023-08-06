@@ -28,7 +28,7 @@ float blinn_phong_normal_distribution(float NdotH, float specular_power, float g
 // The GGX microfacet normal distribution function
 float ggx_normal_distribution(float roughness, float NdotH)
 {
-    float roughness_sqr = roughness*roughness;
+    float roughness_sqr = roughness * roughness;
     float distribution = NdotH * NdotH * (roughness_sqr - 1.0) + 1.0;
     return roughness_sqr / (pi * sqr(distribution));
 }
@@ -40,8 +40,8 @@ float ggx_normal_distribution(float roughness, float NdotH)
 float schlick_ggx_geometric_shadowing(float NdotL, float NdotV, float roughness)
 {
     float k = roughness / 2;
-    float l = (NdotL)/ (NdotL * (1.0 - k) + k);
-    float v = (NdotV)/ (NdotV * (1.0 - k) + k);
+    float l = (NdotL) / (NdotL * (1.0 - k) + k);
+    float v = (NdotV) / (NdotV * (1.0 - k) + k);
     return l * v;
 }
 
@@ -68,9 +68,9 @@ float diffuse_schlick_fresnel_f0(float NdotL, float NdotV, float LdotH, float ro
 {
     float f90 = 0.5 + 2.0 * LdotH * LdotH * roughness;
     float light_scatter = schlick_fresnel(NdotL);
-    float view_scatter  = schlick_fresnel(NdotV);
+    float view_scatter = schlick_fresnel(NdotV);
     return (f90 * light_scatter + (1.0 - light_scatter)) *
-           (f90 * view_scatter  + (1.0 - view_scatter));
+           (f90 * view_scatter + (1.0 - view_scatter));
 }
 #endif
 
@@ -86,7 +86,7 @@ vec3 specular_schlick_fresnel(vec3 specular_colour, float LdotH)
 
 vec3 light(const LightInput light, const SurfaceParams surface, const vec3 view_direction)
 {
-    float roughness = sqr(1.0 - surface.gloss); // TODO Arbitrary remapping of gloss response
+    float roughness = sqr(sqr(1.0 - surface.gloss)); // TODO Arbitrary remapping of gloss response
 
     // "Halfway vectors" for lighting calculations.
     vec3 h = normalize(light.direction + view_direction);
@@ -128,7 +128,8 @@ vec3 light(const LightInput light, const SurfaceParams surface, const vec3 view_
 
     // Compose specular contribuation
     const float epsilon = 0.000001; // Avoid division by zero
-    vec3 specular_contribution = (distribution * fresnel * geometric_shadow) / (4.0 * NdotL * NdotV + epsilon);
+    vec3 specular_contribution = (distribution * fresnel * geometric_shadow) /
+                                 (4.0 * NdotL * NdotV + epsilon);
 
     //----------------------------------------------------------------------------------------------
     // Final composition

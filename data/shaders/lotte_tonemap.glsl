@@ -1,4 +1,5 @@
-vec3 lotteTonemap(vec3 colour) {
+vec3 lotteTonemap(vec3 colour)
+{
     // hard-coded parameters, calculated from contrast, shoulder, hdr_max, mid_in, mid_out.
     // see https://raw.githubusercontent.com/Opioid/tonemapper/master/tonemapper.py
     const float a = 1.1;

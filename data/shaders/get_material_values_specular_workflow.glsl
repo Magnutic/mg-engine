@@ -20,4 +20,3 @@ void get_material_values(vec3 tex_coord, out MaterialValues m_out)
     m_out.ambient_occlusion = 1.0;
     m_out.gloss = specular_glossiness.a;
 }
-
