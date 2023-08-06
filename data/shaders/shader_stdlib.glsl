@@ -10,3 +10,8 @@ float linearize_depth(float depth) {
     return ZNEAR * ZFAR / (ZFAR + depth * (ZNEAR - ZFAR));
 }
 
+float sqr(float v) {
+    return v * v;
+}
+
+const float pi = 3.1415926535;

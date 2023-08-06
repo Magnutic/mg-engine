@@ -1,9 +1,9 @@
-// Clamps distance to light as used in attenuation calculations. Prevents unbounded luminance.
-const float point_light_radius = 0.05f;
-
 // Calculate (light) attenuation
 float attenuate(float distance_sqr, float range_sqr_reciprocal)
 {
+    // Clamps distance to light as used in attenuation calculations. Prevents unbounded luminance.
+    const float point_light_radius = 0.05f;
+
     distance_sqr = max(distance_sqr, point_light_radius * point_light_radius);
 
     float attenuation = 1.0 - distance_sqr * range_sqr_reciprocal;
@@ -13,32 +13,127 @@ float attenuate(float distance_sqr, float range_sqr_reciprocal)
     return max(0.0, attenuation);
 }
 
-float pow5(float x) {
+//--------------------------------------------------------------------------------------------------
+// Microfacet normal distribution functions
+//--------------------------------------------------------------------------------------------------
+
+// The Blinn-Phong microfacet normal distribution function
+float blinn_phong_normal_distribution(float NdotH, float specular_power, float gloss)
+{
+    float Distribution = pow(NdotH, gloss) * specular_power;
+    Distribution *= (2.0 + specular_power) / (2.0 * pi);
+    return Distribution;
+}
+
+// The GGX microfacet normal distribution function
+float ggx_normal_distribution(float roughness, float NdotH)
+{
+    float roughness_sqr = roughness*roughness;
+    float distribution = NdotH * NdotH * (roughness_sqr - 1.0) + 1.0;
+    return roughness_sqr / (pi * sqr(distribution));
+}
+
+//--------------------------------------------------------------------------------------------------
+// Geometric shadowing functions
+//--------------------------------------------------------------------------------------------------
+
+float schlick_ggx_geometric_shadowing(float NdotL, float NdotV, float roughness)
+{
+    float k = roughness / 2;
+    float l = (NdotL)/ (NdotL * (1.0 - k) + k);
+    float v = (NdotV)/ (NdotV * (1.0 - k) + k);
+    return l * v;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Fresnel functions
+//--------------------------------------------------------------------------------------------------
+
+float pow5(float x)
+{
     return (x * x) * (x * x) * x;
 }
 
-// Calculate the Schlick approximation of the fresnel factor
-vec3 schlick(vec3 gloss, vec3 E, vec3 H)
+// Schlick approximation of the fresnel factor
+float schlick_fresnel(float i)
 {
-    float base = 1.0 - clamp(dot(E, H), 0.0, 1.0);
-    float exp  = pow5(base);
-    return gloss + (1.0 - gloss) * exp;
+    float base = 1.0 - clamp(i, 0.0, 1.0);
+    return pow5(base);
 }
+
+// Diffuse fresnel makes the BRDF more "correct", but has little visible impact.
+#if USE_DIFFUSE_FRESNEL
+// Normal incidence reflection calculation
+float diffuse_schlick_fresnel_f0(float NdotL, float NdotV, float LdotH, float roughness)
+{
+    float f90 = 0.5 + 2.0 * LdotH * LdotH * roughness;
+    float light_scatter = schlick_fresnel(NdotL);
+    float view_scatter  = schlick_fresnel(NdotV);
+    return (f90 * light_scatter + (1.0 - light_scatter)) *
+           (f90 * view_scatter  + (1.0 - view_scatter));
+}
+#endif
+
+// Fresnel factor for specularity using the schlick approximation.
+vec3 specular_schlick_fresnel(vec3 specular_colour, float LdotH)
+{
+    return specular_colour + (1.0 - specular_colour) * schlick_fresnel(LdotH);
+}
+
+//--------------------------------------------------------------------------------------------------
+// Light model function
+//--------------------------------------------------------------------------------------------------
 
 vec3 light(const LightInput light, const SurfaceParams surface, const vec3 view_direction)
 {
-    // Basic vectors for lighting calculation
+    float roughness = sqr(1.0 - surface.gloss); // TODO Arbitrary remapping of gloss response
+
+    // "Halfway vectors" for lighting calculations.
     vec3 h = normalize(light.direction + view_direction);
 
-    // Calculate lighting factors
+    // Lighting factors
     float NdotL = max(0.0, dot(surface.normal, light.direction));
     float NdotH = max(0.0, dot(surface.normal, h));
+    float NdotV = max(0.0, dot(surface.normal, view_direction));
+    float LdotH = max(0.0, dot(light.direction, h));
 
-    // PBR Blinn-Phong specular
-    float pwr              = exp2(10.0 * surface.gloss + 1.0);
-    vec3  fresnel          = schlick(surface.specular, view_direction, h);
-    vec3  specular_contrib = fresnel * ((pwr + 2.0) / 8.0) * pow(NdotH, pwr);
+    //----------------------------------------------------------------------------------------------
+    // Diffuse contribution
+    //----------------------------------------------------------------------------------------------
 
-    return (surface.albedo * NdotL + specular_contrib * NdotL) * light.colour * attenuate(light.distance_sqr, 1.0 / light.range_sqr);
+    vec3 diffuse_contribution = surface.albedo;
+
+#if USE_DIFFUSE_FRESNEL
+    diffuse_contribution *= diffuse_schlick_fresnel_f0(NdotL, NdotV, LdotH, roughness);
+#endif
+
+    //----------------------------------------------------------------------------------------------
+    // Specular contribution
+    //----------------------------------------------------------------------------------------------
+
+#if USE_BLINN_PHONG
+    // Blinn-Phong specular
+    float gloss = exp2(10.0 * surface.gloss + 1.0);
+    float power = ((gloss + 2.0) / 8.0);
+    float distribution = blinn_phong_normal_distribution(NdotH, power, gloss);
+#else
+    // GGX specular
+    float distribution = max(0.0, ggx_normal_distribution(roughness, NdotH));
+#endif
+
+    float geometric_shadow = schlick_ggx_geometric_shadowing(NdotL, NdotV, roughness);
+
+    // Fresnel factor
+    vec3 fresnel = specular_schlick_fresnel(surface.specular, LdotH);
+
+    // Compose specular contribuation
+    const float epsilon = 0.000001; // Avoid division by zero
+    vec3 specular_contribution = (distribution * fresnel * geometric_shadow) / (4.0 * NdotL * NdotV + epsilon);
+
+    //----------------------------------------------------------------------------------------------
+    // Final composition
+    //----------------------------------------------------------------------------------------------
+
+    vec3 lighting_model = (diffuse_contribution + specular_contribution) * NdotL;
+    return lighting_model * light.colour * attenuate(light.distance_sqr, 1.0 / light.range_sqr);
 }
-
