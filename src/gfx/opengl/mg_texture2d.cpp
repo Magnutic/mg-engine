@@ -121,34 +121,8 @@ TextureHandle generate_gl_render_target_texture(const RenderTargetParams& params
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    // If possible, allocate storage in one go (depends on availability of OpenGL extension)
-    static const bool have_texture_storage = (GLAD_GL_ARB_texture_storage != 0);
-
-    if (have_texture_storage) {
-        glTexStorage2D(GL_TEXTURE_2D,
-                       info.mip_levels,
-                       info.internal_format,
-                       info.width,
-                       info.height);
-    }
-    else {
-        for (auto i = 0; i < info.mip_levels; ++i) {
-            const auto mip_width = info.width >> i;
-            const auto mip_height = info.height >> i;
-
-            // Allocate storage for texture target
-            glTexImage2D(GL_TEXTURE_2D,                   // target
-                         i,                               // miplevel
-                         as<GLint>(info.internal_format), // internalformat
-                         mip_width,                       // texture width
-                         mip_height,                      // texture height
-                         0,                               // border (must be 0)
-                         info.format,                     // format
-                         info.type,                       // pixel data type
-                         nullptr                          // pixel data
-            );
-        }
-    }
+    // Allocate storage.
+    glTexStorage2D(GL_TEXTURE_2D, info.mip_levels, info.internal_format, info.width, info.height);
 
     MG_CHECK_GL_ERROR();
 
@@ -227,7 +201,7 @@ GlTextureInfo gl_texture_info(const TextureResource& resource,
     }
 
     // Get anisotropic filtering level
-    glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &info.aniso);
+    glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &info.aniso);
 
     return info;
 }
@@ -289,8 +263,7 @@ void set_sampling_params(const TextureSettings& settings) noexcept
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
 }
 
-void upload_compressed_mip(bool preallocated,
-                           int32_t mip_index,
+void upload_compressed_mip(int32_t mip_index,
                            const GlTextureInfo& info,
                            int32_t size,
                            const GLvoid* data) noexcept
@@ -298,23 +271,15 @@ void upload_compressed_mip(bool preallocated,
     const auto width = max(1, info.width >> mip_index);
     const auto height = max(1, info.height >> mip_index);
 
-    if (preallocated) {
-        // N.B. OpenGL docs are misleading about the 'format' param, it should have been called
-        // 'internalformat' to avoid confusion with glTexImage2D's 'format' parameter.
-        glCompressedTexSubImage2D(
-            GL_TEXTURE_2D, mip_index, 0, 0, width, height, info.internal_format, size, data);
-
-        return;
-    }
-
-    glCompressedTexImage2D(
-        GL_TEXTURE_2D, mip_index, info.internal_format, width, height, 0, size, data);
+    // N.B. OpenGL docs are misleading about the 'format' param, it should have been called
+    // 'internalformat' to avoid confusion with glTexImage2D's 'format' parameter.
+    glCompressedTexSubImage2D(
+        GL_TEXTURE_2D, mip_index, 0, 0, width, height, info.internal_format, size, data);
 
     MG_CHECK_GL_ERROR();
 }
 
-void upload_uncompressed_mip(bool preallocated,
-                             int32_t mip_index,
+void upload_uncompressed_mip(int32_t mip_index,
                              const GlTextureInfo& info,
                              int32_t /* size */,
                              const GLvoid* data) noexcept
@@ -322,23 +287,7 @@ void upload_uncompressed_mip(bool preallocated,
     const auto width = info.width >> mip_index;
     const auto height = info.height >> mip_index;
 
-    if (preallocated) {
-        glTexSubImage2D(
-            GL_TEXTURE_2D, mip_index, 0, 0, width, height, info.format, info.type, data);
-
-        return;
-    }
-
-    // N.B. internalformat is unsigned in glCompressedTexImage2D, but signed in glTexImage2D.
-    glTexImage2D(GL_TEXTURE_2D,
-                 mip_index,
-                 as<GLint>(info.internal_format),
-                 width,
-                 height,
-                 0,
-                 info.format,
-                 info.type,
-                 data);
+    glTexSubImage2D(GL_TEXTURE_2D, mip_index, 0, 0, width, height, info.format, info.type, data);
 
     MG_CHECK_GL_ERROR();
 }
@@ -353,18 +302,11 @@ TextureHandle generate_gl_texture_from(const TextureResource& resource,
     glBindTexture(GL_TEXTURE_2D, texture_id);
 
     // Set anisotropic filtering level
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, info.aniso);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, info.aniso);
 
-    // If possible, allocate storage in one go (depends on availability of OpenGL extension)
-    static const bool preallocate = (GLAD_GL_ARB_texture_storage != 0);
+    // Allocate storage.
 
-    if (preallocate) {
-        glTexStorage2D(GL_TEXTURE_2D,
-                       info.mip_levels,
-                       info.internal_format,
-                       info.width,
-                       info.height);
-    }
+    glTexStorage2D(GL_TEXTURE_2D, info.mip_levels, info.internal_format, info.width, info.height);
 
     decltype(upload_compressed_mip)* upload_function = (info.compressed ? upload_compressed_mip
                                                                         : upload_uncompressed_mip);
@@ -375,7 +317,7 @@ TextureHandle generate_gl_texture_from(const TextureResource& resource,
         auto pixels = mip_data.data.data();
         auto size = as<int32_t>(mip_data.data.size_bytes());
 
-        upload_function(preallocate, mip_index, info, size, pixels);
+        upload_function(mip_index, info, size, pixels);
     }
 
     set_sampling_params(settings);
