@@ -35,11 +35,11 @@ using Index = uint32_t;
 
 namespace { // internal linkage
 
-constexpr uint32_t k_matrix_ubo_slot = 0;
-constexpr uint32_t k_skinning_matrices_ubo_slot = 1;
-constexpr uint32_t k_frame_ubo_slot = 2;
-constexpr uint32_t k_light_ubo_slot = 3;
-constexpr uint32_t k_material_params_ubo_slot = 4;
+constexpr uint32_t k_matrix_descriptor_location = 0;
+constexpr uint32_t k_skinning_matrices_descriptor_location = 1;
+constexpr uint32_t k_frame_descriptor_location = 2;
+constexpr uint32_t k_light_descriptor_location = 3;
+constexpr uint32_t k_material_parameters_binding_location = 4;
 
 constexpr uint32_t k_sampler_tile_data_index = 8;
 constexpr uint32_t k_sampler_light_index_index = 9; // Index of sampler for light indices
@@ -162,23 +162,23 @@ PipelinePool make_mesh_pipeline_pool(const MeshPipelinePoolKind kind,
     auto& sampler_light_index_descriptor = config.shared_input_layout[5];
 
     matrix_block_descriptor.input_name = "MatrixBlock";
-    matrix_block_descriptor.location = k_matrix_ubo_slot;
+    matrix_block_descriptor.location = k_matrix_descriptor_location;
     matrix_block_descriptor.type = PipelineInputType::UniformBuffer;
     matrix_block_descriptor.mandatory = true;
 
     skinning_matrix_block_descriptor.input_name = "SkinningMatrixBlock";
-    skinning_matrix_block_descriptor.location = k_skinning_matrices_ubo_slot;
+    skinning_matrix_block_descriptor.location = k_skinning_matrices_descriptor_location;
     skinning_matrix_block_descriptor.type = PipelineInputType::UniformBuffer;
     skinning_matrix_block_descriptor.mandatory = false;
 
     frame_block_descriptor.input_name = "FrameBlock";
-    frame_block_descriptor.location = k_frame_ubo_slot;
+    frame_block_descriptor.location = k_frame_descriptor_location;
     frame_block_descriptor.type = PipelineInputType::UniformBuffer;
     frame_block_descriptor.mandatory = true;
 
     light_block_descriptor.input_name = "LightBlock";
     light_block_descriptor.type = PipelineInputType::UniformBuffer;
-    light_block_descriptor.location = k_light_ubo_slot;
+    light_block_descriptor.location = k_light_descriptor_location;
     light_block_descriptor.mandatory = false;
 
     sampler_tile_data_descriptor.input_name = "_sampler_tile_data";
@@ -191,7 +191,7 @@ PipelinePool make_mesh_pipeline_pool(const MeshPipelinePoolKind kind,
     sampler_light_index_descriptor.location = k_sampler_light_index_index;
     sampler_light_index_descriptor.mandatory = false;
 
-    config.material_params_ubo_slot = k_material_params_ubo_slot;
+    config.material_parameters_binding_location = k_material_parameters_binding_location;
 
     return PipelinePool(std::move(config));
 }
@@ -234,11 +234,11 @@ void bind_shared_inputs(MeshRenderer::Impl& data, const ICamera& cam, RenderPara
     data.frame_ubo.set_data(byte_representation(frame_block));
 
     const std::array shared_bindings = {
-        PipelineInputBinding{ k_matrix_ubo_slot, data.matrix_uniform_handler.ubo() },
-        PipelineInputBinding{ k_skinning_matrices_ubo_slot,
+        PipelineInputBinding{ k_matrix_descriptor_location, data.matrix_uniform_handler.ubo() },
+        PipelineInputBinding{ k_skinning_matrices_descriptor_location,
                               data.skinning_matrix_uniform_handler.ubo() },
-        PipelineInputBinding{ k_frame_ubo_slot, data.frame_ubo },
-        PipelineInputBinding{ k_light_ubo_slot, data.light_buffers.light_block_buffer },
+        PipelineInputBinding{ k_frame_descriptor_location, data.frame_ubo },
+        PipelineInputBinding{ k_light_descriptor_location, data.light_buffers.light_block_buffer },
         PipelineInputBinding{ k_sampler_tile_data_index, data.light_buffers.clusters_texture },
         PipelineInputBinding{ k_sampler_light_index_index, data.light_buffers.light_index_texture }
     };

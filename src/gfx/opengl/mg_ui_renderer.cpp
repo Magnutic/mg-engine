@@ -36,8 +36,8 @@ using glm::vec4;
 const std::array<float, 8> quad_vertices = { { 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f } };
 
 // Binding slots for UniformBufferObjects.
-constexpr uint32_t k_draw_params_ubo_slot = 0;
-constexpr uint32_t k_material_params_ubo_slot = 1;
+constexpr uint32_t k_draw_params_descriptor_location = 0;
+constexpr uint32_t k_material_parameters_binding_location = 1;
 
 struct DrawParamsBlock {
     mat4 M;
@@ -117,7 +117,7 @@ PipelinePool make_ui_pipeline_factory()
         PipelineInputDescriptor& draw_params_block_descriptor = config.shared_input_layout[0];
         draw_params_block_descriptor.input_name = "DrawParamsBlock";
         draw_params_block_descriptor.type = PipelineInputType::UniformBuffer;
-        draw_params_block_descriptor.location = k_draw_params_ubo_slot;
+        draw_params_block_descriptor.location = k_draw_params_descriptor_location;
         draw_params_block_descriptor.mandatory = true;
     }
 
@@ -127,7 +127,7 @@ PipelinePool make_ui_pipeline_factory()
 
     config.on_error_shader_code = { {}, {}, FragmentShaderCode{ ui_fragment_shader_fallback } };
 
-    config.material_params_ubo_slot = k_material_params_ubo_slot;
+    config.material_parameters_binding_location = k_material_parameters_binding_location;
 
     return PipelinePool(std::move(config));
 }
@@ -274,7 +274,7 @@ void setup_material_pipeline(UIRenderer::Impl& data, const mat4& M, const Materi
     block.M = M;
     data.draw_params_ubo.set_data(byte_representation(block));
 
-    std::array input_bindings = { PipelineInputBinding(k_draw_params_ubo_slot,
+    std::array input_bindings = { PipelineInputBinding(k_draw_params_descriptor_location,
                                                        data.draw_params_ubo) };
     Pipeline::bind_shared_inputs(input_bindings);
 

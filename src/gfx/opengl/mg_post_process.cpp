@@ -30,8 +30,8 @@ const std::array<float, 12> quad_vertices = { -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f, 
 constexpr uint32_t k_sampler_colour_texture_unit = 8;
 constexpr uint32_t k_sampler_depth_texture_unit = 9;
 
-constexpr uint32_t k_material_params_ubo_slot = 0;
-constexpr uint32_t k_frame_block_ubo_slot = 1;
+constexpr uint32_t k_material_parameters_binding_location = 0;
+constexpr uint32_t k_frame_block_descriptor_location = 1;
 
 struct FrameBlock {
     float z_near;
@@ -99,7 +99,7 @@ PipelinePool make_post_process_pipeline_pool()
         PipelineInputDescriptor& frame_block_descriptor = config.shared_input_layout[0];
         frame_block_descriptor.input_name = "FrameBlock";
         frame_block_descriptor.type = PipelineInputType::UniformBuffer;
-        frame_block_descriptor.location = k_frame_block_ubo_slot;
+        frame_block_descriptor.location = k_frame_block_descriptor_location;
         frame_block_descriptor.mandatory = false;
 
         PipelineInputDescriptor& sampler_colour_descriptor = config.shared_input_layout[1];
@@ -115,7 +115,7 @@ PipelinePool make_post_process_pipeline_pool()
         sampler_depth_descriptor.mandatory = false;
     }
 
-    config.material_params_ubo_slot = k_material_params_ubo_slot;
+    config.material_parameters_binding_location = k_material_parameters_binding_location;
 
     return PipelinePool(std::move(config));
 }
@@ -200,7 +200,7 @@ void PostProcessRenderer::post_process(const Context& context,
                                                  m_impl->binding_context.value());
 
     std::array shared_input_bindings = {
-        PipelineInputBinding{ k_frame_block_ubo_slot, m_impl->frame_block_ubo },
+        PipelineInputBinding{ k_frame_block_descriptor_location, m_impl->frame_block_ubo },
         PipelineInputBinding{ k_sampler_colour_texture_unit, sampler_colour },
         PipelineInputBinding{ k_sampler_depth_texture_unit, TextureHandle::null_handle() }
     };
@@ -231,7 +231,7 @@ void PostProcessRenderer::post_process(const Context& context,
     m_impl->frame_block_ubo.set_data(byte_representation(frame_block));
 
     std::array shared_input_bindings = {
-        PipelineInputBinding{ k_frame_block_ubo_slot, m_impl->frame_block_ubo },
+        PipelineInputBinding{ k_frame_block_descriptor_location, m_impl->frame_block_ubo },
         PipelineInputBinding{ k_sampler_colour_texture_unit, sampler_colour },
         PipelineInputBinding{ k_sampler_depth_texture_unit, sampler_depth }
     };

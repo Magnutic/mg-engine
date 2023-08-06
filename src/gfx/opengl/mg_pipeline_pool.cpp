@@ -227,7 +227,8 @@ Opt<Pipeline> make_pipeline(const ShaderCompileResult& compiled_shader,
 
 // Create a PipelineInputLayout corresponding to the given material.
 Array<PipelineInputDescriptor>
-generate_material_input_layout(const Material& material, const uint32_t material_params_ubo_slot)
+generate_material_input_layout(const Material& material,
+                               const uint32_t material_parameters_binding_location)
 {
     const auto& samplers = material.samplers();
 
@@ -243,7 +244,7 @@ generate_material_input_layout(const Material& material, const uint32_t material
     PipelineInputDescriptor& material_params_descriptor = descriptors.back();
     material_params_descriptor.input_name = "MaterialParams";
     material_params_descriptor.type = PipelineInputType::UniformBuffer;
-    material_params_descriptor.location = material_params_ubo_slot;
+    material_params_descriptor.location = material_parameters_binding_location;
     material_params_descriptor.mandatory = false;
 
     return descriptors;
@@ -260,8 +261,8 @@ Pipeline make_fallback_pipeline(const PipelinePoolConfig& config, const Material
 
     MG_ASSERT(compile_result.error_flags == 0);
 
-    auto material_input_layout = generate_material_input_layout(material,
-                                                                config.material_params_ubo_slot);
+    auto material_input_layout =
+        generate_material_input_layout(material, config.material_parameters_binding_location);
     Opt<Pipeline> pipeline =
         make_pipeline(compile_result, config.shared_input_layout, material_input_layout);
 
@@ -284,8 +285,8 @@ Pipeline make_pipeline_for_material(const PipelinePoolConfig& config, const Mate
         return make_fallback_pipeline(config, material);
     }
 
-    auto material_input_layout = generate_material_input_layout(material,
-                                                                config.material_params_ubo_slot);
+    auto material_input_layout =
+        generate_material_input_layout(material, config.material_parameters_binding_location);
     Opt<Pipeline> opt_pipeline =
         make_pipeline(compile_result, config.shared_input_layout, material_input_layout);
 
@@ -363,7 +364,7 @@ void PipelinePool::bind_material_pipeline(const Material& material,
     small_vector<PipelineInputBinding, 9> material_input_bindings;
 
     material_input_bindings.push_back(
-        { m_impl->config.material_params_ubo_slot, m_impl->material_params_ubo });
+        { m_impl->config.material_parameters_binding_location, m_impl->material_params_ubo });
 
     for (const auto& [i, sampler] : enumerate<uint32_t>(material.samplers())) {
         material_input_bindings.push_back({ i, sampler.texture });

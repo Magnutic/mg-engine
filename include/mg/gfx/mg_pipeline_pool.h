@@ -47,7 +47,10 @@ struct PipelinePoolConfig {
     ShaderCode preamble_shader_code;
     ShaderCode on_error_shader_code;
 
-    uint32_t material_params_ubo_slot = {};
+    // Binding location for the material parameters.
+    // This should be chosen to not overlap with any of the shared inputs used by the pipeline,
+    // as defined in shared_input_layout.
+    uint32_t material_parameters_binding_location = {};
 
     Array<PipelineInputDescriptor> shared_input_layout;
 };

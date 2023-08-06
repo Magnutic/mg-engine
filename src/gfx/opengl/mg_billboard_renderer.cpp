@@ -36,8 +36,8 @@ namespace Mg::gfx {
 namespace {
 
 // Binding slots for UniformBufferObjects.
-constexpr uint32_t k_camera_ubo_slot = 0;
-constexpr uint32_t k_material_params_ubo_slot = 1;
+constexpr uint32_t k_camera_descriptor_location = 0;
+constexpr uint32_t k_material_parameters_binding_location = 1;
 
 /** Uniform block for passing camera parameters to shader. */
 struct CameraBlock {
@@ -138,7 +138,7 @@ PipelinePool make_billboard_pipeline_factory()
         PipelineInputDescriptor& camera_block_descriptor = config.shared_input_layout[0];
         camera_block_descriptor.input_name = "CameraBlock";
         camera_block_descriptor.type = PipelineInputType::UniformBuffer;
-        camera_block_descriptor.location = k_camera_ubo_slot;
+        camera_block_descriptor.location = k_camera_descriptor_location;
         camera_block_descriptor.mandatory = true;
     }
 
@@ -150,7 +150,7 @@ PipelinePool make_billboard_pipeline_factory()
                                     GeometryShaderCode{ "" },
                                     FragmentShaderCode{ billboard_fragment_shader_fallback } };
 
-    config.material_params_ubo_slot = k_material_params_ubo_slot;
+    config.material_parameters_binding_location = k_material_parameters_binding_location;
 
     return PipelinePool(std::move(config));
 }
@@ -278,7 +278,7 @@ void BillboardRenderer::render(const IRenderTarget& render_target,
         m_impl->camera_ubo.set_data(byte_representation(camera_block));
     }
 
-    const std::array shared_inputs = { PipelineInputBinding(k_camera_ubo_slot,
+    const std::array shared_inputs = { PipelineInputBinding(k_camera_descriptor_location,
                                                             m_impl->camera_ubo) };
     Pipeline::bind_shared_inputs(shared_inputs);
 
