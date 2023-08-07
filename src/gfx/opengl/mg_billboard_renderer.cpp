@@ -51,7 +51,7 @@ struct CameraBlock {
 //--------------------------------------------------------------------------------------------------
 
 constexpr auto billboard_vertex_shader_preamble = R"(
-#version 330 core
+#version 440 core
 
 layout(location = 0) in vec3 v_position;
 layout(location = 1) in vec4 v_colour;
@@ -71,7 +71,7 @@ out vec2 vs_out_size;
 )";
 
 constexpr auto billboard_geometry_shader = R"(
-#version 330 core
+#version 440 core
 
 layout(points) in;
 layout(triangle_strip) out;
@@ -108,7 +108,7 @@ void main() {
 )";
 
 constexpr auto billboard_fragment_shader_preamble = R"(
-#version 330 core
+#version 440 core
 
 layout (location = 0) out vec4 frag_out;
 

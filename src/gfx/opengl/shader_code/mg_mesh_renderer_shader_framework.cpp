@@ -365,7 +365,7 @@ mesh_renderer_vertex_shader_framework_code(const MeshRendererFrameworkShaderPara
     std::string result;
     result.reserve(vertex_framework_code.size() + 500);
 
-    result += "#version 330 core\n";
+    result += "#version 440 core\n";
     result += vertex_fragment_common_code;
     add_define(result, "MATRIX_ARRAY_SIZE", params.matrix_array_size);
     add_define(result, "SKINNING_MATRIX_ARRAY_SIZE", params.skinning_matrix_array_size);
@@ -397,7 +397,7 @@ mesh_renderer_fragment_shader_framework_code(const MeshRendererFrameworkShaderPa
     std::string result;
     result.reserve(fragment_framework_code.size() + 500);
 
-    result += "#version 330 core\n";
+    result += "#version 440 core\n";
     result += vertex_fragment_common_code;
 
     // Defines that configure the shader to match the given params.

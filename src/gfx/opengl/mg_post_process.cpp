@@ -39,7 +39,7 @@ struct FrameBlock {
 };
 
 constexpr const char* post_process_vs = R"(
-#version 330 core
+#version 440 core
 
 layout (location = 0) in vec2 v_pos;
 
@@ -52,7 +52,7 @@ void main() {
 )";
 
 constexpr const char* post_process_fs_preamble = R"(
-#version 330 core
+#version 440 core
 
 layout (location = 0) out vec4 frag_out;
 

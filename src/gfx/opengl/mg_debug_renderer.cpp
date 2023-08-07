@@ -34,7 +34,7 @@ using glm::vec2, glm::vec3, glm::vec4, glm::mat4;
 namespace {
 
 const char* vs_code = R"(
-    #version 330 core
+    #version 440 core
     layout(location = 0) in vec3 vert_position;
 
     uniform mat4 MVP;
@@ -46,7 +46,7 @@ const char* vs_code = R"(
 )";
 
 const char* fs_code = R"(
-    #version 330 core
+    #version 440 core
     uniform vec4 colour;
 
     layout(location = 0) out vec4 frag_colour;

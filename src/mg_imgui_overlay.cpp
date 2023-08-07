@@ -26,7 +26,7 @@ ImguiOverlay::ImguiOverlay(const Window& window)
     ImGui::StyleColorsDark();
 
     // Setup Dear Imgui platform and renderer backends.
-    const char* glsl_version = "#version 330 core";
+    const char* glsl_version = "#version 440 core";
     ImGui_ImplGlfw_InitForOpenGL(window.glfw_window(), true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 

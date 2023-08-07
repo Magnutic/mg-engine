@@ -48,7 +48,7 @@ struct DrawParamsBlock {
 //--------------------------------------------------------------------------------------------------
 
 constexpr auto ui_vertex_shader = R"(
-#version 330 core
+#version 440 core
 
 layout(location = 0) in vec2 v_position;
 
@@ -65,7 +65,7 @@ void main() {
 )";
 
 constexpr auto ui_fragment_shader_preamble = R"(
-#version 330 core
+#version 440 core
 
 layout (location = 0) out vec4 frag_out;
 
@@ -79,7 +79,7 @@ void main() {
 )";
 
 constexpr auto text_shader_vs = R"(
-#version 330 core
+#version 440 core
 
 layout(location = 0) in vec2 v_position;
 layout(location = 1) in vec2 v_texcoord;
@@ -97,7 +97,7 @@ void main() {
 )";
 
 constexpr auto text_shader_fs = R"(
-#version 330 core
+#version 440 core
 layout (location = 0) out vec4 frag_out;
 in vec2 tex_coord;
 uniform sampler2D font_texture;
