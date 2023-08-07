@@ -86,7 +86,10 @@ vec3 specular_schlick_fresnel(vec3 specular_colour, float LdotH)
 
 vec3 light(const LightInput light, const SurfaceParams surface, const vec3 view_direction)
 {
-    float roughness = sqr(sqr(1.0 - surface.gloss)); // TODO Arbitrary remapping of gloss response
+    // TODO This is an arbitrary remapping of gloss response.
+    // gloss of 1.0 seems to have unexpected results; probably makes no mathematical/physical sense
+    // anyway.
+    float roughness = sqr(sqr(1.0 - min(0.99, surface.gloss)));
 
     // "Halfway vectors" for lighting calculations.
     vec3 h = normalize(light.direction + view_direction);
