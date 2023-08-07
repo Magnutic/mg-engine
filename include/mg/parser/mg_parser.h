@@ -41,7 +41,7 @@ struct OptionDeclaration {
 };
 
 struct MaterialParseResult {
-    gfx::BlendMode blend_mode;
+    gfx::BlendMode blend_mode = gfx::blend_mode_constants::bm_default;
 
     std::vector<SamplerDeclaration> samplers;
     std::vector<ParameterDeclaration> parameters;

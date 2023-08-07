@@ -11,6 +11,7 @@
 #pragma once
 
 #include "mg/core/mg_value.h"
+#include "mg/gfx/mg_blend_modes.h"
 #include "mg/gfx/mg_shader_related_types.h"
 #include "mg/resource_cache/mg_base_resource.h"
 #include "mg/resource_cache/mg_resource_handle.h"
@@ -49,7 +50,7 @@ protected:
     LoadResourceResult load_resource_impl(ResourceLoadingInput& input) override;
 
 private:
-    gfx::BlendMode m_blend_mode;
+    gfx::BlendMode m_blend_mode = gfx::blend_mode_constants::bm_default;
     std::vector<parser::ParameterDeclaration> m_parameters;
     std::vector<parser::SamplerDeclaration> m_samplers;
     std::vector<parser::OptionDeclaration> m_options;
