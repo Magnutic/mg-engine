@@ -44,6 +44,9 @@ struct ShaderCode {
 };
 
 struct PipelinePoolConfig {
+    // Name for the pipeline pool. Used for logging.
+    std::string name;
+
     ShaderCode preamble_shader_code;
     ShaderCode on_error_shader_code;
 

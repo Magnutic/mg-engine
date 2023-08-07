@@ -10,6 +10,7 @@
 TEST_CASE("PipelinePoolFromGoodConfig")
 {
     Mg::gfx::PipelinePoolConfig config;
+    config.name = "Good";
     config.material_parameters_binding_location = 0;
     config.shared_input_layout = Mg::Array<Mg::gfx::PipelineInputDescriptor>::make(2);
 
@@ -30,6 +31,7 @@ TEST_CASE("PipelinePoolFromGoodConfig")
 TEST_CASE("PipelinePoolFromBadConfig")
 {
     Mg::gfx::PipelinePoolConfig config;
+    config.name = "Bad";
     config.material_parameters_binding_location = 0;
     config.shared_input_layout = Mg::Array<Mg::gfx::PipelineInputDescriptor>::make(2);
 
@@ -44,12 +46,43 @@ TEST_CASE("PipelinePoolFromBadConfig")
 TEST_CASE("PipelinePoolFromBadConfig2")
 {
     Mg::gfx::PipelinePoolConfig config;
+    config.name = "Bad2";
     config.material_parameters_binding_location = 0;
     config.shared_input_layout = Mg::Array<Mg::gfx::PipelineInputDescriptor>::make(2);
 
     config.shared_input_layout[0].input_name = "Input1";
     config.shared_input_layout[0].location = 1; // texture not allowed in 0-7 (reserved for material
                                                 // samplers)
+    config.shared_input_layout[0].type = Mg::gfx::PipelineInputType::Sampler2D;
+    config.shared_input_layout[0].mandatory = false;
+
+    REQUIRE_THROWS(Mg::gfx::validate(config));
+}
+
+TEST_CASE("PipelinePoolFromBadConfig3")
+{
+    Mg::gfx::PipelinePoolConfig config;
+    config.name = ""; // name not allowed to be empty
+    config.material_parameters_binding_location = 0;
+    config.shared_input_layout = Mg::Array<Mg::gfx::PipelineInputDescriptor>::make(2);
+
+    config.shared_input_layout[0].input_name = "Input1";
+    config.shared_input_layout[0].location = 8;
+    config.shared_input_layout[0].type = Mg::gfx::PipelineInputType::Sampler2D;
+    config.shared_input_layout[0].mandatory = false;
+
+    REQUIRE_THROWS(Mg::gfx::validate(config));
+}
+
+TEST_CASE("PipelinePoolFromBadConfig4")
+{
+    Mg::gfx::PipelinePoolConfig config;
+    config.name = "Bad4";
+    config.material_parameters_binding_location = 0;
+    config.shared_input_layout = Mg::Array<Mg::gfx::PipelineInputDescriptor>::make(2);
+
+    config.shared_input_layout[0].input_name = ""; // Inputs must have a name.
+    config.shared_input_layout[0].location = 8;
     config.shared_input_layout[0].type = Mg::gfx::PipelineInputType::Sampler2D;
     config.shared_input_layout[0].mandatory = false;
 

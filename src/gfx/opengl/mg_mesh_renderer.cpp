@@ -147,6 +147,7 @@ PipelinePool make_mesh_pipeline_pool(const MeshPipelinePoolKind kind,
         internal::mesh_renderer_fragment_shader_framework_code(params);
 
     PipelinePoolConfig config{};
+    config.name = "MeshRenderer";
     config.preamble_shader_code = { VertexShaderCode{ framework_vertex_code },
                                     {},
                                     FragmentShaderCode{ framework_fragment_code } };

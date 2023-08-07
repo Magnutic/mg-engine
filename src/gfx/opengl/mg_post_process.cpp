@@ -87,6 +87,7 @@ PipelinePool make_post_process_pipeline_pool()
     MG_GFX_DEBUG_GROUP("make_post_process_pipeline_pool")
 
     PipelinePoolConfig config{};
+    config.name = "PostProcessRenderer";
 
     config.preamble_shader_code = { VertexShaderCode{ post_process_vs },
                                     {},

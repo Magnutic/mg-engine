@@ -32,6 +32,8 @@ namespace Mg::gfx {
 
 void validate(const PipelinePoolConfig& config)
 {
+    MG_ASSERT(!config.name.empty() && "PipelinePoolConfig should have a name.");
+
     // Check for binding location overlaps.
     {
         small_vector<uint32_t, 10> binding_locations;
@@ -44,22 +46,28 @@ void validate(const PipelinePoolConfig& config)
 
         rng::sort(binding_locations);
         const bool has_duplicate = rng::adjacent_find(binding_locations) != binding_locations.end();
-        MG_ASSERT(!has_duplicate && "PipelineConfig has overlapping binding locations.");
+        MG_ASSERT(!has_duplicate && "PipelinePoolConfig has overlapping binding locations.");
     }
 
     // Check for incorrectly used texture binding locations.
-    for (auto& input_location : config.shared_input_layout) {
-        switch (input_location.type) {
+    for (auto& input_descriptor : config.shared_input_layout) {
+        switch (input_descriptor.type) {
         case PipelineInputType::BufferTexture:
             [[fallthrough]];
 
         case PipelineInputType::Sampler2D:
-            MG_ASSERT(input_location.location >= 8 &&
+            MG_ASSERT(input_descriptor.location >= 8 &&
                       "Texture slots [0,7] are reserved for material samplers.");
 
         default:
             break;
         }
+    }
+
+    // Check that all input descriptors have a name
+    for (auto& input_descriptor : config.shared_input_layout) {
+        MG_ASSERT(!input_descriptor.input_name.str_view().empty() &&
+                  "PipelineInputDescriptors must have a name.");
     }
 }
 
@@ -290,7 +298,7 @@ generate_material_input_layout(const Material& material,
 // Make Pipeline to use as fallback when shaders fail to compile.
 Pipeline make_fallback_pipeline(const PipelinePoolConfig& config, const Material& material)
 {
-    log.message("Using error-fallback shader.");
+    log.message("[PipelinePool '{}'] Using error-fallback shader.", config.name);
 
     const ShaderCode fallback_shader_code = append_shader_code(config.preamble_shader_code,
                                                                config.on_error_shader_code);
@@ -312,7 +320,9 @@ Pipeline make_pipeline_for_material(const PipelinePoolConfig& config, const Mate
 
     const std::string_view shader_name = material.shader().resource_id().str_view();
 
-    log.message("Compiling permutation of shader '{}'.", shader_name);
+    log.message("[PipelinePool '{}'] Compiling permutation of shader '{}'.",
+                config.name,
+                shader_name);
 
     // Assemble and compile shader code for this particular material.
     const ShaderCode shader_code = assemble_shader_code(config.preamble_shader_code, material);

@@ -129,9 +129,11 @@ constexpr auto billboard_fragment_shader_fallback = R"(
     void main() { frag_out = vec4(1.0, 0.0, 1.0, 1.0); }
 )";
 
-PipelinePool make_billboard_pipeline_factory()
+PipelinePool make_billboard_pipeline_pool()
 {
     PipelinePoolConfig config{};
+
+    config.name = "BillboardRenderer";
 
     config.shared_input_layout = Array<PipelineInputDescriptor>::make(1);
     {
@@ -178,7 +180,7 @@ void BillboardRenderList::sort_farthest_first(const ICamera& camera) noexcept
 struct BillboardRenderer::Impl {
     UniformBuffer camera_ubo{ sizeof(CameraBlock) };
 
-    PipelinePool pipeline_pool = make_billboard_pipeline_factory();
+    PipelinePool pipeline_pool = make_billboard_pipeline_pool();
 
     // Size of VBO
     size_t vertex_buffer_size = 0;

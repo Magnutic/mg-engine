@@ -108,9 +108,10 @@ void main() {
 
 //--------------------------------------------------------------------------------------------------
 
-PipelinePool make_ui_pipeline_factory()
+PipelinePool make_ui_pipeline_pool()
 {
     PipelinePoolConfig config = {};
+    config.name = "UIRenderer";
 
     config.shared_input_layout = Array<PipelineInputDescriptor>::make(1);
     {
@@ -202,7 +203,7 @@ mat4 make_transform_matrix(const UIPlacement& placement,
 } // namespace
 
 struct UIRenderer::Impl {
-    PipelinePool pipeline_pool = make_ui_pipeline_factory();
+    PipelinePool pipeline_pool = make_ui_pipeline_pool();
 
     UniformBuffer draw_params_ubo{ sizeof(DrawParamsBlock) };
 
