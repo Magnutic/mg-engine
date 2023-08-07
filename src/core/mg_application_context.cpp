@@ -120,6 +120,11 @@ void ApplicationContext::run_main_loop(IApplication& application)
     double last_loop_time = time_since_init();
     double last_render_time = last_loop_time;
 
+    // Run two simulation steps before rendering. One for initializing before starting to render,
+    // and a second to have two valid results to interpolate between.
+    application.simulation_step();
+    application.simulation_step();
+
     for (;;) {
         // Check if it is time to stop.
         {
