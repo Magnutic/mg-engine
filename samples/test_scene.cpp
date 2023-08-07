@@ -175,7 +175,7 @@ void Scene::init()
     make_input_map();
 
     physics_world = std::make_unique<Mg::physics::World>();
-    actor = std::make_unique<Actor>(*physics_world, glm::vec3(0.0f, 0.0f, 5.0f), 70.0f);
+    actor = std::make_unique<Actor>(*physics_world, glm::vec3(0.0f, 0.0f, 0.0f), 70.0f);
 
     load_models();
     load_materials();
@@ -251,7 +251,7 @@ void Scene::simulation_step()
         camera_locked = !camera_locked;
     }
     if (input_map.was_pressed("reset")) {
-        actor->character_controller.set_position({ 0.0f, 0.0f, 2.0f });
+        actor->character_controller.set_position({ 0.0f, 0.0f, 0.0f });
         actor->character_controller.reset();
     }
     if (input_map.is_held("crouch")) {
@@ -957,7 +957,7 @@ void Scene::load_models()
     add_dynamic_model("meshes/misc/hestdraugr.mgm"_id,
                       std::array{ MaterialFileAssignment{ size_t{ 0 }, "actors/HestDraugr"_id } },
                       std::array{ "RIM_LIGHT"_id },
-                      { -2.0f, 2.0f, 1.0f },
+                      { -2.0f, 2.0f, 1.05f },
                       Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
                       { 1.0f, 1.0f, 1.0f },
                       true);
@@ -965,7 +965,7 @@ void Scene::load_models()
     add_dynamic_model("meshes/box.mgm",
                       std::array{ MaterialFileAssignment{ size_t{ 0 }, "crate"_id } },
                       std::array{ "PARALLAX"_id },
-                      { 0.0f, 0.0f, 10.0f },
+                      { 0.0f, 2.0f, 0.5f },
                       Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
                       { 1.0f, 1.0f, 1.0f },
                       true);
