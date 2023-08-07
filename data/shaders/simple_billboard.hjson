@@ -45,7 +45,7 @@ vertex_code:
 fragment_code:
     '''
     void main() {
-       frag_out = fs_in_colour * texture2D(sampler_diffuse, tex_coord);
+       frag_out = fs_in_colour * texture(sampler_diffuse, tex_coord);
 
     #ifdef A_TEST
        if (frag_out.a < 0.5) { discard; }
