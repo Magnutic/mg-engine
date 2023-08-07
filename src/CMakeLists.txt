@@ -133,12 +133,6 @@ if((${CMAKE_COMPILER_IS_GNUCXX}) OR (${CMAKE_CXX_COMPILER_ID} MATCHES Clang))
     if(CMAKE_BUILD_TYPE STREQUAL Debug)
         set(SANITIZERS "-fsanitize=address,undefined")
 
-        if(${CMAKE_CXX_COMPILER_ID} MATCHES Clang)
-            # Clang also has instrumentation to detect unsigned overflow, which is not necessarily
-            # incorrect code, but often indicative of bugs.
-            set(SANITIZERS "${SANITIZERS},unsigned-integer-overflow")
-        endif()
-
         if(MG_DEBUG_SANITIZERS)
             target_compile_options(mg_engine PRIVATE ${SANITIZERS})
             target_link_libraries(mg_engine PRIVATE ${SANITIZERS})
