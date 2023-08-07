@@ -94,8 +94,6 @@ struct BindMaterialPipelineSettings {
     bool depth_write_enabled : 1 = true;
 };
 
-static constexpr auto s = sizeof(BindMaterialPipelineSettings);
-
 class PipelinePool {
 public:
     explicit PipelinePool(PipelinePoolConfig&& config);
