@@ -55,6 +55,11 @@ struct PipelinePoolConfig {
     Array<PipelineInputDescriptor> shared_input_layout;
 };
 
+/** Check config for errors. Prints error and shuts down application if it fails.
+ * Public for testability.
+ */
+void validate(const PipelinePoolConfig& config);
+
 struct BindMaterialPipelineSettings {
     /** Vertex array -- the geometry to draw. */
     VertexArrayHandle vertex_array{};

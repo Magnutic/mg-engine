@@ -82,3 +82,5 @@ target_link_libraries(thread_pool_test function2)
 add_mg_test(observer_test)
 
 add_mg_test(unicode_test)
+
+add_mg_test(pipeline_pool_test)

@@ -10,6 +10,7 @@
 
 #include "mg/containers/mg_flat_map.h"
 #include "mg/core/mg_log.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg/gfx/mg_blend_modes.h"
 #include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_material.h"
@@ -22,9 +23,45 @@
 #include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_stl_helpers.h"
 
+#include <bits/ranges_algo.h>
 #include <fmt/core.h>
 
+namespace rng = std::ranges;
+
 namespace Mg::gfx {
+
+void validate(const PipelinePoolConfig& config)
+{
+    // Check for binding location overlaps.
+    {
+        small_vector<uint32_t, 10> binding_locations;
+
+        binding_locations.push_back(config.material_parameters_binding_location);
+
+        for (const PipelineInputDescriptor& pid : config.shared_input_layout) {
+            binding_locations.push_back(pid.location);
+        }
+
+        rng::sort(binding_locations);
+        const bool has_duplicate = rng::adjacent_find(binding_locations) != binding_locations.end();
+        MG_ASSERT(!has_duplicate && "PipelineConfig has overlapping binding locations.");
+    }
+
+    // Check for incorrectly used texture binding locations.
+    for (auto& input_location : config.shared_input_layout) {
+        switch (input_location.type) {
+        case PipelineInputType::BufferTexture:
+            [[fallthrough]];
+
+        case PipelineInputType::Sampler2D:
+            MG_ASSERT(input_location.location >= 8 &&
+                      "Texture slots [0,7] are reserved for material samplers.");
+
+        default:
+            break;
+        }
+    }
+}
 
 //--------------------------------------------------------------------------------------------------
 // Shader code assembly and compilation
@@ -318,21 +355,8 @@ Pipeline& get_or_make_pipeline(PipelinePool::Impl& data, const Material& materia
 
 PipelinePool::PipelinePool(PipelinePoolConfig&& config)
 {
+    validate(config);
     m_impl->config = std::move(config);
-
-    for (auto& input_location : m_impl->config.shared_input_layout) {
-        switch (input_location.type) {
-        case PipelineInputType::BufferTexture:
-            [[fallthrough]];
-
-        case PipelineInputType::Sampler2D:
-            MG_ASSERT(input_location.location >= 8 &&
-                      "Texture slots [0,7] are reserved for material samplers.");
-
-        default:
-            break;
-        }
-    }
 }
 
 void PipelinePool::bind_material_pipeline(const Material& material,
