@@ -41,9 +41,27 @@ class ICamera {
 public:
     MG_INTERFACE_BOILERPLATE(ICamera);
 
+    /** Get the projection matrix for this camera. */
     virtual glm::mat4 proj_matrix() const = 0;
+
+    /** Get the view matrix for this camera. */
     virtual glm::mat4 view_matrix() const = 0;
-    virtual glm::mat4 view_proj_matrix() const = 0;
+
+    /** Get the combined view-projection matrix for this camera. */
+    virtual glm::mat4 view_proj_matrix() const { return proj_matrix() * view_matrix(); }
+
+    /** Get the view matrix for this camera as it would be if it were at coordinate
+     * (0.0, 0.0, .0.0).
+     */
+    virtual glm::mat4 view_matrix_without_translation() const = 0;
+
+    /** Get the combined view-projection matrix for this camera as it would be if it were at
+     * coordinate (0.0, 0.0, .0.0).
+     */
+    virtual glm::mat4 view_proj_matrix_without_translation() const
+    {
+        return proj_matrix() * view_matrix_without_translation();
+    }
 
     /** Get world space position of projection's origin. */
     virtual glm::vec3 get_position() const = 0;
@@ -102,7 +120,12 @@ public:
         return glm::inverse(glm::translate(position) * r.to_matrix());
     }
 
-    glm::mat4 view_proj_matrix() const noexcept override { return proj_matrix() * view_matrix(); }
+    glm::mat4 view_matrix_without_translation() const override
+    {
+        // Camera should look toward rotation's forward vector
+        Rotation r = Rotation::combine(Rotation{}.pitch(90_degrees), rotation);
+        return glm::inverse(r.to_matrix());
+    }
 
     glm::vec3 get_position() const noexcept override { return position; }
 
@@ -137,7 +160,14 @@ public:
 
     glm::mat4 view_matrix() const noexcept override { return glm::mat4(1.0f); }
 
+    glm::mat4 view_matrix_without_translation() const override { return view_matrix(); }
+
     glm::mat4 view_proj_matrix() const noexcept override { return proj_matrix(); }
+
+    glm::mat4 view_proj_matrix_without_translation() const noexcept override
+    {
+        return proj_matrix();
+    }
 
     DepthRange depth_range() const noexcept override { return DepthRange{ min.z, max.z }; }
 
