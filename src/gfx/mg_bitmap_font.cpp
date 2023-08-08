@@ -19,6 +19,7 @@
 #include "mg/utils/mg_stl_helpers.h"
 #include "mg/utils/mg_string_utils.h"
 
+#include "opengl/mg_gl_debug.h"
 #include "opengl/mg_glad.h" // TODO temp
 
 //--------------------------------------------------------------------------------------------------
@@ -266,6 +267,7 @@ private:
                      GL_RED,
                      GL_UNSIGNED_BYTE,
                      context.pixels);
+        MG_CHECK_GL_ERROR();
         return TextureHandle::Owner{ gl_texture_id };
     }
 

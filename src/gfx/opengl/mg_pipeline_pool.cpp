@@ -401,7 +401,7 @@ void PipelinePool::bind_material_pipeline(const Material& material,
         { m_impl->config.material_parameters_binding_location, m_impl->material_params_ubo });
 
     for (const auto& [i, sampler] : enumerate<uint32_t>(material.samplers())) {
-        material_input_bindings.push_back({ i, sampler.texture });
+        material_input_bindings.push_back({ i, sampler.texture, sampler.type });
     }
 
     Pipeline::bind_material_inputs(material_input_bindings);

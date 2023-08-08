@@ -82,6 +82,9 @@ GfxDevice::GfxDevice(Window& window)
 
     // Automatically convert linear to sRGB when writing to sRGB frame buffers.
     glEnable(GL_FRAMEBUFFER_SRGB);
+
+    // Seamless texture filtering between cubemap faces.
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }
 
 GfxDevice::~GfxDevice()

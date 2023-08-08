@@ -1,0 +1,17 @@
+tags: []
+
+options: {
+}
+
+parameters: {
+     sampler_diffuse: { type: "samplerCube" }
+     exposure: { type: "float" }
+}
+
+fragment_code:
+    '''
+    void main() {
+        frag_out = texture(sampler_diffuse, normalize(vs_out_position.xzy));
+        frag_out = vec4(pow(2.0, parameters.exposure) * frag_out.rgb, frag_out.a);
+    }
+    '''

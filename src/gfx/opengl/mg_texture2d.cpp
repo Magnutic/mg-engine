@@ -1,15 +1,18 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2024, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
 #include "mg/gfx/mg_texture2d.h"
 
-#include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/resources/mg_texture_resource.h"
+#include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_math_utils.h"
+
+#include "mg_texture_common.h"
 
 #include "mg_gl_debug.h"
 #include "mg_glad.h"
@@ -17,18 +20,6 @@
 namespace Mg::gfx {
 
 namespace {
-
-// Texture format info as required by OpenGL
-struct GlTextureInfo {
-    uint32_t internal_format;
-    uint32_t format;
-    uint32_t type;
-    int32_t mip_levels;
-    int32_t width;
-    int32_t height;
-    float aniso;
-    bool compressed;
-};
 
 //--------------------------------------------------------------------------------------------------
 // render_target helper functions
@@ -131,137 +122,8 @@ TextureHandle generate_gl_render_target_texture(const RenderTargetParams& params
 }
 
 //--------------------------------------------------------------------------------------------------
-// from_texture_resource helper functions
+// Helpers for creating texture from TextureResource
 //--------------------------------------------------------------------------------------------------
-
-// Get texture format info as required by OpenGL
-GlTextureInfo gl_texture_info(const TextureResource& resource,
-                              const TextureSettings& settings) noexcept
-{
-    GlTextureInfo info{};
-
-    const auto& format = resource.format();
-
-    info.mip_levels = as<int32_t>(format.mip_levels);
-    info.width = as<int32_t>(format.width);
-    info.height = as<int32_t>(format.height);
-
-    // Texture channels are all 8-bit, so far.
-    info.type = GL_UNSIGNED_BYTE;
-
-    // Determine whether to use sRGB colour space
-    bool sRGB = settings.sRGB == gfx::SRGBSetting::sRGB;
-
-    if (settings.sRGB == gfx::SRGBSetting::Default) {
-        // Default to sRGB unless it is a normal map (ATI2 compression)
-        sRGB = format.pixel_format != gfx::PixelFormat::ATI2;
-    }
-
-    // Pick OpenGL pixel format
-    switch (format.pixel_format) {
-    case gfx::PixelFormat::DXT1:
-        info.compressed = true;
-        info.internal_format =
-            settings.dxt1_has_alpha
-                ? (sRGB ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT : GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
-                : (sRGB ? GL_COMPRESSED_SRGB_S3TC_DXT1_EXT : GL_COMPRESSED_RGB_S3TC_DXT1_EXT);
-        break;
-
-    case gfx::PixelFormat::DXT3:
-        info.compressed = true;
-        info.internal_format = sRGB ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT
-                                    : GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
-        break;
-
-    case gfx::PixelFormat::DXT5:
-        info.compressed = true;
-        info.internal_format = sRGB ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT
-                                    : GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-        break;
-
-    case gfx::PixelFormat::ATI1:
-        info.compressed = true;
-        info.internal_format = GL_COMPRESSED_RED_RGTC1;
-        break;
-
-    case gfx::PixelFormat::ATI2:
-        info.compressed = true;
-        info.internal_format = GL_COMPRESSED_RG_RGTC2;
-        break;
-
-    case gfx::PixelFormat::BGR:
-        info.internal_format = GL_RGB8;
-        info.format = GL_BGR;
-        break;
-
-    case gfx::PixelFormat::BGRA:
-        info.internal_format = GL_RGBA8;
-        info.format = GL_BGRA;
-        break;
-    }
-
-    // Get anisotropic filtering level
-    glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &info.aniso);
-
-    return info;
-}
-
-// Set up texture sampling parameters for currently bound texture
-void set_sampling_params(const TextureSettings& settings) noexcept
-{
-    GLint edge_sampling = 0;
-
-    switch (settings.edge_sampling) {
-    case gfx::EdgeSampling::Clamp:
-        // N.B. a common mistake is to use GL_CLAMP here.
-        edge_sampling = GL_CLAMP_TO_EDGE;
-        break;
-
-    case gfx::EdgeSampling::Repeat:
-        edge_sampling = GL_REPEAT;
-        break;
-
-    case gfx::EdgeSampling::Mirrored_repeat:
-        edge_sampling = GL_MIRRORED_REPEAT;
-        break;
-    }
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, edge_sampling);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, edge_sampling);
-
-    GLint min_filter = 0;
-    GLint mag_filter = 0;
-
-    switch (settings.filtering) {
-    case gfx::Filtering::Nearest:
-        min_filter = GL_NEAREST;
-        mag_filter = GL_NEAREST;
-        break;
-    case gfx::Filtering::Nearest_mipmap_nearest:
-        min_filter = GL_NEAREST_MIPMAP_NEAREST;
-        mag_filter = GL_NEAREST;
-        break;
-    case gfx::Filtering::Nearest_mipmap_linear:
-        min_filter = GL_NEAREST_MIPMAP_LINEAR;
-        mag_filter = GL_NEAREST;
-        break;
-    case gfx::Filtering::Linear:
-        min_filter = GL_LINEAR;
-        mag_filter = GL_LINEAR;
-        break;
-    case gfx::Filtering::Linear_mipmap_nearest:
-        min_filter = GL_LINEAR_MIPMAP_NEAREST;
-        mag_filter = GL_LINEAR;
-        break;
-    case gfx::Filtering::Linear_mipmap_linear:
-        min_filter = GL_LINEAR_MIPMAP_LINEAR;
-        mag_filter = GL_LINEAR;
-        break;
-    }
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
-}
 
 void upload_compressed_mip(int32_t mip_index,
                            const GlTextureInfo& info,
@@ -284,8 +146,8 @@ void upload_uncompressed_mip(int32_t mip_index,
                              int32_t /* size */,
                              const GLvoid* data) noexcept
 {
-    const auto width = info.width >> mip_index;
-    const auto height = info.height >> mip_index;
+    const auto width = max(1, info.width >> mip_index);
+    const auto height = max(1, info.height >> mip_index);
 
     glTexSubImage2D(GL_TEXTURE_2D, mip_index, 0, 0, width, height, info.format, info.type, data);
 
@@ -305,7 +167,6 @@ TextureHandle generate_gl_texture_from(const TextureResource& resource,
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, info.aniso);
 
     // Allocate storage.
-
     glTexStorage2D(GL_TEXTURE_2D, info.mip_levels, info.internal_format, info.width, info.height);
 
     decltype(upload_compressed_mip)* upload_function = (info.compressed ? upload_compressed_mip

@@ -12,6 +12,7 @@
 #include "mg/core/mg_value.h"
 #include "mg/gfx/mg_shader_related_types.h"
 #include "mg/gfx/mg_texture2d.h"
+#include "mg/gfx/mg_texture_cube.h"
 #include "mg/gfx/mg_texture_pool.h"
 #include "mg/mg_defs.h"
 #include "mg/resource_cache/mg_resource_access_guard.h"
@@ -53,25 +54,50 @@ Material::Material(Identifier material_id, ResourceHandle<ShaderResource> shader
     }
 }
 
-void Material::set_sampler(Identifier sampler_name, const Texture2D* texture)
+// Get index of the sampler with the given name, if such a sampler exists.
+Opt<size_t> sampler_index(Material::Samplers& samplers, Identifier name)
 {
-    auto opt_index = sampler_index(sampler_name);
-    if (!opt_index.has_value()) {
+    for (size_t i = 0; i < samplers.size(); ++i) {
+        auto&& sampler = samplers[i];
+        if (sampler.name == name) {
+            return i;
+        }
+    }
+    return nullopt;
+}
+
+template<typename TextureT>
+void set_sampler_impl(Identifier material_id,
+                      Material::Samplers& samplers,
+                      Identifier sampler_name,
+                      const TextureT* texture)
+{
+    auto it = std::ranges::find_if(samplers,
+                                   [&](auto&& sampler) { return sampler.name == sampler_name; });
+    if (it == samplers.end()) {
         throw RuntimeError{ "Material '{}': set_sampler(\"{}\", ...): shader has no such sampler.",
-                            m_id.str_view(),
+                            material_id.str_view(),
                             sampler_name.str_view() };
     }
 
-    auto& sampler = m_samplers[*opt_index];
-
     if (texture) {
-        sampler.texture_id = texture->id();
-        sampler.texture = texture->handle();
+        it->texture_id = texture->id();
+        it->texture = texture->handle();
     }
     else {
-        sampler.texture_id = "";
-        sampler.texture = {};
+        it->texture_id = "";
+        it->texture = {};
     }
+}
+
+void Material::set_sampler(Identifier sampler_name, const Texture2D* texture)
+{
+    set_sampler_impl(m_id, m_samplers, sampler_name, texture);
+}
+
+void Material::set_sampler(Identifier sampler_name, const TextureCube* texture)
+{
+    set_sampler_impl(m_id, m_samplers, sampler_name, texture);
 }
 
 void Material::set_option(Option option, bool enabled)
@@ -98,17 +124,6 @@ bool Material::get_option(Option option) const
     }
 
     return m_option_flags.test(index);
-}
-
-Opt<size_t> Material::sampler_index(Identifier name)
-{
-    for (size_t i = 0; i < m_samplers.size(); ++i) {
-        auto&& sampler = m_samplers[i];
-        if (sampler.name == name) {
-            return i;
-        }
-    }
-    return nullopt;
 }
 
 void Material::set_parameter(Identifier name, int param)

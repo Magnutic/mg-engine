@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "mg/gfx/mg_light_grid_config.h"
 #include <mg/containers/mg_array.h>
 #include <mg/containers/mg_flat_map.h>
 #include <mg/core/mg_application_context.h>
@@ -15,6 +14,7 @@
 #include <mg/gfx/mg_debug_renderer.h>
 #include <mg/gfx/mg_gfx_device.h>
 #include <mg/gfx/mg_light.h>
+#include <mg/gfx/mg_light_grid_config.h>
 #include <mg/gfx/mg_material.h>
 #include <mg/gfx/mg_material_pool.h>
 #include <mg/gfx/mg_mesh_pool.h>
@@ -23,6 +23,7 @@
 #include <mg/gfx/mg_render_command_list.h>
 #include <mg/gfx/mg_render_target.h>
 #include <mg/gfx/mg_skeleton.h>
+#include <mg/gfx/mg_skybox_renderer.h>
 #include <mg/gfx/mg_texture_pool.h>
 #include <mg/gfx/mg_ui_renderer.h>
 #include <mg/input/mg_input.h>
@@ -130,6 +131,7 @@ public:
     Mg::gfx::BillboardRenderer billboard_renderer;
     Mg::gfx::PostProcessRenderer post_renderer;
     Mg::gfx::UIRenderer ui_renderer{ { 1024, 768 } };
+    Mg::gfx::SkyboxRenderer skybox_renderer;
 
     Mg::gfx::RenderCommandProducer render_command_producer;
     Mg::gfx::BillboardRenderList billboard_render_list;
@@ -152,6 +154,7 @@ public:
     Mg::gfx::Material* bloom_material = nullptr;
     Mg::gfx::Material* billboard_material = nullptr;
     Mg::gfx::Material* ui_material = nullptr;
+    const Mg::gfx::Material* sky_material = nullptr;
 
     bool camera_locked = false;
 

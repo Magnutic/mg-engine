@@ -13,6 +13,7 @@
 #include "mg/core/mg_identifier.h"
 #include "mg/gfx/mg_blend_modes.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
+#include "mg/gfx/mg_shader_related_types.h"
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/utils/mg_enum.h"
 #include "mg/utils/mg_gsl.h"
@@ -37,7 +38,7 @@ MG_ENUM(DepthTestCondition, (less, equal, less_equal, greater, not_equal, greate
 MG_ENUM(CullingMode, (none, front, back))
 
 /** The type of an input to a rendering pipeline. */
-MG_ENUM(PipelineInputType, (BufferTexture, Sampler2D, UniformBuffer))
+MG_ENUM(PipelineInputType, (BufferTexture, Sampler2D, SamplerCube, UniformBuffer))
 
 /** Describes an input to a pipeline: the input's type, name, and its binding location. */
 struct PipelineInputDescriptor {
@@ -64,7 +65,7 @@ struct PipelineInputDescriptor {
 class PipelineInputBinding {
 public:
     PipelineInputBinding(uint32_t location, const BufferTexture& buffer_texture);
-    PipelineInputBinding(uint32_t location, TextureHandle texture);
+    PipelineInputBinding(uint32_t location, TextureHandle texture, shader::SamplerType sampler_type);
     PipelineInputBinding(uint32_t location, const UniformBuffer& ubo);
 
     GfxObjectHandleValue gfx_resource_handle() const { return m_gfx_resource_handle; }

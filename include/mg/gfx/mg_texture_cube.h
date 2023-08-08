@@ -4,8 +4,8 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-/** @file mg_texture2d.h
- * Constructs and owns an instance of a 2D texture in the graphics context.
+/** @file mg_texture_cube.h
+ * Constructs and owns an instance of a cubemap texture in the graphics context.
  */
 
 #pragma once
@@ -24,27 +24,16 @@ class TextureResource;
 namespace Mg::gfx {
 
 /** Constructs and owns the graphics API's texture object from a TextureResource resource. */
-class Texture2D {
+class TextureCube {
 public:
     /** Create a texture from the given resource. */
-    static Texture2D from_texture_resource(const TextureResource& resource,
-                                           const TextureSettings& settings);
+    static TextureCube from_texture_resource(const TextureResource& resource,
+                                             const TextureSettings& settings);
 
-    /** Create a render-target texture. */
-    static Texture2D render_target(const RenderTargetParams& params);
+    MG_MAKE_DEFAULT_MOVABLE(TextureCube);
+    MG_MAKE_NON_COPYABLE(TextureCube);
 
-    /** Create a texture from RGBA8 buffer. */
-    // TODO parameters, mipmaps, compression?
-    static Texture2D from_rgba8_buffer(Identifier id,
-                                       std::span<const uint8_t> rgba8_buffer,
-                                       int32_t width,
-                                       int32_t height,
-                                       const TextureSettings& settings);
-
-    MG_MAKE_DEFAULT_MOVABLE(Texture2D);
-    MG_MAKE_NON_COPYABLE(Texture2D);
-
-    ~Texture2D() { unload(); }
+    ~TextureCube() { unload(); }
 
     ImageSize image_size() const noexcept { return m_image_size; }
 
@@ -53,7 +42,7 @@ public:
     TextureHandle handle() const noexcept { return m_handle; }
 
 private:
-    explicit Texture2D(TextureHandle&& handle) noexcept : m_handle(std::move(handle)) {}
+    explicit TextureCube(TextureHandle&& handle) noexcept : m_handle(std::move(handle)) {}
 
     void unload() noexcept;
 

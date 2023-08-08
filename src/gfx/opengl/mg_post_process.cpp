@@ -11,6 +11,7 @@
 #include "mg/gfx/mg_material.h"
 #include "mg/gfx/mg_pipeline_pool.h"
 #include "mg/gfx/mg_render_target.h"
+#include "mg/gfx/mg_shader_related_types.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/mg_defs.h"
 
@@ -202,8 +203,11 @@ void PostProcessRenderer::post_process(const Context& context,
 
     std::array shared_input_bindings = {
         PipelineInputBinding{ k_frame_block_descriptor_location, m_impl->frame_block_ubo },
-        PipelineInputBinding{ k_sampler_colour_texture_unit, sampler_colour },
-        PipelineInputBinding{ k_sampler_depth_texture_unit, TextureHandle::null_handle() }
+        PipelineInputBinding{
+            k_sampler_colour_texture_unit, sampler_colour, shader::SamplerType::Sampler2D },
+        PipelineInputBinding{ k_sampler_depth_texture_unit,
+                              TextureHandle::null_handle(),
+                              shader::SamplerType::Sampler2D }
     };
 
     Pipeline::bind_shared_inputs(shared_input_bindings);
@@ -233,8 +237,8 @@ void PostProcessRenderer::post_process(const Context& context,
 
     std::array shared_input_bindings = {
         PipelineInputBinding{ k_frame_block_descriptor_location, m_impl->frame_block_ubo },
-        PipelineInputBinding{ k_sampler_colour_texture_unit, sampler_colour },
-        PipelineInputBinding{ k_sampler_depth_texture_unit, sampler_depth }
+        PipelineInputBinding{ k_sampler_colour_texture_unit, sampler_colour, shader::SamplerType::Sampler2D },
+        PipelineInputBinding{ k_sampler_depth_texture_unit, sampler_depth, shader::SamplerType::Sampler2D }
     };
 
     Pipeline::bind_shared_inputs(shared_input_bindings);

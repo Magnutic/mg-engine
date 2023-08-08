@@ -1,0 +1,14 @@
+// Material id: 'skybox'
+shader: shaders/skybox.hjson
+options: {
+}
+parameters: {
+  sampler_diffuse: {
+     type: "samplerCube"
+     value: "textures/cubemap/test_sky_d.dds"
+  }
+  exposure: {
+     type: "float"
+     value: 1.0
+  }
+}

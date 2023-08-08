@@ -19,37 +19,36 @@
 
 namespace Mg {
 
+namespace CubemapFace {
+enum Value : uint32_t { positive_x, negative_x, positive_y, negative_y, positive_z, negative_z };
+}
+
 /** Texture resource class supporting DDS texture data. */
 class TextureResource final : public BaseResource {
 public:
-    /** Size type for texture dimensions (width, height, ...). */
-    using DimT = uint32_t;
-
-    /** Mip-map index type. */
-    using MipIndexT = uint32_t;
-
-    /** Info on the format of the texture, this describes how to interpret the
-     * binary data.
-     */
+    /** Info on the format of the texture. This describes how to interpret the binary data. */
     struct Format {
         gfx::PixelFormat pixel_format = gfx::PixelFormat::BGR;
-        DimT width = 0;
-        DimT height = 0;
-        MipIndexT mip_levels = 0;
+        uint32_t width = 0;
+        uint32_t height = 0;
+        uint32_t mip_levels = 0;
+        uint32_t num_images = 0;
     };
 
     struct MipLevelData {
         std::span<const std::byte> data;
-        DimT width = 0;
-        DimT height = 0;
+        uint32_t width = 0;
+        uint32_t height = 0;
     };
 
     using BaseResource::BaseResource;
 
     /** Access the binary pixel data.
      * @param mip_index Which mipmap to get.
+     * @param image_index index of the image. For a cubemap, you can use one of the values under
+     * Mg::CubemapFace.
      */
-    MipLevelData pixel_data(MipIndexT mip_index) const noexcept;
+    MipLevelData pixel_data(uint32_t mip_index, uint32_t image_index = 0) const noexcept;
 
     /** Get texture format info. */
     const Format& format() const noexcept { return m_format; }
@@ -57,6 +56,8 @@ public:
     bool should_reload_on_file_change() const noexcept override { return true; }
 
     Identifier type_id() const noexcept override { return "TextureResource"; }
+
+    bool is_cube_map() const noexcept { return m_format.num_images == 6; }
 
 protected:
     /** Constructs a texture from file. Only DDS files are supported. */

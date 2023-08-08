@@ -97,7 +97,11 @@ enum class PixelFormat {
     /** Special compression for single-channel images. */
     ATI1,
     /** Special XY compression format for normal maps. */
-    ATI2
+    ATI2,
+    /** RGB, unsigned floating-point values, BPTC compression. */
+    BPTC_RGB_UFLOAT,
+    /** RGB, signed floating-point values, BPTC compression. */
+    BPTC_RGB_SFLOAT,
 };
 
 /** How textures are filtered. For most textures, you want LINEAR_MIPMAP_LINEAR. */

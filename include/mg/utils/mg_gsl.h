@@ -14,7 +14,6 @@
 #include "mg/utils/mg_assert.h"
 
 #include <cstddef>
-#include <initializer_list>
 #include <span>
 #include <type_traits>
 #include <utility>

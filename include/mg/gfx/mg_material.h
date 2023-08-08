@@ -37,6 +37,7 @@ class MaterialResource;
 namespace Mg::gfx {
 
 class Texture2D;
+class TextureCube;
 class TexturePool;
 
 /** Material defining rendering parameters, such as which shader to use, which textures, and all
@@ -107,8 +108,8 @@ public:
     /** Assign a texture to a sampler. */
     void set_sampler(Identifier sampler_name, const Texture2D* texture);
 
-    /** Get index of the sampler with the given name, if such a sampler exists. */
-    Opt<size_t> sampler_index(Identifier sampler_name);
+    /** Assign a cube map texture to a sampler. */
+    void set_sampler(Identifier sampler_name, const TextureCube* texture);
 
     void set_parameter(Identifier name, int param);
     void set_parameter(Identifier name, float param);

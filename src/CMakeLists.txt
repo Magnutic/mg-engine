@@ -45,7 +45,10 @@ add_library(mg_engine
     gfx/opengl/mg_post_process.cpp
     gfx/opengl/mg_render_target.cpp
     gfx/opengl/mg_shader.cpp
+    gfx/opengl/mg_skybox_renderer.cpp
     gfx/opengl/mg_texture2d.cpp
+    gfx/opengl/mg_texture_common.cpp
+    gfx/opengl/mg_texture_cube.cpp
     gfx/opengl/mg_ui_renderer.cpp
     gfx/opengl/mg_uniform_buffer.cpp
     gfx/opengl/shader_code/mg_mesh_renderer_shader_framework.cpp

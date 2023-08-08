@@ -279,7 +279,7 @@ void Scene::render(const double lerp_factor)
 
     physics_world->interpolate(static_cast<float>(lerp_factor));
 
-    // Mouselook
+    // Mouselook. Doing this in render step instead of in simulation_step to minimize input lag.
     {
         app.window().poll_input_events();
         input_map.refresh();
@@ -317,7 +317,13 @@ void Scene::render(const double lerp_factor)
     scene_lights.back() =
         Mg::gfx::make_point_light(camera.position, glm::vec3(25.0f), 2.0f * k_light_radius);
 
-    // Draw meshes and billboards
+    // Clear render target.
+    app.gfx_device().clear(*hdr_target);
+
+    // Draw sky.
+    skybox_renderer.draw(*hdr_target, camera, *sky_material);
+
+    // Draw meshes and billboards.
     {
         render_command_producer.clear();
 
@@ -328,8 +334,6 @@ void Scene::render(const double lerp_factor)
         for (auto&& [model_id, model] : dynamic_models) {
             add_to_render_list(animate_skinned_meshes, model, render_command_producer);
         }
-
-        app.gfx_device().clear(*hdr_target);
 
         const auto& commands = render_command_producer.finalize(camera,
                                                                 Mg::gfx::SortingMode::near_to_far);
@@ -478,7 +482,7 @@ void Scene::setup_config()
 Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file, const bool sRGB)
 {
     // Get from pool if it exists there.
-    Mg::gfx::Texture2D* texture = texture_pool->get(file);
+    Mg::gfx::Texture2D* texture = texture_pool->get_texture2d(file);
     if (texture) {
         return texture;
     }
@@ -847,6 +851,7 @@ void Scene::render_bloom()
 
 // Issue dummy draw commands to force driver to prepare pipelines and compile shaders for all models
 // in the scene.
+// TODO I don't think this actually works. Investigate.
 void Scene::prepare_pipelines()
 {
     MG_GFX_DEBUG_GROUP("prepare_pipelines")
@@ -997,6 +1002,12 @@ void Scene::load_materials()
         resource_cache->resource_handle<Mg::ShaderResource>("shaders/ui_render_test.hjson");
     ui_material = material_pool.create("ui_material", ui_handle);
     ui_material->set_sampler("sampler_colour", load_texture("textures/ui/book_open_da.dds", true));
+
+    // Load sky material
+    {
+        auto m = resource_cache->access_resource<Mg::MaterialResource>("materials/skybox.hjson");
+        sky_material = material_pool.get_or_create(*m);
+    }
 }
 
 // Create a lot of random lights
@@ -1086,6 +1097,7 @@ void Scene::on_resource_reload(const Mg::FileChangedEvent& event)
             billboard_renderer.drop_shaders();
             post_renderer.drop_shaders();
             ui_renderer.drop_shaders();
+            skybox_renderer.drop_shaders();
         });
         break;
     }

@@ -9,9 +9,11 @@
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/gfx/mg_material.h"
+#include "mg/gfx/mg_shader_related_types.h"
 #include "mg/gfx/mg_texture2d.h"
 #include "mg/gfx/mg_texture_pool.h"
 #include "mg/resource_cache/mg_resource_access_guard.h"
+#include "mg/resource_cache/mg_resource_exceptions.h"
 #include "mg/resources/mg_material_resource.h"
 #include "mg/utils/mg_stl_helpers.h"
 
@@ -64,12 +66,33 @@ void init_material_from_resource(Material& material,
         }
 
         for (const auto& sampler : material_resource.samplers()) {
-            if (sampler.texture_resource_id) {
-                Texture2D* texture = texture_pool.load(*sampler.texture_resource_id);
-                MG_ASSERT(texture);
-                material.set_sampler(sampler.name, texture);
+            using enum shader::SamplerType;
+
+            switch (sampler.type) {
+            case Sampler2D:
+                if (sampler.texture_resource_id) {
+                    Texture2D* texture = texture_pool.load_texture2d(*sampler.texture_resource_id);
+                    MG_ASSERT(texture);
+                    material.set_sampler(sampler.name, texture);
+                }
+                break;
+
+            case SamplerCube:
+                if (sampler.texture_resource_id) {
+                    TextureCube* texture = texture_pool.load_cubemap(*sampler.texture_resource_id);
+                    MG_ASSERT(texture);
+                    material.set_sampler(sampler.name, texture);
+                }
+                break;
             }
         }
+    }
+    catch (const ResourceError&) {
+        log.error(
+            "Error initializing Material from MaterialResource '{}'. Failed to load a required "
+            "resource.",
+            material_resource.resource_id().str_view());
+        throw;
     }
     catch (const RuntimeError&) {
         log.error(

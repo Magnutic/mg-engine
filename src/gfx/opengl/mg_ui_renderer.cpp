@@ -15,6 +15,7 @@
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_pipeline_pool.h"
 #include "mg/gfx/mg_render_target.h"
+#include "mg/gfx/mg_shader_related_types.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 
 #include <glm/mat2x2.hpp>
@@ -333,8 +334,9 @@ void setup_text_pipeline(UIRenderer::Impl& data,
     PipelineBindingContext binding_context;
     binding_context.bind_pipeline(data.text_pipeline, pipeline_settings);
 
-    Pipeline::bind_shared_inputs(std::array{ PipelineInputBinding(0, data.draw_params_ubo),
-                                             PipelineInputBinding(0, text_gpu_data.texture) });
+    Pipeline::bind_shared_inputs(std::array{
+        PipelineInputBinding(0, data.draw_params_ubo),
+        PipelineInputBinding(0, text_gpu_data.texture, shader::SamplerType::Sampler2D) });
 }
 
 } // namespace

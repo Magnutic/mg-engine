@@ -8,6 +8,8 @@
 
 #include "../mg_shader.h"
 #include "mg/core/mg_runtime_error.h"
+#include "mg/gfx/mg_shader_related_types.h"
+#include "mg_gl_debug.h"
 #include "mg_opengl_shader.h"
 #include "mg_glad.h"
 
@@ -21,6 +23,21 @@
 
 namespace Mg::gfx {
 
+namespace {
+PipelineInputType pipeline_input_type_for(shader::SamplerType sampler_type)
+{
+    switch (sampler_type) {
+    case shader::SamplerType::Sampler2D:
+        return PipelineInputType::Sampler2D;
+
+    case shader::SamplerType::SamplerCube:
+        return PipelineInputType::SamplerCube;
+    }
+
+    MG_ASSERT(false && "Unexpected sampler_type");
+}
+} // namespace
+
 //--------------------------------------------------------------------------------------------------
 // PipelineInputBinding
 //--------------------------------------------------------------------------------------------------
@@ -31,8 +48,10 @@ PipelineInputBinding::PipelineInputBinding(uint32_t location, const BufferTextur
                            PipelineInputType::BufferTexture)
 {}
 
-PipelineInputBinding::PipelineInputBinding(uint32_t location, TextureHandle texture)
-    : PipelineInputBinding(location, texture.get(), PipelineInputType::Sampler2D)
+PipelineInputBinding::PipelineInputBinding(uint32_t location,
+                                           TextureHandle texture,
+                                           shader::SamplerType sampler_type)
+    : PipelineInputBinding(location, texture.get(), pipeline_input_type_for(sampler_type))
 {}
 
 PipelineInputBinding::PipelineInputBinding(uint32_t location, const UniformBuffer& ubo)
@@ -78,12 +97,19 @@ void bind_pipeline_input_set(std::span<const PipelineInputBinding> bindings)
             glBindTexture(GL_TEXTURE_2D, gl_object_id);
             break;
         }
+        case PipelineInputType::SamplerCube: {
+            glActiveTexture(GL_TEXTURE0 + location);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, gl_object_id);
+            break;
+        }
         case PipelineInputType::UniformBuffer: {
             glBindBufferBase(GL_UNIFORM_BUFFER, location, gl_object_id);
             break;
         }
         }
     }
+
+    MG_CHECK_GL_ERROR();
 }
 
 // Configure the given shader using the input descriptors.
@@ -100,6 +126,10 @@ void apply_input_descriptor(const opengl::ShaderProgramHandle& shader_handle,
     switch (type) {
     case PipelineInputType::BufferTexture:
         [[fallthrough]];
+
+    case PipelineInputType::SamplerCube:
+        [[fallthrough]];
+
     case PipelineInputType::Sampler2D: {
         const Opt<UniformLocation> uniform_index = opengl::uniform_location(shader_handle, name);
         if (uniform_index) {
@@ -108,6 +138,7 @@ void apply_input_descriptor(const opengl::ShaderProgramHandle& shader_handle,
         success = uniform_index.has_value();
         break;
     }
+
     case PipelineInputType::UniformBuffer:
         success = set_uniform_block_binding(shader_handle, name, UniformBufferSlot{ location });
         break;
@@ -120,6 +151,8 @@ void apply_input_descriptor(const opengl::ShaderProgramHandle& shader_handle,
             shader_handle.get()
         };
     }
+
+    MG_CHECK_GL_ERROR();
 }
 
 } // namespace
