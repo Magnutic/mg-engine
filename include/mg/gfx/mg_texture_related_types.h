@@ -53,16 +53,22 @@ inline bool operator!=(ImageSize lhs, ImageSize rhs) noexcept
 
 /** Texture sampling filtering methods. */
 enum class TextureFilterMode {
-    Nearest, /** Nearest-neighbour filtering. */
-    Linear   /** Linearly interpolated -- smooth -- filtering. */
+    /** Nearest-neighbour filtering. */
+    Nearest,
+    /** Linearly interpolated -- smooth -- filtering. */
+    Linear
 };
 /** Input parameters for creating render-target textures. */
 struct RenderTargetParams {
     enum class Format {
-        RGBA8,   /** Red/Green/Blue/Alpha channels of 8-bit unsigned int */
-        RGBA16F, /** Red/Green/Blue/Alpha channels of 16-bit float */
-        RGBA32F, /** Red/Green/Blue/Alpha channels of 32-bit float */
-        Depth24, /** 24-bit depth */
+        /** Red/Green/Blue/Alpha channels of 8-bit unsigned int */
+        RGBA8,
+        /** Red/Green/Blue/Alpha channels of 16-bit float */
+        RGBA16F,
+        /** Red/Green/Blue/Alpha channels of 32-bit float */
+        RGBA32F,
+        /** 24-bit depth */
+        Depth24,
     };
 
     Identifier render_target_id{ "<anonymous render target texture>" };
@@ -78,30 +84,46 @@ struct RenderTargetParams {
 
 /** The format in which a texture is compressed. */
 enum class PixelFormat {
-    BGR,  /** Uncompressed, 24-bit BGR. */
-    BGRA, /** Uncompressed, 32-bit BGRA. */
-    DXT1, /** RGB, optionally 1-bit alpha, DXT compression. */
-    DXT3, /** ARGB, explicit alpha, DXT compression. */
-    DXT5, /** ARGB, interpolated alpha, DXT compression. */
-    ATI1, /** Special compression for single-channel images. */
-    ATI2  /** Special XY compression format for normal maps. */
+    /** Uncompressed, 24-bit BGR. */
+    BGR,
+    /** Uncompressed, 32-bit BGRA. */
+    BGRA,
+    /** RGB, optionally 1-bit alpha, DXT compression. */
+    DXT1,
+    /** ARGB, explicit alpha, DXT compression. */
+    DXT3,
+    /** ARGB, interpolated alpha, DXT compression. */
+    DXT5,
+    /** Special compression for single-channel images. */
+    ATI1,
+    /** Special XY compression format for normal maps. */
+    ATI2
 };
 
 /** How textures are filtered. For most textures, you want LINEAR_MIPMAP_LINEAR. */
 enum class Filtering {
-    Nearest,                /** Nearest neighbour filtering */
-    Linear,                 /** Smoothly interpolated */
-    Nearest_mipmap_nearest, /** Nearest with mipmapping */
-    Linear_mipmap_nearest,  /** Linear with mipmapping */
-    Nearest_mipmap_linear,  /** Nearest, smooth transitions between mips */
-    Linear_mipmap_linear    /** Linear, smooth transitions between mips */
+    /** Nearest neighbour filtering */
+    Nearest,
+    /** Smoothly interpolated */
+    Linear,
+    /** Nearest with mipmapping */
+    Nearest_mipmap_nearest,
+    /** Linear with mipmapping */
+    Linear_mipmap_nearest,
+    /** Nearest, smooth transitions between mips */
+    Nearest_mipmap_linear,
+    /** Linear, smooth transitions between mips */
+    Linear_mipmap_linear
 };
 
 /** What happens when textures are sampled outside the [0, 1] UV-range. */
 enum class EdgeSampling {
-    Repeat,          /** Texture is repeated endlessly */
-    Mirrored_repeat, /** Texture is repeated but alternately mirrored */
-    Clamp            /** Edge colour is propagated to infinity */
+    /** Texture is repeated endlessly */
+    Repeat,
+    /** Texture is repeated but alternately mirrored */
+    Mirrored_repeat,
+    /** Edge colour is propagated to infinity */
+    Clamp
 };
 
 /** Whether the texture is in sRGB colour space. Generally, this is the case (and is desirable) for
@@ -110,9 +132,12 @@ enum class EdgeSampling {
  * will choose linear for ATI2, since it is used for normal maps.
  */
 enum class SRGBSetting {
-    Default, /** Automatically choose sRGB setting based on pixel format. */
-    sRGB,    /** Always treat as sRGB. */
-    Linear   /** Always treat as linear. */
+    /** Automatically choose sRGB setting based on pixel format. */
+    Default,
+    /** Always treat as sRGB. */
+    sRGB,
+    /** Always treat as linear. */
+    Linear
 };
 
 /** Configurable settings for a texture. */
