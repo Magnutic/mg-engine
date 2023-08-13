@@ -86,10 +86,13 @@ vec3 specular_schlick_fresnel(vec3 specular_colour, float LdotH)
 
 vec3 light(const LightInput light, const SurfaceParams surface, const vec3 view_direction)
 {
-    // TODO This is an arbitrary remapping of gloss response.
-    // gloss of 1.0 seems to have unexpected results; probably makes no mathematical/physical sense
-    // anyway.
-    float roughness = sqr(sqr(1.0 - min(0.99, surface.gloss)));
+    // TODO This is an arbitrary remapping of gloss response to roughness.
+    // Roughness of 0.0 seems to have unexpected results; probably makes no mathematical/physical
+    // sense anyway. Roughness too close to 0.0 does not look good with point lights, since you will
+    // get only individual pixels lighting up extremely bright, causing flashing bloom artefacts
+    // (and not having a visible highlight at all). Capping the roughness could be seen as
+    // compensating for the lack of area of point lights.
+    float roughness = max(0.01, sqr(sqr(1.0 - surface.gloss)));
 
     // "Halfway vectors" for lighting calculations.
     vec3 h = normalize(light.direction + view_direction);
