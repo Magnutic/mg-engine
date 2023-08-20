@@ -487,7 +487,7 @@ void CharacterController::step_down()
         // target position.
         const bool should_clamp_to_floor = drop_height > 0.0f && drop_height < step_down_height &&
                                            has_hit && !has_clamped_to_floor && m_was_on_ground &&
-                                           !m_was_jumping;
+                                           m_jump_velocity == 0.0f;
 
         if (should_clamp_to_floor) {
             m_target_position = original_position;
@@ -537,7 +537,14 @@ void CharacterController::step_down()
 #endif
             }
             else {
-                const vec3 impulse = { 0.0f, 0.0f, min(0.0f, m_vertical_velocity * mass) };
+                // This factor reduces the impulse when the character controller just grazes
+                // the side of the body, which could otherwise cause the object to be sent flying.
+                const float impulse_factor =
+                    max(0.0f, dot(world_up, drop_sweep_result->hit_normal_worldspace));
+
+                const vec3 impulse = { 0.0f,
+                                       0.0f,
+                                       min(0.0f, m_vertical_velocity * mass * impulse_factor) };
                 dynamic_body->apply_impulse(impulse, relative_position);
 
 #if (MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION & MG_DEBUG_VIS_FORCES_FLAG) != 0
@@ -561,7 +568,6 @@ void CharacterController::step_down()
 
         m_vertical_velocity = 0.0f;
         m_vertical_step = 0.0f;
-        m_was_jumping = false;
     }
     else {
         // we dropped the full height
@@ -569,6 +575,15 @@ void CharacterController::step_down()
     }
 
     collision_body().set_position(m_current_position);
+
+    // Apply jump. We do this after one completed step to let the impulse applied to the stood-upon
+    // object affect the character before we add the vertical velocity, so that we jump less high if
+    // the object we stood upon gets pushed down by the impulse (otherwise, we would not be
+    // conserving energy).
+    // TODO move, does not really belong in this function
+    if (m_jump_velocity > 0.0f) {
+        m_vertical_velocity += std::exchange(m_jump_velocity, 0.0f);
+    }
 }
 
 void CharacterController::move(const vec3& velocity)
@@ -587,7 +602,7 @@ void CharacterController::reset()
     m_vertical_velocity = 0.0f;
     m_vertical_step = 0.0f;
     m_was_on_ground = false;
-    m_was_jumping = false;
+    m_jump_velocity = 0.0f;
     m_desired_velocity = vec3(0.0f, 0.0f, 0.0f);
     set_is_standing(true);
 }
@@ -635,8 +650,23 @@ bool CharacterController::set_is_standing(bool v)
 void CharacterController::jump(const float velocity)
 {
     if (velocity > 0.0f) {
-        m_vertical_velocity = velocity;
-        m_was_jumping = true;
+        m_jump_velocity += velocity;
+        const auto sweep_target = m_current_position - vec3(0.0f, 0.0f, 2.0f * step_height());
+
+        auto sweep_result = character_sweep_test(m_current_position, sweep_target, world_up, -1.0f);
+        if (sweep_result) {
+            // This factor reduces the impulse when the character controller just grazes
+            // the side of the body, which could otherwise cause the object to be sent flying.
+            const float impulse_factor = max(0.0f,
+                                             dot(sweep_result->hit_point_worldspace, world_up));
+            if (auto dynamic_body = sweep_result->body.as_dynamic_body(); dynamic_body) {
+                const vec3 impulse = { 0.0f,
+                                       0.0f,
+                                       min(0.0f, -m_jump_velocity * mass * impulse_factor) };
+                const vec3 relative_position = get_position(1.0f) - dynamic_body->get_position();
+                dynamic_body->apply_impulse(impulse, relative_position);
+            }
+        }
     }
 }
 
