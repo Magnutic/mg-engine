@@ -376,6 +376,13 @@ public:
     return static_cast<PhysicsBody*>(bullet_object->getUserPointer());
 }
 
+PhysicsBodyHandle::PhysicsBodyHandle(PhysicsBody* data) : m_data(data)
+{
+    if (data) {
+        ++m_data->ref_count;
+    }
+}
+
 PhysicsBodyHandle::~PhysicsBodyHandle()
 {
     if (m_data) {
@@ -395,13 +402,6 @@ PhysicsBodyHandle& PhysicsBodyHandle::operator=(const PhysicsBodyHandle& rhs)
     auto tmp(rhs);
     swap(tmp);
     return *this;
-}
-
-PhysicsBodyHandle::PhysicsBodyHandle(PhysicsBody* data) : m_data(data)
-{
-    if (data) {
-        ++m_data->ref_count;
-    }
 }
 
 Identifier PhysicsBodyHandle::id() const
@@ -1009,7 +1009,12 @@ void World::update(const float time_step)
         rb.transform = convert_transform(rb.body.getWorldTransform());
     }
 
-    m_impl->collisions.clear();
+    // Remove ghost-object collisions from last update.
+    for (GhostObject& ghost_object : m_impl->ghost_objects) {
+        ghost_object.collisions.clear();
+    }
+
+    collect_garbage();
 
     // Get all collisions that occurred.
     const int num_manifolds = m_impl->dispatcher->getNumManifolds();
@@ -1030,11 +1035,8 @@ void World::update(const float time_step)
     // Collisions by id must be sorted for `find_collisions_for` to work, as it uses binary search.
     sort(m_impl->collisions_by_id);
 
+    // Collect all collisions involing ghost objects.
     for (GhostObject& ghost_object : m_impl->ghost_objects) {
-        // Remove collisions from last update.
-        ghost_object.collisions.clear();
-
-        // Collect the new collisions.
         find_collisions_for(ghost_object.id, ghost_object.collisions);
     }
 }
@@ -1050,6 +1052,10 @@ void World::interpolate(const float factor)
 
 void World::collect_garbage()
 {
+    // First, remove all collisions. These contain reference-counted handles to bodies, so they must
+    // be removed for the rest to take effect.
+    m_impl->collisions.clear();
+
     // Delete bodies. Bodies have pointers into the collision shapes, so they must be deleted before
     // shapes.
     {

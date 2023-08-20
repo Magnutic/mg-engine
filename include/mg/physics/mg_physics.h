@@ -382,8 +382,8 @@ public:
         set_transform(temp);
     }
 
-    /** Get all collisions involving this object during the most recent update. Pointers remain
-     * valid until the next update.
+    /** Get all collisions involving this object during the most recent update.
+     * Pointers remain valid until the next call to Mg::physics::World::update().
      */
     std::span<const Collision* const> collisions() const;
 
@@ -510,9 +510,6 @@ public:
     //----------------------------------------------------------------------------------------------
     // Miscellaneous
 
-    /** Clean up data structures, removing unused objects, bodies, and shapes. */
-    void collect_garbage();
-
     /** Use the provided debug renderer and camera to draw debug geometry, visualising the collision
      * shapes as the physics simulation sees it.
      */
@@ -523,6 +520,9 @@ public:
     struct Impl;
 
 private:
+    /** Clean up data structures, removing unused objects, bodies, and shapes. */
+    void collect_garbage();
+
     ImplPtr<Impl> m_impl;
 };
 
