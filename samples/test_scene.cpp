@@ -253,6 +253,7 @@ void Scene::simulation_step()
     if (input_map.was_pressed("reset")) {
         actor->character_controller.set_position({ 0.0f, 0.0f, 0.0f });
         actor->character_controller.reset();
+        load_models();
     }
     if (input_map.is_held("crouch")) {
         actor->character_controller.set_is_standing(false);
@@ -929,6 +930,8 @@ void Scene::render_skeleton_debug_geometry()
 void Scene::load_models()
 {
     using namespace Mg::literals;
+
+    dynamic_models.clear();
 
     add_scene_model("meshes/misc/test_scene_2.mgm",
                     std::array{
