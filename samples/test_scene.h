@@ -11,6 +11,7 @@
 #include <mg/gfx/mg_animation.h>
 #include <mg/gfx/mg_billboard_renderer.h>
 #include <mg/gfx/mg_bitmap_font.h>
+#include <mg/gfx/mg_blur_renderer.h>
 #include <mg/gfx/mg_debug_renderer.h>
 #include <mg/gfx/mg_gfx_device.h>
 #include <mg/gfx/mg_light.h>
@@ -70,16 +71,6 @@ inline std::shared_ptr<Mg::ResourceCache> setup_resource_cache()
     return std::make_shared<Mg::ResourceCache>(std::make_unique<Mg::BasicFileLoader>("../data"));
 }
 
-using RenderPassTargets = std::vector<std::unique_ptr<Mg::gfx::TextureRenderTarget>>;
-
-struct BlurTargets {
-    RenderPassTargets hor_pass_targets;
-    RenderPassTargets vert_pass_targets;
-
-    Mg::gfx::Texture2D* hor_pass_target_texture;
-    Mg::gfx::Texture2D* vert_pass_target_texture;
-};
-
 class Scene : public Mg::IApplication {
 public:
     Mg::ApplicationContext app;
@@ -95,13 +86,15 @@ public:
     Mg::gfx::MeshPool mesh_pool;
     std::shared_ptr<Mg::gfx::TexturePool> texture_pool =
         std::make_shared<Mg::gfx::TexturePool>(resource_cache);
-    Mg::gfx::MaterialPool material_pool{ texture_pool };
+    std::shared_ptr<Mg::gfx::MaterialPool> material_pool =
+        std::make_shared<Mg::gfx::MaterialPool>(texture_pool);
 
     std::unique_ptr<Mg::gfx::BitmapFont> font;
 
     Mg::gfx::MeshRenderer mesh_renderer{ Mg::gfx::LightGridConfig{} };
     Mg::gfx::DebugRenderer debug_renderer;
     Mg::gfx::BillboardRenderer billboard_renderer;
+    std::unique_ptr<Mg::gfx::BlurRenderer> blur_renderer;
     Mg::gfx::PostProcessRenderer post_renderer;
     Mg::gfx::UIRenderer ui_renderer{ { 1024, 768 } };
     Mg::gfx::SkyboxRenderer skybox_renderer;
@@ -110,7 +103,6 @@ public:
     Mg::gfx::BillboardRenderList billboard_render_list;
 
     std::unique_ptr<Mg::gfx::TextureRenderTarget> hdr_target;
-    BlurTargets blur_targets;
 
     Mg::gfx::Camera camera;
     float last_camera_z = 0.0f;
@@ -123,8 +115,8 @@ public:
 
     std::vector<Mg::gfx::Light> scene_lights;
 
-    Mg::gfx::Material* blur_material = nullptr;
     Mg::gfx::Material* bloom_material = nullptr;
+    Mg::gfx::Material* blur_material = nullptr;
     Mg::gfx::Material* billboard_material = nullptr;
     Mg::gfx::Material* ui_material = nullptr;
     const Mg::gfx::Material* sky_material = nullptr;
@@ -171,7 +163,6 @@ private:
 
     void make_input_map();
 
-    void make_blur_targets(Mg::VideoMode video_mode);
     void make_hdr_target(Mg::VideoMode mode);
 
     void load_models();
@@ -183,7 +174,6 @@ private:
 
     void render_light_debug_geometry();
     void render_skeleton_debug_geometry();
-    void render_bloom();
 
     void prepare_pipelines();
 

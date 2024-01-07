@@ -120,7 +120,9 @@ void Scene::init()
         this);
 
     make_hdr_target(app.window().settings().video_mode);
-    make_blur_targets(app.window().settings().video_mode);
+
+    blur_renderer = std::make_unique<Mg::gfx::BlurRenderer>(texture_pool,
+                                                            app.window().settings().video_mode);
 
     app.gfx_device().set_clear_colour(0.0125f, 0.01275f, 0.025f, 1.0f);
 
@@ -190,12 +192,13 @@ void Scene::simulation_step()
         {
             texture_pool->destroy(hdr_target->colour_target());
             texture_pool->destroy(hdr_target->depth_target());
-            texture_pool->destroy(blur_targets.hor_pass_target_texture);
-            texture_pool->destroy(blur_targets.vert_pass_target_texture);
         }
 
         make_hdr_target(app.window().settings().video_mode);
-        make_blur_targets(app.window().settings().video_mode);
+
+        // Recreate BlurRenderer, to make new state matching new video mode.
+        blur_renderer = std::make_unique<Mg::gfx::BlurRenderer>(texture_pool,
+                                                                app.window().settings().video_mode);
 
         app.window().release_cursor();
     }
@@ -303,13 +306,13 @@ void Scene::render(const double lerp_factor)
         billboard_renderer.render(*hdr_target, camera, billboard_render_list, *billboard_material);
     }
 
-    render_bloom();
+    blur_renderer->render(post_renderer, *hdr_target, *blur_material);
 
     // Apply tonemap and render to window render target.
     {
         app.gfx_device().clear(app.window().render_target);
 
-        bloom_material->set_sampler("sampler_bloom", blur_targets.vert_pass_target_texture);
+        bloom_material->set_sampler("sampler_bloom", blur_renderer->target_texture());
 
         post_renderer.post_process(post_renderer.make_context(),
                                    *bloom_material,
@@ -460,7 +463,7 @@ const Mg::gfx::Material* Scene::load_material(Mg::Identifier file,
                                               std::span<const Mg::Identifier> options)
 {
 #if 1
-    if (const Mg::gfx::Material* preexisting = material_pool.find(file); preexisting != nullptr) {
+    if (const Mg::gfx::Material* preexisting = material_pool->find(file); preexisting != nullptr) {
         return preexisting;
     }
 
@@ -510,13 +513,13 @@ const Mg::gfx::Material* Scene::load_material(Mg::Identifier file,
     if (use_metallic_workflow) {
         auto handle = resource_cache->resource_handle<Mg::ShaderResource>(
             "shaders/default_metallic_workflow.hjson");
-        m = material_pool.create(file, handle);
+        m = material_pool->create(file, handle);
         m->set_sampler("sampler_ao_roughness_metallic", ao_roughness_metallic_texture);
     }
     else {
         auto handle = resource_cache->resource_handle<Mg::ShaderResource>(
             "shaders/default_specular_workflow.hjson");
-        m = material_pool.create(file, handle);
+        m = material_pool->create(file, handle);
         m->set_sampler("sampler_specular", specular_texture);
     }
 
@@ -531,7 +534,7 @@ const Mg::gfx::Material* Scene::load_material(Mg::Identifier file,
 #else
     auto material_access =
         resource_cache->access_resource<Mg::MaterialResource>("materials/default.hjson");
-    return material_pool.get_or_create(*material_access);
+    return material_pool->get_or_create(*material_access);
 #endif
 }
 
@@ -700,40 +703,6 @@ void Scene::make_input_map()
     // clang-format on
 }
 
-void Scene::make_blur_targets(Mg::VideoMode video_mode)
-{
-    MG_GFX_DEBUG_GROUP("Scene::make_blur_targets")
-    static constexpr int32_t k_num_mip_levels = 4;
-
-    blur_targets = {};
-
-    Mg::gfx::RenderTargetParams params{};
-    params.filter_mode = Mg::gfx::TextureFilterMode::Linear;
-    params.width = video_mode.width >> 2;
-    params.height = video_mode.height >> 2;
-    params.num_mip_levels = k_num_mip_levels;
-    params.texture_format = Mg::gfx::RenderTargetParams::Format::RGBA16F;
-    params.render_target_id = "Blur_horizontal";
-
-    blur_targets.hor_pass_target_texture = texture_pool->create_render_target(params);
-
-    params.render_target_id = "Blur_vertical";
-    blur_targets.vert_pass_target_texture = texture_pool->create_render_target(params);
-
-    for (int32_t mip_level = 0; mip_level < k_num_mip_levels; ++mip_level) {
-        blur_targets.hor_pass_targets.emplace_back(Mg::gfx::TextureRenderTarget::with_colour_target(
-            blur_targets.hor_pass_target_texture,
-            Mg::gfx::TextureRenderTarget::DepthType::None,
-            mip_level));
-
-        blur_targets.vert_pass_targets.emplace_back(
-            Mg::gfx::TextureRenderTarget::with_colour_target(
-                blur_targets.vert_pass_target_texture,
-                Mg::gfx::TextureRenderTarget::DepthType::None,
-                mip_level));
-    }
-}
-
 void Scene::make_hdr_target(Mg::VideoMode mode)
 {
     MG_GFX_DEBUG_GROUP("Scene::make_hdr_target")
@@ -754,55 +723,6 @@ void Scene::make_hdr_target(Mg::VideoMode mode)
 
     hdr_target = Mg::gfx::TextureRenderTarget::with_colour_and_depth_targets(colour_target,
                                                                              depth_target);
-}
-
-void Scene::render_bloom()
-{
-    MG_GFX_DEBUG_GROUP("render_bloom")
-
-    constexpr size_t k_num_blur_iterations = 2;
-    const size_t num_blur_targets = blur_targets.hor_pass_targets.size();
-
-    Mg::gfx::TextureRenderTarget::BlitSettings blit_settings = {};
-    blit_settings.colour = true;
-    blit_settings.depth = false;
-    blit_settings.stencil = false;
-    blit_settings.filter = Mg::gfx::TextureRenderTarget::BlitFilter::linear;
-
-    // Init first pass by blitting to ping-pong buffers.
-    Mg::gfx::TextureRenderTarget::blit(*hdr_target,
-                                       *blur_targets.vert_pass_targets[0],
-                                       blit_settings);
-
-    Mg::gfx::PostProcessRenderer::Context post_render_context = post_renderer.make_context();
-
-    for (size_t mip_i = 0; mip_i < num_blur_targets; ++mip_i) {
-        Mg::gfx::TextureRenderTarget& hor_target = *blur_targets.hor_pass_targets[mip_i];
-        Mg::gfx::TextureRenderTarget& vert_target = *blur_targets.vert_pass_targets[mip_i];
-
-        // Source mip-level will be [0, 0, 1, 2, 3, ...]
-        blur_material->set_parameter("source_mip_level", Mg::max(0, static_cast<int>(mip_i) - 1));
-        blur_material->set_parameter("destination_mip_level", static_cast<int>(mip_i));
-
-        // Render gaussian blur in separate horizontal and vertical passes.
-        for (size_t u = 0; u < k_num_blur_iterations; ++u) {
-            // Horizontal pass
-            blur_material->set_option("HORIZONTAL", true);
-            post_renderer.post_process(post_render_context,
-                                       *blur_material,
-                                       hor_target,
-                                       vert_target.colour_target()->handle());
-
-            blur_material->set_parameter("source_mip_level", static_cast<int>(mip_i));
-
-            // Vertical pass
-            blur_material->set_option("HORIZONTAL", false);
-            post_renderer.post_process(post_render_context,
-                                       *blur_material,
-                                       vert_target,
-                                       hor_target.colour_target()->handle());
-        }
-    }
 }
 
 // Issue dummy draw commands to force driver to prepare pipelines and compile shaders for all models
@@ -940,29 +860,31 @@ void Scene::load_materials()
     // Create post-process materials
     const auto bloom_handle =
         resource_cache->resource_handle<Mg::ShaderResource>("shaders/post_process_bloom.hjson");
-    auto const blur_handle =
+
+    bloom_material = material_pool->create("bloom_material", bloom_handle);
+
+    const auto blur_handle =
         resource_cache->resource_handle<Mg::ShaderResource>("shaders/post_process_blur.hjson");
 
-    bloom_material = material_pool.create("bloom_material", bloom_handle);
-    blur_material = material_pool.create("blur_material", blur_handle);
+    blur_material = material_pool->create("blur_material", blur_handle);
 
     // Create billboard material
     const auto billboard_handle =
         resource_cache->resource_handle<Mg::ShaderResource>("shaders/simple_billboard.hjson");
 
-    billboard_material = material_pool.create("billboard_material", billboard_handle);
+    billboard_material = material_pool->create("billboard_material", billboard_handle);
     billboard_material->set_sampler("sampler_diffuse", load_texture("textures/light_t.dds", true));
 
     // Create UI material
     const auto ui_handle =
         resource_cache->resource_handle<Mg::ShaderResource>("shaders/ui_render_test.hjson");
-    ui_material = material_pool.create("ui_material", ui_handle);
+    ui_material = material_pool->create("ui_material", ui_handle);
     ui_material->set_sampler("sampler_colour", load_texture("textures/ui/book_open_da.dds", true));
 
     // Load sky material
     {
         auto m = resource_cache->access_resource<Mg::MaterialResource>("materials/skybox.hjson");
-        sky_material = material_pool.get_or_create(*m);
+        sky_material = material_pool->get_or_create(*m);
     }
 }
 
@@ -1043,7 +965,7 @@ void Scene::on_resource_reload(const Mg::FileChangedEvent& event)
     case "MaterialResource"_hash: {
         try_reload([&] {
             Mg::ResourceAccessGuard<Mg::MaterialResource> access(event.resource);
-            material_pool.update(*access);
+            material_pool->update(*access);
         });
         [[fallthrough]];
     }
