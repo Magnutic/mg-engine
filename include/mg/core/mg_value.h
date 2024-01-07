@@ -105,17 +105,18 @@ public:
     /** Construct a Value of the given type with a default value. */
     explicit Value(const Type type)
     {
-        switch (type) {
 #define MG_INIT_M_DATA_CASE(enum_value, data_type, ...) \
     case Type::enum_value:                              \
         m_data = data_type{};                           \
         break;
 
+        switch (type) {
             MG_FOR_EACH_VALUE_TYPE(MG_INIT_M_DATA_CASE)
+        default:
+            MG_ASSERT(false && "Unexpected Value::Type");
+        }
 
 #undef MG_INIT_M_DATA_CASE
-        }
-        MG_ASSERT(false && "Unexpected Value::Type");
     }
 
     ~Value() = default;
