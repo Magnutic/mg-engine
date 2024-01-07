@@ -3,8 +3,8 @@ float weight[3] = float[](0.2270270270, 0.3162162162, 0.0702702703);
 
 void main()
 {
-    int source_mip_level = material_params.source_mip_level;
-    int destination_mip_level = material_params.destination_mip_level;
+    int source_mip_level = parameters.source_mip_level;
+    int destination_mip_level = parameters.destination_mip_level;
 
     vec2 step_size = (1.0 + (destination_mip_level - source_mip_level)) /
                      textureSize(sampler_colour, source_mip_level);

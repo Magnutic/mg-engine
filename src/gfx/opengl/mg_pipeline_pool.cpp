@@ -131,7 +131,7 @@ std::string shader_input_layout_code(const Material& material)
             snippet += ";\n";
         }
 
-        snippet += "} material_params;\n\n";
+        snippet += "} parameters;\n\n";
     }
 
     // Include definition of each sampler.

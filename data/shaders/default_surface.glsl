@@ -51,11 +51,11 @@ void surface(const SurfaceInput s_in, out SurfaceParams s_out) {
     s_out.specular = material.specular;
     s_out.gloss    = material.gloss;
     s_out.normal   = material.normal;
-    s_out.emission = material.albedo * material_params.ambient_colour.rgb * material.ambient_occlusion;
+    s_out.emission = material.albedo * parameters.ambient_colour.rgb * material.ambient_occlusion;
 
 #if RIM_LIGHT
     float rim_factor = 1.0 - max(0.0, dot(s_in.view_direction, material.normal));
-    rim_factor       = pow(rim_factor, material_params.rim_power) * material_params.rim_intensity;
+    rim_factor       = pow(rim_factor, parameters.rim_power) * parameters.rim_intensity;
     s_out.emission   += rim_factor * material.specular;
 #endif
 

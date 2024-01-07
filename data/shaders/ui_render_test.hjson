@@ -11,8 +11,8 @@ parameters: {
 fragment_code:
     '''
     void main() {
-        vec4 result = texture(sampler_colour, tex_coord).rgba * material_params.colour;
-        result.a *= material_params.opacity;
+        vec4 result = texture(sampler_colour, tex_coord).rgba * parameters.colour;
+        result.a *= parameters.opacity;
         frag_out = result;
     }
     '''
