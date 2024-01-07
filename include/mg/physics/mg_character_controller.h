@@ -28,6 +28,8 @@
  * Collision-handling physical body that can be controlled for example by a player or by an AI.
  */
 
+#pragma once
+
 #include "mg/core/mg_identifier.h"
 #include "mg/physics/mg_physics.h"
 
