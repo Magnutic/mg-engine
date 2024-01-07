@@ -28,8 +28,8 @@
 #include <mg/gfx/mg_ui_renderer.h>
 #include <mg/input/mg_input.h>
 #include <mg/input/mg_keyboard.h>
+#include <mg/mg_actor.hpp>
 #include <mg/mg_bounding_volumes.h>
-#include <mg/physics/mg_character_controller.h>
 #include <mg/physics/mg_physics.h>
 #include <mg/resource_cache/mg_resource_cache.h>
 #include <mg/utils/mg_optional.h>
@@ -80,33 +80,6 @@ struct BlurTargets {
     Mg::gfx::Texture2D* vert_pass_target_texture;
 };
 
-class Actor {
-public:
-    constexpr static float radius = 0.5f;
-    constexpr static float height = 1.8f;
-    constexpr static float step_height = 0.6f;
-
-    explicit Actor(Mg::physics::World& physics_world, const glm::vec3& position, const float mass)
-        : character_controller("Actor", physics_world, {})
-    {
-        character_controller.mass = mass;
-        character_controller.set_position(position);
-    }
-
-    void update(glm::vec3 acceleration, float jump_impulse);
-
-    glm::vec3 position(const float interpolate = 1.0f) const
-    {
-        return character_controller.get_position(interpolate);
-    }
-
-    float current_height() const { return character_controller.current_height(); }
-
-    Mg::physics::CharacterController character_controller;
-    float max_horizontal_speed = 10.0f;
-    float friction = 0.6f;
-};
-
 class Scene : public Mg::IApplication {
 public:
     Mg::ApplicationContext app;
@@ -146,7 +119,7 @@ public:
     Mg::input::InputMap input_map;
 
     std::unique_ptr<Mg::physics::World> physics_world;
-    std::unique_ptr<Actor> actor;
+    std::unique_ptr<Mg::Actor> actor;
 
     std::vector<Mg::gfx::Light> scene_lights;
 

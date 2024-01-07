@@ -56,6 +56,7 @@ add_library(mg_engine
     input/mg_joy.cpp
     input/mg_keyboard.cpp
     input/mg_mouse.cpp
+    mg_actor.cpp
     mg_bounding_volumes.cpp
     mg_imgui_overlay.cpp
     mg_unicode.cpp
