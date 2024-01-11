@@ -13,8 +13,6 @@
 #include "mg/containers/mg_array.h"
 #include "mg/core/mg_window_settings.h"
 #include "mg/gfx/mg_render_target.h"
-#include "mg/input/mg_keyboard.h"
-#include "mg/input/mg_mouse.h"
 #include "mg/utils/mg_macros.h"
 
 #include <cstdint>
@@ -24,9 +22,12 @@
 
 struct GLFWwindow;
 
-namespace Mg {
+namespace Mg::input {
+class IButtonEventHandler;
+class IMouseMovementEventHandler;
+} // namespace Mg::input
 
-//--------------------------------------------------------------------------------------------------
+namespace Mg {
 
 /* Find all available screen resolutions.
  * This could be useful for e.g. listing choices in a display options menu.
@@ -35,8 +36,6 @@ Array<VideoMode> find_available_video_modes();
 
 /** Get video mode of primary monitor. */
 VideoMode current_monitor_video_mode() noexcept;
-
-//--------------------------------------------------------------------------------------------------
 
 /** Whether or not cursor is locked into the window when it is focused.
  * Locked results in cursor being invisible and forced to stay within the window.
@@ -66,7 +65,7 @@ public:
     MG_MAKE_NON_MOVABLE(Window);
 
     /** Call at end of frame to display image to window. */
-    void refresh() noexcept;
+    void swap_buffers() noexcept;
 
     /** Set window title. */
     void set_title(std::string title) noexcept;
@@ -129,27 +128,26 @@ public:
     void apply_settings(WindowSettings s);
 
     //----------------------------------------------------------------------------------------------
-    // Input devices
 
-    /** Get underlying GLFW window handle. Used by input system and ImguiOverlay. */
-    GLFWwindow* glfw_window() const noexcept { return m_window; }
-
-    /** Polls input events for this window, refreshing `keyboard` and `mouse` members. */
+    /** Polls input events for this window. Should be done every frame. */
     void poll_input_events();
 
-    /** Keyboard input device associated with this Window. */
-    input::Keyboard keyboard;
+    void register_button_event_handler(input::IButtonEventHandler& handler);
+    void deregister_button_event_handler(input::IButtonEventHandler& handler);
 
-    /** Mouse input device associated with this Window. */
-    input::Mouse mouse;
+    void register_mouse_movement_event_handler(input::IMouseMovementEventHandler& handler);
+    void deregister_mouse_movement_event_handler(input::IMouseMovementEventHandler& handler);
 
-    //----------------------------------------------------------------------------------------------
-    // Render target for this window.
-
+    /** Render target for this window. */
     gfx::WindowRenderTarget render_target{};
 
+    /** Get underlying GLFW window handle. */
+    GLFWwindow* glfw_window() const noexcept { return m_window; }
+
 private:
-    void mouse_button_callback(int button, bool pressed);
+    void mouse_button_callback(int button, int action, int mods);
+    void cursor_position_callback(float x, float y);
+    void key_callback(int key, int scancode, int action, int mods);
     void focus_callback(bool focused);
     void frame_buffer_size_callback(int width, int height);
     void window_size_callback(int width, int height);
@@ -164,6 +162,9 @@ private:
     std::string m_title;
 
     GLFWwindow* m_window = nullptr;
+
+    std::vector<input::IButtonEventHandler*> m_button_event_handlers;
+    std::vector<input::IMouseMovementEventHandler*> m_mouse_movement_event_handlers;
 
     CursorLockMode m_cursor_lock_mode = CursorLockMode::UNLOCKED;
     bool m_is_cursor_locked = false;

@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2024, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -10,114 +10,111 @@
 
 #pragma once
 
-#include <vector>
-
+#include "mg/containers/mg_flat_map.h"
 #include "mg/core/mg_identifier.h"
-#include "mg/utils/mg_impl_ptr.h"
+#include "mg/input/mg_keyboard.h"
+#include "mg/input/mg_mouse.h"
 #include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_optional.h"
+
+#include <glm/vec2.hpp>
+
+namespace Mg {
+class Window;
+}
 
 namespace Mg::input {
 
-/** Threshold value above which (the absolute value of) InputSources' state is to be considered as
- * being pressed.
- */
-constexpr float k_is_pressed_threshold = 0.5f;
-
-class IInputDevice;
-
-/** InputSource represents a particular source of input, e.g. a keyboard key, a mouse button or
- * axis, joystick axis, etc.
- */
-class InputSource {
-public:
-    /** Identifier for an individual input source within an input device. How the value for
-     * InputSource::Id is mapped to a specific such input source is internal to each IInputDevice
-     * implementation.
-     */
-    using Id = uint32_t;
-
-    explicit InputSource(const IInputDevice& dev, InputSource::Id id) noexcept
-        : m_device(&dev), m_id(id)
-    {}
-
-    std::string description() const;
-    float state() const;
-
-private:
-    const IInputDevice* m_device;
-    InputSource::Id m_id;
+enum class InputEvent {
+    Press,
+    Release,
 };
 
-//--------------------------------------------------------------------------------------------------
-
-/** Generic interface for all kinds of input devices: keyboard, mouse, joystick / gamepad, etc. */
-class IInputDevice {
-    friend class InputSource;
-
+class IButtonEventHandler {
 public:
-    MG_INTERFACE_BOILERPLATE(IInputDevice);
+    MG_INTERFACE_BOILERPLATE(IButtonEventHandler);
 
-protected:
-    virtual float state(InputSource::Id) const = 0;
-    virtual std::string description(InputSource::Id) const = 0;
+    virtual void handle_key_event(Key key, InputEvent event) = 0;
+    virtual void handle_mouse_button_event(MouseButton button, InputEvent event) = 0;
 };
 
-//--------------------------------------------------------------------------------------------------
-
-/** InputMap provides a mapping from a set of Identifiers to InputSources. */
-class InputMap {
+class IMouseMovementEventHandler {
 public:
-    explicit InputMap();
-    ~InputMap();
+    MG_INTERFACE_BOILERPLATE(IMouseMovementEventHandler);
 
-    MG_MAKE_NON_COPYABLE(InputMap);
-    MG_MAKE_DEFAULT_MOVABLE(InputMap);
+    virtual void handle_mouse_move_event(float x, float y, bool is_cursor_locked_to_window) = 0;
+};
 
-    /** Bind command to the given input source. */
-    void bind(Identifier command, InputSource input_id);
+struct ButtonState {
+    bool was_pressed = false;
+    bool was_released = false;
+    bool is_held = false;
+};
 
-    void unbind(Identifier command);
+class ButtonTracker : public IButtonEventHandler {
+public:
+    using ButtonStates = FlatMap<Identifier, ButtonState, Identifier::HashCompare>;
 
-    InputSource binding(Identifier command) const;
+    explicit ButtonTracker(Window& window);
+    ~ButtonTracker() override;
 
-    /** Get a list of all commands. */
-    std::vector<Identifier> commands() const;
+    MG_MAKE_NON_MOVABLE(ButtonTracker);
+    MG_MAKE_NON_COPYABLE(ButtonTracker);
 
-    /** Checks input devices and updates state. Call this once per time step. */
-    void update();
+    // Implementation of IButtonEventHandler.
+    // Mg::Window calls these functions to notify ButtonTracker of button events.
+    void handle_key_event(Key key, InputEvent event) override;
+    void handle_mouse_button_event(MouseButton button, InputEvent event) override;
 
-    /** Checks input devices but does not update state. This can be used to poll input more often
-     * than state is updated. The typical use case is to ensure mouse motion is polled every render
-     * frame to minimize input latency, when rendering framerate is disconnected from the logical
-     * time step.
-     */
-    void refresh();
+    void bind(Identifier button_action_id, Key key, bool overwrite = true);
+    void bind(Identifier button_action_id, MouseButton button, bool overwrite = true);
 
-    /** Get current state of input command.
-     * @return State of command as float. Keys and buttons return 1.0f if pressed, 0.0f otherwise.
-     * Joystick axes return in the range [-1.0f, 1.0f].
-     */
-    float state(Identifier command) const;
+    // Get button events for each binding since last call to this function.
+    [[nodiscard]] ButtonStates get_button_events()
+    {
+        ButtonStates result = m_states;
 
-    /** Get previous state of input command as float. Previous state refers to the state before the
-     * last `InputSystem::update()` call.
-     * @return Previous state of command as float. Keys and buttons return 1.0f if pressed, 0.0f
-     * otherwise. Joystick axes return in the range [-1.0f, 1.0f].
-     */
-    float prev_state(Identifier command) const;
+        for (auto& [id, state] : m_states) {
+            state.was_pressed = false;
+            state.was_released = false;
+        }
 
-    /** Returns whether button assigned to identifier was just pressed. */
-    bool was_pressed(Identifier command) const;
-
-    /** Returns whether button assigned to identifier is currently held. */
-    bool is_held(Identifier command) const;
-
-    /** Returns whether button assigned to identifier was just released. */
-    bool was_released(Identifier command) const;
+        return result;
+    }
 
 private:
-    struct Impl;
-    ImplPtr<Impl> m_impl;
+    Window& m_window;
+    ButtonStates m_states;
+    FlatMap<MouseButton, Identifier> m_mouse_button_bindings;
+    FlatMap<Key, Identifier> m_key_bindings;
+};
+
+class MouseMovementTracker : public IMouseMovementEventHandler {
+public:
+    explicit MouseMovementTracker(Window& window);
+    ~MouseMovementTracker() override;
+
+    MG_MAKE_NON_MOVABLE(MouseMovementTracker);
+    MG_MAKE_NON_COPYABLE(MouseMovementTracker);
+
+    // Implementation of IMouseMovementEventHandler.
+    // Mg::Window calls these functions to notify MouseMovementTracker of input events.
+    void handle_mouse_move_event(float x, float y, bool is_cursor_locked_to_window) override;
+
+    /** Get mouse cursor position in screen coordinates, relative to upper left corner of the
+     * window.
+     */
+    glm::vec2 mouse_cursor_position() const { return m_cursor_position; }
+
+    /** Get difference in cursor position since last call to this function.
+     * Returns delta in units of screen coordinates.
+     */
+    glm::vec2 mouse_delta() { return std::exchange(m_cursor_delta, { 0.0f, 0.0f }); }
+
+private:
+    Window& m_window;
+    glm::vec2 m_cursor_position = { 0.0f, 0.0f };
+    glm::vec2 m_cursor_delta = { 0.0f, 0.0f };
 };
 
 } // namespace Mg::input

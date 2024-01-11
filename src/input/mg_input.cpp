@@ -1,139 +1,99 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2024, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
 #include "mg/input/mg_input.h"
-
 #include "mg/core/mg_log.h"
-
-#include <cmath>
-#include <unordered_map>
+#include "mg/core/mg_runtime_error.h"
+#include "mg/core/mg_window.h"
 
 namespace Mg::input {
 
 namespace {
 
-struct State {
-    float largest_diff = 0.0f;
-    float current_state = 0.0f;
-    float prev_state = 0.0f;
-};
+void update_button_state(ButtonState& state, const InputEvent event)
+{
+    if (event == InputEvent::Press) {
+        state.is_held = true;
+        state.was_pressed = true;
+    }
+    else {
+        state.is_held = false;
+        state.was_released = true;
+    }
+}
 
 } // namespace
 
-std::string InputSource::description() const
+
+ButtonTracker::ButtonTracker(Window& window) : m_window{ window }
 {
-    return m_device->description(m_id);
+    m_window.register_button_event_handler(*this);
 }
 
-float InputSource::state() const
+ButtonTracker::~ButtonTracker()
 {
-    return m_device->state(m_id);
+    m_window.deregister_button_event_handler(*this);
 }
 
-struct InputMap::Impl {
-    std::unordered_map<Identifier, InputSource> commands;
-    std::unordered_map<Identifier, State> command_states;
-};
-
-InputMap::InputMap() = default;
-
-InputMap::~InputMap() = default;
-
-void InputMap::bind(Identifier command, InputSource input_id)
+void ButtonTracker::handle_key_event(const Key key, const InputEvent event)
 {
-    m_impl->commands.insert_or_assign(command, input_id);
-    m_impl->command_states.insert_or_assign(command, State{ 0.0f, 0.0f });
+    log.verbose("Received {} {}",
+                event == InputEvent::Press ? "press" : "release",
+                localized_key_name(key));
+    if (auto it = m_key_bindings.find(key); it != m_key_bindings.end()) {
+        update_button_state(m_states[it->second], event);
+    }
 }
 
-void InputMap::unbind(Identifier command)
+void ButtonTracker::handle_mouse_button_event(const MouseButton button, const InputEvent event)
 {
-    if (auto it = m_impl->commands.find(command); it != m_impl->commands.end()) {
-        m_impl->commands.erase(it);
+    if (auto it = m_mouse_button_bindings.find(button); it != m_mouse_button_bindings.end()) {
+        update_button_state(m_states[it->second], event);
+    }
+}
+
+void ButtonTracker::bind(Identifier button_action_id, Key key, bool overwrite)
+{
+    if (!overwrite && m_key_bindings.find(key) != m_key_bindings.end()) {
         return;
     }
-
-    log.warning(
-        "InputMap::unbind(): "
-        "Attempting to clear binding for non-existing command '{}'",
-        command.str_view());
+    m_key_bindings[key] = button_action_id;
+    m_states[button_action_id] = {};
 }
 
-InputSource InputMap::binding(Identifier command) const
+void ButtonTracker::bind(Identifier button_action_id, MouseButton button, bool overwrite)
 {
-    return m_impl->commands.at(command);
-}
-
-std::vector<Identifier> InputMap::commands() const
-{
-    std::vector<Identifier> ret_val;
-    ret_val.reserve(m_impl->commands.size());
-
-    for (auto&& p : m_impl->commands) {
-        ret_val.push_back(p.first);
+    if (!overwrite && m_mouse_button_bindings.find(button) != m_mouse_button_bindings.end()) {
+        return;
     }
-
-    return ret_val;
+    m_mouse_button_bindings[button] = button_action_id;
+    m_states[button_action_id] = {};
 }
 
-void InputMap::update()
+MouseMovementTracker::MouseMovementTracker(Window& window) : m_window{ window }
 {
-    refresh();
-    for (auto& [id, state] : m_impl->command_states) {
-        state.prev_state = state.current_state;
-        state.current_state = m_impl->commands.at(id).state();
+    m_window.register_mouse_movement_event_handler(*this);
+}
 
-        // Check for missed states B when going from A -> B -> A in one update.
-        // (This can only happen if `refresh` was called between `update`s).
-        const bool missed_state_change = state.prev_state == state.current_state &&
-                                         state.largest_diff != 0.0f;
-        if (missed_state_change) {
-            state.current_state = state.largest_diff;
-        }
+MouseMovementTracker::~MouseMovementTracker()
+{
+    m_window.deregister_mouse_movement_event_handler(*this);
+}
 
-        state.largest_diff = 0.0f;
+void MouseMovementTracker::handle_mouse_move_event(const float x,
+                                                   const float y,
+                                                   const bool is_cursor_locked_to_window)
+{
+    m_cursor_delta = { m_cursor_delta.x + x - m_cursor_position.x,
+                       m_cursor_delta.y + y - m_cursor_position.y };
+    m_cursor_position = { x, y };
+
+    if (!is_cursor_locked_to_window) {
+        m_cursor_delta = { 0.0f, 0.0f };
     }
-}
-
-void InputMap::refresh()
-{
-    for (auto& [id, state] : m_impl->command_states) {
-        const float new_state = m_impl->commands.at(id).state();
-        if (std::abs(new_state - state.current_state) > state.largest_diff) {
-            state.largest_diff = new_state;
-        }
-    }
-}
-
-float InputMap::state(Identifier command) const
-{
-    return m_impl->command_states.at(command).current_state;
-}
-
-float InputMap::prev_state(Identifier command) const
-{
-    return m_impl->command_states.at(command).prev_state;
-}
-
-bool InputMap::is_held(Identifier command) const
-{
-    return std::abs(state(command)) >= k_is_pressed_threshold;
-}
-
-bool InputMap::was_pressed(Identifier command) const
-{
-    auto& state = m_impl->command_states.at(command);
-    return std::abs(state.prev_state) < k_is_pressed_threshold &&
-           std::abs(state.current_state) >= k_is_pressed_threshold;
-}
-
-bool InputMap::was_released(Identifier command) const
-{
-    auto& state = m_impl->command_states.at(command);
-    return std::abs(state.prev_state) >= k_is_pressed_threshold &&
-           std::abs(state.current_state) < k_is_pressed_threshold;
 }
 
 } // namespace Mg::input

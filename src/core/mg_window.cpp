@@ -10,6 +10,8 @@
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/gfx/mg_render_target.h"
+#include "mg/input/mg_input.h"
+#include "mg/input/mg_mouse.h"
 #include "mg/mg_defs.h"
 #include "mg/utils/mg_gsl.h"
 
@@ -179,8 +181,17 @@ std::unique_ptr<Window> Window::make(WindowSettings settings, std::string title)
 
     // Set up callbacks
 
-    glfwSetMouseButtonCallback(window, [](GLFWwindow* w, int button, int act, int) {
-        window_from_glfw_handle(w).mouse_button_callback(button, act == GLFW_PRESS);
+    glfwSetCursorPosCallback(window, [](GLFWwindow* w, double x, double y) {
+        window_from_glfw_handle(w).cursor_position_callback(float(x), float(y));
+    });
+
+    glfwSetMouseButtonCallback(window, [](GLFWwindow* w, int button, int action, int mods) {
+        window_from_glfw_handle(w).mouse_button_callback(button, action, mods);
+    });
+
+
+    glfwSetKeyCallback(window, [](GLFWwindow* w, int key, int scancode, int action, int mods) {
+        window_from_glfw_handle(w).key_callback(key, scancode, action, mods);
     });
 
     glfwSetWindowFocusCallback(window, [](GLFWwindow* w, int focused) {
@@ -195,11 +206,7 @@ std::unique_ptr<Window> Window::make(WindowSettings settings, std::string title)
         window_from_glfw_handle(w).window_size_callback(width, height);
     });
 
-    // Sticky keys means that key state remains 'pressed' until their state has been polled, so
-    // that key-presses in between polls do not go unnoticed.
-    glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE);
-
-    if (glfwRawMouseMotionSupported() != GLFW_FALSE) {
+    if (glfwRawMouseMotionSupported() == GLFW_TRUE) {
         log.message("Raw mouse-motion input enabled.");
         glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     }
@@ -215,7 +222,7 @@ std::unique_ptr<Window> Window::make(WindowSettings settings, std::string title)
 }
 
 Window::Window(ConstructKey /*unused*/, GLFWwindow* handle, WindowSettings settings)
-    : keyboard{ *this }, mouse{ *this }, m_settings{ settings }, m_window{ handle }
+    : m_settings{ settings }, m_window{ handle }
 {
     MG_ASSERT(s_window == nullptr && "Only one Mg::Window may exist at a time.");
     s_window = this;
@@ -250,18 +257,35 @@ void Window::clear_should_close_flag() noexcept
     glfwSetWindowShouldClose(m_window, 0);
 }
 
-void Window::refresh() noexcept
+void Window::swap_buffers() noexcept
 {
     // Update GLFW window
-    // TODO: this is OpenGL-specific
     glfwSwapBuffers(m_window);
 }
 
 void Window::poll_input_events()
 {
     glfwPollEvents();
-    mouse.refresh();
-    keyboard.refresh();
+}
+
+void Window::register_button_event_handler(input::IButtonEventHandler& handler)
+{
+    m_button_event_handlers.push_back(&handler);
+}
+
+void Window::deregister_button_event_handler(input::IButtonEventHandler& handler)
+{
+    std::erase(m_button_event_handlers, &handler);
+}
+
+void Window::register_mouse_movement_event_handler(input::IMouseMovementEventHandler& handler)
+{
+    m_mouse_movement_event_handlers.push_back(&handler);
+}
+
+void Window::deregister_mouse_movement_event_handler(input::IMouseMovementEventHandler& handler)
+{
+    std::erase(m_mouse_movement_event_handlers, &handler);
 }
 
 void Window::apply_settings(WindowSettings s)
@@ -345,14 +369,43 @@ void Window::set_cursor_lock_mode(CursorLockMode mode) noexcept
     }
 }
 
-// Mark window as focused when user clicks within window
-void Window::mouse_button_callback(int button, bool pressed)
+void Window::cursor_position_callback(const float x, const float y)
 {
-    if (button != GLFW_MOUSE_BUTTON_LEFT || !pressed) {
+    for (auto* handler : m_mouse_movement_event_handlers) {
+        handler->handle_mouse_move_event(x, y, m_is_cursor_locked);
+    }
+}
+
+void Window::mouse_button_callback(const int button, const int action, const int /*mods*/)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        // Mark window as focused when user clicks within window
+        grab_cursor();
+    }
+
+    if (action != GLFW_PRESS && action != GLFW_RELEASE) {
         return;
     }
 
-    grab_cursor();
+    const auto event = action == GLFW_PRESS ? input::InputEvent::Press : input::InputEvent::Release;
+    for (auto* handler : m_button_event_handlers) {
+        handler->handle_mouse_button_event(input::MouseButton{ button }, event);
+    }
+}
+
+void Window::key_callback(const int key,
+                          const int /*scancode*/,
+                          const int action,
+                          const int /*mods*/)
+{
+    if (action != GLFW_PRESS && action != GLFW_RELEASE) {
+        return;
+    }
+
+    const auto event = action == GLFW_PRESS ? input::InputEvent::Press : input::InputEvent::Release;
+    for (auto* handler : m_button_event_handlers) {
+        handler->handle_key_event(input::Key{ key }, event);
+    }
 }
 
 void Window::focus_callback(bool focused)

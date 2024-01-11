@@ -1,8 +1,6 @@
 #include "test_scene.h"
-#include "mg/gfx/mg_texture_related_types.h"
-#include "mg/resources/mg_material_resource.h"
+#include "mg/physics/mg_character_controller.h"
 
-#include <initializer_list>
 #include <mg/core/mg_application_context.h>
 #include <mg/core/mg_config.h>
 #include <mg/core/mg_identifier.h>
@@ -18,13 +16,16 @@
 #include <mg/gfx/mg_skeleton.h>
 #include <mg/gfx/mg_texture2d.h>
 #include <mg/gfx/mg_texture_pool.h>
+#include <mg/gfx/mg_texture_related_types.h>
 #include <mg/gfx/mg_ui_renderer.h>
+#include <mg/input/mg_input.h>
 #include <mg/mg_bounding_volumes.h>
 #include <mg/mg_unicode.h>
 #include <mg/physics/mg_physics.h>
 #include <mg/resource_cache/internal/mg_resource_entry_base.h>
 #include <mg/resource_cache/mg_resource_access_guard.h>
 #include <mg/resources/mg_font_resource.h>
+#include <mg/resources/mg_material_resource.h>
 #include <mg/resources/mg_mesh_resource.h>
 #include <mg/resources/mg_shader_resource.h>
 #include <mg/resources/mg_sound_resource.h>
@@ -36,6 +37,7 @@
 
 #include <fmt/core.h>
 
+#include <initializer_list>
 #include <numeric>
 #include <variant>
 
@@ -49,19 +51,6 @@ constexpr auto window_title = "Mg Engine Test Scene";
 constexpr int k_steps_per_second = 60.0;
 constexpr size_t k_num_lights = 128;
 constexpr float k_light_radius = 3.0f;
-constexpr float actor_acceleration = 0.6f;
-
-std::array<float, 3> get_actor_acceleration(Mg::input::InputMap& input_map)
-{
-    auto is_held_value = [&input_map](Mg::Identifier mapping) -> float {
-        return static_cast<float>(input_map.is_held(mapping));
-    };
-    auto forward_acc = actor_acceleration * (is_held_value("forward") - is_held_value("backward"));
-    auto right_acc = actor_acceleration * (is_held_value("right") - is_held_value("left"));
-    auto up_acc = 0.0f; // actor_acceleration * (is_held_value("jump") - is_held_value("crouch"));
-
-    return { forward_acc, right_acc, up_acc };
-}
 
 void add_to_render_list(const bool animate_skinned_meshes,
                         const Model& model,
@@ -129,11 +118,21 @@ void Scene::init()
     camera.set_aspect_ratio(app.window().aspect_ratio());
     camera.field_of_view = 80_degrees;
 
-    make_input_map();
+    sample_control_button_tracker = std::make_shared<Mg::input::ButtonTracker>(app.window());
+    sample_control_button_tracker->bind("lock_camera", Mg::input::Key::E);
+    sample_control_button_tracker->bind("fullscreen", Mg::input::Key::F4);
+    sample_control_button_tracker->bind("exit", Mg::input::Key::Esc);
+    sample_control_button_tracker->bind("toggle_debug_vis", Mg::input::Key::F);
+    sample_control_button_tracker->bind("toggle_animations", Mg::input::Key::Tab);
+    sample_control_button_tracker->bind("reset", Mg::input::Key::R);
 
     physics_world = std::make_unique<Mg::physics::World>();
-    actor =
-        std::make_unique<Mg::Actor>("Actor"_id, *physics_world, glm::vec3(0.0f, 0.0f, 0.0f), 70.0f);
+    player_controller = std::make_unique<Mg::PlayerController>(
+        "Actor"_id,
+        *physics_world,
+        Mg::physics::CharacterControllerSettings{},
+        std::make_shared<Mg::input::ButtonTracker>(app.window()),
+        std::make_shared<Mg::input::MouseMovementTracker>(app.window()));
 
     load_models();
     load_materials();
@@ -157,31 +156,19 @@ void Scene::simulation_step()
     Mg::gfx::get_debug_render_queue().clear();
 
     app.window().poll_input_events();
-    input_map.update();
 
-    if (input_map.was_pressed("exit") || app.window().should_close_flag()) {
+    auto button_states = sample_control_button_tracker->get_button_events();
+
+    if (button_states["exit"].was_pressed || app.window().should_close_flag()) {
         m_should_exit = true;
     }
 
-    if (input_map.was_pressed("toggle_animations")) {
+    if (button_states["toggle_animations"].was_pressed) {
         animate_skinned_meshes = !animate_skinned_meshes;
     }
 
-    // Actor movement
-    const bool is_jumping = input_map.was_pressed("jump") &&
-                            actor->character_controller.is_on_ground();
-
-    const auto [forward_acc, right_acc, up_acc] = get_actor_acceleration(input_map);
-    const Mg::Rotation rotation_horizontal(glm::vec3(0.0f, 0.0f, camera.rotation.euler_angles().z));
-    const glm::vec3 vec_forward = rotation_horizontal.forward();
-    const glm::vec3 vec_right = rotation_horizontal.right();
-
-    const float factor = actor->character_controller.is_on_ground() ? 1.0f : 0.3f;
-    actor->update((vec_forward * forward_acc + vec_right * right_acc) * factor,
-                  (is_jumping ? 5.0f : 0.0f));
-
     // Fullscreen switching
-    if (input_map.was_pressed("fullscreen")) {
+    if (button_states["fullscreen"].was_pressed) {
         Mg::WindowSettings s = app.window().settings();
         s.fullscreen = !s.fullscreen;
         s.video_mode = {}; // reset resolution etc. to defaults
@@ -197,36 +184,35 @@ void Scene::simulation_step()
         make_hdr_target(app.window().settings().video_mode);
 
         // Recreate BlurRenderer, to make new state matching new video mode.
+        blur_renderer.reset();
         blur_renderer = std::make_unique<Mg::gfx::BlurRenderer>(texture_pool,
                                                                 app.window().settings().video_mode);
 
-        app.window().release_cursor();
+        if (app.window().is_cursor_locked_to_window() && !s.fullscreen) {
+            app.window().release_cursor();
+        }
     }
 
-    if (input_map.was_pressed("toggle_debug_vis")) {
+    if (button_states["toggle_debug_vis"].was_pressed) {
         draw_debug = !draw_debug;
     }
-    if (input_map.was_pressed("lock_camera")) {
+    if (button_states["lock_camera"].was_pressed) {
         camera_locked = !camera_locked;
     }
-    if (input_map.was_pressed("reset")) {
-        actor->character_controller.set_position({ 0.0f, 0.0f, 0.0f });
-        actor->character_controller.reset();
+    if (button_states["reset"].was_pressed) {
+        player_controller->character_controller.set_position({ 0.0f, 0.0f, 0.0f });
+        player_controller->character_controller.reset();
         load_models();
     }
-    if (input_map.is_held("crouch")) {
-        actor->character_controller.set_is_standing(false);
-    }
-    else {
-        actor->character_controller.set_is_standing(true);
-    }
 
+    player_controller->handle_movement_inputs();
     physics_world->update(1.0f / k_steps_per_second);
-    actor->character_controller.update(1.0f / k_steps_per_second);
+    player_controller->update(1.0f / k_steps_per_second);
 
     // Vertical interpolation for camera to avoid sharp movements when e.g. stepping up stairs.
     last_camera_z = camera_z;
-    const auto new_camera_z = actor->position(1.0f).z + actor->current_height() - 0.1f;
+    const auto new_camera_z = player_controller->character_controller.get_position(1.0f).z +
+                              player_controller->character_controller.current_height() - 0.1f;
     camera_z = std::abs(last_camera_z - new_camera_z) < 1.0f
                    ? glm::mix(last_camera_z, new_camera_z, 0.35f)
                    : new_camera_z;
@@ -241,31 +227,13 @@ void Scene::render(const double lerp_factor)
     // Mouselook. Doing this in render step instead of in simulation_step to minimize input lag.
     {
         app.window().poll_input_events();
-        input_map.refresh();
-
-        const auto cursor_position = app.window().mouse.get_cursor_position();
-        float mouse_delta_x = cursor_position.x - last_cursor_position.x;
-        float mouse_delta_y = cursor_position.y - last_cursor_position.y;
-        mouse_delta_x *= app.config().as<float>("mouse_sensitivity_x");
-        mouse_delta_y *= app.config().as<float>("mouse_sensitivity_y");
-        if (!app.window().is_cursor_locked_to_window()) {
-            mouse_delta_x = 0.0f;
-            mouse_delta_y = 0.0f;
-        }
-
-        Mg::Angle cam_pitch = camera.rotation.pitch() - Mg::Angle::from_radians(mouse_delta_y);
-        Mg::Angle cam_yaw = camera.rotation.yaw() - Mg::Angle::from_radians(mouse_delta_x);
-
-        cam_pitch = Mg::Angle::clamp(cam_pitch, -90_degrees, 90_degrees);
-
-        // Set rotation from euler angles, clamping pitch between straight down & straight up.
-        camera.rotation = Mg::Rotation{ { cam_pitch.radians(), 0.0f, cam_yaw.radians() } };
-
-        last_cursor_position = cursor_position;
+        player_controller->handle_rotation_inputs(app.config().as<float>("mouse_sensitivity_x"),
+                                                  app.config().as<float>("mouse_sensitivity_y"));
+        camera.rotation = player_controller->rotation;
     }
 
     if (!camera_locked) {
-        camera.position = actor->position(float(lerp_factor));
+        camera.position = player_controller->character_controller.get_position(float(lerp_factor));
         camera.position.z = glm::mix(last_camera_z, camera_z, lerp_factor);
     }
 
@@ -346,15 +314,16 @@ void Scene::render(const double lerp_factor)
         typesetting.line_spacing_factor = 1.25f;
         typesetting.max_width_pixels = ui_renderer.resolution().x;
 
-        const glm::vec3 v = actor->character_controller.velocity();
-        const glm::vec3 p = actor->position();
+        const glm::vec3 v = player_controller->character_controller.velocity();
+        const glm::vec3 p = player_controller->character_controller.get_position();
 
         std::string text = fmt::format("FPS: {:.2f}", app.performance_info().frames_per_second);
         text += fmt::format("\nLast frame time: {:.2f} ms",
                             app.performance_info().last_frame_time_seconds * 1'000);
         text += fmt::format("\nVelocity: {{{:.2f}, {:.2f}, {:.2f}}}", v.x, v.y, v.z);
         text += fmt::format("\nPosition: {{{:.2f}, {:.2f}, {:.2f}}}", p.x, p.y, p.z);
-        text += fmt::format("\nGrounded: {:b}", actor->character_controller.is_on_ground());
+        text += fmt::format("\nGrounded: {:b}",
+                            player_controller->character_controller.is_on_ground());
 
         ui_renderer.draw_text(app.window().render_target,
                               placement,
@@ -418,7 +387,7 @@ void Scene::render(const double lerp_factor)
     }
 #endif
 
-    app.window().refresh();
+    app.window().swap_buffers();
 }
 
 Mg::UpdateTimerSettings Scene::update_timer_settings() const
@@ -434,8 +403,8 @@ Mg::UpdateTimerSettings Scene::update_timer_settings() const
 void Scene::setup_config()
 {
     auto& cfg = app.config();
-    cfg.set_default_value("mouse_sensitivity_x", 0.002f);
-    cfg.set_default_value("mouse_sensitivity_y", 0.002f);
+    cfg.set_default_value("mouse_sensitivity_x", 0.4f);
+    cfg.set_default_value("mouse_sensitivity_y", 0.4f);
 }
 
 Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file, const bool sRGB)
@@ -679,28 +648,6 @@ Model& Scene::add_dynamic_model(Mg::Identifier mesh_file,
     }
 
     return model;
-}
-
-void Scene::make_input_map()
-{
-    using namespace Mg::input;
-
-    const auto& kb = app.window().keyboard;
-
-    // clang-format off
-    input_map.bind("forward",           kb.key(Keyboard::Key::W));
-    input_map.bind("backward",          kb.key(Keyboard::Key::S));
-    input_map.bind("left",              kb.key(Keyboard::Key::A));
-    input_map.bind("right",             kb.key(Keyboard::Key::D));
-    input_map.bind("jump",              kb.key(Keyboard::Key::Space));
-    input_map.bind("crouch",            kb.key(Keyboard::Key::LeftControl));
-    input_map.bind("lock_camera",       kb.key(Keyboard::Key::E));
-    input_map.bind("fullscreen",        kb.key(Keyboard::Key::F4));
-    input_map.bind("exit",              kb.key(Keyboard::Key::Esc));
-    input_map.bind("toggle_debug_vis",  kb.key(Keyboard::Key::F));
-    input_map.bind("toggle_animations", kb.key(Keyboard::Key::Tab));
-    input_map.bind("reset",             kb.key(Keyboard::Key::R));
-    // clang-format on
 }
 
 void Scene::make_hdr_target(Mg::VideoMode mode)

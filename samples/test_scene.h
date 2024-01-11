@@ -29,8 +29,8 @@
 #include <mg/gfx/mg_ui_renderer.h>
 #include <mg/input/mg_input.h>
 #include <mg/input/mg_keyboard.h>
-#include <mg/mg_actor.hpp>
 #include <mg/mg_bounding_volumes.h>
+#include <mg/mg_player_controller.h>
 #include <mg/physics/mg_physics.h>
 #include <mg/resource_cache/mg_resource_cache.h>
 #include <mg/utils/mg_optional.h>
@@ -108,10 +108,10 @@ public:
     float last_camera_z = 0.0f;
     float camera_z = 0.0f;
 
-    Mg::input::InputMap input_map;
+    std::shared_ptr<Mg::input::ButtonTracker> sample_control_button_tracker;
 
     std::unique_ptr<Mg::physics::World> physics_world;
-    std::unique_ptr<Mg::Actor> actor;
+    std::unique_ptr<Mg::PlayerController> player_controller;
 
     std::vector<Mg::gfx::Light> scene_lights;
 
@@ -134,8 +134,6 @@ public:
     Mg::UpdateTimerSettings update_timer_settings() const override;
 
 private:
-    Mg::input::Mouse::CursorPosition last_cursor_position;
-
     void setup_config();
 
     bool load_mesh(Mg::Identifier file, Model& model);
@@ -160,8 +158,6 @@ private:
                              Mg::Rotation rotation,
                              glm::vec3 scale,
                              bool enable_physics);
-
-    void make_input_map();
 
     void make_hdr_target(Mg::VideoMode mode);
 
