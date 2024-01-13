@@ -99,7 +99,6 @@ void Scene::init()
         app.window().set_title("Mg Engine Example Application");
         app.window().apply_settings(window_settings);
         app.window().set_cursor_lock_mode(Mg::CursorLockMode::LOCKED);
-        app.window().release_cursor(); // Don't lock instantly.
     }
 
     resource_cache->set_resource_reload_callback(

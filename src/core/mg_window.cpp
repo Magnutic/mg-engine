@@ -361,12 +361,6 @@ void Window::release_cursor()
 void Window::set_cursor_lock_mode(CursorLockMode mode) noexcept
 {
     m_cursor_lock_mode = mode;
-    if (m_cursor_lock_mode == CursorLockMode::LOCKED) {
-        grab_cursor();
-    }
-    else {
-        release_cursor();
-    }
 }
 
 void Window::cursor_position_callback(const float x, const float y)
