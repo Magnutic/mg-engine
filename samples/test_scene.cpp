@@ -144,8 +144,6 @@ void Scene::init()
         Mg::UnicodeBlock::Basic_Latin) };
     font = std::make_unique<Mg::gfx::BitmapFont>(font_resource, 24, unicode_ranges);
 
-    prepare_pipelines();
-
     // imgui = std::make_unique<Mg::ImguiOverlay>(app.window());
 }
 
@@ -670,55 +668,6 @@ void Scene::make_hdr_target(Mg::VideoMode mode)
 
     hdr_target = Mg::gfx::TextureRenderTarget::with_colour_and_depth_targets(colour_target,
                                                                              depth_target);
-}
-
-// Issue dummy draw commands to force driver to prepare pipelines and compile shaders for all models
-// in the scene.
-// TODO I don't think this actually works. Investigate.
-void Scene::prepare_pipelines()
-{
-    MG_GFX_DEBUG_GROUP("prepare_pipelines")
-
-    Mg::gfx::RenderCommandProducer dummy_render_command_producer;
-
-    for (auto& [model_id, model] : scene_models) {
-        dummy_render_command_producer.add_mesh(model.mesh,
-                                               glm::mat4(1.0f),
-                                               model.material_assignments);
-    }
-
-    for (auto& [model_id, model] : dynamic_models) {
-        dummy_render_command_producer.add_mesh(model.mesh,
-                                               glm::mat4(1.0f),
-                                               model.material_assignments);
-        if (model.skeleton) {
-            const auto num_joints = Mg::narrow<uint16_t>(model.skeleton->joints().size());
-            auto palette =
-                dummy_render_command_producer.allocate_skinning_matrix_palette(num_joints);
-            dummy_render_command_producer.add_skinned_mesh(model.mesh,
-                                                           glm::mat4(1.0f),
-                                                           model.material_assignments,
-                                                           palette);
-        }
-    }
-
-    Mg::gfx::Camera dummy_camera;
-    dummy_camera.position = { 0.0f, 0.0f, 5.0f };
-    dummy_camera.rotation.pitch(-90_degrees);
-
-    const Mg::gfx::RenderCommandList& dummy_render_command_list =
-        dummy_render_command_producer.finalize(dummy_camera, Mg::gfx::SortingMode::unsorted);
-
-    Mg::gfx::Light light =
-        Mg::gfx::make_point_light(dummy_camera.position, { 1.0f, 1.0f, 1.0f }, 10.0f);
-
-    app.gfx_device().clear(*hdr_target);
-    mesh_renderer.render(dummy_camera,
-                         dummy_render_command_list,
-                         std::array{ light },
-                         *hdr_target,
-                         Mg::gfx::RenderParameters{});
-    app.gfx_device().clear(*hdr_target);
 }
 
 void Scene::render_light_debug_geometry()
