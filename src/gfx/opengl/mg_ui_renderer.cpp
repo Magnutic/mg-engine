@@ -270,7 +270,7 @@ float UIRenderer::scaling_factor() const
 
 namespace {
 
-void setup_material_pipeline(UIRenderer::Impl& data, const mat4& M, const Material& material)
+void set_up_rendering_pipeline(UIRenderer::Impl& data, const mat4& M, const Material& material)
 {
     DrawParamsBlock block = {};
     block.M = M;
@@ -281,6 +281,7 @@ void setup_material_pipeline(UIRenderer::Impl& data, const mat4& M, const Materi
     Pipeline::bind_shared_inputs(input_bindings);
 
     BindMaterialPipelineSettings settings;
+    settings.vertex_array = data.quad_vao;
     settings.depth_test_condition = DepthTestCondition::always;
     settings.depth_write_enabled = false;
 
@@ -298,21 +299,18 @@ void UIRenderer::draw_rectangle(const UIPlacement& placement,
 
     const mat4 M =
         make_transform_matrix(placement, size, m_impl->resolution, m_impl->scaling_factor);
-    setup_material_pipeline(*m_impl, M, material);
+    set_up_rendering_pipeline(*m_impl, M, material);
 
-    const auto quad_vao_id = m_impl->quad_vao.as_gl_id();
-
-    glBindVertexArray(quad_vao_id);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
 namespace {
 
-void setup_text_pipeline(UIRenderer::Impl& data,
-                         const IRenderTarget& render_target,
-                         const PreparedText::GpuData& text_gpu_data,
-                         const mat4& M,
-                         const BlendMode blend_mode)
+void set_up_text_pipeline(UIRenderer::Impl& data,
+                          const IRenderTarget& render_target,
+                          const PreparedText::GpuData& text_gpu_data,
+                          const mat4& M,
+                          const BlendMode blend_mode)
 {
     DrawParamsBlock block = {};
     block.M = M;
@@ -356,7 +354,7 @@ void UIRenderer::draw_text(const IRenderTarget& render_target,
                                          m_impl->resolution,
                                          m_impl->scaling_factor);
 
-    setup_text_pipeline(*m_impl, render_target, text.gpu_data(), M, blend_mode);
+    set_up_text_pipeline(*m_impl, render_target, text.gpu_data(), M, blend_mode);
 
     glDrawArrays(GL_TRIANGLES, 0, as<GLsizei>(verts_per_char * text.num_glyphs()));
 }
