@@ -68,16 +68,55 @@ std::string format_message(const LogItem& item)
 
 } // namespace
 
+class LogHistory {
+public:
+    explicit LogHistory(const size_t num_history_lines) : m_num_history_lines{ num_history_lines }
+    {
+        m_history.reserve(num_history_lines);
+    }
+
+    void add(std::string&& message)
+    {
+        const auto history_index = m_history.empty()
+                                       ? 0
+                                       : (m_last_history_index + 1) % m_num_history_lines;
+        if (history_index == m_history.size()) {
+            m_history.emplace_back();
+        }
+
+        m_history[history_index] = message;
+        m_last_history_index = history_index;
+    }
+
+    std::vector<std::string> get() const
+    {
+        std::vector<std::string> result;
+        result.resize(m_history.size());
+
+        for (size_t i = 0; i < m_history.size(); ++i) {
+            const size_t source_index = (m_last_history_index + i) % m_history.size();
+            result[i] = m_history[source_index];
+        }
+
+        return result;
+    }
+
+private:
+    size_t m_num_history_lines;
+    size_t m_last_history_index = 0u;
+    std::vector<std::string> m_history;
+};
+
 class Log::Impl {
 public:
     Impl(std::string_view file_path_,
          Log::Prio console_verbosity_,
          Log::Prio log_file_verbosity_,
-         const size_t num_history_lines_)
+         const size_t num_history_lines)
         : console_verbosity(console_verbosity_)
         , log_file_verbosity(log_file_verbosity_)
         , file_path(file_path_)
-        , num_history_lines(num_history_lines_)
+        , history(num_history_lines)
         , m_writer(fs::path(cast_as_u8_unchecked(file_path_)), std::ios::trunc)
     {
         if (!m_writer) {
@@ -85,8 +124,6 @@ public:
                       << "Failed to open log file '" << file_path << "'.";
             return;
         }
-
-        history.reserve(num_history_lines);
 
         m_writer << fmt::format("Log started at {}\n", now_localtime());
 
@@ -144,10 +181,7 @@ public:
     Log::Prio log_file_verbosity = Log::Prio::Verbose;
 
     std::string file_path;
-
-    size_t num_history_lines;
-    size_t last_history_index = 0u;
-    std::vector<std::string> history;
+    LogHistory history;
 
 private:
     void run_loop()
@@ -191,13 +225,7 @@ private:
         }
 
         // Keep in history.
-        const auto history_index = history.empty() ? 0
-                                                   : (last_history_index + 1) % num_history_lines;
-        if (history_index == history.size()) {
-            history.emplace_back();
-        }
-        history[history_index] = formatted_message;
-        last_history_index = history_index;
+        history.add(std::move(formatted_message));
     }
 
     std::ofstream m_writer;
@@ -247,15 +275,7 @@ std::string_view Log::file_path() const noexcept
 
 std::vector<std::string> Log::get_history()
 {
-    std::vector<std::string> result;
-    result.resize(m_impl->history.size());
-
-    for (size_t i = 0; i < m_impl->history.size(); ++i) {
-        const size_t source_index = (m_impl->last_history_index + i) % m_impl->history.size();
-        result[i] = m_impl->history[source_index];
-    }
-
-    return result;
+    return m_impl->history.get();
 }
 
 void Log::write_impl(Prio prio, std::string msg)
