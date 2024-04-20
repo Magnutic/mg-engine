@@ -5,7 +5,6 @@
 //**************************************************************************************************
 
 #include "mg/input/mg_input.h"
-#include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/core/mg_window.h"
 
@@ -40,9 +39,6 @@ ButtonTracker::~ButtonTracker()
 
 void ButtonTracker::handle_key_event(const Key key, const InputEvent event)
 {
-    log.verbose("Received {} {}",
-                event == InputEvent::Press ? "press" : "release",
-                localized_key_name(key));
     if (auto it = m_key_bindings.find(key); it != m_key_bindings.end()) {
         update_button_state(m_states[it->second], event);
     }
