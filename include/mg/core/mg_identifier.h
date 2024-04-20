@@ -1,18 +1,18 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2024, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
 /** @file mg_identifier.h
- * Identifier based on FNV-1a string hashing.
- * Usage: `Mg::Identifier id("String to hash");` or, if you just want the hash:
- * `uint32_t hash = Mg::hash_fnv1a("String to hash");`
+ * Compact string Identifier, based on FNV-1a string hash, but with a fallback in case of hash
+ * collisions.
  */
 
 #pragma once
 
 #include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_hash_fnv1a.h"
 #include "mg/utils/mg_u8string_casts.h"
 
 #include <cstdint>
@@ -27,19 +27,6 @@
 #endif
 
 namespace Mg {
-
-/** Hash string using FNV1a algorithm. */
-MG_INLINE MG_USES_UNSIGNED_OVERFLOW constexpr uint32_t hash_fnv1a(std::string_view str)
-{
-    uint32_t hash = 2166136261u;
-
-    for (const char c : str) {
-        hash ^= static_cast<uint32_t>(c);
-        hash *= 16777619u;
-    }
-
-    return hash;
-}
 
 class Identifier;
 
