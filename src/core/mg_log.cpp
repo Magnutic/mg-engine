@@ -6,8 +6,11 @@
 
 #include "mg/core/mg_log.h"
 
+#include "mg/containers/mg_flat_map.h"
 #include "mg/mg_defs.h"
 #include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_hash_fnv1a.h"
 #include "mg/utils/mg_u8string_casts.h"
 
 #include <chrono>
@@ -25,6 +28,7 @@
 
 namespace Mg {
 
+using namespace std::chrono_literals;
 namespace fs = std::filesystem;
 
 namespace {
@@ -32,6 +36,7 @@ namespace {
 struct LogItem {
     Log::Prio prio;
     std::string message;
+    std::chrono::milliseconds duplicate_message_timeout;
 };
 
 constexpr const char* get_prefix(Log::Prio prio)
@@ -68,6 +73,7 @@ std::string format_message(const LogItem& item)
 
 } // namespace
 
+/** Keeps a fixed-size history of most recent log lines. */
 class LogHistory {
 public:
     explicit LogHistory(const size_t num_history_lines) : m_num_history_lines{ num_history_lines }
@@ -105,6 +111,45 @@ private:
     size_t m_num_history_lines;
     size_t m_last_history_index = 0u;
     std::vector<std::string> m_history;
+};
+
+/** Tracks log lines that we don't want to print repeatedly within too little time. */
+class DuplicateMessageTracker {
+public:
+    bool can_print(const std::string& message, std::chrono::milliseconds timeout)
+    {
+        const auto now = std::chrono::steady_clock::now();
+        const auto hash = hash_fnv1a(message);
+
+        if (auto it = m_items.find(hash); it != m_items.end()) {
+            auto& item = it->second;
+            const bool has_hash_collision = item.message != message;
+
+            // Time out, or -- far less likely -- hash collision
+            if (has_hash_collision || item.last_log_time + item.timeout < now) {
+                item.last_log_time = now;
+                item.timeout = timeout;
+                if (has_hash_collision) {
+                    item.message = message;
+                }
+                return true;
+            }
+
+            return false;
+        }
+
+        m_items.insert({ hash, { .last_log_time = now, .timeout = timeout, .message = message } });
+        return true;
+    }
+
+private:
+    struct Item {
+        std::chrono::steady_clock::time_point last_log_time;
+        std::chrono::milliseconds timeout = 1000ms;
+        std::string message;
+    };
+
+    FlatMap<uint32_t, Item> m_items;
 };
 
 class Log::Impl {
@@ -182,6 +227,7 @@ public:
 
     std::string file_path;
     LogHistory history;
+    DuplicateMessageTracker duplicate_message_tracker;
 
 private:
     void run_loop()
@@ -214,6 +260,12 @@ private:
 
     void write_out(LogItem&& item)
     {
+        // Drop duplicate messages that appear within the requested timeout.
+        if (item.duplicate_message_timeout > 0ms &&
+            !duplicate_message_tracker.can_print(item.message, item.duplicate_message_timeout)) {
+            return;
+        }
+
         std::string formatted_message = format_message(item);
 
         // Write to terminal.
@@ -278,9 +330,16 @@ std::vector<std::string> Log::get_history()
     return m_impl->history.get();
 }
 
-void Log::write_impl(Prio prio, std::string msg)
+void Log::write_impl(Prio prio, std::string msg, float duplicate_message_timeout_seconds)
 {
-    m_impl->enqueue({ prio, std::move(msg) });
+    const auto duplicate_message_timeout =
+        std::chrono::milliseconds{ narrow_cast<int>(duplicate_message_timeout_seconds * 1000.0f) };
+
+    m_impl->enqueue({
+        .prio = prio,
+        .message = std::move(msg),
+        .duplicate_message_timeout = duplicate_message_timeout,
+    });
 
     // Flush on error messages, since a crash could be imminent.
     if (prio == Prio::Error) {

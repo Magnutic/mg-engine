@@ -61,29 +61,97 @@ public:
 
     void write(Prio prio, std::string msg) { write_impl(prio, std::move(msg)); }
 
+    void write_once(Prio prio, std::string msg, float duplicate_message_timeout_seconds)
+    {
+        write_impl(prio, std::move(msg), duplicate_message_timeout_seconds);
+    }
+
     template<typename T, typename... Ts>
     void write(Prio prio, fmt::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
     {
         write_impl(prio, fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
     }
 
+    template<typename T, typename... Ts>
+    void write_once(Prio prio,
+                    fmt::format_string<T, Ts...> msg,
+                    T&& arg,
+                    Ts&&... args,
+                    float duplicate_message_timeout_seconds)
+    {
+        write_impl(prio,
+                   fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
+                   duplicate_message_timeout_seconds);
+    }
+
     /** Writes a message with priority Error */
     void error(std::string msg) { write_impl(Prio::Error, std::move(msg)); }
+
+    /** Writes a message with priority Error, but at most once within the timeout.
+     * Note that there is some performance overhead to this, so prefer to avoid calling log too
+     * often.
+     */
+    void error_once(std::string msg, float duplicate_message_timeout_seconds)
+    {
+        write_impl(Prio::Error, std::move(msg), duplicate_message_timeout_seconds);
+    }
 
     /** Writes a message with priority Warning */
     void warning(std::string msg) { write_impl(Prio::Warning, std::move(msg)); }
 
+    /** Writes a message with priority Warning, but at most once within the timeout
+     * Note that there is some performance overhead to this, so prefer to avoid calling log too
+     * often.
+     . */
+    void warning_once(std::string msg, float duplicate_message_timeout_seconds)
+    {
+        write_impl(Prio::Warning, std::move(msg), duplicate_message_timeout_seconds);
+    }
+
     /** Writes a message with priority Message */
     void message(std::string msg) { write_impl(Prio::Message, std::move(msg)); }
 
+    /** Writes a message with priority Message, but at most once within the timeout.
+     * Note that there is some performance overhead to this, so prefer to avoid calling log too
+     * often.
+     */
+    void message_once(std::string msg, float duplicate_message_timeout_seconds)
+    {
+        write_impl(Prio::Message, std::move(msg), duplicate_message_timeout_seconds);
+    }
+
     /** Writes a message with priority Verbose */
     void verbose(std::string msg) { write_impl(Prio::Verbose, std::move(msg)); }
+
+    /** Writes a message with priority Verbose, but at most once within the timeout.
+     * Note that there is some performance overhead to this, so prefer to avoid calling log too
+     * often.
+     */
+    void verbose_once(std::string msg, float duplicate_message_timeout_seconds)
+    {
+        write_impl(Prio::Verbose, std::move(msg), duplicate_message_timeout_seconds);
+    }
 
     /** Formats and writes a message with priority Error */
     template<typename T, typename... Ts>
     void error(fmt::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
     {
         write_impl(Prio::Error, fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
+    }
+
+    /** Formats and writes a message with priority Error, but at most once within the timeout.
+     * Note that there is some performance overhead to this, so prefer to avoid calling log too
+     * often.
+     */
+    template<typename T, typename... Ts>
+    void error_once(fmt::format_string<T, Ts...> msg,
+                    T&& arg,
+                    Ts&&... args,
+                    float duplicate_message_timeout_seconds)
+    {
+        write_impl(Prio::Error,
+                   fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
+                   duplicate_message_timeout_seconds);
     }
 
     /** Formats and writes a message with priority Warning */
@@ -94,6 +162,21 @@ public:
                    fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
     }
 
+    /** Formats and writes a message with priority Warning, but at most once within the timeout.
+     * Note that there is some performance overhead to this, so prefer to avoid calling log too
+     * often.
+     */
+    template<typename T, typename... Ts>
+    void warning_once(fmt::format_string<T, Ts...> msg,
+                      T&& arg,
+                      Ts&&... args,
+                      float duplicate_message_timeout_seconds)
+    {
+        write_impl(Prio::Warning,
+                   fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
+                   duplicate_message_timeout_seconds);
+    }
+
     /** Formats and writes a message with priority Message */
     template<typename T, typename... Ts>
     void message(fmt::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
@@ -102,12 +185,42 @@ public:
                    fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
     }
 
+    /** Formats and writes a message with priority Message, but at most once within the timeout.
+     * Note that there is some performance overhead to this, so prefer to avoid calling log too
+     * often.
+     */
+    template<typename T, typename... Ts>
+    void message_once(fmt::format_string<T, Ts...> msg,
+                      T&& arg,
+                      Ts&&... args,
+                      float duplicate_message_timeout_seconds)
+    {
+        write_impl(Prio::Message,
+                   fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
+                   duplicate_message_timeout_seconds);
+    }
+
     /** Formats and writes a message with priority Verbose */
     template<typename T, typename... Ts>
     void verbose(fmt::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
     {
         write_impl(Prio::Verbose,
                    fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
+    }
+
+    /** Formats and writes a message with priority Verbose, but at most once within the timeout.
+     * Note that there is some performance overhead to this, so prefer to avoid calling log too
+     * often.
+     */
+    template<typename T, typename... Ts>
+    void verbose_once(fmt::format_string<T, Ts...> msg,
+                      T&& arg,
+                      Ts&&... args,
+                      float duplicate_message_timeout_seconds)
+    {
+        write_impl(Prio::Verbose,
+                   fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
+                   duplicate_message_timeout_seconds);
     }
 
     /** Flush the log, writing to file immediately. */
@@ -121,7 +234,7 @@ public:
 
 private:
     /** Writes message with priority prio. */
-    void write_impl(Prio prio, std::string msg);
+    void write_impl(Prio prio, std::string msg, float duplicate_message_timeout_seconds = 0.0);
 
     class Impl;
     ImplPtr<Impl> m_impl;
