@@ -376,18 +376,19 @@ void PipelinePool::bind_material_pipeline(const Material& material,
     MG_GFX_DEBUG_GROUP("PipelinePool::bind_material_pipeline")
 
     const Pipeline& pipeline = get_or_make_pipeline(*m_impl, material);
-    Pipeline::Settings pipeline_settings{ .vertex_array = settings.vertex_array,
-                                          .target_framebuffer = settings.target_framebuffer,
-                                          .viewport_size = settings.viewport_size,
-                                          .blend_mode = material.blend_mode,
-                                          .blending_enabled = material.blend_mode !=
-                                                              blend_mode_constants::bm_default,
-                                          .depth_test_condition = settings.depth_test_condition,
-                                          .polygon_mode = settings.polygon_mode,
-                                          .culling_mode = settings.culling_mode,
-                                          .colour_write_enabled = settings.colour_write_enabled,
-                                          .alpha_write_enabled = settings.alpha_write_enabled,
-                                          .depth_write_enabled = settings.depth_write_enabled };
+    Pipeline::Settings pipeline_settings{
+        .vertex_array = settings.vertex_array,
+        .target_framebuffer = settings.target_framebuffer,
+        .viewport_size = settings.viewport_size,
+        .blend_mode = material.blend_mode,
+        .blending_enabled = material.blend_mode != blend_mode_constants::bm_default,
+        .depth_test_condition = settings.depth_test_condition,
+        .polygon_mode = settings.polygon_mode,
+        .culling_mode = settings.culling_mode,
+        .colour_write_enabled = settings.colour_write_enabled,
+        .alpha_write_enabled = settings.alpha_write_enabled,
+        .depth_write_enabled = settings.depth_write_enabled,
+    };
     binding_context.bind_pipeline(pipeline, pipeline_settings);
 
     // Upload material parameter values to MaterialParams uniform buffer.

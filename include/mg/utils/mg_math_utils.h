@@ -4,7 +4,7 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-/** @file mg_utils.h
+/** @file mg_math_utils.h
  * Several small math utilities.
  */
 

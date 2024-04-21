@@ -796,6 +796,7 @@ void Scene::load_materials()
                                    load_texture("textures/particle_t.dds", true));
     particle_material->set_option("A_TEST", false);
     particle_material->blend_mode = Mg::gfx::blend_mode_constants::bm_add_premultiplied;
+    particle_material->set_option("FADE_WHEN_CLOSE", true);
 
     // Create UI material
     const auto ui_handle =

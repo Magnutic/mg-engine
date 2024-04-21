@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2024, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -18,6 +18,7 @@
 #include "mg/gfx/mg_render_target.h"
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_math_utils.h"
 #include "mg/utils/mg_stl_helpers.h"
 
 #include "mg_gl_debug.h"
@@ -67,7 +68,7 @@ constexpr auto billboard_vertex_shader_preamble = R"(
 layout(location = 0) in vec4 v_colour;
 layout(location = 1) in vec3 v_position;
 layout(location = 2) in float v_radius;
-layout(location = 3) in float v_index;
+layout(location = 3) in float v_rotation;
 
 layout(std140) uniform CameraBlock {
     uniform mat4 VP;
@@ -80,6 +81,7 @@ layout(std140) uniform CameraBlock {
 
 out vec4 vs_out_colour;
 out vec2 vs_out_size;
+out float vs_out_rotation;
 )";
 
 constexpr auto billboard_geometry_shader = R"(
@@ -91,6 +93,7 @@ layout(max_vertices = 4) out;
 
 in vec4 vs_out_colour[];
 in vec2 vs_out_size[];
+in float vs_out_rotation[];
 out vec4 fs_in_colour;
 out vec2 tex_coord;
 
@@ -99,19 +102,22 @@ void main() {
 
     fs_in_colour = vs_out_colour[0];
 
-    gl_Position = gl_in[0].gl_Position + vec4(-vs_out_size[0].x, -vs_out_size[0].y, 0.0, 0.0);
+    float c = cos(vs_out_rotation[0]);
+    float s = sin(vs_out_rotation[0]);
+
+    gl_Position = gl_in[0].gl_Position + vec4(vec2(-c - s, s - c) * vs_out_size[0], 0.0, 0.0);
     tex_coord = vec2(0.0, 1.0);
     EmitVertex();
 
-    gl_Position = gl_in[0].gl_Position + vec4(vs_out_size[0].x, -vs_out_size[0].y, 0.0, 0.0);
+    gl_Position = gl_in[0].gl_Position + vec4(vec2(c - s, -s - c) * vs_out_size[0], 0.0, 0.0);
     tex_coord = vec2(1.0, 1.0);
     EmitVertex();
 
-    gl_Position = gl_in[0].gl_Position + vec4(-vs_out_size[0].x, vs_out_size[0].y, 0.0, 0.0);
+    gl_Position = gl_in[0].gl_Position + vec4(vec2(-c + s, s + c) * vs_out_size[0], 0.0, 0.0);
     tex_coord = vec2(0.0, 0.0);
     EmitVertex();
 
-    gl_Position = gl_in[0].gl_Position + vec4(vs_out_size[0].x, vs_out_size[0].y, 0.0, 0.0);
+    gl_Position = gl_in[0].gl_Position + vec4(vec2(c + s, -s + c) * vs_out_size[0], 0.0, 0.0);
     tex_coord = vec2(1.0, 0.0);
     EmitVertex();
 
@@ -170,10 +176,6 @@ PipelinePool make_billboard_pipeline_pool()
 }
 
 } // namespace
-
-//--------------------------------------------------------------------------------------------------
-// BillboardRendererList implementation
-//--------------------------------------------------------------------------------------------------
 
 void sort_farthest_first(const ICamera& camera, std::span<Billboard> billboards) noexcept
 {
@@ -249,6 +251,7 @@ BillboardRenderer::BillboardRenderer()
     set_attrib_ptr(4); // colour
     set_attrib_ptr(3); // pos
     set_attrib_ptr(1); // radius
+    set_attrib_ptr(1); // rotation
 
     glBindVertexArray(0);
 
@@ -302,10 +305,12 @@ void BillboardRenderer::render(const IRenderTarget& render_target,
     settings.vertex_array = m_impl->vao;
     settings.target_framebuffer = render_target.handle();
     settings.viewport_size = render_target.image_size();
+
     // Enable depth write only if we are not blending with the destination buffer.
     // This will let solid billboards properly occlude each other without causing glitches for e.g.
     // additive-blended particles.
     settings.depth_write_enabled = material.blend_mode == blend_mode_constants::bm_default;
+
     m_impl->pipeline_pool.bind_material_pipeline(material, settings, binding_context);
 
     glDrawArrays(GL_POINTS, 0, as<GLint>(billboards.size()));
@@ -372,46 +377,70 @@ void ParticleSystem::emit(const size_t num)
             m_unused_indices.pop_back();
         }
         else {
-            particle_index = m_particles.size();
+            particle_index = m_billboards.size();
+            m_billboards.emplace_back();
             m_particles.emplace_back();
-            m_velocities.emplace_back();
-            m_ages.emplace_back();
         }
 
-        Billboard& particle = m_particles[particle_index];
+        Particle& particle = m_particles[particle_index];
 
-        const auto r = m_rand.range(0.0f, 10.0f);
-        const auto g = m_rand.range(0.0f, 10.0f);
-        const auto b = m_rand.range(0.0f, 10.0f);
-        particle.colour = vec4(r, g, b, 1.0f);
-        particle.pos = position;
-        particle.radius = m_rand.range(0.015f, 0.04f);
+        particle.colour_choice = m_rand.range(0.0f, 1.0f);
 
+        const float speed = m_rand.normal_distributed(initial_speed_mean, initial_speed_stddev);
         const float h = 1.0f - std::sin((90_degrees - emission_angle_range).radians());
-        m_velocities[particle_index] = quaternion * uniform_random_spherical_cap(m_rand, h) * 3.0f;
-        m_ages[particle_index] = 0.0f;
+        particle.velocity = quaternion * uniform_random_spherical_cap(m_rand, h) * speed;
+
+        particle.rotation_velocity = m_rand.normal_distributed(rotation_velocity_mean,
+                                                               rotation_velocity_stddev);
+
+        particle.initial_radius = m_rand.normal_distributed(initial_radius_mean,
+                                                            initial_radius_stddev);
+        particle.final_radius = m_rand.normal_distributed(final_radius_mean, final_radius_stddev);
+
+        particle.lifetime =
+            max(0.0f, m_rand.normal_distributed(particle_lifetime_mean, particle_lifetime_stddev));
+
+        particle.age = 0.0f;
+
+        Billboard& billboard = m_billboards[particle_index];
+        billboard.colour = glm::mix(colour_range_a.colours.begin()->second,
+                                    colour_range_b.colours.begin()->second,
+                                    particle.colour_choice);
+        billboard.pos = position;
+        billboard.radius = particle.initial_radius;
+        billboard.rotation = m_rand.normal_distributed(initial_rotation_mean,
+                                                       initial_rotation_stddev);
     }
 }
 
 void ParticleSystem::update(const float time_step)
 {
-    MG_ASSERT(m_particles.size() == m_velocities.size() && m_velocities.size() == m_ages.size());
+    MG_ASSERT(m_billboards.size() == m_particles.size());
 
-    for (size_t i = 0; i < m_particles.size(); ++i) {
-        Billboard& particle = m_particles[i];
-        vec3& velocity = m_velocities[i];
-        particle.pos += velocity * time_step;
+    for (size_t i = 0; i < m_billboards.size(); ++i) {
+        Particle& particle = m_particles[i];
+        Billboard& billboard = m_billboards[i];
+
+        const auto x = particle.age / particle.lifetime;
+
+        vec3& velocity = m_particles[i].velocity;
+        billboard.pos += velocity * time_step;
         velocity += gravity * time_step;
-    }
 
-    for (size_t i = 0; i < m_ages.size(); ++i) {
-        m_ages[i] += time_step;
+        billboard.rotation += particle.rotation_velocity * time_step;
 
-        if (m_ages[i] > particle_lifetime) {
-            Billboard& particle = m_particles[i];
-            particle.colour = vec4(0.0f);
-            particle.pos = vec3(0.0f);
-            particle.radius = 0.0f;
+        billboard.radius = glm::mix(particle.initial_radius, particle.final_radius, x);
+
+        billboard.colour = glm::mix(evaluate_colour(colour_range_a, x),
+                                    evaluate_colour(colour_range_b, x),
+                                    particle.colour_choice);
+
+        particle.age += time_step;
+
+        if (particle.age > particle.lifetime) {
+            billboard.colour = vec4(0.0f);
+            billboard.pos = vec3(0.0f);
+            billboard.radius = 0.0f;
 
             m_unused_indices.push_back(i);
         }

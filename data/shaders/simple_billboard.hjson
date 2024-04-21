@@ -21,6 +21,7 @@ vertex_code:
         vs_out_colour = v_colour;
         float radius = v_radius + v_radius * random(gl_VertexID);
         gl_Position = VP * vec4(v_position, 1.0);
+        vs_out_rotation = v_rotation;
 
     #if FADE_WHEN_CLOSE || SHRINK_WHEN_CLOSE
         vec3 diff = v_position - cam_pos;

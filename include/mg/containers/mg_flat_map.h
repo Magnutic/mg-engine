@@ -39,7 +39,10 @@ public:
         }
     }
 
-    std::pair<iterator, bool> insert(const value_type& value) { insert(value_type{ value }); }
+    std::pair<iterator, bool> insert(const value_type& value)
+    {
+        return insert(value_type{ value });
+    }
     std::pair<iterator, bool> insert(value_type&& value)
     {
         auto it = lower_bound(value.first);
