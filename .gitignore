@@ -32,3 +32,4 @@ tests/catch.hpp
 
 data/textures/contexture*
 data/meshes/mg_mesh_converter
+data/unused/
