@@ -68,8 +68,10 @@ public:
     void scaling_factor(float scaling_factor);
     float scaling_factor() const;
 
-    void
-    draw_rectangle(const UIPlacement& placement, glm::vec2 size, const Material& material) noexcept;
+    void draw_rectangle(const IRenderTarget& render_target,
+                        const UIPlacement& placement,
+                        glm::vec2 size,
+                        const Material& material) noexcept;
 
     void draw_text(const IRenderTarget& render_target,
                    const UIPlacement& placement,

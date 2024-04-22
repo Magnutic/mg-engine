@@ -312,10 +312,10 @@ void Scene::render(const double lerp_factor)
         placement.anchor = Mg::gfx::UIPlacement::centre;
 
         ui_material->set_parameter("opacity", 0.5f);
-        ui_renderer.draw_rectangle(placement,
+        ui_renderer.draw_rectangle(app.window().render_target,
+                                   placement,
                                    { 100.0f, 100.0f },
-                                   *ui_material,
-                                   Mg::gfx::blend_mode_constants::bm_add);
+                                   *ui_material);
     }
 #endif
     {
@@ -803,6 +803,7 @@ void Scene::load_materials()
         resource_cache->resource_handle<Mg::ShaderResource>("shaders/ui_render_test.hjson");
     ui_material = material_pool->create("ui_material", ui_handle);
     ui_material->set_sampler("sampler_colour", load_texture("textures/ui/book_open_da.dds", true));
+    ui_material->blend_mode = Mg::gfx::blend_mode_constants::bm_add;
 
     // Load sky material
     {

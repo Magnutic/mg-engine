@@ -270,7 +270,10 @@ float UIRenderer::scaling_factor() const
 
 namespace {
 
-void set_up_rendering_pipeline(UIRenderer::Impl& data, const mat4& M, const Material& material)
+void set_up_rendering_pipeline(UIRenderer::Impl& data,
+                               const IRenderTarget& render_target,
+                               const mat4& M,
+                               const Material& material)
 {
     DrawParamsBlock block = {};
     block.M = M;
@@ -280,26 +283,33 @@ void set_up_rendering_pipeline(UIRenderer::Impl& data, const mat4& M, const Mate
                                                        data.draw_params_ubo) };
     Pipeline::bind_shared_inputs(input_bindings);
 
-    BindMaterialPipelineSettings settings;
-    settings.vertex_array = data.quad_vao;
-    settings.depth_test_condition = DepthTestCondition::always;
-    settings.depth_write_enabled = false;
+    BindMaterialPipelineSettings pipeline_settings;
+    pipeline_settings.vertex_array = data.quad_vao;
+    pipeline_settings.depth_test_condition = DepthTestCondition::always;
+    pipeline_settings.depth_write_enabled = false;
+    pipeline_settings.colour_write_enabled = true;
+    pipeline_settings.alpha_write_enabled = true;
+    pipeline_settings.polygon_mode = PolygonMode::fill;
+    pipeline_settings.culling_mode = CullingMode::back;
+    pipeline_settings.target_framebuffer = render_target.handle();
+    pipeline_settings.viewport_size = render_target.image_size();
 
     PipelineBindingContext binding_context;
-    data.pipeline_pool.bind_material_pipeline(material, settings, binding_context);
+    data.pipeline_pool.bind_material_pipeline(material, pipeline_settings, binding_context);
 }
 
 } // namespace
 
-void UIRenderer::draw_rectangle(const UIPlacement& placement,
-                                const vec2 size,
+void UIRenderer::draw_rectangle(const IRenderTarget& render_target,
+                                const UIPlacement& placement,
+                                glm::vec2 size,
                                 const Material& material) noexcept
 {
     MG_GFX_DEBUG_GROUP("UIRenderer::draw_rectangle");
 
     const mat4 M =
         make_transform_matrix(placement, size, m_impl->resolution, m_impl->scaling_factor);
-    set_up_rendering_pipeline(*m_impl, M, material);
+    set_up_rendering_pipeline(*m_impl, render_target, M, material);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
@@ -317,7 +327,7 @@ void set_up_text_pipeline(UIRenderer::Impl& data,
     data.draw_params_ubo.set_data(byte_representation(block));
 
     Pipeline::Settings pipeline_settings = {};
-    pipeline_settings.blending_enabled = true;
+    pipeline_settings.blending_enabled = blend_mode != blend_mode_constants::bm_default;
     pipeline_settings.blend_mode = blend_mode;
     pipeline_settings.depth_test_condition = DepthTestCondition::always;
     pipeline_settings.depth_write_enabled = false;
