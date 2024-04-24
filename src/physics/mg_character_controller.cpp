@@ -297,8 +297,6 @@ void push_back_against_penetrating_object(const Collision& collision,
 
 void CharacterController::recover_from_penetration()
 {
-    constexpr float recovery_per_iteration_factor = 1.0f / num_penetration_recovery_iterations;
-
     for (int i = 0; i < num_penetration_recovery_iterations; ++i) {
         m_current_position = collision_body().get_position();
 
@@ -311,8 +309,12 @@ void CharacterController::recover_from_penetration()
 
         for (const Collision& collision : m_collisions) {
             const bool other_is_b = collision.object_a == collision_body();
-            const vec3 recovery_offset = penetration_recovery_offset(collision, other_is_b) *
-                                         recovery_per_iteration_factor;
+            const vec3 recovery_offset = penetration_recovery_offset(collision, other_is_b);
+
+            if (recovery_offset != vec3(0.0f)) {
+                still_penetrates = true;
+            }
+
             push_back_against_penetrating_object(collision,
                                                  other_is_b,
                                                  recovery_offset,
