@@ -33,10 +33,9 @@
 // Debug visualization bit flags.
 #define MG_DEBUG_VIS_SWEEP_FLAG 1
 #define MG_DEBUG_VIS_FORCES_FLAG 2
-/*
-#define MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION \
-    (MG_DEBUG_VIS_SWEEP_FLAG | MG_DEBUG_VIS_FORCES_FLAG)
-*/
+#define MG_DEBUG_VIS_PENETRATION_RECOVERY_FLAG 4
+//#define MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION \
+//    (MG_DEBUG_VIS_SWEEP_FLAG | MG_DEBUG_VIS_FORCES_FLAG | MG_DEBUG_VIS_PENETRATION_RECOVERY_FLAG)
 
 #ifdef MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION
 #    include "mg/gfx/mg_debug_renderer.h"
@@ -91,23 +90,28 @@ vec3 new_position_based_on_collision(const vec3& current_position,
     return current_position + perpendicular_movement;
 }
 
-} // namespace
-
-#if (MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION & MG_DEBUG_VIS_SWEEP_FLAG) != 0
-static void debug_vis_ray_hit(const RayHit& ray_hit, vec4 colour)
+#if (MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION) != 0
+void debug_vis_vector(const vec3& start, const vec3& end, const vec4& colour)
 {
     gfx::DebugRenderer::EllipsoidDrawParams params;
-    params.dimensions = vec3(0.05f);
-    params.centre = vec3(ray_hit.hit_point_worldspace);
+    params.dimensions = vec3(0.025f);
+    params.centre = start;
     params.colour = colour;
     gfx::get_debug_render_queue().draw_ellipsoid(params);
-    gfx::get_debug_render_queue().draw_line(ray_hit.hit_point_worldspace,
-                                            ray_hit.hit_point_worldspace +
-                                                ray_hit.hit_normal_worldspace * 1.0f,
-                                            colour,
-                                            2.0f);
+    gfx::get_debug_render_queue().draw_line(start, end, colour, 2.0f);
 }
 #endif
+
+#if (MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION & MG_DEBUG_VIS_SWEEP_FLAG) != 0
+void debug_vis_ray_hit(const RayHit& ray_hit, vec4 colour)
+{
+    debug_vis_vector(ray_hit.hit_point_worldspace,
+                     ray_hit.hit_point_worldspace + ray_hit.hit_normal_worldspace,
+                     colour);
+}
+#endif
+
+} // namespace
 
 void CharacterController::init()
 {
@@ -256,7 +260,16 @@ vec3 penetration_recovery_offset(const Collision& collision, const bool other_is
     const float direction_sign = other_is_b ? -1.0f : 1.0f;
 
     if (collision.distance < 0.0f) {
-        return collision.normal_on_b * direction_sign * collision.distance;
+        const auto result = collision.normal_on_b * direction_sign * collision.distance;
+
+#if (MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION & \
+     MG_DEBUG_VIS_PENETRATION_RECOVERY_FLAG) != 0
+        const auto start = other_is_b ? collision.contact_point_on_b : collision.contact_point_on_a;
+        const auto colour = vec4(0.0f, 0.0f, 1.0f, 0.25f);
+        debug_vis_vector(start, start + result * 5.0f, colour);
+#endif
+
+        return result;
     }
 
     return vec3(0.0f);
@@ -377,7 +390,7 @@ void CharacterController::horizontal_step(const vec3& step)
     }
 
 
-    // Apply an force to hit objects.
+    // Apply a force to hit objects.
     {
         const auto sweep_target = m_current_position + m_desired_direction * 0.2f;
         auto sweep_result = character_sweep_test(m_current_position, sweep_target, world_up, -1.0f);
@@ -389,15 +402,9 @@ void CharacterController::horizontal_step(const vec3& step)
             dynamic_body->apply_force(force, relative_position);
 
 #if MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION
-            gfx::DebugRenderer::EllipsoidDrawParams params;
-            params.dimensions = vec3(0.05f);
-            params.centre = vec3(dynamic_body->get_position() + relative_position);
-            params.colour = { 1.0f, 1.0f, 0.0f, 1.0f };
-            gfx::get_debug_render_queue().draw_ellipsoid(params);
-            gfx::get_debug_render_queue().draw_line(params.centre,
-                                                    params.centre + normalize(force),
-                                                    params.colour,
-                                                    2.0f);
+            const auto colour = vec4{ 1.0f, 1.0f, 0.0f, 1.0f };
+            const auto start = vec3(dynamic_body->get_position() + relative_position);
+            debug_vis_vector(start, start + normalize(force), colour);
 #endif
         }
     }
@@ -527,15 +534,9 @@ void CharacterController::step_down()
 #endif
 
 #if (MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION & MG_DEBUG_VIS_FORCES_FLAG) != 0
-                gfx::DebugRenderer::EllipsoidDrawParams params;
-                params.dimensions = vec3(0.05f);
-                params.centre = vec3(dynamic_body->get_position() + relative_position);
-                params.colour = { 0.0f, 1.0f, 0.0f, 1.0f };
-                gfx::get_debug_render_queue().draw_ellipsoid(params);
-                gfx::get_debug_render_queue().draw_line(params.centre,
-                                                        params.centre + glm::normalize(force),
-                                                        params.colour,
-                                                        2.0f);
+                const auto colour = { 0.0f, 1.0f, 0.0f, 1.0f };
+                const auto start = vec3(dynamic_body->get_position() + relative_position);
+                debug_vis_vector(start, start + glm::normalize(force), colour);
 #endif
             }
             else {
@@ -550,15 +551,9 @@ void CharacterController::step_down()
                 dynamic_body->apply_impulse(impulse, relative_position);
 
 #if (MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION & MG_DEBUG_VIS_FORCES_FLAG) != 0
-                gfx::DebugRenderer::EllipsoidDrawParams params;
-                params.dimensions = vec3(0.05f);
-                params.centre = vec3(dynamic_body->get_position() + relative_position);
-                params.colour = { 0.0f, 0.0f, 1.0f, 1.0f };
-                gfx::get_debug_render_queue().draw_ellipsoid(params);
-                gfx::get_debug_render_queue().draw_line(params.centre,
-                                                        params.centre + glm::normalize(impulse),
-                                                        params.colour,
-                                                        2.0f);
+                const auto colour = { 0.0f, 0.0f, 1.0f, 1.0f };
+                const auto start = vec3(dynamic_body->get_position() + relative_position);
+                debug_vis_vector(start, start + glm::normalize(force), colour);
 #endif
             }
 
