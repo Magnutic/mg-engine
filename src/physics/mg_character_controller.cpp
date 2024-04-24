@@ -318,27 +318,30 @@ void CharacterController::recover_from_penetration()
         m_collisions.clear();
         m_world->calculate_collisions_for(collision_body(), m_collisions);
 
-        bool still_penetrates = false;
+        auto recovery_offset = vec3(0.0f);
+        size_t num_penetrations = 0u;
 
         for (const Collision& collision : m_collisions) {
             const bool other_is_b = collision.object_a == collision_body();
-            const vec3 recovery_offset = penetration_recovery_offset(collision, other_is_b);
-
-            if (recovery_offset != vec3(0.0f)) {
-                still_penetrates = true;
+            const auto recovery_offset_part = penetration_recovery_offset(collision, other_is_b);
+            if (recovery_offset_part != vec3(0.0f)) {
+                ++num_penetrations;
             }
-
+            recovery_offset += recovery_offset_part;
             push_back_against_penetrating_object(collision,
                                                  other_is_b,
                                                  recovery_offset,
                                                  m_time_step);
-            m_current_position += recovery_offset;
         }
 
-        if (!still_penetrates) {
+        if (num_penetrations == 0u) {
             break;
         }
 
+        // It may well be that all penetration normals point in the same direction, so that they all
+        // add up in the recovery offset. To avoid pushing the character too far out, we divide the
+        // recovery offset by the number of penetrations.
+        m_current_position += recovery_offset * (1.0f / float(num_penetrations));
         collision_body().set_position(m_current_position);
     }
 }
