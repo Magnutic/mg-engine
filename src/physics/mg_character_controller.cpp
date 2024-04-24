@@ -429,6 +429,10 @@ void CharacterController::horizontal_step(const vec3& step)
         }
 
         if (sweep_result) {
+            // First, walk as far as we can before we hit the obstacle.
+            m_current_position += step * sweep_result->hit_fraction;
+
+            // Then, try to slide along the obstacle.
             fraction -= sweep_result->hit_fraction;
             m_target_position =
                 new_position_based_on_collision(m_current_position,
