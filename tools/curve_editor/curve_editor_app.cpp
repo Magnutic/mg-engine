@@ -36,7 +36,7 @@ protected:
     {
         m_app.window().poll_input_events();
         m_editor.update(curve);
-        m_app.window().refresh();
+        m_app.window().swap_buffers();
     }
 
     bool should_exit() const override { return m_app.window().should_close_flag(); }
