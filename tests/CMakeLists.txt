@@ -84,3 +84,5 @@ add_mg_test(observer_test)
 add_mg_test(unicode_test)
 
 add_mg_test(pipeline_pool_test)
+
+add_mg_test(file_io_test)
