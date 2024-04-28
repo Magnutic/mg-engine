@@ -11,7 +11,9 @@
 #pragma once
 
 #include "mg/utils/mg_macros.h"
+
 #include <string_view>
+#include <cstdint>
 
 /** Hash string using FNV1a algorithm. */
 MG_INLINE MG_USES_UNSIGNED_OVERFLOW constexpr uint32_t hash_fnv1a(std::string_view str)
