@@ -54,7 +54,6 @@ add_library(mg_engine
     gfx/opengl/mg_uniform_buffer.cpp
     gfx/opengl/shader_code/mg_mesh_renderer_shader_framework.cpp
     input/mg_input.cpp
-    input/mg_joy.cpp
     input/mg_keyboard.cpp
     input/mg_mouse.cpp
     mg_bounding_volumes.cpp
