@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "mg/containers/mg_flat_map.h"
 #include "mg/core/mg_file_loader.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/resource_cache/internal/mg_resource_entry.h"
@@ -163,10 +164,16 @@ public:
 
     using FileChangeCallbackT = void (*)(void* user_data, const FileChangedEvent&);
 
-    void set_resource_reload_callback(FileChangeCallbackT callback, void* user_data) noexcept
+    void set_resource_reload_callback(Identifier resource_type,
+                                      FileChangeCallbackT callback,
+                                      void* user_data) noexcept
     {
-        m_resource_reload_callback = callback;
-        m_resource_reload_callback_user_data = user_data;
+        m_resource_reload_callbacks[resource_type] = { callback, user_data };
+    }
+
+    void remove_resource_reload_callback(Identifier resource_type)
+    {
+        m_resource_reload_callbacks.erase(resource_type);
     }
 
 private:
@@ -222,9 +229,13 @@ private:
 
     // --------------------------------------- Data members ----------------------------------------
 
-    // Callback invoked when a resource has changed on the file system.
-    FileChangeCallbackT m_resource_reload_callback = nullptr;
-    void* m_resource_reload_callback_user_data = nullptr;
+    // Callbacks invoked when a resource has changed on the file system.
+    struct FileChangeCallbackRecord {
+        FileChangeCallbackT callback = {};
+        void* user_data = nullptr;
+    };
+    FlatMap<Identifier, FileChangeCallbackRecord, Identifier::HashCompare>
+        m_resource_reload_callbacks;
 
     // Loaders for loading resource file data into memory.
     std::vector<std::unique_ptr<IFileLoader>> m_file_loaders;

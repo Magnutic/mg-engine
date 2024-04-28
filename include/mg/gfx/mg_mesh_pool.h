@@ -18,10 +18,12 @@
 #include "mg/utils/mg_optional.h"
 
 #include <cstddef>
+#include <memory>
 
 namespace Mg {
 class MeshResource;
-}
+class ResourceCache;
+} // namespace Mg
 
 namespace Mg::gfx {
 
@@ -48,20 +50,18 @@ enum class InfluencesBufferSize : size_t;
 /** Creates, stores, and updates meshes. */
 class MeshPool {
 public:
-    MeshPool();
+    explicit MeshPool(std::shared_ptr<ResourceCache> resource_cache);
 
-    /** Create a new mesh using the given mesh resource. Expects that no mesh with the same
-     * identifier already exists -- if one does, use update() instead.
-     */
-    MeshHandle create(const MeshResource& mesh_res);
+    /** Get or load a mesh using the given mesh resource. */
+    MeshHandle get_or_load(Identifier resource_id);
 
     /** Create a new mesh using the given mesh data. Expects that no mesh with the same
      * identifier already exists -- if one does, use update() instead.
      */
     MeshHandle create(const Mesh::MeshDataView& mesh_data, Identifier name);
 
-    /** Get the mesh with the given name, if such a mesh exists. Otherwise, returns nullopt. */
-    Opt<MeshHandle> get(Identifier name) const;
+    /** Find the mesh with the given name, if such a mesh exists. Otherwise, returns nullopt. */
+    Opt<MeshHandle> find(Identifier name) const;
 
     /** Destroy the given mesh. Unless another mesh uses the same GPU data buffers (as would be the
      * case if meshes were created using the same `Mg::gfx::MeshBuffer`), then the GPU buffers will

@@ -30,7 +30,7 @@ class MaterialPool {
 public:
     explicit MaterialPool(std::shared_ptr<ResourceCache> resource_cache,
                           std::shared_ptr<gfx::TexturePool> texture_pool);
-    ~MaterialPool() = default;
+    ~MaterialPool();
 
     MG_MAKE_NON_MOVABLE(MaterialPool);
     MG_MAKE_NON_COPYABLE(MaterialPool);

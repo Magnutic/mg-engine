@@ -113,12 +113,14 @@ void ResourceCache::refresh()
     }
 
     // Notify callbacks of file changes.
-    if (m_resource_reload_callback) {
-        for (const auto& [entry, resource_type, new_time_stamp] : entries_to_reload) {
-            const BaseResourceHandle handle(entry.resource_id(), entry);
-            m_resource_reload_callback(m_resource_reload_callback_user_data,
-                                       { handle, resource_type, new_time_stamp });
+    for (const auto& [entry, resource_type, new_time_stamp] : entries_to_reload) {
+        auto it = m_resource_reload_callbacks.find(resource_type);
+        if (it == m_resource_reload_callbacks.end()) {
+            continue;
         }
+
+        const BaseResourceHandle handle(entry.resource_id(), entry);
+        it->second.callback(it->second.user_data, { handle, resource_type, new_time_stamp });
     }
 }
 
@@ -273,6 +275,7 @@ bool ResourceCache::unload_unused(bool unload_all_unused) const
     // Create vector of FileInfos sorted so that ResourceEntry with earliest last-access time
     // comes first (and thus unload resources in least-recently-used order).
     std::vector<const FileInfo*> file_infos;
+    file_infos.reserve(m_file_list.size());
     for (const FileInfo& file_info : m_file_list) {
         file_infos.push_back(&file_info);
     }

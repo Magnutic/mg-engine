@@ -13,6 +13,7 @@
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_joint.h"
 #include "mg/gfx/mg_mesh_data.h"
+#include "mg/resource_cache/mg_resource_cache.h"
 #include "mg/resources/mg_mesh_resource.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_stl_helpers.h"
@@ -48,7 +49,22 @@ struct MakeMeshParams {
 
 class MeshPool::Impl {
 public:
-    Impl() = default;
+    Impl(std::shared_ptr<ResourceCache> resource_cache)
+        : m_resource_cache(std::move(resource_cache))
+    {
+        auto reload_callback = [](void* pool_impl, const Mg::FileChangedEvent& event) {
+            try {
+                ResourceAccessGuard<MeshResource> access{ event.resource };
+                static_cast<Impl*>(pool_impl)->update(access->resource_id(), access->data_view());
+            }
+            catch (...) {
+                Mg::log.error("Failed to reload MeshResource '{}'. Keeping old version.",
+                              event.resource.resource_id().str_view());
+            }
+        };
+
+        m_resource_cache->set_resource_reload_callback("MeshResource"_id, reload_callback, this);
+    }
 
     ~Impl()
     {
@@ -57,6 +73,8 @@ public:
         for (MeshInternal& mesh : m_mesh_data) {
             _clear_mesh(mesh);
         }
+
+        m_resource_cache->remove_resource_reload_callback("MeshResource"_id);
     }
 
     MG_MAKE_NON_COPYABLE(Impl);
@@ -68,7 +86,7 @@ public:
 
     void destroy(MeshHandle handle);
 
-    Opt<MeshHandle> get(Identifier name) const
+    Opt<MeshHandle> find(Identifier name) const
     {
         const auto it = m_mesh_map.find(name);
         if (it == m_mesh_map.end()) {
@@ -76,6 +94,8 @@ public:
         }
         return it->second;
     }
+
+    ResourceCache& resource_cache() { return *m_resource_cache; }
 
 private:
     friend class MeshBuffer::Impl;
@@ -137,6 +157,8 @@ private:
 
     void _clear_mesh(MeshInternal& mesh);
 
+    std::shared_ptr<ResourceCache> m_resource_cache;
+
     plf::colony<SharedBuffer> m_vertex_buffers;
     plf::colony<SharedBuffer> m_index_buffers;
     plf::colony<MeshInternal> m_mesh_data;
@@ -166,7 +188,7 @@ bool MeshPool::Impl::update(Identifier name, const Mesh::MeshDataView& data)
 {
     MG_GFX_DEBUG_GROUP("MeshPool::Impl::update");
 
-    Opt<MeshHandle> opt_handle = get(name);
+    Opt<MeshHandle> opt_handle = find(name);
 
     // If not found, then we do not have a mesh using the updated resource, so ignore.
     if (!opt_handle) {
@@ -450,12 +472,15 @@ MeshBuffer::CreateReturn MeshBuffer::create_in_buffer(const Mesh::MeshDataView& 
 
 //--------------------------------------------------------------------------------------------------
 
-MeshPool::MeshPool() = default;
+MeshPool::MeshPool(std::shared_ptr<ResourceCache> resource_cache)
+    : m_impl{ std::move(resource_cache) }
+{}
 
-MeshHandle MeshPool::create(const MeshResource& mesh_res)
+MeshHandle MeshPool::get_or_load(Identifier resource_id)
 {
     MG_GFX_DEBUG_GROUP("MeshPool::create")
-    return m_impl->create(mesh_res.resource_id(), mesh_res.data_view());
+    auto access = m_impl->resource_cache().access_resource<MeshResource>(resource_id);
+    return m_impl->create(access->resource_id(), access->data_view());
 }
 
 MeshHandle MeshPool::create(const Mesh::MeshDataView& mesh_data, Identifier name)
@@ -464,9 +489,9 @@ MeshHandle MeshPool::create(const Mesh::MeshDataView& mesh_data, Identifier name
     return m_impl->create(name, mesh_data);
 }
 
-Opt<MeshHandle> MeshPool::get(Identifier name) const
+Opt<MeshHandle> MeshPool::find(Identifier name) const
 {
-    return m_impl->get(name);
+    return m_impl->find(name);
 }
 
 void MeshPool::destroy(MeshHandle handle)

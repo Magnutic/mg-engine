@@ -41,6 +41,26 @@ MaterialPool::MaterialPool(std::shared_ptr<ResourceCache> resource_cache,
 {
     m_impl->resource_cache = std::move(resource_cache);
     m_impl->texture_pool = std::move(texture_pool);
+
+    auto reload_callback = [](void* pool_impl, const Mg::FileChangedEvent& event) {
+        try {
+            ResourceAccessGuard<MaterialResource> access{ event.resource };
+            static_cast<MaterialPool*>(pool_impl)->update(*access);
+        }
+        catch (...) {
+            Mg::log.error("Failed to reload MaterialResource '{}'. Keeping old version.",
+                          event.resource.resource_id().str_view());
+        }
+    };
+
+    m_impl->resource_cache->set_resource_reload_callback("MaterialResource"_id,
+                                                         reload_callback,
+                                                         this);
+}
+
+MaterialPool::~MaterialPool()
+{
+    m_impl->resource_cache->remove_resource_reload_callback("MaterialResource"_id);
 }
 
 Material* MaterialPool::create(Identifier id, ResourceHandle<ShaderResource> shader_resource_handle)

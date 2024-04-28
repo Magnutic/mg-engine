@@ -72,10 +72,24 @@ void add_to_render_list(const bool animate_skinned_meshes,
 
 } // namespace
 
-Scene::Scene() : app(config_file, window_title) {}
+Scene::Scene() : app(config_file, window_title)
+{
+    resource_cache->set_resource_reload_callback(
+        "ShaderResource"_id,
+        [](void* data, const Mg::FileChangedEvent&) {
+            auto& scene = *static_cast<Scene*>(data);
+            scene.mesh_renderer.drop_shaders();
+            scene.billboard_renderer.drop_shaders();
+            scene.post_renderer.drop_shaders();
+            scene.ui_renderer.drop_shaders();
+            scene.skybox_renderer.drop_shaders();
+        },
+        this);
+}
 
 Scene::~Scene()
 {
+    resource_cache->remove_resource_reload_callback("ShaderResource"_id);
     Mg::write_display_settings(app.config(), app.window().settings());
     app.config().write_to_file(config_file);
 }
@@ -98,12 +112,6 @@ void Scene::init()
         app.window().apply_settings(window_settings);
         app.window().set_cursor_lock_mode(Mg::CursorLockMode::LOCKED);
     }
-
-    resource_cache->set_resource_reload_callback(
-        [](void* scene, const Mg::FileChangedEvent& event) {
-            static_cast<Scene*>(scene)->on_resource_reload(event);
-        },
-        this);
 
     make_hdr_target(app.window().settings().video_mode);
 
@@ -440,17 +448,10 @@ Model Scene::load_model(Mg::Identifier mesh_file,
     Model model = {};
     model.id = mesh_file;
 
+    model.mesh = mesh_pool->get_or_load(mesh_file);
+
     const Mg::ResourceAccessGuard access =
         resource_cache->access_resource<Mg::MeshResource>(mesh_file);
-
-    const Mg::Opt<Mg::gfx::MeshHandle> mesh_handle = mesh_pool.get(mesh_file);
-    if (mesh_handle.has_value()) {
-        model.mesh = mesh_handle.value();
-    }
-    else {
-        model.mesh = mesh_pool.create(*access);
-    }
-
     model.centre = access->bounding_sphere().centre;
     model.aabb = access->axis_aligned_bounding_box();
 
@@ -621,38 +622,42 @@ void Scene::load_models()
 
     dynamic_models.clear();
 
-    add_scene_model("meshes/misc/test_scene_2.mgm",
-                    std::array{
-                        MaterialFileAssignment{ size_t{ 0 }, "materials/buildings/GreenBrick.hjson"_id },
-                        MaterialFileAssignment{ size_t{ 1 }, "materials/buildings/W31_1.hjson"_id },
-                        MaterialFileAssignment{ size_t{ 2 }, "materials/buildings/BigWhiteBricks.hjson"_id },
-                        MaterialFileAssignment{ size_t{ 3 }, "materials/buildings/GreenBrick.hjson"_id },
-                    });
+    add_scene_model(
+        "meshes/misc/test_scene_2.mgm",
+        std::array{
+            MaterialFileAssignment{ size_t{ 0 }, "materials/buildings/GreenBrick.hjson"_id },
+            MaterialFileAssignment{ size_t{ 1 }, "materials/buildings/W31_1.hjson"_id },
+            MaterialFileAssignment{ size_t{ 2 }, "materials/buildings/BigWhiteBricks.hjson"_id },
+            MaterialFileAssignment{ size_t{ 3 }, "materials/buildings/GreenBrick.hjson"_id },
+        });
 
     add_dynamic_model("meshes/CesiumMan.mgm",
-                      std::array{ MaterialFileAssignment{ size_t{ 0 }, "materials/actors/fox.hjson"_id } },
+                      std::array{
+                          MaterialFileAssignment{ size_t{ 0 }, "materials/actors/fox.hjson"_id } },
                       { 2.0f, 0.0f, 0.0f },
                       Mg::Rotation(),
                       { 1.0f, 1.0f, 1.0f },
                       false);
 
     add_dynamic_model("meshes/Fox.mgm",
-                      std::array{ MaterialFileAssignment{ "fox1", "materials/actors/fox.hjson"_id } },
+                      std::array{
+                          MaterialFileAssignment{ "fox1", "materials/actors/fox.hjson"_id } },
                       { 1.0f, 1.0f, 0.0f },
                       Mg::Rotation(),
                       { 0.01f, 0.01f, 0.01f },
                       false);
 
     add_dynamic_model("meshes/misc/hestdraugr.mgm"_id,
-                      std::array{
-                          MaterialFileAssignment{ size_t{ 0 }, "materials/actors/HestDraugr.hjson"_id } },
+                      std::array{ MaterialFileAssignment{
+                          size_t{ 0 }, "materials/actors/HestDraugr.hjson"_id } },
                       { -2.0f, 2.0f, 1.05f },
                       Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
                       { 1.0f, 1.0f, 1.0f },
                       true);
 
     add_dynamic_model("meshes/box.mgm",
-                      std::array{ MaterialFileAssignment{ size_t{ 0 }, "materials/crate.hjson"_id } },
+                      std::array{
+                          MaterialFileAssignment{ size_t{ 0 }, "materials/crate.hjson"_id } },
                       { 0.0f, 2.0f, 0.5f },
                       Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
                       { 1.0f, 1.0f, 1.0f },
@@ -741,58 +746,6 @@ void Scene::on_window_focus_change(const bool is_focused)
 {
     if (is_focused) {
         resource_cache->refresh();
-    }
-}
-
-void Scene::on_resource_reload(const Mg::FileChangedEvent& event)
-{
-    MG_GFX_DEBUG_GROUP("Scene::on_resource_reload")
-
-    using namespace Mg::literals;
-
-    const auto resource_name = event.resource.resource_id().str_view();
-    Mg::log.message(fmt::format("File '{}' changed and was reloaded.", resource_name));
-
-    auto try_reload = [&](auto&& reload_action) {
-        try {
-            reload_action();
-        }
-        catch (...) {
-            Mg::log.error("An error occurred when reloading resource from '{}'", resource_name);
-        }
-    };
-
-    switch (event.resource_type.hash()) {
-    case "TextureResource"_hash: {
-        try_reload([&] {
-            Mg::ResourceAccessGuard<Mg::TextureResource> access(event.resource);
-            texture_pool->update(*access);
-        });
-        break;
-    }
-    case "MeshResource"_hash: {
-        try_reload([&] {
-            Mg::ResourceAccessGuard<Mg::MeshResource> access(event.resource);
-            mesh_pool.update(*access);
-        });
-        break;
-    }
-    case "MaterialResource"_hash: {
-        try_reload([&] {
-            Mg::ResourceAccessGuard<Mg::MaterialResource> access(event.resource);
-            material_pool->update(*access);
-        });
-        [[fallthrough]];
-    }
-    case "ShaderResource"_hash:
-        try_reload([&] {
-            mesh_renderer.drop_shaders();
-            billboard_renderer.drop_shaders();
-            post_renderer.drop_shaders();
-            ui_renderer.drop_shaders();
-            skybox_renderer.drop_shaders();
-        });
-        break;
     }
 }
 

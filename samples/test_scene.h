@@ -83,7 +83,8 @@ public:
 
     std::shared_ptr<Mg::ResourceCache> resource_cache = setup_resource_cache();
 
-    Mg::gfx::MeshPool mesh_pool;
+    std::shared_ptr<Mg::gfx::MeshPool> mesh_pool =
+        std::make_shared<Mg::gfx::MeshPool>(resource_cache);
     std::shared_ptr<Mg::gfx::TexturePool> texture_pool =
         std::make_shared<Mg::gfx::TexturePool>(resource_cache);
     std::shared_ptr<Mg::gfx::MaterialPool> material_pool =
@@ -161,7 +162,6 @@ private:
     void generate_lights();
 
     void on_window_focus_change(bool is_focused);
-    void on_resource_reload(const Mg::FileChangedEvent& event);
 
     void render_light_debug_geometry();
     void render_skeleton_debug_geometry();

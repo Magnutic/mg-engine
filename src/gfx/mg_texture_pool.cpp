@@ -263,9 +263,27 @@ TexturePool::TexturePool(std::shared_ptr<ResourceCache> resource_cache)
     MG_ASSERT(resource_cache != nullptr);
     m_impl->resource_cache = std::move(resource_cache);
     init_default_textures(*m_impl);
+
+    auto reload_callback = [](void* pool_impl, const Mg::FileChangedEvent& event) {
+        try {
+            ResourceAccessGuard<TextureResource> access{ event.resource };
+            static_cast<TexturePool*>(pool_impl)->update(*access);
+        }
+        catch (...) {
+            Mg::log.error("Failed to reload TextureResource '{}'. Keeping old version.",
+                          event.resource.resource_id().str_view());
+        }
+    };
+
+    m_impl->resource_cache->set_resource_reload_callback("TextureResource"_id,
+                                                         reload_callback,
+                                                         this);
 }
 
-TexturePool::~TexturePool() = default;
+TexturePool::~TexturePool()
+{
+    m_impl->resource_cache->remove_resource_reload_callback("TextureResource"_id);
+}
 
 Texture2D* TexturePool::get_texture2d(const Identifier& texture_id)
 {
