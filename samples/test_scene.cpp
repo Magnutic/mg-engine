@@ -37,9 +37,7 @@
 
 #include <fmt/core.h>
 
-#include <initializer_list>
 #include <numeric>
-#include <variant>
 
 namespace {
 
@@ -421,85 +419,6 @@ void Scene::setup_config()
     cfg.set_default_value("mouse_sensitivity_y", 0.4f);
 }
 
-const Mg::gfx::Material* Scene::load_material(Mg::Identifier file,
-                                              std::span<const Mg::Identifier> options)
-{
-#if 1
-    if (const Mg::gfx::Material* preexisting = material_pool->find(file); preexisting != nullptr) {
-        return preexisting;
-    }
-
-    const std::string diffuse_filename = fmt::format("textures/{}_da.dds", file.str_view());
-    const std::string diffuse_filename_alt = fmt::format("textures/{}_d.dds", file.str_view());
-    const std::string normal_filename = fmt::format("textures/{}_n.dds", file.str_view());
-    const std::string specular_filename = fmt::format("textures/{}_s.dds", file.str_view());
-    const std::string ao_roughness_metallic_filename = fmt::format("textures/{}_arm.dds",
-                                                                   file.str_view());
-
-    Mg::gfx::Texture2D* diffuse_texture =
-        texture_pool->load_texture2d(Mg::Identifier::from_runtime_string(diffuse_filename));
-    if (!diffuse_texture) {
-        diffuse_texture =
-            texture_pool->load_texture2d(Mg::Identifier::from_runtime_string(diffuse_filename_alt));
-    }
-    if (!diffuse_texture) {
-        diffuse_texture =
-            texture_pool->get_default_texture(Mg::gfx::TexturePool::DefaultTexture::Checkerboard);
-    }
-
-    Mg::gfx::Texture2D* normal_texture =
-        texture_pool->load_texture2d(Mg::Identifier::from_runtime_string(normal_filename));
-    if (!normal_texture) {
-        normal_texture =
-            texture_pool->get_default_texture(Mg::gfx::TexturePool::DefaultTexture::NormalsFlat);
-    }
-
-    Mg::gfx::Texture2D* ao_roughness_metallic_texture = texture_pool->load_texture2d(
-        Mg::Identifier::from_runtime_string(ao_roughness_metallic_filename));
-
-    Mg::gfx::Texture2D* specular_texture = nullptr;
-
-    if (!ao_roughness_metallic_texture) {
-        specular_texture =
-            texture_pool->load_texture2d(Mg::Identifier::from_runtime_string(specular_filename));
-
-        if (!specular_texture) {
-            specular_texture = texture_pool->get_default_texture(
-                Mg::gfx::TexturePool::DefaultTexture::Transparent);
-        }
-    }
-
-    const bool use_metallic_workflow = ao_roughness_metallic_texture != nullptr;
-
-    Mg::gfx::Material* m = nullptr;
-    if (use_metallic_workflow) {
-        auto handle = resource_cache->resource_handle<Mg::ShaderResource>(
-            "shaders/default_metallic_workflow.hjson");
-        m = material_pool->create(file, handle);
-        m->set_sampler("sampler_ao_roughness_metallic", ao_roughness_metallic_texture);
-    }
-    else {
-        auto handle = resource_cache->resource_handle<Mg::ShaderResource>(
-            "shaders/default_specular_workflow.hjson");
-        m = material_pool->create(file, handle);
-        m->set_sampler("sampler_specular", specular_texture);
-    }
-
-    for (auto o : options) {
-        m->set_option(o, true);
-    }
-
-    m->set_sampler("sampler_diffuse", diffuse_texture);
-    m->set_sampler("sampler_normal", normal_texture);
-
-    return m;
-#else
-    auto material_access =
-        resource_cache->access_resource<Mg::MaterialResource>("materials/default.hjson");
-    return material_pool->get_or_create(*material_access);
-#endif
-}
-
 Model::Model() = default;
 Model::~Model() = default;
 
@@ -516,8 +435,7 @@ void Model::update()
 }
 
 Model Scene::load_model(Mg::Identifier mesh_file,
-                        std::span<const MaterialFileAssignment> material_files,
-                        std::span<const Mg::Identifier> options)
+                        std::span<const MaterialFileAssignment> material_files)
 {
     Model model = {};
     model.id = mesh_file;
@@ -571,7 +489,7 @@ Model Scene::load_model(Mg::Identifier mesh_file,
         }
 
         model.material_assignments.push_back(
-            { submesh_index, load_material(material_fname, options) });
+            { submesh_index, material_pool->get_or_load(material_fname) });
     }
 
     if (model.skeleton) {
@@ -582,11 +500,10 @@ Model Scene::load_model(Mg::Identifier mesh_file,
 }
 
 Model& Scene::add_scene_model(Mg::Identifier mesh_file,
-                              std::span<const MaterialFileAssignment> material_files,
-                              std::span<const Mg::Identifier> options)
+                              std::span<const MaterialFileAssignment> material_files)
 {
     const auto [it, inserted] =
-        scene_models.insert({ mesh_file, load_model(mesh_file, material_files, options) });
+        scene_models.insert({ mesh_file, load_model(mesh_file, material_files) });
     Model& model = it->second;
 
     const Mg::ResourceAccessGuard access =
@@ -600,14 +517,13 @@ Model& Scene::add_scene_model(Mg::Identifier mesh_file,
 
 Model& Scene::add_dynamic_model(Mg::Identifier mesh_file,
                                 std::span<const MaterialFileAssignment> material_files,
-                                std::span<const Mg::Identifier> options,
                                 glm::vec3 position,
                                 Mg::Rotation rotation,
                                 glm::vec3 scale,
                                 bool enable_physics)
 {
     const auto [it, inserted] =
-        dynamic_models.insert({ mesh_file, load_model(mesh_file, material_files, options) });
+        dynamic_models.insert({ mesh_file, load_model(mesh_file, material_files) });
     Model& model = it->second;
 
     if (enable_physics) {
@@ -707,39 +623,36 @@ void Scene::load_models()
 
     add_scene_model("meshes/misc/test_scene_2.mgm",
                     std::array{
-                        MaterialFileAssignment{ size_t{ 0 }, "buildings/GreenBrick"_id },
-                        MaterialFileAssignment{ size_t{ 1 }, "buildings/W31_1"_id },
-                        MaterialFileAssignment{ size_t{ 2 }, "buildings/BigWhiteBricks"_id },
-                        MaterialFileAssignment{ size_t{ 3 }, "buildings/GreenBrick"_id } },
-                    std::array{ "PARALLAX"_id });
+                        MaterialFileAssignment{ size_t{ 0 }, "materials/buildings/GreenBrick.hjson"_id },
+                        MaterialFileAssignment{ size_t{ 1 }, "materials/buildings/W31_1.hjson"_id },
+                        MaterialFileAssignment{ size_t{ 2 }, "materials/buildings/BigWhiteBricks.hjson"_id },
+                        MaterialFileAssignment{ size_t{ 3 }, "materials/buildings/GreenBrick.hjson"_id },
+                    });
 
     add_dynamic_model("meshes/CesiumMan.mgm",
-                      std::array{ MaterialFileAssignment{ size_t{ 0 }, "actors/fox"_id } },
-                      std::array{ "RIM_LIGHT"_id },
+                      std::array{ MaterialFileAssignment{ size_t{ 0 }, "materials/actors/fox.hjson"_id } },
                       { 2.0f, 0.0f, 0.0f },
                       Mg::Rotation(),
                       { 1.0f, 1.0f, 1.0f },
                       false);
 
     add_dynamic_model("meshes/Fox.mgm",
-                      std::array{ MaterialFileAssignment{ "fox1", "actors/fox"_id } },
-                      std::array{ "RIM_LIGHT"_id },
+                      std::array{ MaterialFileAssignment{ "fox1", "materials/actors/fox.hjson"_id } },
                       { 1.0f, 1.0f, 0.0f },
                       Mg::Rotation(),
                       { 0.01f, 0.01f, 0.01f },
                       false);
 
     add_dynamic_model("meshes/misc/hestdraugr.mgm"_id,
-                      std::array{ MaterialFileAssignment{ size_t{ 0 }, "actors/HestDraugr"_id } },
-                      std::array{ "RIM_LIGHT"_id },
+                      std::array{
+                          MaterialFileAssignment{ size_t{ 0 }, "materials/actors/HestDraugr.hjson"_id } },
                       { -2.0f, 2.0f, 1.05f },
                       Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
                       { 1.0f, 1.0f, 1.0f },
                       true);
 
     add_dynamic_model("meshes/box.mgm",
-                      std::array{ MaterialFileAssignment{ size_t{ 0 }, "crate"_id } },
-                      std::array{ "PARALLAX"_id },
+                      std::array{ MaterialFileAssignment{ size_t{ 0 }, "materials/crate.hjson"_id } },
                       { 0.0f, 2.0f, 0.5f },
                       Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
                       { 1.0f, 1.0f, 1.0f },
@@ -765,7 +678,7 @@ void Scene::load_materials()
 
     billboard_material = material_pool->create("billboard_material", billboard_handle);
     billboard_material->set_sampler("sampler_diffuse",
-                                    texture_pool->load_texture2d("textures/light_t.dds"));
+                                    texture_pool->get_texture2d("textures/light_t.dds"));
 
     // Create particle material
     const auto particle_handle =
@@ -773,7 +686,7 @@ void Scene::load_materials()
 
     particle_material = material_pool->create("particle_material", particle_handle);
     particle_material->set_sampler("sampler_diffuse",
-                                   texture_pool->load_texture2d("textures/particle_t.dds"));
+                                   texture_pool->get_texture2d("textures/particle_t.dds"));
     particle_material->set_option("A_TEST", false);
     particle_material->blend_mode = Mg::gfx::blend_mode_constants::bm_add_premultiplied;
     particle_material->set_option("FADE_WHEN_CLOSE", true);
@@ -783,14 +696,11 @@ void Scene::load_materials()
         resource_cache->resource_handle<Mg::ShaderResource>("shaders/ui_render_test.hjson");
     ui_material = material_pool->create("ui_material", ui_handle);
     ui_material->set_sampler("sampler_colour",
-                             texture_pool->load_texture2d("textures/ui/book_open_da.dds"));
+                             texture_pool->get_texture2d("textures/ui/book_open_da.dds"));
     ui_material->blend_mode = Mg::gfx::blend_mode_constants::bm_add;
 
     // Load sky material
-    {
-        auto m = resource_cache->access_resource<Mg::MaterialResource>("materials/skybox.hjson");
-        sky_material = material_pool->get_or_create(*m);
-    }
+    sky_material = material_pool->get_or_load("materials/skybox.hjson");
 }
 
 // Create a lot of random lights

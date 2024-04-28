@@ -17,6 +17,7 @@
 #include "mg/resource_cache/mg_resource_cache.h"
 #include "mg/resource_cache/mg_resource_exceptions.h"
 #include "mg/resources/mg_texture_resource.h"
+#include "mg/utils/mg_enum.h"
 #include "mg/utils/mg_string_utils.h"
 
 #include <plf_colony.h>
@@ -140,7 +141,7 @@ TextureT* create_texture_impl(TexturePool::Impl& data,
 }
 
 template<typename TextureT>
-TextureT* get_impl(const TexturePool::Impl& data, const Identifier& texture_id)
+TextureT* find_impl(const TexturePool::Impl& data, const Identifier& texture_id)
 {
     const auto it = data.textures_by_id.find(texture_id);
     if (it == data.textures_by_id.end()) {
@@ -167,7 +168,7 @@ TextureT* from_resource_impl(TexturePool::Impl& data,
 template<typename TextureT>
 TextureT* load_impl(TexturePool::Impl& data, const Identifier& texture_id)
 {
-    if (auto* result = get_impl<TextureT>(data, texture_id); result) {
+    if (auto* result = find_impl<TextureT>(data, texture_id); result) {
         return result;
     }
 
@@ -190,22 +191,88 @@ template<typename TextureT> void destroy_impl(TexturePool::Impl& data, TextureT*
     data.textures_by_id.erase(texture_id);
 }
 
+constexpr std::array<Identifier, enum_utils::count<DefaultTexture>> default_texture_identifiers = {
+    {
+        "__default_texture_rgba_white",
+        "__default_texture_rgba_black",
+        "__default_texture_rgba_transparent",
+        "__default_texture_normals_flat",
+        "__default_texture_checkerboard",
+    }
+};
+
+// clang-format off
+constexpr std::array<std::array<uint8_t, 16>, enum_utils::count<DefaultTexture>> default_texture_buffers = {{
+    { // White
+         255, 255, 255, 255,
+         255, 255, 255, 255,
+         255, 255, 255, 255,
+         255, 255, 255, 255,
+    },
+    { // Black
+         0, 0, 0, 255,
+         0, 0, 0, 255,
+         0, 0, 0, 255,
+         0, 0, 0, 255,
+    },
+    { // Transparent
+         0, 0, 0, 0,
+         0, 0, 0, 0,
+         0, 0, 0, 0,
+         0, 0, 0, 0,
+    },
+    { // Normals flat
+         127, 127, 255, 255,
+         127, 127, 255, 255,
+         127, 127, 255, 255,
+         127, 127, 255, 255,
+    },
+    { // Checkerboard
+         0, 0, 0, 255,
+         255, 255, 255, 255,
+         255, 255, 255, 255,
+         0, 0, 0, 255,
+    }
+}};
+// clang-format on
+
+void init_default_textures(TexturePool::Impl& data)
+{
+    for (uint32_t i = 0; i < enum_utils::count<DefaultTexture>; ++i) {
+        const DefaultTexture type{ i };
+        const Identifier& id = default_texture_identifiers.at(i);
+
+        TextureSettings settings = {};
+        settings.sRGB = type == DefaultTexture::NormalsFlat ? SRGBSetting::Linear
+                                                            : SRGBSetting::Default;
+        settings.filtering = Filtering::Nearest;
+
+        auto generate_texture = [&]() {
+            std::span<const uint8_t> buffer = default_texture_buffers.at(i);
+            return Texture2D::from_rgba8_buffer(id, buffer, 2, 2, settings);
+        };
+
+        create_texture_impl<Texture2D>(data, id, generate_texture, settings);
+    }
+}
+
 } // namespace
 
 TexturePool::TexturePool(std::shared_ptr<ResourceCache> resource_cache)
 {
     MG_ASSERT(resource_cache != nullptr);
     m_impl->resource_cache = std::move(resource_cache);
+    init_default_textures(*m_impl);
 }
 
 TexturePool::~TexturePool() = default;
 
-Texture2D* TexturePool::load_texture2d(const Identifier& texture_id)
+Texture2D* TexturePool::get_texture2d(const Identifier& texture_id)
 {
     return load_impl<Texture2D>(*m_impl, texture_id);
 }
 
-TextureCube* TexturePool::load_cubemap(const Identifier& texture_id)
+TextureCube* TexturePool::get_cubemap(const Identifier& texture_id)
 {
     return load_impl<TextureCube>(*m_impl, texture_id);
 }
@@ -217,9 +284,14 @@ Texture2D* TexturePool::create_render_target(const RenderTargetParams& params)
     return create_texture_impl<Texture2D>(*m_impl, params.render_target_id, generate_texture, {});
 }
 
-Texture2D* TexturePool::get_texture2d(const Identifier& texture_id) const
+Texture2D* TexturePool::find_texture2d(const Identifier& texture_id) const
 {
-    return get_impl<Texture2D>(*m_impl, texture_id);
+    return find_impl<Texture2D>(*m_impl, texture_id);
+}
+
+TextureCube* TexturePool::find_cubemap(const Identifier& texture_id) const
+{
+    return find_impl<TextureCube>(*m_impl, texture_id);
 }
 
 void TexturePool::update(const TextureResource& resource)
@@ -256,76 +328,9 @@ void TexturePool::destroy(TextureCube* texture)
     destroy_impl<TextureCube>(*m_impl, texture);
 }
 
-namespace {
-
-const auto num_default_textures = static_cast<size_t>(TexturePool::DefaultTexture::Checkerboard) +
-                                  1;
-
-constexpr std::array<Identifier, num_default_textures> default_texture_identifiers = { {
-    "__default_texture_rgba_white",
-    "__default_texture_rgba_black",
-    "__default_texture_rgba_transparent",
-    "__default_texture_normals_flat",
-    "__default_texture_checkerboard",
-} };
-
-// clang-format off
-constexpr std::array<std::array<uint8_t, 16>, num_default_textures> default_texture_buffers = {{
-    { // White
-         255, 255, 255, 255,
-         255, 255, 255, 255,
-         255, 255, 255, 255,
-         255, 255, 255, 255,
-    },
-    { // Black
-         0, 0, 0, 255,
-         0, 0, 0, 255,
-         0, 0, 0, 255,
-         0, 0, 0, 255,
-    },
-    { // Transparent
-         0, 0, 0, 0,
-         0, 0, 0, 0,
-         0, 0, 0, 0,
-         0, 0, 0, 0,
-    },
-    { // Normals flat
-         127, 127, 255, 255,
-         127, 127, 255, 255,
-         127, 127, 255, 255,
-         127, 127, 255, 255,
-    },
-    { // Checkerboard
-         0, 0, 0, 255,
-         255, 255, 255, 255,
-         255, 255, 255, 255,
-         0, 0, 0, 255,
-    }
-}};
-// clang-format on
-
-} // namespace
-
 Texture2D* TexturePool::get_default_texture(DefaultTexture type)
 {
-    const auto index = static_cast<size_t>(type);
-    const Identifier& id = default_texture_identifiers.at(index);
-
-    TextureSettings settings = {};
-    settings.sRGB = type == DefaultTexture::NormalsFlat ? SRGBSetting::Linear
-                                                        : SRGBSetting::Default;
-    settings.filtering = Filtering::Nearest;
-
-    if (Texture2D* texture = get_texture2d(id)) {
-        return texture;
-    }
-
-    auto generate_texture = [&]() {
-        std::span<const uint8_t> buffer = default_texture_buffers.at(index);
-        return Texture2D::from_rgba8_buffer(id, buffer, 2, 2, settings);
-    };
-
-    return create_texture_impl<Texture2D>(*m_impl, id, generate_texture, settings);
-};
+    return find_texture2d(default_texture_identifiers.at(static_cast<size_t>(type)));
+}
 
 } // namespace Mg::gfx

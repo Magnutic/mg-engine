@@ -1,0 +1,47 @@
+// Material id: 'buildings/W31_1'
+shader: shaders/default_specular_workflow.hjson
+blend_mode: {
+  BlendMode: {
+    colour_blend_op: add
+    alpha_blend_op: add
+    src_colour_factor: one
+    dst_colour_factor: zero
+    src_alpha_factor: one
+    dst_alpha_factor: zero
+  }
+}
+options: {
+  PARALLAX: true
+  RIM_LIGHT: false
+}
+parameters: {
+  sampler_diffuse: {
+    type: sampler2D
+    value: textures/buildings/W31_1_da.dds
+  }
+  sampler_normal: {
+    type: sampler2D
+    value: textures/buildings/W31_1_n.dds
+  }
+  sampler_specular: {
+    type: sampler2D
+    value: textures/buildings/W31_1_s.dds
+  }
+  ambient_colour: {
+    type: vec4
+    value: [
+      0.75
+      1.07000005245209
+      1.5
+      1.0
+    ]
+  }
+  rim_intensity: {
+    type: float
+    value: 0.0
+  }
+  rim_power: {
+    type: float
+    value: 0.0
+  }
+}

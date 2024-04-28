@@ -13,6 +13,7 @@
 #include "mg/gfx/mg_texture2d.h"
 #include "mg/gfx/mg_texture_pool.h"
 #include "mg/resource_cache/mg_resource_access_guard.h"
+#include "mg/resource_cache/mg_resource_cache.h"
 #include "mg/resource_cache/mg_resource_exceptions.h"
 #include "mg/resources/mg_material_resource.h"
 #include "mg/utils/mg_stl_helpers.h"
@@ -24,6 +25,7 @@
 namespace Mg::gfx {
 
 struct MaterialPool::Impl {
+    std::shared_ptr<ResourceCache> resource_cache;
     std::shared_ptr<TexturePool> texture_pool;
     plf::colony<Material> materials;
 };
@@ -34,8 +36,10 @@ template<typename MaterialsT> auto find_impl(MaterialsT& materials, Identifier i
     return it == materials.end() ? nullptr : &*it;
 }
 
-MaterialPool::MaterialPool(std::shared_ptr<TexturePool> texture_pool)
+MaterialPool::MaterialPool(std::shared_ptr<ResourceCache> resource_cache,
+                           std::shared_ptr<gfx::TexturePool> texture_pool)
 {
+    m_impl->resource_cache = std::move(resource_cache);
     m_impl->texture_pool = std::move(texture_pool);
 }
 
@@ -71,7 +75,7 @@ void init_material_from_resource(Material& material,
             switch (sampler.type) {
             case Sampler2D:
                 if (sampler.texture_resource_id) {
-                    Texture2D* texture = texture_pool.load_texture2d(*sampler.texture_resource_id);
+                    Texture2D* texture = texture_pool.get_texture2d(*sampler.texture_resource_id);
                     MG_ASSERT(texture);
                     material.set_sampler(sampler.name, texture);
                 }
@@ -79,7 +83,7 @@ void init_material_from_resource(Material& material,
 
             case SamplerCube:
                 if (sampler.texture_resource_id) {
-                    TextureCube* texture = texture_pool.load_cubemap(*sampler.texture_resource_id);
+                    TextureCube* texture = texture_pool.get_cubemap(*sampler.texture_resource_id);
                     MG_ASSERT(texture);
                     material.set_sampler(sampler.name, texture);
                 }
@@ -105,15 +109,15 @@ void init_material_from_resource(Material& material,
 
 } // namespace
 
-const Material* MaterialPool::get_or_create(const MaterialResource& material_resource)
+const Material* MaterialPool::get_or_load(Identifier id)
 {
-    auto shader_resource = material_resource.shader_resource();
-    const Identifier id = material_resource.resource_id();
-    if (const Material* preexisting = find(id); preexisting) {
-        return preexisting;
+    if (const Material* material = find(id); material) {
+        return material;
     }
-    Material* material = create(id, shader_resource);
-    init_material_from_resource(*material, material_resource, *m_impl->texture_pool);
+
+    auto access = m_impl->resource_cache->access_resource<MaterialResource>(id);
+    Material* material = create(id, access->shader_resource());
+    init_material_from_resource(*material, *access, *m_impl->texture_pool);
     return material;
 }
 

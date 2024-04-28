@@ -28,7 +28,8 @@ class TexturePool;
 
 class MaterialPool {
 public:
-    explicit MaterialPool(std::shared_ptr<gfx::TexturePool> texture_pool);
+    explicit MaterialPool(std::shared_ptr<ResourceCache> resource_cache,
+                          std::shared_ptr<gfx::TexturePool> texture_pool);
     ~MaterialPool() = default;
 
     MG_MAKE_NON_MOVABLE(MaterialPool);
@@ -39,13 +40,13 @@ public:
      */
     Material* create(Identifier id, ResourceHandle<ShaderResource> shader_resource_handle);
 
-    /** Get or create a Material from the given MaterialResource.
+    /** Get (if already loaded) or else load a Material from the ResourceCache.
      * Note that this returns an immutable const Material*. The reason for this is so that future
      * calls to this function do not return a mutated version of the Material. If you need to edit
      * a Material that was loaded from a MaterialResource, first copy the Material using
      * MaterialPool::copy() and edit the copy instead.
      */
-    const Material* get_or_create(const MaterialResource& material_resource);
+    const Material* get_or_load(Identifier id);
 
     Material* copy(Identifier id, const Material* source);
 
@@ -53,6 +54,7 @@ public:
 
     void destroy(const Material* handle);
 
+    /** Get Material if it already exists in pool. Otherwise, returns nullptr. */
     const Material* find(Identifier id) const;
 
     Array<Material*> get_all_materials();

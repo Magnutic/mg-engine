@@ -87,7 +87,7 @@ public:
     std::shared_ptr<Mg::gfx::TexturePool> texture_pool =
         std::make_shared<Mg::gfx::TexturePool>(resource_cache);
     std::shared_ptr<Mg::gfx::MaterialPool> material_pool =
-        std::make_shared<Mg::gfx::MaterialPool>(texture_pool);
+        std::make_shared<Mg::gfx::MaterialPool>(resource_cache, texture_pool);
 
     std::unique_ptr<Mg::gfx::BitmapFont> font;
 
@@ -141,22 +141,14 @@ private:
 
     bool load_mesh(Mg::Identifier file, Model& model);
 
-    Mg::gfx::Texture2D* load_texture(Mg::Identifier file, bool sRGB);
-
-    const Mg::gfx::Material* load_material(Mg::Identifier file,
-                                           std::span<const Mg::Identifier> options);
-
     Model load_model(Mg::Identifier mesh_file,
-                     std::span<const MaterialFileAssignment> material_files,
-                     std::span<const Mg::Identifier> options);
+                     std::span<const MaterialFileAssignment> material_files);
 
     Model& add_scene_model(Mg::Identifier mesh_file,
-                           std::span<const MaterialFileAssignment> material_files,
-                           std::span<const Mg::Identifier> options);
+                           std::span<const MaterialFileAssignment> material_files);
 
     Model& add_dynamic_model(Mg::Identifier mesh_file,
                              std::span<const MaterialFileAssignment> material_files,
-                             std::span<const Mg::Identifier> options,
                              glm::vec3 position,
                              Mg::Rotation rotation,
                              glm::vec3 scale,

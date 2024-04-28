@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "mg/utils/mg_enum.h"
 #include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
 
@@ -28,6 +29,8 @@ class TextureCube;
 struct TextureSettings;
 struct RenderTargetParams; // Defined in mg_texture_related_types.h
 
+MG_ENUM(DefaultTexture, (White, Black, Transparent, NormalsFlat, Checkerboard))
+
 class TexturePool {
 public:
     explicit TexturePool(std::shared_ptr<ResourceCache> resource_cache);
@@ -37,18 +40,18 @@ public:
     MG_MAKE_NON_COPYABLE(TexturePool);
 
     /** Loads texture from resource cache unless it is already in the pool. */
-    Texture2D* load_texture2d(const Identifier& texture_id);
+    Texture2D* get_texture2d(const Identifier& texture_id);
 
     /** Loads texture from resource cache unless it is already in the pool. */
-    TextureCube* load_cubemap(const Identifier& texture_id);
+    TextureCube* get_cubemap(const Identifier& texture_id);
 
     Texture2D* create_render_target(const RenderTargetParams& params);
 
     /** Find a texture by its resource id. Null if there is no Texture2D with that id. */
-    Texture2D* get_texture2d(const Identifier& texture_id) const;
+    Texture2D* find_texture2d(const Identifier& texture_id) const;
 
     /** Find a texture by its resource id. Null if there is no TextureCube with that id. */
-    TextureCube* get_cubemap(const Identifier& texture_id) const;
+    TextureCube* find_cubemap(const Identifier& texture_id) const;
 
     /** Update the texture that was created from resource.
      * Used for hot-reloading of texture files.
@@ -58,8 +61,6 @@ public:
     void destroy(Texture2D* texture);
 
     void destroy(TextureCube* texture);
-
-    enum class DefaultTexture { White, Black, Transparent, NormalsFlat, Checkerboard };
 
     Texture2D* get_default_texture(DefaultTexture type);
 
