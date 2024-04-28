@@ -23,14 +23,14 @@ namespace Mg::io {
 enum class Mode { text, binary };
 
 /** Portably creates ofstream from UTF-8 filepath, with stream exceptions enabled. Returns nullopt
- * if creating the filestream fails.
+ * along with error reason if creating the filestream fails.
  */
-Opt<std::ofstream> make_output_filestream(std::string_view filepath, bool overwrite, Mode mode);
+std::pair<Opt<std::ofstream>, std::string> make_output_filestream(std::string_view filepath, bool overwrite, Mode mode);
 
 /** Portably creates ifstream from UTF-8 filepath, with stream exceptions enabled. Returns nullopt
- * if creating the filestream fails.
+ * along with error reason if creating the filestream fails.
  */
-Opt<std::ifstream> make_input_filestream(std::string_view filepath, Mode mode);
+std::pair<Opt<std::ifstream>, std::string> make_input_filestream(std::string_view filepath, Mode mode);
 
 std::string get_all_text(std::istream& stream);
 

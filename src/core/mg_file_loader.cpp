@@ -122,10 +122,10 @@ void BasicFileLoader::load_file(Identifier file, std::span<std::byte> target_buf
         };
     }
 
-    Opt<std::ifstream> istream = io::make_input_filestream(cast_u8_to_char(path.generic_u8string()),
-                                                           io::Mode::binary);
+    const auto u8path = cast_u8_to_char(path.generic_u8string());
+    auto [istream, error_msg] = io::make_input_filestream(u8path, io::Mode::binary);
     if (!istream) {
-        throw RuntimeError{ "Could not read file '{}'", cast_u8_to_char(path.generic_u8string()) };
+        throw RuntimeError{ "Could not read file '{}': {}", u8path, error_msg };
     }
 
     const auto size = io::file_size(*istream);

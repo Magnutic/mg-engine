@@ -9,10 +9,30 @@
 #include "mg/utils/mg_u8string_casts.h"
 
 #include <filesystem>
+#include <iostream>
 
 namespace Mg::io {
 
-Opt<std::ofstream> make_output_filestream(std::string_view filepath, bool overwrite, Mode mode)
+namespace {
+
+// Thread-safe strerror that works on both Linux and Windows.
+std::string error_message(const int errnum)
+{
+    std::array<char, 256> buffer;
+    std::string result;
+#if _WIN32
+    strerror_s(buffer.data(), buffer.size(), errnum);
+    result = buffer.data();
+#else
+    result = strerror_r(errnum, buffer.data(), buffer.size());
+#endif
+    return result;
+}
+
+} // namespace
+
+std::pair<Opt<std::ofstream>, std::string>
+make_output_filestream(std::string_view filepath, bool overwrite, Mode mode)
 {
     std::ios::openmode open_mode = std::ios::out;
     open_mode |= overwrite ? std::ios::trunc : std::ios::app;
@@ -20,33 +40,34 @@ Opt<std::ofstream> make_output_filestream(std::string_view filepath, bool overwr
         open_mode |= std::ios::binary;
     }
 
-    auto writer = make_opt<std::ofstream>(std::filesystem::path(cast_as_u8_unchecked(filepath)),
+    auto stream = make_opt<std::ofstream>(std::filesystem::path(cast_as_u8_unchecked(filepath)),
                                           open_mode);
 
-    if (!writer->good()) {
-        return {};
+    if (!stream->good()) {
+        return { nullopt, error_message(errno) };
     }
 
-    writer->exceptions(std::ios::badbit | std::ios::failbit);
-    return writer;
+    stream->exceptions(std::ios::badbit | std::ios::failbit);
+    return { std::move(stream), "" };
 }
 
-Opt<std::ifstream> make_input_filestream(std::string_view filepath, Mode mode)
+std::pair<Opt<std::ifstream>, std::string> make_input_filestream(std::string_view filepath,
+                                                                 Mode mode)
 {
     std::ios::openmode open_mode = std::ios::in;
     if (mode == Mode::binary) {
         open_mode |= std::ios::binary;
     }
 
-    auto writer = make_opt<std::ifstream>(std::filesystem::path(cast_as_u8_unchecked(filepath)),
+    auto stream = make_opt<std::ifstream>(std::filesystem::path(cast_as_u8_unchecked(filepath)),
                                           open_mode);
 
-    if (!writer->good()) {
-        return {};
+    if (!stream->good()) {
+        return { nullopt, error_message(errno) };
     }
 
-    writer->exceptions(std::ios::badbit | std::ios::failbit);
-    return writer;
+    stream->exceptions(std::ios::badbit | std::ios::failbit);
+    return { std::move(stream), "" };
 }
 
 std::string get_all_text(std::istream& stream)

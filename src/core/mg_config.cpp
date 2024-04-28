@@ -249,10 +249,10 @@ void Config::read_from_file(std::string_view filepath)
 {
     log.verbose("Reading config file '{}'", filepath);
 
-    Opt<std::ifstream> reader = io::make_input_filestream(filepath, io::Mode::text);
+    auto [reader, error_msg] = io::make_input_filestream(filepath, io::Mode::text);
 
     if (!reader) {
-        log.warning("Could not read config file '{}'.", filepath);
+        log.warning("Could not read config file '{}': {}", filepath, error_msg);
         return;
     }
 
@@ -296,7 +296,7 @@ void Config::write_to_file(std::string_view filepath) const
 
     {
         // Read in old lines from config file if it exists
-        Opt<std::ifstream> reader = io::make_input_filestream(filepath, io::Mode::text);
+        auto [reader, error_msg] = io::make_input_filestream(filepath, io::Mode::text);
 
         while (reader && reader->good()) {
             lines.emplace_back(io::get_line(*reader));
@@ -338,10 +338,10 @@ void Config::write_to_file(std::string_view filepath) const
     }
 
     // Write result to file
-    Opt<std::ofstream> writer = io::make_output_filestream(filepath, true, io::Mode::text);
+    auto [writer, error_msg] = io::make_output_filestream(filepath, true, io::Mode::text);
 
     if (!writer) {
-        log.error("Error writing config file {}", filepath);
+        log.error("Error writing config file '{}': {}", filepath, error_msg);
         return;
     }
 
