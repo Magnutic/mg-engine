@@ -15,7 +15,7 @@ namespace Mg::input {
 
 namespace {
 
-const char* default_key_name(const Key key)
+const char* non_printable_key_name(const Key key)
 {
     switch (key) {
     case Key::Space:
@@ -155,6 +155,11 @@ int glfw_key_code(Key key)
 
 std::string localized_key_name(const Key key)
 {
+    // Work around apparent GLFW bug
+    if (key == Key::World2) {
+        return "World2";
+    }
+
     // Ask GLFW for localized key name
     const char* localized_name = glfwGetKeyName(glfw_key_code(key), 0);
     if (localized_name != nullptr) {
@@ -162,8 +167,7 @@ std::string localized_key_name(const Key key)
     }
 
     // If glfwGetKeyName does not return localized name, fall back to these.
-    log.warning("Input: could not get localized name of key {}.", glfw_key_code(key));
-    return default_key_name(key);
+    return non_printable_key_name(key);
 }
 
 } // namespace Mg::input
