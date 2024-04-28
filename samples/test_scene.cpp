@@ -421,27 +421,6 @@ void Scene::setup_config()
     cfg.set_default_value("mouse_sensitivity_y", 0.4f);
 }
 
-Mg::gfx::Texture2D* Scene::load_texture(Mg::Identifier file, const bool sRGB)
-{
-    // Get from pool if it exists there.
-    Mg::gfx::Texture2D* texture = texture_pool->get_texture2d(file);
-    if (texture) {
-        return texture;
-    }
-
-    Mg::gfx::TextureSettings settings = {};
-    settings.sRGB = sRGB ? Mg::gfx::SRGBSetting::sRGB : Mg::gfx::SRGBSetting::Linear;
-
-    // Otherwise, load from file.
-    if (resource_cache->file_exists(file)) {
-        const Mg::ResourceAccessGuard access =
-            resource_cache->access_resource<Mg::TextureResource>(file);
-        return texture_pool->from_resource(*access, settings);
-    }
-
-    return nullptr;
-}
-
 const Mg::gfx::Material* Scene::load_material(Mg::Identifier file,
                                               std::span<const Mg::Identifier> options)
 {
@@ -458,10 +437,10 @@ const Mg::gfx::Material* Scene::load_material(Mg::Identifier file,
                                                                    file.str_view());
 
     Mg::gfx::Texture2D* diffuse_texture =
-        load_texture(Mg::Identifier::from_runtime_string(diffuse_filename), true);
+        texture_pool->load_texture2d(Mg::Identifier::from_runtime_string(diffuse_filename));
     if (!diffuse_texture) {
-        diffuse_texture = load_texture(Mg::Identifier::from_runtime_string(diffuse_filename_alt),
-                                       true);
+        diffuse_texture =
+            texture_pool->load_texture2d(Mg::Identifier::from_runtime_string(diffuse_filename_alt));
     }
     if (!diffuse_texture) {
         diffuse_texture =
@@ -469,20 +448,20 @@ const Mg::gfx::Material* Scene::load_material(Mg::Identifier file,
     }
 
     Mg::gfx::Texture2D* normal_texture =
-        load_texture(Mg::Identifier::from_runtime_string(normal_filename), false);
+        texture_pool->load_texture2d(Mg::Identifier::from_runtime_string(normal_filename));
     if (!normal_texture) {
         normal_texture =
             texture_pool->get_default_texture(Mg::gfx::TexturePool::DefaultTexture::NormalsFlat);
     }
 
-    Mg::gfx::Texture2D* ao_roughness_metallic_texture =
-        load_texture(Mg::Identifier::from_runtime_string(ao_roughness_metallic_filename), false);
+    Mg::gfx::Texture2D* ao_roughness_metallic_texture = texture_pool->load_texture2d(
+        Mg::Identifier::from_runtime_string(ao_roughness_metallic_filename));
 
     Mg::gfx::Texture2D* specular_texture = nullptr;
 
     if (!ao_roughness_metallic_texture) {
-        specular_texture = load_texture(Mg::Identifier::from_runtime_string(specular_filename),
-                                        true);
+        specular_texture =
+            texture_pool->load_texture2d(Mg::Identifier::from_runtime_string(specular_filename));
 
         if (!specular_texture) {
             specular_texture = texture_pool->get_default_texture(
@@ -785,7 +764,8 @@ void Scene::load_materials()
         resource_cache->resource_handle<Mg::ShaderResource>("shaders/simple_billboard.hjson");
 
     billboard_material = material_pool->create("billboard_material", billboard_handle);
-    billboard_material->set_sampler("sampler_diffuse", load_texture("textures/light_t.dds", true));
+    billboard_material->set_sampler("sampler_diffuse",
+                                    texture_pool->load_texture2d("textures/light_t.dds"));
 
     // Create particle material
     const auto particle_handle =
@@ -793,7 +773,7 @@ void Scene::load_materials()
 
     particle_material = material_pool->create("particle_material", particle_handle);
     particle_material->set_sampler("sampler_diffuse",
-                                   load_texture("textures/particle_t.dds", true));
+                                   texture_pool->load_texture2d("textures/particle_t.dds"));
     particle_material->set_option("A_TEST", false);
     particle_material->blend_mode = Mg::gfx::blend_mode_constants::bm_add_premultiplied;
     particle_material->set_option("FADE_WHEN_CLOSE", true);
@@ -802,7 +782,8 @@ void Scene::load_materials()
     const auto ui_handle =
         resource_cache->resource_handle<Mg::ShaderResource>("shaders/ui_render_test.hjson");
     ui_material = material_pool->create("ui_material", ui_handle);
-    ui_material->set_sampler("sampler_colour", load_texture("textures/ui/book_open_da.dds", true));
+    ui_material->set_sampler("sampler_colour",
+                             texture_pool->load_texture2d("textures/ui/book_open_da.dds"));
     ui_material->blend_mode = Mg::gfx::blend_mode_constants::bm_add;
 
     // Load sky material

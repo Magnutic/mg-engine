@@ -42,11 +42,6 @@ public:
     /** Loads texture from resource cache unless it is already in the pool. */
     TextureCube* load_cubemap(const Identifier& texture_id);
 
-    Texture2D* from_resource(const TextureResource& resource, const TextureSettings& settings);
-
-    TextureCube* from_resource_cubemap(const TextureResource& resource,
-                                       const TextureSettings& settings);
-
     Texture2D* create_render_target(const RenderTargetParams& params);
 
     /** Find a texture by its resource id. Null if there is no Texture2D with that id. */

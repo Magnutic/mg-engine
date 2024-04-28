@@ -15,6 +15,7 @@
 #include "mg/gfx/mg_texture_cube.h"
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/resource_cache/mg_resource_cache.h"
+#include "mg/resource_cache/mg_resource_exceptions.h"
 #include "mg/resources/mg_texture_resource.h"
 #include "mg/utils/mg_string_utils.h"
 
@@ -74,7 +75,7 @@ namespace {
 TextureSettings deduce_texture_settings(const TextureResource& texture_resource)
 {
     TextureSettings settings = {};
-    const Identifier id  = texture_resource.resource_id();
+    const Identifier id = texture_resource.resource_id();
 
     Opt<TextureCategory> category = deduce_texture_category(id.str_view());
     if (!category.has_value()) {
@@ -170,9 +171,14 @@ TextureT* load_impl(TexturePool::Impl& data, const Identifier& texture_id)
         return result;
     }
 
-    auto access_guard = data.resource_cache->access_resource<TextureResource>(texture_id);
-    const auto settings = deduce_texture_settings(*access_guard);
-    return from_resource_impl<TextureT>(data, *access_guard, settings);
+    try {
+        auto access_guard = data.resource_cache->access_resource<TextureResource>(texture_id);
+        const auto settings = deduce_texture_settings(*access_guard);
+        return from_resource_impl<TextureT>(data, *access_guard, settings);
+    }
+    catch (const ResourceNotFound&) {
+        return nullptr;
+    }
 }
 
 template<typename TextureT> void destroy_impl(TexturePool::Impl& data, TextureT* texture)
@@ -202,20 +208,6 @@ Texture2D* TexturePool::load_texture2d(const Identifier& texture_id)
 TextureCube* TexturePool::load_cubemap(const Identifier& texture_id)
 {
     return load_impl<TextureCube>(*m_impl, texture_id);
-}
-
-Texture2D* TexturePool::from_resource(const TextureResource& resource,
-                                      const TextureSettings& settings)
-{
-    MG_GFX_DEBUG_GROUP("TexturePool::from_resource")
-    return from_resource_impl<Texture2D>(*m_impl, resource, settings);
-}
-
-TextureCube* TexturePool::from_resource_cubemap(const TextureResource& resource,
-                                                const TextureSettings& settings)
-{
-    MG_GFX_DEBUG_GROUP("TexturePool::from_resource_cubemap")
-    return from_resource_impl<TextureCube>(*m_impl, resource, settings);
 }
 
 Texture2D* TexturePool::create_render_target(const RenderTargetParams& params)
