@@ -207,7 +207,7 @@ void Scene::simulation_step()
     }
 
     if (button_states["toggle_debug_vis"].was_pressed) {
-        draw_debug = !draw_debug;
+        ++debug_visualization;
     }
     if (button_states["lock_camera"].was_pressed) {
         camera_locked = !camera_locked;
@@ -343,24 +343,11 @@ void Scene::render(const double lerp_factor)
         text += fmt::format("\nPosition: {{{:.2f}, {:.2f}, {:.2f}}}", p.x, p.y, p.z);
         text += fmt::format("\nGrounded: {:b}",
                             player_controller->character_controller.is_on_ground());
-        text += fmt::format("\nParticles: {}", particle_system.particles().size());
+        text += fmt::format("\nNum particles: {}", particle_system.particles().size());
 
         ui_renderer.draw_text(app.window().render_target,
                               placement,
                               font->prepare_text(text, typesetting));
-
-#if 0
-        for (const auto& collision : physics_world->get_collisions()) {
-            Mg::gfx::DebugRenderer::EllipsoidDrawParams params;
-            params.dimensions = glm::vec3(0.05f);
-            params.centre = glm::vec3(collision.contact_point_on_a);
-            params.colour = glm::vec4(1.0f, 0.0f, 1.0f, 0.5f);
-            debug_renderer.draw_ellipsoid(camera.view_proj_matrix(), params);
-            params.centre = glm::vec3(collision.contact_point_on_b);
-            params.colour = glm::vec4(0.0f, 1.0f, 0.0f, 0.5f);
-            debug_renderer.draw_ellipsoid(camera.view_proj_matrix(), params);
-        }
-#endif
     }
 
     Model& fox = dynamic_models["meshes/Fox.mgm"];
@@ -375,37 +362,25 @@ void Scene::render(const double lerp_factor)
     }
 
     // Debug geometry
-    if (draw_debug) {
-        // render_light_debug_geometry();
+    switch (debug_visualization % 4) {
+    case 1:
+        render_light_debug_geometry();
+        break;
+    case 2:
         render_skeleton_debug_geometry();
-        /*
+        break;
+    case 3:
         physics_world->draw_debug(app.window().render_target,
                                   debug_renderer,
                                   camera.view_proj_matrix());
-        */
-        Mg::gfx::get_debug_render_queue().dispatch(app.window().render_target,
-                                                   debug_renderer,
-                                                   camera.view_proj_matrix());
+        break;
+    default:
+        break;
     }
 
-#if 0 // Raycast from camera test.
-    std::vector<Mg::physics::RayHit> results;
-    physics_world->raycast(camera.position,
-                           camera.position + camera.rotation.forward() * 1000.0f,
-                           ~Mg::physics::CollisionGroup::Character,
-                           results);
-    for (auto& rayhit : results) {
-        Mg::gfx::DebugRenderer::EllipsoidDrawParams params;
-        params.dimensions = glm::vec3(0.05f);
-        params.centre = glm::vec3(rayhit.hit_point_worldspace);
-        params.colour = glm::vec4(1.0f, 0.0f, 1.0f, 0.5f);
-        debug_renderer.draw_ellipsoid(camera.view_proj_matrix(), params);
-        debug_renderer.draw_line(camera.view_proj_matrix(),
-                                 rayhit.hit_point_worldspace,
-                                 rayhit.hit_point_worldspace + rayhit.hit_normal_worldspace * 0.2f,
-                                 { 0.0f, 0.0f, 1.0f, 1.0f });
-    }
-#endif
+    Mg::gfx::get_debug_render_queue().dispatch(app.window().render_target,
+                                               debug_renderer,
+                                               camera.view_proj_matrix());
 
     app.window().swap_buffers();
 }
@@ -620,6 +595,7 @@ void Scene::load_models()
 {
     using namespace Mg::literals;
 
+    scene_models.clear();
     dynamic_models.clear();
 
     add_scene_model(

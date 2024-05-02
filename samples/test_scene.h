@@ -127,7 +127,7 @@ public:
 
     bool camera_locked = false;
 
-    bool draw_debug = false;
+    int debug_visualization = 0;
 
     bool animate_skinned_meshes = true;
 
