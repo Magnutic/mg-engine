@@ -479,6 +479,9 @@ MeshPool::MeshPool(std::shared_ptr<ResourceCache> resource_cache)
 MeshHandle MeshPool::get_or_load(Identifier resource_id)
 {
     MG_GFX_DEBUG_GROUP("MeshPool::create")
+    if (auto opt_handle = find(resource_id); opt_handle) {
+        return opt_handle.value();
+    }
     auto access = m_impl->resource_cache().access_resource<MeshResource>(resource_id);
     return m_impl->create(access->resource_id(), access->data_view());
 }
