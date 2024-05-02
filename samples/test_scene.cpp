@@ -148,8 +148,6 @@ void Scene::init()
     std::vector<Mg::UnicodeRange> unicode_ranges = { Mg::get_unicode_range(
         Mg::UnicodeBlock::Basic_Latin) };
     font = std::make_unique<Mg::gfx::BitmapFont>(font_resource, 24, unicode_ranges);
-
-    // imgui = std::make_unique<Mg::ImguiOverlay>(app.window());
 }
 
 void Scene::simulation_step()
@@ -311,19 +309,6 @@ void Scene::render(const double lerp_factor)
     ui_renderer.resolution(
         { app.window().frame_buffer_size().width, app.window().frame_buffer_size().height });
 
-#if 0
-    {
-        Mg::gfx::UIPlacement placement = {};
-        placement.position = Mg::gfx::UIPlacement::centre;
-        placement.anchor = Mg::gfx::UIPlacement::centre;
-
-        ui_material->set_parameter("opacity", 0.5f);
-        ui_renderer.draw_rectangle(app.window().render_target,
-                                   placement,
-                                   { 100.0f, 100.0f },
-                                   *ui_material);
-    }
-#endif
     {
         Mg::gfx::UIPlacement placement = {};
         placement.position = Mg::gfx::UIPlacement::top_left + glm::vec2(0.01f, -0.01f);
@@ -513,14 +498,11 @@ Model& Scene::add_dynamic_model(Mg::Identifier mesh_file,
 
         Mg::physics::Shape* shape =
             physics_world->create_convex_hull(access->vertices(), model.centre, scale);
-        // physics_world->create_box_shape(model.aabb.max_corner - model.aabb.min_corner);
         model.physics_body =
             physics_world->create_dynamic_body(mesh_file,
                                                *shape,
                                                body_params,
                                                glm::translate(position) * rotation.to_matrix());
-        // model.physics_body->as_dynamic_body()->set_filter_mask(
-        //~Mg::physics::CollisionGroup::Character);
 
         // Add visualization translation relative to centre of mass.
         // Note unusual order: for once we translate before the scale, since the translation is in
@@ -671,14 +653,6 @@ void Scene::load_materials()
     particle_material->set_option("A_TEST", false);
     particle_material->blend_mode = Mg::gfx::blend_mode_constants::bm_add_premultiplied;
     particle_material->set_option("FADE_WHEN_CLOSE", true);
-
-    // Create UI material
-    const auto ui_handle =
-        resource_cache->resource_handle<Mg::ShaderResource>("shaders/ui_render_test.hjson");
-    ui_material = material_pool->create("ui_material", ui_handle);
-    ui_material->set_sampler("sampler_colour",
-                             texture_pool->get_texture2d("textures/ui/book_open_da.dds"));
-    ui_material->blend_mode = Mg::gfx::blend_mode_constants::bm_add;
 
     // Load sky material
     sky_material = material_pool->get_or_load("materials/skybox.hjson");

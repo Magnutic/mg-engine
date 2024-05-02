@@ -120,7 +120,6 @@ public:
     Mg::gfx::Material* blur_material = nullptr;
     Mg::gfx::Material* billboard_material = nullptr;
     Mg::gfx::Material* particle_material = nullptr;
-    Mg::gfx::Material* ui_material = nullptr;
     const Mg::gfx::Material* sky_material = nullptr;
 
     Mg::gfx::ParticleSystem particle_system;
