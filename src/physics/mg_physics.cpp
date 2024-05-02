@@ -1035,7 +1035,7 @@ void World::update(const float time_step)
     // Collisions by id must be sorted for `find_collisions_for` to work, as it uses binary search.
     sort(m_impl->collisions_by_id);
 
-    // Collect all collisions involing ghost objects.
+    // Collect all collisions involving ghost objects.
     for (GhostObject& ghost_object : m_impl->ghost_objects) {
         find_collisions_for(ghost_object.id, ghost_object.collisions);
     }
