@@ -38,14 +38,7 @@
 #include <variant>
 
 struct Model {
-    Model();
-    ~Model();
-    MG_MAKE_DEFAULT_MOVABLE(Model);
-    MG_MAKE_NON_COPYABLE(Model);
-
     void update();
-
-    using AnimationClips = Mg::small_vector<Mg::gfx::Mesh::AnimationClip, 5>;
 
     glm::mat4 transform = glm::mat4(1.0f);
     glm::mat4 vis_transform = glm::mat4(1.0f);
@@ -53,8 +46,7 @@ struct Model {
     Mg::small_vector<Mg::gfx::MaterialAssignment, 10> material_assignments;
     Mg::Opt<Mg::gfx::Skeleton> skeleton;
     Mg::Opt<Mg::gfx::SkeletonPose> pose;
-    AnimationClips clips;
-    Mg::Identifier id;
+    Mg::small_vector<Mg::gfx::Mesh::AnimationClip, 5> clips;
     glm::vec3 centre = glm::vec3(0.0f);
     Mg::AxisAlignedBoundingBox aabb;
 

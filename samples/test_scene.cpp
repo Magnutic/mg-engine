@@ -260,6 +260,17 @@ void Scene::render(const double lerp_factor)
     // Draw sky.
     skybox_renderer.draw(*hdr_target, camera, *sky_material);
 
+    // Animate meshes.
+    {
+        Model& fox = dynamic_models["meshes/Fox.mgm"];
+        Mg::gfx::animate_skeleton(fox.clips[1], fox.pose.value(), app.time_since_init());
+
+        Model& cesium_man = dynamic_models["meshes/CesiumMan.mgm"];
+        Mg::gfx::animate_skeleton(cesium_man.clips[0],
+                                  cesium_man.pose.value(),
+                                  app.time_since_init());
+    }
+
     // Draw meshes and billboards.
     {
         render_command_producer.clear();
@@ -333,17 +344,6 @@ void Scene::render(const double lerp_factor)
                               font->prepare_text(text, typesetting));
     }
 
-    Model& fox = dynamic_models["meshes/Fox.mgm"];
-    {
-        Mg::gfx::animate_skeleton(fox.clips[1], fox.pose.value(), app.time_since_init());
-    }
-    Model& cesium_man = dynamic_models["meshes/CesiumMan.mgm"];
-    {
-        Mg::gfx::animate_skeleton(cesium_man.clips[0],
-                                  cesium_man.pose.value(),
-                                  app.time_since_init());
-    }
-
     // Debug geometry
     switch (debug_visualization % 4) {
     case 1:
@@ -385,9 +385,6 @@ void Scene::setup_config()
     cfg.set_default_value("mouse_sensitivity_y", 0.4f);
 }
 
-Model::Model() = default;
-Model::~Model() = default;
-
 void Model::update()
 {
     if (physics_body) {
@@ -404,7 +401,6 @@ Model Scene::load_model(Mg::Identifier mesh_file,
                         std::span<const MaterialFileAssignment> material_files)
 {
     Model model = {};
-    model.id = mesh_file;
 
     model.mesh = mesh_pool->get_or_load(mesh_file);
 
@@ -470,6 +466,7 @@ Model& Scene::add_scene_model(Mg::Identifier mesh_file,
 
     Mg::physics::Shape* shape = physics_world->create_mesh_shape(access->data_view());
     model.physics_body = physics_world->create_static_body(mesh_file, *shape, glm::mat4{ 1.0f });
+    model.update();
 
     return model;
 }
