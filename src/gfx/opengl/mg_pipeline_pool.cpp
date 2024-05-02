@@ -153,9 +153,9 @@ std::string shader_input_layout_code(const Material& material)
 }
 
 struct ShaderCompileResult {
-    Opt<VertexShaderHandle> vs_handle;
-    Opt<GeometryShaderHandle> gs_handle;
-    Opt<FragmentShaderHandle> fs_handle;
+    Opt<VertexShaderHandle::Owner> vs_handle;
+    Opt<GeometryShaderHandle::Owner> gs_handle;
+    Opt<FragmentShaderHandle::Owner> fs_handle;
     ShaderErrorFlags error_flags = {};
 };
 
@@ -261,9 +261,9 @@ Opt<Pipeline> make_pipeline(const ShaderCompileResult& compiled_shader,
                             std::span<const PipelineInputDescriptor> material_input_layout)
 {
     Pipeline::Params params = {};
-    params.vertex_shader = compiled_shader.vs_handle.value();
-    params.fragment_shader = compiled_shader.fs_handle.value();
-    params.geometry_shader = compiled_shader.gs_handle;
+    params.vertex_shader = compiled_shader.vs_handle.value().handle;
+    params.fragment_shader = compiled_shader.fs_handle.value().handle;
+    params.geometry_shader = compiled_shader.gs_handle.map([](auto&& gs) { return gs.handle; });
     params.shared_input_layout = shared_input_layout;
     params.material_input_layout = material_input_layout;
 

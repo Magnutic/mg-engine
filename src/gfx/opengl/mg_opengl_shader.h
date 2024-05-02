@@ -25,9 +25,9 @@ namespace Mg::gfx::opengl {
 using ShaderProgramHandle = PipelineHandle;
 
 /** Construct a shader program by linking the supplied Shaders */
-Opt<ShaderProgramHandle> link_shader_program(VertexShaderHandle vertex_shader,
-                                             Opt<GeometryShaderHandle> geometry_shader,
-                                             Opt<FragmentShaderHandle> fragment_shader);
+Opt<ShaderProgramHandle::Owner> link_shader_program(VertexShaderHandle vertex_shader,
+                                                    Opt<GeometryShaderHandle> geometry_shader,
+                                                    Opt<FragmentShaderHandle> fragment_shader);
 
 void destroy_shader_program(ShaderProgramHandle handle) noexcept;
 

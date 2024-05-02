@@ -98,6 +98,12 @@ public:
     explicit Owner(const GfxObjectHandleValue value) : handle(value) {}
     ~Owner() { handle.free(); }
 
+    // Release ownership and return handle.
+    GfxObjectHandle<type> release()
+    {
+        return std::exchange(handle, GfxObjectHandle<type>::null_handle());
+    };
+
     MG_MAKE_NON_COPYABLE(Owner);
     MG_MAKE_DEFAULT_MOVABLE(Owner);
 

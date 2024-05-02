@@ -270,31 +270,15 @@ struct Sphere {
     DebugMesh mesh;
 };
 
-/** RAII-owning wrapper for shader handles. */
-template<typename ShaderHandleT> class ShaderOwner {
+class DebugShaderProgram {
 public:
-    explicit ShaderOwner(ShaderHandleT handle_) noexcept : handle(std::move(handle_)) {}
-    ~ShaderOwner() { destroy_shader(handle); }
-
-    MG_MAKE_NON_COPYABLE(ShaderOwner);
-    MG_MAKE_DEFAULT_MOVABLE(ShaderOwner);
-
-    ShaderHandleT handle;
-};
-
-class ShaderProgramOwner {
-public:
-    explicit ShaderProgramOwner(opengl::ShaderProgramHandle handle_) : handle(std::move(handle_))
+    explicit DebugShaderProgram(opengl::ShaderProgramHandle::Owner handle_) : handle(std::move(handle_))
     {
-        uniform_location_colour = opengl::uniform_location(handle, "colour").value();
-        uniform_location_MVP = opengl::uniform_location(handle, "MVP").value();
+        uniform_location_colour = opengl::uniform_location(handle.handle, "colour").value();
+        uniform_location_MVP = opengl::uniform_location(handle.handle, "MVP").value();
     }
-    ~ShaderProgramOwner() { opengl::destroy_shader_program(handle); }
 
-    MG_MAKE_DEFAULT_MOVABLE(ShaderProgramOwner);
-    MG_MAKE_NON_COPYABLE(ShaderProgramOwner);
-
-    opengl::ShaderProgramHandle handle;
+    opengl::ShaderProgramHandle::Owner handle;
     opengl::UniformLocation uniform_location_colour;
     opengl::UniformLocation uniform_location_MVP;
 };
@@ -306,10 +290,10 @@ public:
 //--------------------------------------------------------------------------------------------------
 
 struct DebugRenderer::Impl {
-    ShaderProgramOwner program = [] {
-        ShaderOwner vs{ compile_vertex_shader(vs_code).value() };
-        ShaderOwner fs{ compile_fragment_shader(fs_code).value() };
-        return ShaderProgramOwner(
+    DebugShaderProgram program = [] {
+        auto vs = compile_vertex_shader(vs_code).value();
+        auto fs = compile_fragment_shader(fs_code).value();
+        return DebugShaderProgram(
             opengl::link_shader_program(vs.handle, nullopt, fs.handle).value());
     }();
 
@@ -323,7 +307,7 @@ DebugRenderer::DebugRenderer() = default;
 namespace {
 
 void draw(const IRenderTarget& render_target,
-          const ShaderProgramOwner& program,
+          const DebugShaderProgram& program,
           const mat4& MVP,
           const DebugMesh& mesh,
           const vec4& colour,
@@ -345,7 +329,7 @@ void draw(const IRenderTarget& render_target,
         glViewport(0, 0, w, h);
     }
 
-    opengl::use_program(program.handle);
+    opengl::use_program(program.handle.handle);
     opengl::set_uniform(program.uniform_location_colour, colour);
     opengl::set_uniform(program.uniform_location_MVP, MVP);
 
@@ -382,7 +366,7 @@ void draw(const IRenderTarget& render_target,
 }
 
 void draw_primitive(const IRenderTarget& render_target,
-                    const ShaderProgramOwner& program,
+                    const DebugShaderProgram& program,
                     const mat4& view_proj,
                     const DebugMesh& mesh,
                     const DebugRenderer::PrimitiveDrawParams& params)

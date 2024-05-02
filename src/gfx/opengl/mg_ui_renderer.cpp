@@ -136,12 +136,12 @@ PipelinePool make_ui_pipeline_pool()
 
 Pipeline make_text_pipeline()
 {
-    Opt<VertexShaderHandle> vs = compile_vertex_shader(text_shader_vs);
-    Opt<FragmentShaderHandle> fs = compile_fragment_shader(text_shader_fs);
+    Opt<VertexShaderHandle::Owner> vs = compile_vertex_shader(text_shader_vs);
+    Opt<FragmentShaderHandle::Owner> fs = compile_fragment_shader(text_shader_fs);
 
     Pipeline::Params params;
-    params.vertex_shader = vs.value();
-    params.fragment_shader = fs.value();
+    params.vertex_shader = vs.value().handle;
+    params.fragment_shader = fs.value().handle;
     std::array<PipelineInputDescriptor, 2> input_descriptors;
     input_descriptors[0] = { "DrawParamsBlock", PipelineInputType::UniformBuffer, 0, true };
     input_descriptors[1] = { "font_texture", PipelineInputType::Sampler2D, 0, true };

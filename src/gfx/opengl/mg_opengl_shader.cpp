@@ -106,9 +106,9 @@ Opt<GLuint> uniform_block_index(GLuint ubo_id, std::string_view block_name) noex
 // ShaderProgram implementation
 //--------------------------------------------------------------------------------------------------
 
-Opt<ShaderProgramHandle> link_shader_program(VertexShaderHandle vertex_shader,
-                                             Opt<GeometryShaderHandle> geometry_shader,
-                                             Opt<FragmentShaderHandle> fragment_shader)
+Opt<ShaderProgramHandle::Owner> link_shader_program(VertexShaderHandle vertex_shader,
+                                                    Opt<GeometryShaderHandle> geometry_shader,
+                                                    Opt<FragmentShaderHandle> fragment_shader)
 {
     MG_GFX_DEBUG_GROUP("link_shader_program");
 
@@ -120,7 +120,7 @@ Opt<ShaderProgramHandle> link_shader_program(VertexShaderHandle vertex_shader,
     ShaderAttachGuard guard_fs(program_id, fragment_shader.map(get_and_narrow));
 
     if (link_program(program_id)) {
-        return ShaderProgramHandle(program_id);
+        return ShaderProgramHandle::Owner(program_id);
     }
 
     return nullopt;

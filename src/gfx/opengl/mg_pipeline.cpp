@@ -65,11 +65,12 @@ PipelineInputBinding::PipelineInputBinding(uint32_t location, const UniformBuffe
 Opt<Pipeline> Pipeline::make(const Params& params)
 {
     // Note: in OpenGL, PipelineHandle refers to shader programs.
-    Opt<PipelineHandle> opt_program_handle = opengl::link_shader_program(params.vertex_shader,
-                                                                         params.geometry_shader,
-                                                                         params.fragment_shader);
+    Opt<PipelineHandle::Owner> opt_program_handle =
+        opengl::link_shader_program(params.vertex_shader,
+                                    params.geometry_shader,
+                                    params.fragment_shader);
     if (opt_program_handle) {
-        return Pipeline(opt_program_handle.value(),
+        return Pipeline(opt_program_handle.value().release(),
                         params.shared_input_layout,
                         params.material_input_layout);
     }

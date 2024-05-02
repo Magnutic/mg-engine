@@ -55,35 +55,22 @@ template<GLenum shader_stage> Opt<GLuint> compile_shader(const std::string& code
 
 } // namespace
 
-Opt<VertexShaderHandle> compile_vertex_shader(const std::string& code)
+Opt<VertexShaderHandle::Owner> compile_vertex_shader(const std::string& code)
 {
-    auto wrap_in_handle = [](GLuint shader_id) { return VertexShaderHandle{ shader_id }; };
+    auto wrap_in_handle = [](GLuint shader_id) { return VertexShaderHandle::Owner{ shader_id }; };
     return compile_shader<GL_VERTEX_SHADER>(code).map(wrap_in_handle);
 }
 
-Opt<GeometryShaderHandle> compile_geometry_shader(const std::string& code)
+Opt<GeometryShaderHandle::Owner> compile_geometry_shader(const std::string& code)
 {
-    auto wrap_in_handle = [](GLuint shader_id) { return GeometryShaderHandle{ shader_id }; };
+    auto wrap_in_handle = [](GLuint shader_id) { return GeometryShaderHandle::Owner{ shader_id }; };
     return compile_shader<GL_GEOMETRY_SHADER>(code).map(wrap_in_handle);
 }
 
-Opt<FragmentShaderHandle> compile_fragment_shader(const std::string& code)
+Opt<FragmentShaderHandle::Owner> compile_fragment_shader(const std::string& code)
 {
-    auto wrap_in_handle = [](GLuint shader_id) { return FragmentShaderHandle{ shader_id }; };
+    auto wrap_in_handle = [](GLuint shader_id) { return FragmentShaderHandle::Owner{ shader_id }; };
     return compile_shader<GL_FRAGMENT_SHADER>(code).map(wrap_in_handle);
-}
-
-void destroy_shader(VertexShaderHandle handle) noexcept
-{
-    glDeleteShader(handle.as_gl_id());
-}
-void destroy_shader(FragmentShaderHandle handle) noexcept
-{
-    glDeleteShader(handle.as_gl_id());
-}
-void destroy_shader(GeometryShaderHandle handle) noexcept
-{
-    glDeleteShader(handle.as_gl_id());
 }
 
 } // namespace Mg::gfx

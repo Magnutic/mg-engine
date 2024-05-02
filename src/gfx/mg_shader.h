@@ -17,12 +17,8 @@
 
 namespace Mg::gfx {
 
-Opt<VertexShaderHandle> compile_vertex_shader(const std::string& code);
-Opt<FragmentShaderHandle> compile_fragment_shader(const std::string& code);
-Opt<GeometryShaderHandle> compile_geometry_shader(const std::string& code);
-
-void destroy_shader(VertexShaderHandle handle) noexcept;
-void destroy_shader(FragmentShaderHandle handle) noexcept;
-void destroy_shader(GeometryShaderHandle handle) noexcept;
+Opt<VertexShaderHandle::Owner> compile_vertex_shader(const std::string& code);
+Opt<FragmentShaderHandle::Owner> compile_fragment_shader(const std::string& code);
+Opt<GeometryShaderHandle::Owner> compile_geometry_shader(const std::string& code);
 
 } // namespace Mg::gfx
