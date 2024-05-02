@@ -133,11 +133,10 @@ void Scene::init()
 
     physics_world = std::make_unique<Mg::physics::World>();
     player_controller = std::make_unique<Mg::PlayerController>(
-        "Actor"_id,
-        *physics_world,
-        Mg::physics::CharacterControllerSettings{},
         std::make_shared<Mg::input::ButtonTracker>(app.window()),
         std::make_shared<Mg::input::MouseMovementTracker>(app.window()));
+    character_controller = std::make_unique<Mg::physics::CharacterController>(
+        "Actor"_id, *physics_world, Mg::physics::CharacterControllerSettings{});
 
     load_models();
     load_materials();
@@ -211,19 +210,19 @@ void Scene::simulation_step()
         camera_locked = !camera_locked;
     }
     if (button_states["reset"].was_pressed) {
-        player_controller->character_controller.set_position({ 0.0f, 0.0f, 0.0f });
-        player_controller->character_controller.reset();
+        character_controller->set_position({ 0.0f, 0.0f, 0.0f });
+        character_controller->reset();
         load_models();
     }
 
-    player_controller->handle_movement_inputs();
+    player_controller->handle_movement_inputs(*character_controller);
     physics_world->update(1.0f / k_steps_per_second);
-    player_controller->update(1.0f / k_steps_per_second);
+    character_controller->update(1.0f / k_steps_per_second);
 
     // Vertical interpolation for camera to avoid sharp movements when e.g. stepping up stairs.
     last_camera_z = camera_z;
-    const auto new_camera_z = player_controller->character_controller.get_position(1.0f).z +
-                              player_controller->character_controller.current_height() - 0.1f;
+    const auto new_camera_z = character_controller->get_position(1.0f).z +
+                              character_controller->current_height() - 0.1f;
     camera_z = std::abs(last_camera_z - new_camera_z) < 1.0f
                    ? glm::mix(last_camera_z, new_camera_z, 0.35f)
                    : new_camera_z;
@@ -244,7 +243,7 @@ void Scene::render(const double lerp_factor)
     }
 
     if (!camera_locked) {
-        camera.position = player_controller->character_controller.get_position(float(lerp_factor));
+        camera.position = character_controller->get_position(float(lerp_factor));
         camera.position.z = glm::mix(last_camera_z, camera_z, lerp_factor);
     }
 
@@ -318,16 +317,15 @@ void Scene::render(const double lerp_factor)
         typesetting.line_spacing_factor = 1.25f;
         typesetting.max_width_pixels = ui_renderer.resolution().x;
 
-        const glm::vec3 v = player_controller->character_controller.velocity();
-        const glm::vec3 p = player_controller->character_controller.get_position();
+        const glm::vec3 v = character_controller->velocity();
+        const glm::vec3 p = character_controller->get_position();
 
         std::string text = fmt::format("FPS: {:.2f}", app.performance_info().frames_per_second);
         text += fmt::format("\nLast frame time: {:.2f} ms",
                             app.performance_info().last_frame_time_seconds * 1'000);
         text += fmt::format("\nVelocity: {{{:.2f}, {:.2f}, {:.2f}}}", v.x, v.y, v.z);
         text += fmt::format("\nPosition: {{{:.2f}, {:.2f}, {:.2f}}}", p.x, p.y, p.z);
-        text += fmt::format("\nGrounded: {:b}",
-                            player_controller->character_controller.is_on_ground());
+        text += fmt::format("\nGrounded: {:b}", character_controller->is_on_ground());
         text += fmt::format("\nNum particles: {}", particle_system.particles().size());
 
         ui_renderer.draw_text(app.window().render_target,

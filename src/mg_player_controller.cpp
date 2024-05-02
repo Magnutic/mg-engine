@@ -7,17 +7,14 @@
 #include "mg/mg_player_controller.h"
 
 #include "mg/input/mg_input.h"
+#include "mg/physics/mg_character_controller.h"
 
 namespace Mg {
 
 PlayerController::PlayerController(
-    const Identifier id,
-    physics::World& world,
-    const physics::CharacterControllerSettings& settings,
     std::shared_ptr<input::ButtonTracker> button_tracker,
     std::shared_ptr<input::MouseMovementTracker> mouse_movement_tracker)
-    : character_controller{ id, world, settings }
-    , m_button_tracker{ std::move(button_tracker) }
+    : m_button_tracker{ std::move(button_tracker) }
     , m_mouse_movement_tracker{ std::move(mouse_movement_tracker) }
 {
     MG_ASSERT(m_button_tracker && m_mouse_movement_tracker);
@@ -33,7 +30,7 @@ PlayerController::PlayerController(
 
 PlayerController::~PlayerController() = default;
 
-void PlayerController::handle_movement_inputs()
+void PlayerController::handle_movement_inputs(physics::CharacterController& character_controller)
 {
     auto button_states = m_button_tracker->get_button_events();
 

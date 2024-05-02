@@ -113,6 +113,7 @@ public:
 
     std::unique_ptr<Mg::physics::World> physics_world;
     std::unique_ptr<Mg::PlayerController> player_controller;
+    std::unique_ptr<Mg::physics::CharacterController> character_controller;
 
     std::vector<Mg::gfx::Light> scene_lights;
 

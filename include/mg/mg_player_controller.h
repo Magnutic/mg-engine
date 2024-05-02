@@ -10,8 +10,9 @@
 
 #pragma once
 
-#include "mg/physics/mg_character_controller.h"
+#include "mg/core/mg_rotation.h"
 #include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_macros.h"
 
 #include <memory>
 
@@ -22,6 +23,10 @@ class ButtonTracker;
 class MouseMovementTracker;
 } // namespace Mg::input
 
+namespace Mg::physics {
+class CharacterController;
+}
+
 namespace Mg {
 
 class PlayerController {
@@ -29,10 +34,7 @@ public:
     MG_MAKE_NON_MOVABLE(PlayerController);
     MG_MAKE_NON_COPYABLE(PlayerController);
 
-    explicit PlayerController(Identifier id,
-                              physics::World& world,
-                              const physics::CharacterControllerSettings& settings,
-                              std::shared_ptr<input::ButtonTracker> button_tracker,
+    explicit PlayerController(std::shared_ptr<input::ButtonTracker> button_tracker,
                               std::shared_ptr<input::MouseMovementTracker> mouse_movement_tracker);
 
     ~PlayerController();
@@ -40,7 +42,7 @@ public:
     /** Read user input and apply movements to the character controller accordingly.
      * Do this before updating the physics world.
      */
-    void handle_movement_inputs();
+    void handle_movement_inputs(physics::CharacterController& character_controller);
 
     /** Read user input and update rotation accordingly. This is separated from the main update
      * function, because we want to call it more often: if we update the rotation once for every
@@ -49,15 +51,6 @@ public:
      */
     void handle_rotation_inputs(float sensitivity_x, float sensitivity_y);
 
-    /** Update the character controller. Do this after updating the physics world. */
-    void update(const float time_step)
-    {
-        // TODO remove this; physics world shall instead automatically update all character
-        // controllers in it just as it updates all other bodies.
-        character_controller.update(time_step);
-    }
-
-    physics::CharacterController character_controller;
     Rotation rotation;
     float acceleration = 0.6f;
     float max_horizontal_speed = 10.0f;
