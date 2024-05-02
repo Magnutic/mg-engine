@@ -84,8 +84,9 @@ public:
                            const glm::mat4& view_projection_frustum,
                            float max_distance = 0.0f);
 
-private:
     struct Impl;
+
+private:
     ImplPtr<Impl> m_impl;
 };
 
@@ -123,8 +124,9 @@ public:
 
     void clear();
 
-private:
     struct Impl;
+
+private:
     ImplPtr<Impl> m_impl;
 };
 

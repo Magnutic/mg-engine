@@ -8,9 +8,12 @@
 
 #include "mg/containers/mg_flat_map.h"
 #include "mg/core/mg_rotation.h"
+#include "mg/gfx/mg_blend_modes.h"
 #include "mg/gfx/mg_joint.h"
+#include "mg/gfx/mg_pipeline.h"
 #include "mg/gfx/mg_render_target.h"
 #include "mg/gfx/mg_skeleton.h"
+#include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/utils/mg_assert.h"
 
 #include "../mg_shader.h"
@@ -37,7 +40,10 @@ const char* vs_code = R"(
     #version 440 core
     layout(location = 0) in vec3 vert_position;
 
-    uniform mat4 MVP;
+    layout(std140) uniform DrawParamsBlock {
+        uniform vec4 colour;
+        uniform mat4 MVP;
+    };
 
     void main()
     {
@@ -47,7 +53,11 @@ const char* vs_code = R"(
 
 const char* fs_code = R"(
     #version 440 core
-    uniform vec4 colour;
+
+    layout(std140) uniform DrawParamsBlock {
+        uniform vec4 colour;
+        uniform mat4 MVP;
+    };
 
     layout(location = 0) out vec4 frag_colour;
 
@@ -270,18 +280,26 @@ struct Sphere {
     DebugMesh mesh;
 };
 
-class DebugShaderProgram {
-public:
-    explicit DebugShaderProgram(opengl::ShaderProgramHandle::Owner handle_) : handle(std::move(handle_))
-    {
-        uniform_location_colour = opengl::uniform_location(handle.handle, "colour").value();
-        uniform_location_MVP = opengl::uniform_location(handle.handle, "MVP").value();
-    }
-
-    opengl::ShaderProgramHandle::Owner handle;
-    opengl::UniformLocation uniform_location_colour;
-    opengl::UniformLocation uniform_location_MVP;
+// Block of shader uniforms.
+struct DrawParamsBlock {
+    glm::vec4 colour;
+    glm::mat4 MVP;
 };
+
+Pipeline make_debug_pipeline()
+{
+    Opt<VertexShaderHandle::Owner> vs = compile_vertex_shader(vs_code);
+    Opt<FragmentShaderHandle::Owner> fs = compile_fragment_shader(fs_code);
+
+    Pipeline::Params params;
+    params.vertex_shader = vs.value().handle;
+    params.fragment_shader = fs.value().handle;
+    std::array<PipelineInputDescriptor, 2> input_descriptors;
+    input_descriptors[0] = { "DrawParamsBlock", PipelineInputType::UniformBuffer, 0, true };
+    params.shared_input_layout = input_descriptors;
+
+    return Pipeline::make(params).value();
+}
 
 } // namespace
 
@@ -290,24 +308,22 @@ public:
 //--------------------------------------------------------------------------------------------------
 
 struct DebugRenderer::Impl {
-    DebugShaderProgram program = [] {
-        auto vs = compile_vertex_shader(vs_code).value();
-        auto fs = compile_fragment_shader(fs_code).value();
-        return DebugShaderProgram(
-            opengl::link_shader_program(vs.handle, nullopt, fs.handle).value());
-    }();
+    VertexShaderHandle::Owner vs = compile_vertex_shader(vs_code).value();
+    FragmentShaderHandle::Owner fs = compile_fragment_shader(fs_code).value();
 
     DebugMesh box = generate_mesh(box_vertices, box_indices);
     FlatMap<size_t, Sphere> spheres;
     DebugMesh line = generate_mesh({}, {});
+    UniformBuffer draw_params_ubo{ sizeof(DrawParamsBlock) };
+    Pipeline debug_pipeline = make_debug_pipeline();
 };
 
 DebugRenderer::DebugRenderer() = default;
 
 namespace {
 
-void draw(const IRenderTarget& render_target,
-          const DebugShaderProgram& program,
+void draw(DebugRenderer::Impl& impl,
+          const IRenderTarget& render_target,
           const mat4& MVP,
           const DebugMesh& mesh,
           const vec4& colour,
@@ -315,35 +331,28 @@ void draw(const IRenderTarget& render_target,
           const bool line_mode,
           const float line_width = 1.0f)
 {
-    { // Bind render target
-        auto handle = render_target.handle();
-        glBindFramebuffer(GL_FRAMEBUFFER, handle.as_gl_id());
+    DrawParamsBlock block = {};
+    block.colour = colour;
+    block.MVP = MVP;
+    impl.draw_params_ubo.set_data(byte_representation(block));
 
-        const bool is_window_framebuffer = handle.get() == 0;
-        if (!is_window_framebuffer) {
-            const GLuint buffer = GL_COLOR_ATTACHMENT0;
-            glDrawBuffers(1, &buffer);
-        }
+    Pipeline::Settings pipeline_settings = {};
+    pipeline_settings.blending_enabled = true;
+    pipeline_settings.blend_mode = blend_mode_constants::bm_alpha;
+    pipeline_settings.depth_test_condition = DepthTestCondition::less;
+    pipeline_settings.depth_write_enabled = true;
+    pipeline_settings.colour_write_enabled = true;
+    pipeline_settings.alpha_write_enabled = true;
+    pipeline_settings.polygon_mode = wireframe ? PolygonMode::line : PolygonMode::fill;
+    pipeline_settings.culling_mode = wireframe ? CullingMode::none : CullingMode::back;
+    pipeline_settings.target_framebuffer = render_target.handle();
+    pipeline_settings.viewport_size = render_target.image_size();
+    pipeline_settings.vertex_array = mesh.vao.handle;
 
-        const auto [w, h] = render_target.image_size();
-        glViewport(0, 0, w, h);
-    }
+    PipelineBindingContext binding_context;
+    binding_context.bind_pipeline(impl.debug_pipeline, pipeline_settings);
 
-    opengl::use_program(program.handle.handle);
-    opengl::set_uniform(program.uniform_location_colour, colour);
-    opengl::set_uniform(program.uniform_location_MVP, MVP);
-
-    glBindVertexArray(mesh.vao.handle.as_gl_id());
-
-    std::array<GLint, 2> old_poly_mode = { 0, 0 };
-    GLboolean old_culling = 0;
-
-    if (wireframe) {
-        glGetIntegerv(GL_POLYGON_MODE, old_poly_mode.data());
-        glGetBooleanv(GL_CULL_FACE, &old_culling);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glDisable(GL_CULL_FACE);
-    }
+    Pipeline::bind_shared_inputs(std::array{ PipelineInputBinding(0, impl.draw_params_ubo) });
 
     float old_line_width = 0.0f;
     glGetFloatv(GL_LINE_WIDTH, &old_line_width);
@@ -352,21 +361,13 @@ void draw(const IRenderTarget& render_target,
     const GLenum primitive_type = line_mode ? GL_LINES : GL_TRIANGLES;
     glDrawElements(primitive_type, mesh.num_indices, GL_UNSIGNED_SHORT, nullptr);
 
-    if (wireframe) {
-        // glGet(GL_POLYGON_MODE) returns front- and back polygon modes separately; but since
-        // GL 3.2, it is not allowed to set front- and back separately.
-        MG_ASSERT_DEBUG(old_poly_mode[0] == old_poly_mode[1]);
-        glPolygonMode(GL_FRONT_AND_BACK, as<GLuint>(old_poly_mode[0]));
-        glEnable(GL_CULL_FACE);
-    }
-
     glLineWidth(old_line_width);
 
     glBindVertexArray(0);
 }
 
-void draw_primitive(const IRenderTarget& render_target,
-                    const DebugShaderProgram& program,
+void draw_primitive(DebugRenderer::Impl& impl,
+                    const IRenderTarget& render_target,
                     const mat4& view_proj,
                     const DebugMesh& mesh,
                     const DebugRenderer::PrimitiveDrawParams& params)
@@ -380,7 +381,7 @@ void draw_primitive(const IRenderTarget& render_target,
     const mat4 MVP = view_proj * translation * params.orientation.to_matrix() *
                      scale(params.dimensions);
 
-    draw(render_target, program, MVP, mesh, params.colour, params.wireframe, false);
+    draw(impl, render_target, MVP, mesh, params.colour, params.wireframe, false);
 }
 
 } // namespace
@@ -389,7 +390,7 @@ void DebugRenderer::draw_box(const IRenderTarget& render_target,
                              const mat4& view_proj,
                              BoxDrawParams params)
 {
-    draw_primitive(render_target, m_impl->program, view_proj, m_impl->box, params);
+    draw_primitive(*m_impl, render_target, view_proj, m_impl->box, params);
 }
 
 void DebugRenderer::draw_ellipsoid(const IRenderTarget& render_target,
@@ -405,7 +406,7 @@ void DebugRenderer::draw_ellipsoid(const IRenderTarget& render_target,
     }
 
     const Sphere& sphere = it->second;
-    draw_primitive(render_target, m_impl->program, view_proj, sphere.mesh, params);
+    draw_primitive(*m_impl, render_target, view_proj, sphere.mesh, params);
 }
 
 void DebugRenderer::draw_line(const IRenderTarget& render_target,
@@ -416,7 +417,7 @@ void DebugRenderer::draw_line(const IRenderTarget& render_target,
 {
     const auto indices = generate_line_vertex_indices(points.size());
     update_mesh(m_impl->line, points, indices);
-    draw(render_target, m_impl->program, view_proj, m_impl->line, colour, false, true, width);
+    draw(*m_impl, render_target, view_proj, m_impl->line, colour, false, true, width);
 }
 
 void DebugRenderer::draw_bones(const IRenderTarget& render_target,
