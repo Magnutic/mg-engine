@@ -210,7 +210,7 @@ private:
     bool m_is_standing = true;
     float m_vertical_velocity = 0.0f;
     float m_jump_velocity = 0.0f;
-    bool m_was_on_ground = false;
+    bool m_is_on_ground = false;
 
     /// The desired velocity and its normalized direction, as set by the user.
     glm::vec3 m_desired_velocity = glm::vec3(0.0f);

@@ -470,7 +470,7 @@ void CharacterController::step_down()
     // If we are not moving upwards, and the floor is close beneath us, clamp down to the floor, so
     // that we follow stairs and ledges down.
     const bool try_clamping_to_floor = !drop_sweep_result && m_vertical_velocity <= 0.0f &&
-                                       m_was_on_ground && m_jump_velocity == 0.0f;
+                                       m_is_on_ground && m_jump_velocity == 0.0f;
     if (try_clamping_to_floor) {
         // Double step_height to compensate for the character controller floating step_height units
         // in the air.
@@ -499,7 +499,7 @@ void CharacterController::step_down()
             [[maybe_unused]] const vec3 relative_position = get_position(1.0f) -
                                                             dynamic_body->get_position();
 
-            if (m_was_on_ground) {
+            if (m_is_on_ground) {
                 const vec3 force = -world_up * mass * gravity;
 
 #if MG_CHARACTER_APPLY_TORQUE_TO_STOOD_UPON_OBJECT
@@ -548,6 +548,7 @@ void CharacterController::step_down()
         m_current_position = m_current_position + step_drop + world_up * step_height();
     }
 
+    m_is_on_ground = drop_sweep_result.has_value();
     collision_body().set_position(m_current_position);
 }
 
@@ -565,7 +566,7 @@ vec3 CharacterController::velocity() const
 void CharacterController::reset()
 {
     m_vertical_velocity = 0.0f;
-    m_was_on_ground = false;
+    m_is_on_ground = false;
     m_jump_velocity = 0.0f;
     m_desired_velocity = vec3(0.0f, 0.0f, 0.0f);
     set_is_standing(true);
@@ -648,8 +649,6 @@ void CharacterController::update(const float time_step)
     m_time_step = time_step;
     m_last_position = m_current_position;
     m_current_position = collision_body().get_position();
-
-    m_was_on_ground = is_on_ground();
 
     // Update fall velocity.
     m_vertical_velocity -= gravity * m_time_step;
