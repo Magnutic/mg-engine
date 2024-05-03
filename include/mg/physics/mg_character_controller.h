@@ -132,8 +132,8 @@ public:
      */
     bool is_on_ground() const
     {
-        return std::fabs(m_vertical_velocity) < FLT_EPSILON &&
-               std::fabs(m_vertical_step) < FLT_EPSILON;
+        // TODO what is this? Cannot possibly be correct.
+        return std::fabs(m_vertical_velocity) < FLT_EPSILON;
     }
 
     /** Get the character controller's identifier. */
@@ -206,12 +206,11 @@ private:
     float m_max_slope_radians = 0.0f;
     float m_max_slope_cosine = 0.0f;
 
-    // TODO refactor the following "ephemeral" data members to be some struct that is passed through
-    // the update functions like a pipeline.
+    float m_time_step = 1.0f;
     bool m_is_standing = true;
     float m_vertical_velocity = 0.0f;
     float m_jump_velocity = 0.0f;
-    float m_vertical_step = 0.0f;
+    bool m_was_on_ground = false;
 
     /// The desired velocity and its normalized direction, as set by the user.
     glm::vec3 m_desired_velocity = glm::vec3(0.0f);
@@ -221,12 +220,6 @@ private:
 
     glm::vec3 m_current_position = glm::vec3(0.0f);
     glm::vec3 m_last_position = glm::vec3(0.0f);
-    float m_current_step_offset = 0.0f;
-    glm::vec3 m_target_position = glm::vec3(0.0f);
-
-    float m_time_step = 1.0f; // Placeholder value to prevent division by zero before first update.
-
-    bool m_was_on_ground = false;
 
     // Array of collisions. Used in recover_from_penetration but declared here to allow the
     // heap buffer to be re-used between invocations.

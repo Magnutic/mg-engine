@@ -34,10 +34,9 @@
 #define MG_DEBUG_VIS_SWEEP_FLAG 1
 #define MG_DEBUG_VIS_FORCES_FLAG 2
 #define MG_DEBUG_VIS_PENETRATION_RECOVERY_FLAG 4
-//#define MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION \
-//    (MG_DEBUG_VIS_SWEEP_FLAG | MG_DEBUG_VIS_FORCES_FLAG | MG_DEBUG_VIS_PENETRATION_RECOVERY_FLAG)
+#define MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION 0
 
-#ifdef MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION
+#if MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION
 #    include "mg/gfx/mg_debug_renderer.h"
 #endif
 
@@ -154,7 +153,7 @@ void CharacterController::init()
 
         m_standing_shape = m_world->create_capsule_shape(m_settings.radius, capsule_height);
         m_standing_collision_body =
-            m_world->create_ghost_object(m_id, *m_standing_shape, glm::mat4(1.0f));
+            m_world->create_ghost_object(m_id, *m_standing_shape, mat4(1.0f));
 
         m_standing_collision_body.set_filter_group(CollisionGroup::Character);
         m_standing_collision_body.set_filter_mask(~CollisionGroup::Character);
@@ -185,7 +184,7 @@ void CharacterController::init()
 
         m_crouching_shape = m_world->create_capsule_shape(m_settings.radius, capsule_height);
         m_crouching_collision_body =
-            m_world->create_ghost_object(ghost_id, *m_crouching_shape, glm::mat4(1.0f));
+            m_world->create_ghost_object(ghost_id, *m_crouching_shape, mat4(1.0f));
 
         // Disable collision for crouching body by default.
         m_crouching_collision_body.set_filter_group(CollisionGroup::Character);
@@ -245,7 +244,7 @@ CharacterController::CharacterController(Identifier id,
     m_last_position = m_current_position;
 }
 
-glm::vec3 CharacterController::get_position(float interpolate) const
+vec3 CharacterController::get_position(float interpolate) const
 {
     const auto capsule_centre = mix(m_last_position, m_current_position, interpolate);
     return capsule_centre + world_up * feet_offset();
@@ -350,45 +349,42 @@ static constexpr bool collision_enabled = true; // TODO: noclip
 
 void CharacterController::step_up()
 {
-    m_target_position = m_current_position + world_up * max(m_vertical_step, 0.0f);
+    auto target_position = m_current_position +
+                           world_up * max(m_vertical_velocity * m_time_step, 0.0f);
 
     if (collision_enabled) {
         Opt<RayHit> sweep_result = character_sweep_test(m_current_position,
-                                                        m_target_position,
+                                                        target_position,
                                                         -world_up,
                                                         m_max_slope_cosine);
 
         if (sweep_result) {
-            m_current_step_offset = 0.0f;
-            m_current_position = m_target_position;
+            m_current_position = target_position;
 
             collision_body().set_position(m_current_position);
 
             // Fix penetration if we hit a ceiling, for example.
             recover_from_penetration();
 
-            if (m_vertical_step > 0.0f) {
-                m_vertical_step = 0.0f;
+            if (m_vertical_velocity > 0.0f) {
                 m_vertical_velocity = 0.0f;
-                m_current_step_offset = 0.0f;
             }
 
-            m_target_position = collision_body().get_position();
-            m_current_position = m_target_position;
+            target_position = collision_body().get_position();
+            m_current_position = target_position;
             return;
         }
     }
 
-    m_current_step_offset = 0.0f;
-    m_current_position = m_target_position;
+    m_current_position = target_position;
 }
 
 void CharacterController::horizontal_step(const vec3& step)
 {
-    m_target_position = m_current_position + step;
+    auto target_position = m_current_position + step;
 
     if (!collision_enabled || length2(step) <= FLT_EPSILON) {
-        m_current_position = m_target_position;
+        m_current_position = target_position;
         return;
     }
 
@@ -416,14 +412,14 @@ void CharacterController::horizontal_step(const vec3& step)
     constexpr size_t max_iterations = 10;
 
     for (size_t i = 0; i < max_iterations && fraction > 0.01f; ++i) {
-        const vec3 sweep_direction_negative = normalize(m_current_position - m_target_position);
+        const vec3 sweep_direction_negative = normalize(m_current_position - target_position);
 
         Opt<RayHit> sweep_result;
-        if (m_current_position != m_target_position) {
+        if (m_current_position != target_position) {
             // Sweep test with "up-vector" and "max-slope" such that only surfaces facing
             // against the character's movement are considered.
             sweep_result = character_sweep_test(m_current_position,
-                                                m_target_position,
+                                                target_position,
                                                 sweep_direction_negative,
                                                 0.0f);
         }
@@ -434,12 +430,11 @@ void CharacterController::horizontal_step(const vec3& step)
 
             // Then, try to slide along the obstacle.
             fraction -= sweep_result->hit_fraction;
-            m_target_position =
-                new_position_based_on_collision(m_current_position,
-                                                m_target_position,
-                                                sweep_result->hit_normal_worldspace);
-            const float step_length_sqr = length2(m_target_position - m_current_position);
-            const vec3 step_direction = normalize(m_target_position - m_current_position);
+            target_position = new_position_based_on_collision(m_current_position,
+                                                              target_position,
+                                                              sweep_result->hit_normal_worldspace);
+            const float step_length_sqr = length2(target_position - m_current_position);
+            const vec3 step_direction = normalize(target_position - m_current_position);
 
             // See Quake 2: "If velocity is against original velocity, stop ead to avoid tiny
             // oscilations in sloping corners."
@@ -455,71 +450,48 @@ void CharacterController::horizontal_step(const vec3& step)
         }
     }
 
-    m_current_position = m_target_position;
+    m_current_position = target_position;
 }
 
 void CharacterController::step_down()
 {
-    m_velocity_added_by_moving_surface = glm::vec3(0.0f);
+    m_velocity_added_by_moving_surface = vec3(0.0f);
 
     if (!collision_enabled) {
         return;
     }
 
-    const vec3 original_position = m_target_position;
+    auto step_drop = world_up * (min(0.0f, m_vertical_velocity) * m_time_step - step_height());
+    Opt<RayHit> drop_sweep_result = character_sweep_test(m_current_position,
+                                                         m_current_position + step_drop,
+                                                         world_up,
+                                                         m_max_slope_cosine);
 
-    float drop_height = -min(0.0f, m_vertical_velocity) * m_time_step + step_height();
-    vec3 step_drop = -world_up * drop_height;
-    m_target_position += step_drop;
+    // If we are not moving upwards, and the floor is close beneath us, clamp down to the floor, so
+    // that we follow stairs and ledges down.
+    const bool try_clamping_to_floor = !drop_sweep_result && m_vertical_velocity <= 0.0f &&
+                                       m_was_on_ground && m_jump_velocity == 0.0f;
+    if (try_clamping_to_floor) {
+        // Double step_height to compensate for the character controller floating step_height units
+        // in the air.
+        const float step_down_height = 2.0f * step_height();
 
-    Opt<RayHit> drop_sweep_result;
-    Opt<RayHit> double_drop_sweep_result;
-
-    bool has_clamped_to_floor = false;
-
-    for (;;) {
+        // Test a double fall height, to see if the character should interpolate its fall
+        // (full) or not (partial).
         drop_sweep_result = character_sweep_test(m_current_position,
-                                                 m_target_position,
+                                                 m_current_position - world_up * step_down_height,
                                                  world_up,
                                                  m_max_slope_cosine);
-
-        if (!drop_sweep_result) {
-            // Test a double fall height, to see if the character should interpolate its fall
-            // (full) or not (partial).
-            double_drop_sweep_result = character_sweep_test(m_current_position,
-                                                            m_target_position + step_drop,
-                                                            world_up,
-                                                            m_max_slope_cosine);
+        if (drop_sweep_result) {
+            step_drop = -world_up * step_down_height;
         }
-
-        const bool has_hit = double_drop_sweep_result.has_value();
-
-        // Double step_height to compensate for the character controller floating step_height in
-        // the air.
-        const float step_down_height = (m_vertical_velocity < 0.0f) ? 2.0f * step_height() : 0.0f;
-
-        // Redo the velocity calculation when falling a small amount, for fast stairs motion.
-        // For larger falls, use the smoother/slower interpolated movement by not touching the
-        // target position.
-        const bool should_clamp_to_floor = drop_height > 0.0f && drop_height < step_down_height &&
-                                           has_hit && !has_clamped_to_floor && m_was_on_ground &&
-                                           m_jump_velocity == 0.0f;
-
-        if (should_clamp_to_floor) {
-            m_target_position = original_position;
-            drop_height = step_down_height;
-            step_drop = -world_up * (m_current_step_offset + drop_height);
-            m_target_position += step_drop;
-            has_clamped_to_floor = true;
-            continue; // re-run previous tests
-        }
-        break;
     }
 
-    if (drop_sweep_result || has_clamped_to_floor) {
+
+    if (drop_sweep_result) {
         const float mix_factor = drop_sweep_result ? drop_sweep_result->hit_fraction : 1.0f;
-        m_current_position = mix(m_current_position, m_target_position, mix_factor) +
-                             vec3(0.0f, 0.0f, step_height());
+        m_current_position = mix(m_current_position, m_current_position + step_drop, mix_factor) +
+                             world_up * step_height();
 
         auto dynamic_body = drop_sweep_result ? drop_sweep_result->body.as_dynamic_body() : nullopt;
         if (dynamic_body) {
@@ -528,7 +500,7 @@ void CharacterController::step_down()
                                                             dynamic_body->get_position();
 
             if (m_was_on_ground) {
-                const vec3 force = { 0.0f, 0.0f, min(0.0f, -mass * gravity) };
+                const vec3 force = -world_up * mass * gravity;
 
 #if MG_CHARACTER_APPLY_TORQUE_TO_STOOD_UPON_OBJECT
                 dynamic_body->apply_force(force, relative_position);
@@ -552,9 +524,8 @@ void CharacterController::step_down()
                 const float impulse_factor =
                     max(0.0f, dot(world_up, drop_sweep_result->hit_normal_worldspace));
 
-                const vec3 impulse = { 0.0f,
-                                       0.0f,
-                                       min(0.0f, m_vertical_velocity * mass * impulse_factor) };
+                const vec3 impulse = world_up * min(0.0f, m_vertical_velocity) * mass *
+                                     impulse_factor;
                 dynamic_body->apply_impulse(impulse, relative_position);
 
 #if (MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION & MG_DEBUG_VIS_FORCES_FLAG) != 0
@@ -571,23 +542,13 @@ void CharacterController::step_down()
         }
 
         m_vertical_velocity = 0.0f;
-        m_vertical_step = 0.0f;
     }
     else {
         // we dropped the full height
-        m_current_position = m_target_position + vec3(0.0f, 0.0f, step_height());
+        m_current_position = m_current_position + step_drop + world_up * step_height();
     }
 
     collision_body().set_position(m_current_position);
-
-    // Apply jump. We do this after one completed step to let the impulse applied to the stood-upon
-    // object affect the character before we add the vertical velocity, so that we jump less high if
-    // the object we stood upon gets pushed down by the impulse (otherwise, we would not be
-    // conserving energy).
-    // TODO move, does not really belong in this function
-    if (m_jump_velocity > 0.0f) {
-        m_vertical_velocity += std::exchange(m_jump_velocity, 0.0f);
-    }
 }
 
 void CharacterController::move(const vec3& velocity)
@@ -604,7 +565,6 @@ vec3 CharacterController::velocity() const
 void CharacterController::reset()
 {
     m_vertical_velocity = 0.0f;
-    m_vertical_step = 0.0f;
     m_was_on_ground = false;
     m_jump_velocity = 0.0f;
     m_desired_velocity = vec3(0.0f, 0.0f, 0.0f);
@@ -664,9 +624,7 @@ void CharacterController::jump(const float velocity)
             const float impulse_factor = max(0.0f,
                                              dot(sweep_result->hit_point_worldspace, world_up));
             if (auto dynamic_body = sweep_result->body.as_dynamic_body(); dynamic_body) {
-                const vec3 impulse = { 0.0f,
-                                       0.0f,
-                                       min(0.0f, -m_jump_velocity * mass * impulse_factor) };
+                const vec3 impulse = world_up * min(0.0f, -m_jump_velocity) * mass * impulse_factor;
                 const vec3 relative_position = get_position(1.0f) - dynamic_body->get_position();
                 dynamic_body->apply_impulse(impulse, relative_position);
             }
@@ -690,22 +648,28 @@ void CharacterController::update(const float time_step)
     m_time_step = time_step;
     m_last_position = m_current_position;
     m_current_position = collision_body().get_position();
-    m_target_position = m_current_position;
 
     m_was_on_ground = is_on_ground();
 
     // Update fall velocity.
     m_vertical_velocity -= gravity * m_time_step;
-    if (m_vertical_velocity < 0.0f && std::abs(m_vertical_velocity) > max_fall_speed) {
+    if (m_vertical_velocity < -max_fall_speed) {
         m_vertical_velocity = -max_fall_speed;
     }
-    m_vertical_step = m_vertical_velocity * m_time_step;
 
     step_up();
     horizontal_step((m_desired_velocity + m_velocity_added_by_moving_surface) * m_time_step);
     step_down();
 
     recover_from_penetration();
+
+    // Apply jump. We do this after one completed step to let the impulse applied to the stood-upon
+    // object affect the character before we add the vertical velocity, so that we jump less high if
+    // the object we stood upon gets pushed down by the impulse (otherwise, we would not be
+    // conserving energy).
+    if (m_jump_velocity > 0.0f) {
+        m_vertical_velocity += std::exchange(m_jump_velocity, 0.0f);
+    }
 }
 
 } // namespace Mg::physics
