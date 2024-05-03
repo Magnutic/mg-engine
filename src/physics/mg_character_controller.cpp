@@ -623,7 +623,7 @@ void CharacterController::jump(const float velocity)
             // This factor reduces the impulse when the character controller just grazes
             // the side of the body, which could otherwise cause the object to be sent flying.
             const float impulse_factor = max(0.0f,
-                                             dot(sweep_result->hit_point_worldspace, world_up));
+                                             dot(sweep_result->hit_normal_worldspace, world_up));
             if (auto dynamic_body = sweep_result->body.as_dynamic_body(); dynamic_body) {
                 const vec3 impulse = world_up * min(0.0f, -m_jump_velocity) * mass * impulse_factor;
                 const vec3 relative_position = get_position(1.0f) - dynamic_body->get_position();
