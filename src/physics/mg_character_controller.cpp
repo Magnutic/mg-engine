@@ -336,20 +336,14 @@ void CharacterController::step_up()
         Opt<RayHit> sweep_result =
             character_sweep_test(m_current_position, target_position, -world_up, 0.0f);
 
+        // Fix penetration if we hit a ceiling.
         if (sweep_result) {
-            m_current_position = target_position;
-
-            collision_body().set_position(m_current_position);
-
-            // Fix penetration if we hit a ceiling, for example.
-            recover_from_penetration();
-
             if (m_vertical_velocity > 0.0f) {
                 m_vertical_velocity = 0.0f;
             }
 
-            target_position = collision_body().get_position();
-            m_current_position = target_position;
+            collision_body().set_position(target_position);
+            recover_from_penetration();
             return;
         }
     }
@@ -390,40 +384,38 @@ void CharacterController::horizontal_step(const vec3& step)
     constexpr size_t max_iterations = 10;
 
     for (size_t i = 0; i < max_iterations && fraction > 0.01f; ++i) {
+        if (m_current_position == target_position) {
+            break;
+        }
+
+        // Sweep test with "up-vector" and "min_normal_angle" such that only surfaces facing
+        // against the character's movement are considered.
         const vec3 sweep_direction_negative = normalize(m_current_position - target_position);
-
-        Opt<RayHit> sweep_result;
-        if (m_current_position != target_position) {
-            // Sweep test with "up-vector" and "min_normal_angle" such that only surfaces facing
-            // against the character's movement are considered.
-            sweep_result = character_sweep_test(m_current_position,
-                                                target_position,
-                                                sweep_direction_negative,
-                                                0.0f);
+        Opt<RayHit> sweep_result = character_sweep_test(m_current_position,
+                                                        target_position,
+                                                        sweep_direction_negative,
+                                                        0.0f);
+        if (!sweep_result) {
+            break;
         }
 
-        if (sweep_result) {
-            // First, walk as far as we can before we hit the obstacle.
-            m_current_position += step * sweep_result->hit_fraction;
+        // First, walk as far as we can before we hit the obstacle.
+        m_current_position += step * sweep_result->hit_fraction;
 
-            // Then, try to slide along the obstacle.
-            fraction -= sweep_result->hit_fraction;
-            target_position = new_position_based_on_collision(m_current_position,
-                                                              target_position,
-                                                              sweep_result->hit_normal_worldspace);
-            const float step_length_sqr = length2(target_position - m_current_position);
-            const vec3 step_direction = normalize(target_position - m_current_position);
+        // Then, try to slide along the obstacle.
+        fraction -= sweep_result->hit_fraction;
+        target_position = new_position_based_on_collision(m_current_position,
+                                                          target_position,
+                                                          sweep_result->hit_normal_worldspace);
+        const float step_length_sqr = length2(target_position - m_current_position);
+        const vec3 step_direction = normalize(target_position - m_current_position);
 
-            // See Quake 2: "If velocity is against original velocity, stop ead to avoid tiny
-            // oscilations in sloping corners."
-            const bool step_direction_is_against_desired_direction =
-                dot(step_direction, m_desired_direction) <= 0.0f;
+        // See Quake 2: "If velocity is against original velocity, stop ead to avoid tiny
+        // oscilations in sloping corners."
+        const bool step_direction_is_against_desired_direction = dot(step_direction,
+                                                                     m_desired_direction) <= 0.0f;
 
-            if (step_length_sqr <= FLT_EPSILON || step_direction_is_against_desired_direction) {
-                break;
-            }
-        }
-        else {
+        if (step_length_sqr <= FLT_EPSILON || step_direction_is_against_desired_direction) {
             break;
         }
     }
@@ -506,12 +498,10 @@ void CharacterController::step_down()
     const bool try_clamping_to_floor = !drop_sweep_result && m_vertical_velocity <= 0.0f &&
                                        m_is_on_ground && m_jump_velocity == 0.0f;
     if (try_clamping_to_floor) {
-        // Double step_height to compensate for the character controller floating step_height units
-        // in the air.
+        // Double step_height: once to compensate for the character controller floating step_height
+        // units in the air, and once again to check for floors up to step_height units beneath.
         const float step_down_height = 2.0f * step_height();
 
-        // Test a double fall height, to see if the character should interpolate its fall
-        // (full) or not (partial).
         drop_sweep_result = character_sweep_test(m_current_position,
                                                  m_current_position - world_up * step_down_height,
                                                  world_up,
