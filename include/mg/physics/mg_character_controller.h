@@ -57,6 +57,18 @@ struct CharacterControllerSettings {
 
     /** Horizontal acceleration applied when sliding down a slope. */
     float slide_down_acceleration = 0.5f;
+
+    /** The gravity acceleration for the character controller. */
+    float gravity = 9.82f;
+
+    /** The force with which the character pushes other objects in its way. */
+    float push_force = 200.0f;
+
+    /** Maximum fall speed, or terminal velocity, for the character. */
+    float max_fall_speed = 55.0f;
+
+    /** Mass of the character. Used for forces when colliding with dynamic objects. */
+    float mass = 70.0f;
 };
 
 /** CharacterController is a collision-handling physical body that can be controlled for example by
@@ -134,28 +146,13 @@ public:
 
     /** Get whether the character controller is standing on the ground (as opposed to being in air).
      */
-    bool is_on_ground() const
-    {
-        return m_is_on_ground;
-    }
+    bool is_on_ground() const { return m_is_on_ground; }
 
     /** Get the character controller's identifier. */
     Identifier id() const { return m_id; }
 
     /** Get the settings with which this character controller was constructed. */
     const CharacterControllerSettings& settings() const { return m_settings; }
-
-    /** The gravity acceleration for the character controller. */
-    float gravity = 9.82f;
-
-    /** The force with which the character pushes other objects in its way. */
-    float push_force = 200.0f;
-
-    /** Maximum fall speed, or terminal velocity, for the character. */
-    float max_fall_speed = 55.0f;
-
-    /** Mass of the character. Used for forces when colliding with dynamic objects. */
-    float mass = 70.0f;
 
 private:
     void init(const glm::vec3& initial_position);

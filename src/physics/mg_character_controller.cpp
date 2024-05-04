@@ -374,7 +374,7 @@ void CharacterController::horizontal_step(const vec3& step)
         auto sweep_result = character_sweep_test(m_current_position, sweep_target, world_up, -1.0f);
         auto dynamic_body = sweep_result ? sweep_result->body.as_dynamic_body() : nullopt;
         if (dynamic_body) {
-            const vec3 force = push_force * m_desired_direction;
+            const vec3 force = m_settings.push_force * m_desired_direction;
             const vec3 relative_position = get_position(1.0f) + world_up * current_height() * 0.8f -
                                            dynamic_body->get_position();
             dynamic_body->apply_force(force, relative_position);
@@ -479,7 +479,7 @@ void CharacterController::step_down()
                                                             dynamic_body->get_position();
 
             if (m_is_on_ground) {
-                const vec3 force = -world_up * mass * gravity;
+                const vec3 force = -world_up * m_settings.mass * m_settings.gravity;
 
 #if MG_CHARACTER_APPLY_TORQUE_TO_STOOD_UPON_OBJECT
                 dynamic_body->apply_force(force, relative_position);
@@ -503,7 +503,7 @@ void CharacterController::step_down()
                 const float impulse_factor =
                     max(0.0f, dot(world_up, drop_sweep_result->hit_normal_worldspace));
 
-                const vec3 impulse = world_up * min(0.0f, m_vertical_velocity) * mass *
+                const vec3 impulse = world_up * min(0.0f, m_vertical_velocity) * m_settings.mass *
                                      impulse_factor;
                 dynamic_body->apply_impulse(impulse, relative_position);
 
@@ -628,7 +628,8 @@ void CharacterController::jump(const float velocity)
             const float impulse_factor = max(0.0f,
                                              dot(sweep_result->hit_normal_worldspace, world_up));
             if (auto dynamic_body = sweep_result->body.as_dynamic_body(); dynamic_body) {
-                const vec3 impulse = world_up * min(0.0f, -m_jump_velocity) * mass * impulse_factor;
+                const vec3 impulse = world_up * min(0.0f, -m_jump_velocity) * m_settings.mass *
+                                     impulse_factor;
                 const vec3 relative_position = get_position(1.0f) - dynamic_body->get_position();
                 dynamic_body->apply_impulse(impulse, relative_position);
             }
@@ -654,9 +655,9 @@ void CharacterController::update(const float time_step)
     m_current_position = collision_body().get_position();
 
     // Update fall velocity.
-    m_vertical_velocity -= gravity * m_time_step;
-    if (m_vertical_velocity < -max_fall_speed) {
-        m_vertical_velocity = -max_fall_speed;
+    m_vertical_velocity -= m_settings.gravity * m_time_step;
+    if (m_vertical_velocity < -m_settings.max_fall_speed) {
+        m_vertical_velocity = -m_settings.max_fall_speed;
     }
 
     step_up();
