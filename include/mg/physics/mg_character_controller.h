@@ -53,7 +53,10 @@ struct CharacterControllerSettings {
     float crouching_step_height = 0.3f;
 
     /** The maximum slope angle that the character can walk up. */
-    Angle max_walkable_slope = Angle::from_radians(45.0f);
+    Angle max_walkable_slope = Angle::from_degrees(45.0f);
+
+    /** Horizontal acceleration applied when sliding down a slope. */
+    float slide_down_acceleration = 0.5f;
 };
 
 /** CharacterController is a collision-handling physical body that can be controlled for example by
@@ -63,7 +66,8 @@ class CharacterController {
 public:
     explicit CharacterController(Identifier id,
                                  World& world,
-                                 const CharacterControllerSettings& settings);
+                                 const CharacterControllerSettings& settings,
+                                 const glm::vec3& initial_position = glm::vec3(0.0f));
 
     ~CharacterController() = default;
 
@@ -132,8 +136,7 @@ public:
      */
     bool is_on_ground() const
     {
-        // TODO what is this? Cannot possibly be correct.
-        return std::fabs(m_vertical_velocity) < FLT_EPSILON;
+        return m_is_on_ground;
     }
 
     /** Get the character controller's identifier. */
@@ -155,12 +158,13 @@ public:
     float mass = 70.0f;
 
 private:
-    void init();
+    void init(const glm::vec3& initial_position);
 
     Opt<RayHit> character_sweep_test(const glm::vec3& start,
                                      const glm::vec3& end,
                                      const glm::vec3& up,
-                                     float max_surface_angle_cosine) const;
+                                     float min_normal_angle_cosine = -1.0f,
+                                     float max_normal_angle_cosine = 1.0f) const;
     void recover_from_penetration();
     void step_up();
     void horizontal_step(const glm::vec3& step);
@@ -182,14 +186,14 @@ private:
         return m_is_standing ? m_settings.standing_step_height : m_settings.crouching_step_height;
     }
 
-    // Vertical offset from current_position (capsule centre) to the character's feet.
+    // Vertical offset from current_position (collision-body centre) to the character's feet.
     float feet_offset() const
     {
-        // Capsule hovers step_height over the ground.
-        const float capsule_height = current_height() - step_height();
+        // Body hovers step_height over the ground.
+        const float body_height = current_height() - step_height();
 
-        // Offset from capsule_centre to feet.
-        return -(step_height() + capsule_height * 0.5f);
+        // Offset from collision-body centre to feet.
+        return -(step_height() + body_height * 0.5f);
     }
 
     // Settings for the character controller.

@@ -26,7 +26,7 @@
 
 #include "mg/physics/mg_character_controller.h"
 
-#include "mg/core/mg_log.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg/utils/mg_math_utils.h"
 #include "mg/utils/mg_stl_helpers.h"
 
@@ -112,46 +112,37 @@ void debug_vis_ray_hit(const RayHit& ray_hit, vec4 colour)
 
 } // namespace
 
-void CharacterController::init()
+void CharacterController::init(const glm::vec3& initial_position)
 {
     m_max_slope_radians = m_settings.max_walkable_slope.radians();
     m_max_slope_cosine = std::cos(m_settings.max_walkable_slope.radians());
 
-    // Due to a capsule shape being at least 2 * radius tall, and the fact that the body hovers
-    // step_height above ground, it might not be possible to get the desired height. This lambda
-    // calculates the capsule height (length between the swept spheres making up the capsule) and
-    // the resulting height, given the desired height.
-    auto capsule_height_and_resulting_height_for =
-        [&](const float desired_height, const float step_height) -> std::pair<float, float> {
-        const float radius_term = m_settings.radius * 2.0f;
-        const float hovering_term = step_height;
-        const float diff = radius_term + hovering_term;
+    if (m_settings.standing_step_height >= m_settings.standing_height) {
+        throw RuntimeError{
+            "CharacterController {}: could not set standing_step_height={}. "
+            "The value must be smaller than standing_height={}",
+            m_id.str_view(),
+            m_settings.standing_step_height,
+            m_settings.standing_height
+        };
+    }
 
-        const float capsule_height = max(0.0f, desired_height - diff);
-        const float resulting_height = capsule_height + diff;
-
-        return { capsule_height, resulting_height };
-    };
+    if (m_settings.crouching_step_height >= m_settings.crouching_height) {
+        throw RuntimeError{
+            "CharacterController {}: could not set crouching_step_height={}. "
+            "The value must be smaller than crouching_height={}",
+            m_id.str_view(),
+            m_settings.crouching_step_height,
+            m_settings.crouching_height
+        };
+    }
 
     // Standing body
     {
-        const auto& [capsule_height, resulting_height] =
-            capsule_height_and_resulting_height_for(m_settings.standing_height,
-                                                    m_settings.standing_step_height);
-
-        if (resulting_height > m_settings.standing_height + FLT_EPSILON) {
-            log.warning(
-                "CharacterController {}: could not set standing_height = {} due to 2.0 * radius + "
-                "standing_step_height > standing_height [radius = {}, standing_step_height = {}].",
-                m_id.str_view(),
-                m_settings.standing_height,
-                m_settings.radius,
-                m_settings.standing_step_height);
-
-            m_settings.standing_height = resulting_height;
-        }
-
-        m_standing_shape = m_world->create_capsule_shape(m_settings.radius, capsule_height);
+        m_standing_shape = m_world->create_cylinder_shape(
+            vec3(2.0f * m_settings.radius,
+                 2.0f * m_settings.radius,
+                 m_settings.standing_height - m_settings.standing_step_height));
         m_standing_collision_body =
             m_world->create_ghost_object(m_id, *m_standing_shape, mat4(1.0f));
 
@@ -162,27 +153,13 @@ void CharacterController::init()
 
     // Crouching body
     {
-        const auto& [capsule_height, resulting_height] =
-            capsule_height_and_resulting_height_for(m_settings.crouching_height,
-                                                    m_settings.crouching_step_height);
-
-        if (resulting_height > m_settings.crouching_height + FLT_EPSILON) {
-            log.warning(
-                "CharacterController {}: could not set crouching_height = {} due to 2.0 * radius + "
-                "crouching_step_height > crouching_height [radius = {}, crouching_step_height = "
-                "{}].",
-                m_id.str_view(),
-                m_settings.crouching_height,
-                m_settings.radius,
-                m_settings.crouching_step_height);
-
-            m_settings.crouching_height = resulting_height;
-        }
-
         const auto ghost_id =
             Identifier::from_runtime_string(std::string(m_id.str_view()) + "_crouching"s);
 
-        m_crouching_shape = m_world->create_capsule_shape(m_settings.radius, capsule_height);
+        m_crouching_shape = m_world->create_cylinder_shape(
+            vec3(2.0f * m_settings.radius,
+                 2.0f * m_settings.radius,
+                 m_settings.crouching_height - m_settings.crouching_step_height));
         m_crouching_collision_body =
             m_world->create_ghost_object(ghost_id, *m_crouching_shape, mat4(1.0f));
 
@@ -191,19 +168,25 @@ void CharacterController::init()
         m_crouching_collision_body.set_filter_mask(~CollisionGroup::Character);
         m_crouching_collision_body.has_contact_response(false);
     }
+
+    set_position(initial_position);
+    m_current_position = collision_body().get_position();
+    m_last_position = m_current_position;
 }
 
 Opt<RayHit> CharacterController::character_sweep_test(const vec3& start,
                                                       const vec3& end,
                                                       const vec3& up,
-                                                      const float max_surface_angle_cosine) const
+                                                      const float min_normal_angle_cosine,
+                                                      const float max_normal_angle_cosine) const
 {
     m_ray_hits.clear();
     m_world->convex_sweep(*shape(), start, end, ~CollisionGroup::Character, m_ray_hits);
 
     auto reject_condition = [&](const RayHit& hit) {
         return hit.body == collision_body() || !hit.body.has_contact_response() ||
-               dot(up, hit.hit_normal_worldspace) < max_surface_angle_cosine;
+               dot(up, hit.hit_normal_worldspace) < min_normal_angle_cosine ||
+               dot(up, hit.hit_normal_worldspace) > max_normal_angle_cosine;
     };
 
 #if (MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION & MG_DEBUG_VIS_SWEEP_FLAG) != 0
@@ -235,19 +218,17 @@ Opt<RayHit> CharacterController::character_sweep_test(const vec3& start,
 
 CharacterController::CharacterController(Identifier id,
                                          World& world,
-                                         const CharacterControllerSettings& settings)
+                                         const CharacterControllerSettings& settings,
+                                         const glm::vec3& initial_position)
     : m_settings(settings), m_id(id), m_world(&world)
 {
-    init();
-
-    m_current_position = collision_body().get_position();
-    m_last_position = m_current_position;
+    init(initial_position);
 }
 
 vec3 CharacterController::get_position(float interpolate) const
 {
-    const auto capsule_centre = mix(m_last_position, m_current_position, interpolate);
-    return capsule_centre + world_up * feet_offset();
+    const auto body_centre = mix(m_last_position, m_current_position, interpolate);
+    return body_centre + world_up * feet_offset();
 }
 
 namespace {
@@ -353,10 +334,8 @@ void CharacterController::step_up()
                            world_up * max(m_vertical_velocity * m_time_step, 0.0f);
 
     if (collision_enabled) {
-        Opt<RayHit> sweep_result = character_sweep_test(m_current_position,
-                                                        target_position,
-                                                        -world_up,
-                                                        m_max_slope_cosine);
+        Opt<RayHit> sweep_result =
+            character_sweep_test(m_current_position, target_position, -world_up, 0.0f);
 
         if (sweep_result) {
             m_current_position = target_position;
@@ -416,7 +395,7 @@ void CharacterController::horizontal_step(const vec3& step)
 
         Opt<RayHit> sweep_result;
         if (m_current_position != target_position) {
-            // Sweep test with "up-vector" and "max-slope" such that only surfaces facing
+            // Sweep test with "up-vector" and "min_normal_angle" such that only surfaces facing
             // against the character's movement are considered.
             sweep_result = character_sweep_test(m_current_position,
                                                 target_position,
@@ -544,18 +523,42 @@ void CharacterController::step_down()
         m_vertical_velocity = 0.0f;
     }
     else {
-        // we dropped the full height
+        // We dropped the full height.
         m_current_position = m_current_position + step_drop + world_up * step_height();
     }
 
-    m_is_on_ground = drop_sweep_result.has_value();
+    // Determine whether we are standing on solid ground.
+    // A bit of a hack, but also check if we are about to jump. Jumps are deferred one step, to let
+    // jump impulses affect dynamic bodies first. Therefore we must consider the jump that is about
+    // to happen here, or else it would be possible to jump twice.
+    m_is_on_ground = drop_sweep_result.has_value() && m_jump_velocity <= 0.0f;
+
+    // Slide down slopes
+    if (!m_is_on_ground) {
+        // If the drop sweeps did not find any results before, it may be because the surface below
+        // slopes too much. Try another sweep, but this time _only_ look for surfaces that slope too
+        // much to stand on.
+        auto slope_sweep_result = character_sweep_test(m_current_position,
+                                                       m_current_position + step_drop,
+                                                       world_up,
+                                                       0.0f,
+                                                       m_max_slope_cosine);
+        if (slope_sweep_result) {
+            const auto slope_normal = slope_sweep_result->hit_normal_worldspace;
+            const auto slide_direction =
+                glm::normalize(perpendicular_component(slope_normal, world_up));
+            m_current_position += slide_direction * m_settings.slide_down_acceleration *
+                                  m_time_step;
+        }
+    }
+
     collision_body().set_position(m_current_position);
 }
 
 void CharacterController::move(const vec3& velocity)
 {
-    m_desired_velocity = velocity;
-    m_desired_direction = normalize_if_nonzero(velocity);
+    m_desired_velocity += velocity;
+    m_desired_direction = normalize_if_nonzero(m_desired_direction + velocity);
 }
 
 vec3 CharacterController::velocity() const
@@ -662,6 +665,12 @@ void CharacterController::update(const float time_step)
 
     recover_from_penetration();
 
+    // Prevent gravity from accumulating vertical velocity if we are not actually falling.
+    // This can otherwise happen when sliding down into a pit.
+    if (m_vertical_velocity < 0.0f) {
+        m_vertical_velocity = (m_current_position.z - m_last_position.z) / time_step;
+    }
+
     // Apply jump. We do this after one completed step to let the impulse applied to the stood-upon
     // object affect the character before we add the vertical velocity, so that we jump less high if
     // the object we stood upon gets pushed down by the impulse (otherwise, we would not be
@@ -669,6 +678,9 @@ void CharacterController::update(const float time_step)
     if (m_jump_velocity > 0.0f) {
         m_vertical_velocity += std::exchange(m_jump_velocity, 0.0f);
     }
+
+    m_desired_velocity = vec3(0.0f);
+    m_desired_direction = vec3(0.0f);
 }
 
 } // namespace Mg::physics

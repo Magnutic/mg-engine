@@ -210,8 +210,8 @@ void Scene::simulation_step()
         camera_locked = !camera_locked;
     }
     if (button_states["reset"].was_pressed) {
-        character_controller->set_position({ 0.0f, 0.0f, 0.0f });
         character_controller->reset();
+        character_controller->set_position({ 0.0f, 0.0f, 0.0f });
         load_models();
     }
 
@@ -222,7 +222,7 @@ void Scene::simulation_step()
     // Vertical interpolation for camera to avoid sharp movements when e.g. stepping up stairs.
     last_camera_z = camera_z;
     const auto new_camera_z = character_controller->get_position(1.0f).z +
-                              character_controller->current_height() - 0.1f;
+                              character_controller->current_height() * 0.95f;
     camera_z = std::abs(last_camera_z - new_camera_z) < 1.0f
                    ? glm::mix(last_camera_z, new_camera_z, 0.35f)
                    : new_camera_z;

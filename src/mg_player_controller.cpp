@@ -97,7 +97,9 @@ void PlayerController::handle_movement_inputs(physics::CharacterController& char
     // Apply movements to character controller.
     character_controller.set_is_standing(!button_states["crouch"].is_held);
     character_controller.move(horizontal_velocity);
-    character_controller.jump(jump_impulse);
+    if (jump_impulse > 0.0f) {
+        character_controller.jump(jump_impulse);
+    }
 }
 
 void PlayerController::handle_rotation_inputs(const float sensitivity_x, const float sensitivity_y)
