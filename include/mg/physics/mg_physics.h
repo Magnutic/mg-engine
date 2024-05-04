@@ -443,7 +443,7 @@ public:
                               const glm::vec3& centre_of_mass,
                               const glm::vec3& scale);
 
-    Shape* create_compound_shape(std::span<Shape*> parts,
+    Shape* create_compound_shape(std::span<Shape* const> parts,
                                  std::span<const glm::mat4> part_transforms);
 
     //----------------------------------------------------------------------------------------------

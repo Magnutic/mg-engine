@@ -295,7 +295,7 @@ private:
 
 class CompoundShape : public ShapeBase {
 public:
-    explicit CompoundShape(std::span<Shape*> parts, std::span<const mat4> part_transforms)
+    explicit CompoundShape(std::span<Shape* const> parts, std::span<const mat4> part_transforms)
     {
         MG_ASSERT(parts.size() == part_transforms.size());
 
@@ -907,7 +907,8 @@ Shape* World::create_convex_hull(const std::span<const gfx::Mesh::Vertex> vertic
     return &*m_impl->convex_hull_shapes.emplace(vertices, centre_of_mass, scale);
 }
 
-Shape* World::create_compound_shape(std::span<Shape*> parts, std::span<const mat4> part_transforms)
+Shape* World::create_compound_shape(std::span<Shape* const> parts,
+                                    std::span<const mat4> part_transforms)
 {
     return &*m_impl->compound_shapes.emplace(parts, part_transforms);
 }
