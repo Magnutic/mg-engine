@@ -69,6 +69,11 @@ struct CharacterControllerSettings {
 
     /** Mass of the character. Used for forces when colliding with dynamic objects. */
     float mass = 70.0f;
+
+    /** When moving up and down stairs, smooth the vertical movement by applying the motion by this
+     * multiplied by this factor each step.
+     */
+    float vertical_interpolation_factor = 0.35f;
 };
 
 /** CharacterController is a collision-handling physical body that can be controlled for example by
@@ -127,6 +132,17 @@ public:
     float current_height() const
     {
         return m_is_standing ? m_settings.standing_height : m_settings.crouching_height;
+    }
+
+    /** Like current_height, but with smooth transitions between crouching and standing states.
+     * @param interpolate Factor for interpolating between last update's height and the most
+     * recent height. When using a fixed update time step but variable framerate, this can be used
+     * to prevent choppy motion. The default value of 1.0f will always return the most recent
+     * position.
+     */
+    float current_height_smooth(const float interpolate = 1.0f) const
+    {
+        return glm::mix(m_last_height_interpolated, m_current_height_interpolated, interpolate);
     }
 
 
@@ -208,9 +224,11 @@ private:
     float m_max_slope_cosine = 0.0f;
 
     float m_time_step = 1.0f;
-    bool m_is_standing = true;
     float m_vertical_velocity = 0.0f;
     float m_jump_velocity = 0.0f;
+    float m_last_height_interpolated = 0.0f;
+    float m_current_height_interpolated = 0.0f;
+    bool m_is_standing = true;
     bool m_is_on_ground = false;
 
     /// The desired velocity and its normalized direction, as set by the user.

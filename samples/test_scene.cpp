@@ -218,14 +218,6 @@ void Scene::simulation_step()
     player_controller->handle_movement_inputs(*character_controller);
     physics_world->update(1.0f / k_steps_per_second);
     character_controller->update(1.0f / k_steps_per_second);
-
-    // Vertical interpolation for camera to avoid sharp movements when e.g. stepping up stairs.
-    last_camera_z = camera_z;
-    const auto new_camera_z = character_controller->get_position(1.0f).z +
-                              character_controller->current_height() * 0.95f;
-    camera_z = std::abs(last_camera_z - new_camera_z) < 1.0f
-                   ? glm::mix(last_camera_z, new_camera_z, 0.35f)
-                   : new_camera_z;
 }
 
 void Scene::render(const double lerp_factor)
@@ -244,7 +236,8 @@ void Scene::render(const double lerp_factor)
 
     if (!camera_locked) {
         camera.position = character_controller->get_position(float(lerp_factor));
-        camera.position.z = glm::mix(last_camera_z, camera_z, lerp_factor);
+        camera.position.z += character_controller->current_height_smooth(float(lerp_factor)) *
+                             0.95f;
     }
 
     for (auto& [id, model] : dynamic_models) {

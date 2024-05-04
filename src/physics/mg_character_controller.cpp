@@ -170,8 +170,7 @@ void CharacterController::init(const glm::vec3& initial_position)
     }
 
     set_position(initial_position);
-    m_current_position = collision_body().get_position();
-    m_last_position = m_current_position;
+    reset();
 }
 
 Opt<RayHit> CharacterController::character_sweep_test(const vec3& start,
@@ -524,9 +523,15 @@ void CharacterController::step_down()
 
 
     if (drop_sweep_result) {
+        // There is a floor to stand on. Adjust vertical position accordingly.
         const float mix_factor = drop_sweep_result ? drop_sweep_result->hit_fraction : 1.0f;
-        m_current_position = mix(m_current_position, m_current_position + step_drop, mix_factor) +
-                             world_up * step_height();
+        const auto target_position =
+            mix(m_current_position, m_current_position + step_drop, mix_factor) +
+            world_up * step_height();
+
+        // Interpolate vertical position, for smooth movement up and down stairs.
+        const auto factor = m_is_on_ground ? m_settings.vertical_interpolation_factor : 1.0f;
+        m_current_position = glm::mix(m_current_position, target_position, factor);
 
         auto dynamic_body = drop_sweep_result ? drop_sweep_result->body.as_dynamic_body() : nullopt;
         if (dynamic_body) {
@@ -599,11 +604,15 @@ vec3 CharacterController::velocity() const
 
 void CharacterController::reset()
 {
+    m_current_position = collision_body().get_position();
+    m_last_position = m_current_position;
     m_vertical_velocity = 0.0f;
-    m_is_on_ground = false;
     m_jump_velocity = 0.0f;
     m_desired_velocity = vec3(0.0f, 0.0f, 0.0f);
     set_is_standing(true);
+    m_is_on_ground = false;
+    m_current_height_interpolated = current_height();
+    m_last_height_interpolated = m_current_height_interpolated;
 }
 
 bool CharacterController::set_is_standing(bool v)
@@ -631,14 +640,14 @@ bool CharacterController::set_is_standing(bool v)
     const bool value_changed = std::exchange(m_is_standing, v) != v;
     if (value_changed) {
         const vec3 direction = world_up * (v ? 1.0f : -1.0f);
+        const vec3 offset = direction * vertical_offset * 0.5f;
 
         // Disable collisions for old object.
         old_collision_body.has_contact_response(false);
 
         // And enable for new one.
-        old_collision_body.has_contact_response(false);
-
-        collision_body().set_position(m_current_position + direction * vertical_offset * 0.5f);
+        collision_body().has_contact_response(true);
+        collision_body().set_position(m_current_position + offset);
         return true;
     }
 
@@ -680,8 +689,8 @@ void CharacterController::set_position(const vec3& position)
 void CharacterController::update(const float time_step)
 {
     m_time_step = time_step;
-    m_last_position = m_current_position;
     m_current_position = collision_body().get_position();
+    m_last_position = m_current_position;
 
     // Update fall velocity.
     m_vertical_velocity -= m_settings.gravity * m_time_step;
@@ -711,6 +720,11 @@ void CharacterController::update(const float time_step)
 
     m_desired_velocity = vec3(0.0f);
     m_desired_direction = vec3(0.0f);
+
+    m_last_height_interpolated = m_current_height_interpolated;
+    m_current_height_interpolated = glm::mix(m_current_height_interpolated,
+                                             current_height(),
+                                             m_settings.vertical_interpolation_factor);
 }
 
 } // namespace Mg::physics

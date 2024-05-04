@@ -98,8 +98,6 @@ public:
     std::unique_ptr<Mg::gfx::TextureRenderTarget> hdr_target;
 
     Mg::gfx::Camera camera;
-    float last_camera_z = 0.0f;
-    float camera_z = 0.0f;
 
     std::shared_ptr<Mg::input::ButtonTracker> sample_control_button_tracker;
 
