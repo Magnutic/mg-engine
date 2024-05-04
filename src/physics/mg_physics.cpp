@@ -6,15 +6,13 @@
 
 #include "mg/physics/mg_physics.h"
 
-#include "mg/utils/mg_math_utils.h"
-#include "mg_physics_debug_renderer.h"
-
 #include "mg/containers/mg_array.h"
 #include "mg/containers/mg_flat_map.h"
 #include "mg/containers/mg_small_vector.h"
 #include "mg/gfx/mg_debug_renderer.h"
 #include "mg/gfx/mg_mesh_data.h"
 #include "mg/utils/mg_stl_helpers.h"
+#include "mg_physics_debug_renderer.h"
 
 #include <BulletCollision/BroadphaseCollision/btCollisionAlgorithm.h>
 #include <BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
@@ -251,27 +249,22 @@ private:
     btConvexHullShape m_bt_shape;
 };
 
-
 class MeshShape : public ShapeBase {
 public:
     explicit MeshShape(const gfx::Mesh::MeshDataView& mesh_data)
-        : m_vertices(decltype(m_vertices)::make_copy(mesh_data.vertices))
-        , m_indices(decltype(m_indices)::make_copy(mesh_data.indices))
-        , m_bt_shape(prepare_shape())
+        : m_vertices{ copy_vertex_positions(mesh_data.vertices) }
+        , m_indices{ Array<uint32_t>::make_copy(mesh_data.indices) }
+        , m_bt_shape{ prepare_shape() }
     {}
 
     btBvhTriangleMeshShape& bullet_shape() override { return m_bt_shape; }
 
     Type type() const override { return Type::Mesh; }
 
+    const Mg::Array<vec3>& vertices() const { return m_vertices; }
+    const Mg::Array<Mg::gfx::Mesh::Index>& indices() const { return m_indices; }
+
 private:
-    // TODO maybe reference rather than copy this data, somehow
-    Mg::Array<Mg::gfx::Mesh::Vertex> m_vertices;
-    Mg::Array<Mg::gfx::Mesh::Index> m_indices;
-
-    btTriangleMesh m_bt_triangle_mesh;
-    btBvhTriangleMeshShape m_bt_shape;
-
     btBvhTriangleMeshShape prepare_shape()
     {
         btIndexedMesh bt_indexed_mesh = {};
@@ -283,13 +276,26 @@ private:
         bt_indexed_mesh.m_numTriangles = Mg::as<int>(m_indices.size() / 3);
         bt_indexed_mesh.m_triangleIndexBase = reinterpret_cast<const uint8_t*>(m_indices.data());
 
-        static_assert(std::is_same_v<gfx::Mesh::Index, uint32_t>,
-                      "Vertex index type must match enum value below.");
         constexpr auto bt_index_type = PHY_INTEGER;
 
         m_bt_triangle_mesh.addIndexedMesh(bt_indexed_mesh, bt_index_type);
         return btBvhTriangleMeshShape{ &m_bt_triangle_mesh, true, true };
     }
+
+    static Array<vec3> copy_vertex_positions(std::span<const gfx::Mesh::Vertex> vertices)
+    {
+        auto result = Array<vec3>::make_for_overwrite(vertices.size());
+        for (size_t i = 0; i < result.size(); ++i) {
+            result[i] = vertices[i].position;
+        }
+        return result;
+    }
+
+    Mg::Array<vec3> m_vertices;
+    Mg::Array<uint32_t> m_indices;
+
+    btTriangleMesh m_bt_triangle_mesh;
+    btBvhTriangleMeshShape m_bt_shape;
 };
 
 
@@ -1247,17 +1253,34 @@ public:
     }
 
     float addSingleResult(btCollisionWorld::LocalConvexResult& result,
-                          bool normal_is_in_worldspace) override
+                          const bool normal_is_in_worldspace) override
     {
         ++m_num_hits;
         RayHit& hit = m_out.emplace_back();
 
         hit.body = PhysicsBodyHandle{ collision_object_cast(result.m_hitCollisionObject) };
 
-        hit.hit_normal_worldspace = convert_vector(
-            normal_is_in_worldspace ? result.m_hitNormalLocal
-                                    : (result.m_hitCollisionObject->getWorldTransform().getBasis() *
-                                       result.m_hitNormalLocal));
+        if (auto* mesh_shape = dynamic_cast<MeshShape*>(&hit.body.shape()); mesh_shape) {
+            // Bullet reports weird normals for convex sweeps against meshes, especially when
+            // sweeping cylinders or boxes. That breaks the character controller, making it fall
+            // through floors. To work around this, we calculate the normal of the triangle here.
+            const auto ti = size_t(result.m_localShapeInfo->m_triangleIndex);
+            const auto i0 = mesh_shape->indices()[ti * 3];
+            const auto i1 = mesh_shape->indices()[ti * 3 + 1];
+            const auto i2 = mesh_shape->indices()[ti * 3 + 2];
+            const auto v0 = mesh_shape->vertices()[i0];
+            const auto v1 = mesh_shape->vertices()[i1];
+            const auto v2 = mesh_shape->vertices()[i2];
+            hit.hit_normal_worldspace = hit.body.get_transform() *
+                                        vec4(glm::normalize(glm::cross(v1 - v0, v2 - v0)), 1.0f);
+        }
+        else {
+            hit.hit_normal_worldspace =
+                convert_vector(normal_is_in_worldspace
+                                   ? result.m_hitNormalLocal
+                                   : (result.m_hitCollisionObject->getWorldTransform().getBasis() *
+                                      result.m_hitNormalLocal));
+        }
 
         hit.hit_fraction = result.m_hitFraction;
         hit.hit_point_worldspace = convert_vector(result.m_hitPointLocal);
