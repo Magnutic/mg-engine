@@ -375,7 +375,7 @@ void CharacterController::horizontal_step(const vec3& step)
         auto dynamic_body = sweep_result ? sweep_result->body.as_dynamic_body() : nullopt;
         if (dynamic_body) {
             const vec3 force = m_settings.push_force * m_desired_direction;
-            const vec3 relative_position = get_position(1.0f) + world_up * current_height() * 0.8f -
+            const vec3 relative_position = sweep_result->hit_point_worldspace -
                                            dynamic_body->get_position();
             dynamic_body->apply_force(force, relative_position);
 
@@ -432,6 +432,62 @@ void CharacterController::horizontal_step(const vec3& step)
     m_current_position = target_position;
 }
 
+namespace {
+
+// Apply an impulse to the object on which we landed.
+void apply_impulse_to_object_below(DynamicBodyHandle& dynamic_body,
+                                   const vec3& relative_position,
+                                   const vec3& hit_normal_worldspace,
+                                   const float character_vertical_velocity,
+                                   const float character_mass)
+{
+    // This factor reduces the impulse when the character controller just grazes
+    // the side of the body, which could otherwise cause the object to be sent flying.
+    const float impulse_factor = max(0.0f, dot(world_up, hit_normal_worldspace));
+
+    const float body_vertical_velocity = dot(dynamic_body.velocity(), world_up);
+    const float relative_vertical_velocity = character_vertical_velocity - body_vertical_velocity;
+    const float impulse = min(0.0f, relative_vertical_velocity) * character_mass * impulse_factor;
+    if (abs(impulse) < FLT_EPSILON) {
+        return;
+    }
+    const auto impulse_vector = world_up * impulse;
+
+    dynamic_body.apply_impulse(impulse_vector, relative_position);
+
+#if (MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION & MG_DEBUG_VIS_FORCES_FLAG) != 0
+    const auto colour = vec4{ 0.0f, 0.0f, 1.0f, 1.0f };
+    const auto start = vec3(dynamic_body.get_position() + relative_position);
+    debug_vis_vector(start, start + glm::normalize(impulse_vector), colour);
+#endif
+}
+
+// Apply a force to the object on which we stand.
+void apply_force_to_object_below(DynamicBodyHandle& dynamic_body,
+                                 [[maybe_unused]] const vec3& relative_position,
+                                 const float force)
+{
+    const vec3 force_vector = -world_up * force;
+
+#if MG_CHARACTER_APPLY_TORQUE_TO_STOOD_UPON_OBJECT
+    dynamic_body.apply_force(force_vector, relative_position);
+#else
+    // This ought to be a non-central force so that we apply the appropriate torque
+    // as well, but that can cause the object to slowly slide away under our feet. I
+    // am not sure how other games solve this problem. For now, we work around the
+    // problem by ignoring torque.
+    dynamic_body.apply_central_force(force_vector);
+#endif
+
+#if (MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION & MG_DEBUG_VIS_FORCES_FLAG) != 0
+    const auto colour = vec4{ 0.0f, 1.0f, 0.0f, 1.0f };
+    const auto start = vec3(dynamic_body.get_position() + relative_position);
+    debug_vis_vector(start, start + glm::normalize(force_vector), colour);
+#endif
+}
+
+} // namespace
+
 void CharacterController::step_down()
 {
     m_velocity_added_by_moving_surface = vec3(0.0f);
@@ -474,44 +530,19 @@ void CharacterController::step_down()
 
         auto dynamic_body = drop_sweep_result ? drop_sweep_result->body.as_dynamic_body() : nullopt;
         if (dynamic_body) {
-            // Apply an impulse to the object on which we landed.
-            [[maybe_unused]] const vec3 relative_position = get_position(1.0f) -
-                                                            dynamic_body->get_position();
+            const vec3 relative_position = drop_sweep_result->hit_point_worldspace -
+                                           dynamic_body->get_position();
 
             if (m_is_on_ground) {
-                const vec3 force = -world_up * m_settings.mass * m_settings.gravity;
-
-#if MG_CHARACTER_APPLY_TORQUE_TO_STOOD_UPON_OBJECT
-                dynamic_body->apply_force(force, relative_position);
-#else
-                // This ought to be a non-central force so that we apply the appropriate torque
-                // as well, but that can cause the object to slowly slide away under our feet. I
-                // am not sure how other games solve this problem. For now, we work around the
-                // problem by ignoring torque.
-                dynamic_body->apply_central_force(force);
-#endif
-
-#if (MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION & MG_DEBUG_VIS_FORCES_FLAG) != 0
-                const auto colour = { 0.0f, 1.0f, 0.0f, 1.0f };
-                const auto start = vec3(dynamic_body->get_position() + relative_position);
-                debug_vis_vector(start, start + glm::normalize(force), colour);
-#endif
+                const auto force = m_settings.mass * m_settings.gravity;
+                apply_force_to_object_below(dynamic_body.value(), relative_position, force);
             }
             else {
-                // This factor reduces the impulse when the character controller just grazes
-                // the side of the body, which could otherwise cause the object to be sent flying.
-                const float impulse_factor =
-                    max(0.0f, dot(world_up, drop_sweep_result->hit_normal_worldspace));
-
-                const vec3 impulse = world_up * min(0.0f, m_vertical_velocity) * m_settings.mass *
-                                     impulse_factor;
-                dynamic_body->apply_impulse(impulse, relative_position);
-
-#if (MG_ENABLE_CHARACTER_CONTROLLER_DEBUG_VISUALIZATION & MG_DEBUG_VIS_FORCES_FLAG) != 0
-                const auto colour = { 0.0f, 0.0f, 1.0f, 1.0f };
-                const auto start = vec3(dynamic_body->get_position() + relative_position);
-                debug_vis_vector(start, start + glm::normalize(force), colour);
-#endif
+                apply_impulse_to_object_below(dynamic_body.value(),
+                                              relative_position,
+                                              drop_sweep_result->hit_normal_worldspace,
+                                              m_vertical_velocity,
+                                              m_settings.mass);
             }
 
             // Move with the object.
@@ -620,18 +651,16 @@ void CharacterController::jump(const float velocity)
     if (velocity > 0.0f) {
         m_jump_velocity += velocity;
         const auto sweep_target = m_current_position - vec3(0.0f, 0.0f, 2.0f * step_height());
-
         auto sweep_result = character_sweep_test(m_current_position, sweep_target, world_up, -1.0f);
         if (sweep_result) {
-            // This factor reduces the impulse when the character controller just grazes
-            // the side of the body, which could otherwise cause the object to be sent flying.
-            const float impulse_factor = max(0.0f,
-                                             dot(sweep_result->hit_normal_worldspace, world_up));
             if (auto dynamic_body = sweep_result->body.as_dynamic_body(); dynamic_body) {
-                const vec3 impulse = world_up * min(0.0f, -m_jump_velocity) * m_settings.mass *
-                                     impulse_factor;
-                const vec3 relative_position = get_position(1.0f) - dynamic_body->get_position();
-                dynamic_body->apply_impulse(impulse, relative_position);
+                const vec3 relative_position = sweep_result->hit_point_worldspace -
+                                               dynamic_body->get_position();
+                apply_impulse_to_object_below(dynamic_body.value(),
+                                              relative_position,
+                                              sweep_result->hit_normal_worldspace,
+                                              -m_jump_velocity,
+                                              m_settings.mass);
             }
         }
     }
@@ -669,7 +698,7 @@ void CharacterController::update(const float time_step)
     // Prevent gravity from accumulating vertical velocity if we are not actually falling.
     // This can otherwise happen when sliding down into a pit.
     if (m_vertical_velocity < 0.0f) {
-        m_vertical_velocity = (m_current_position.z - m_last_position.z) / time_step;
+        m_vertical_velocity = min(0.0f, (m_current_position.z - m_last_position.z) / time_step);
     }
 
     // Apply jump. We do this after one completed step to let the impulse applied to the stood-upon
