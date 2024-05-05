@@ -50,26 +50,6 @@ constexpr int k_steps_per_second = 60.0;
 constexpr size_t k_num_lights = 128;
 constexpr float k_light_radius = 3.0f;
 
-void add_to_render_list(const bool animate_skinned_meshes,
-                        const Model& model,
-                        Mg::gfx::RenderCommandProducer& renderlist)
-{
-    const glm::mat4 transform = model.transform * model.vis_transform;
-
-    if (animate_skinned_meshes && model.skeleton && model.pose) {
-        const auto num_joints = Mg::narrow<uint16_t>(model.skeleton->joints().size());
-        auto palette = renderlist.allocate_skinning_matrix_palette(num_joints);
-        Mg::gfx::calculate_skinning_matrices(transform,
-                                             *model.skeleton,
-                                             *model.pose,
-                                             palette.skinning_matrices());
-        renderlist.add_skinned_mesh(model.mesh, transform, model.material_assignments, palette);
-    }
-    else {
-        renderlist.add_mesh(model.mesh, transform, model.material_assignments);
-    }
-}
-
 } // namespace
 
 Scene::Scene() : app(config_file, window_title)
@@ -138,7 +118,7 @@ void Scene::init()
     character_controller = std::make_unique<Mg::physics::CharacterController>(
         "Actor"_id, *physics_world, Mg::physics::CharacterControllerSettings{});
 
-    load_models();
+    create_entities();
     load_materials();
     generate_lights();
 
@@ -167,7 +147,10 @@ void Scene::simulation_step()
         animate_skinned_meshes = !animate_skinned_meshes;
     }
 
+    entities.update();
+
     // Particle system
+#if 0
     particle_system.emit(10);
     particle_system.position = dynamic_models["meshes/box.mgm"].physics_body->get_position();
     glm::mat3 rotation = dynamic_models["meshes/box.mgm"].physics_body->get_transform();
@@ -176,6 +159,7 @@ void Scene::simulation_step()
                        .pitch(-25_degrees)
                        .yaw(Mg::Angle::from_radians(float(app.time_since_init())))
                        .apply_to({ 0.0f, 0.0f, 1.0f });
+#endif
 
     // Fullscreen switching
     if (button_states["fullscreen"].was_pressed) {
@@ -212,7 +196,7 @@ void Scene::simulation_step()
     if (button_states["reset"].was_pressed) {
         character_controller->reset();
         character_controller->set_position({ 0.0f, 0.0f, 0.0f });
-        load_models();
+        create_entities();
     }
 
     player_controller->handle_movement_inputs(*character_controller);
@@ -223,8 +207,6 @@ void Scene::simulation_step()
 void Scene::render(const double lerp_factor)
 {
     MG_GFX_DEBUG_GROUP("Scene::render_scene")
-
-    physics_world->interpolate(static_cast<float>(lerp_factor));
 
     // Mouselook. Doing this in render step instead of in simulation_step to minimize input lag.
     {
@@ -240,10 +222,6 @@ void Scene::render(const double lerp_factor)
                              0.95f;
     }
 
-    for (auto& [id, model] : dynamic_models) {
-        model.update();
-    }
-
     scene_lights.back() =
         Mg::gfx::make_point_light(camera.position, glm::vec3(25.0f), 2.0f * k_light_radius);
 
@@ -253,28 +231,13 @@ void Scene::render(const double lerp_factor)
     // Draw sky.
     skybox_renderer.draw(*hdr_target, camera, *sky_material);
 
-    // Animate meshes.
-    {
-        Model& fox = dynamic_models["meshes/Fox.mgm"];
-        Mg::gfx::animate_skeleton(fox.clips[1], fox.pose.value(), app.time_since_init());
-
-        Model& cesium_man = dynamic_models["meshes/CesiumMan.mgm"];
-        Mg::gfx::animate_skeleton(cesium_man.clips[0],
-                                  cesium_man.pose.value(),
-                                  app.time_since_init());
-    }
+    entities.animate(float(app.time_since_init()));
 
     // Draw meshes and billboards.
     {
         render_command_producer.clear();
 
-        for (auto&& [model_id, model] : scene_models) {
-            add_to_render_list(animate_skinned_meshes, model, render_command_producer);
-        }
-
-        for (auto&& [model_id, model] : dynamic_models) {
-            add_to_render_list(animate_skinned_meshes, model, render_command_producer);
-        }
+        entities.add_meshes_to_render_list(render_command_producer, float(lerp_factor));
 
         const auto& commands = render_command_producer.finalize(camera,
                                                                 Mg::gfx::SortingMode::near_to_far);
@@ -378,45 +341,17 @@ void Scene::setup_config()
     cfg.set_default_value("mouse_sensitivity_y", 0.4f);
 }
 
-void Model::update()
+void Scene::load_model(Mg::Identifier mesh_file,
+                       std::span<const MaterialFileAssignment> material_files,
+                       Mg::ecs::Entity entity)
 {
-    if (physics_body) {
-        if (auto dynamic_body = physics_body->as_dynamic_body(); dynamic_body.has_value()) {
-            transform = dynamic_body->interpolated_transform();
-        }
-        else {
-            transform = physics_body->get_transform();
-        }
-    }
-}
-
-Model Scene::load_model(Mg::Identifier mesh_file,
-                        std::span<const MaterialFileAssignment> material_files)
-{
-    Model model = {};
-
-    model.mesh = mesh_pool->get_or_load(mesh_file);
+    auto& mesh = entities.collection.add_component<MeshComponent>(entity);
+    mesh.mesh = mesh_pool->get_or_load(mesh_file);
 
     const Mg::ResourceAccessGuard access =
         resource_cache->access_resource<Mg::MeshResource>(mesh_file);
-    model.centre = access->bounding_sphere().centre;
-    model.aabb = access->axis_aligned_bounding_box();
-
-    // Load skeleton, if any.
-    if (!access->joints().empty()) {
-        model.skeleton.emplace(mesh_file,
-                               access->skeleton_root_transform(),
-                               access->joints().size());
-
-        for (size_t i = 0; i < model.skeleton->joints().size(); ++i) {
-            model.skeleton->joints()[i] = access->joints()[i];
-        }
-    }
-
-    // Load animation clips, if any.
-    for (const auto& clip : access->animation_clips()) {
-        model.clips.push_back(clip);
-    }
+    mesh.centre = access->bounding_sphere().centre;
+    mesh.aabb = access->axis_aligned_bounding_box();
 
     // Assign materials to submeshes.
     for (auto&& [submesh_index_or_name, material_fname] : material_files) {
@@ -436,44 +371,62 @@ Model Scene::load_model(Mg::Identifier mesh_file,
                                 .value_or(0);
         }
 
-        model.material_assignments.push_back(
+        mesh.material_assignments.push_back(
             { submesh_index, material_pool->get_or_load(material_fname) });
     }
 
-    if (model.skeleton) {
-        model.pose = model.skeleton->get_bind_pose();
-    }
+    // Load animation data, if present.
+    if (!access->joints().empty() && !access->animation_clips().empty()) {
+        auto& animation = entities.collection.add_component<AnimationComponent>(entity);
 
-    return model;
+        animation.skeleton = Mg::gfx::Skeleton{ mesh_file,
+                                                access->skeleton_root_transform(),
+                                                access->joints().size() };
+
+        for (size_t i = 0; i < animation.skeleton.joints().size(); ++i) {
+            animation.skeleton.joints()[i] = access->joints()[i];
+        }
+
+        animation.pose = animation.skeleton.get_bind_pose();
+
+        // Load animation clips, if any.
+        for (const auto& clip : access->animation_clips()) {
+            animation.clips.push_back(clip);
+        }
+    }
 }
 
-Model& Scene::add_scene_model(Mg::Identifier mesh_file,
-                              std::span<const MaterialFileAssignment> material_files)
+Mg::ecs::Entity Scene::add_static_object(Mg::Identifier mesh_file,
+                                         std::span<const MaterialFileAssignment> material_files,
+                                         const glm::mat4& transform)
 {
-    const auto [it, inserted] =
-        scene_models.insert({ mesh_file, load_model(mesh_file, material_files) });
-    Model& model = it->second;
+    const auto entity = entities.collection.create_entity();
+    load_model(mesh_file, material_files, entity);
 
     const Mg::ResourceAccessGuard access =
         resource_cache->access_resource<Mg::MeshResource>(mesh_file);
 
     Mg::physics::Shape* shape = physics_world->create_mesh_shape(access->data_view());
-    model.physics_body = physics_world->create_static_body(mesh_file, *shape, glm::mat4{ 1.0f });
-    model.update();
 
-    return model;
+    auto static_body = physics_world->create_static_body(mesh_file, *shape, transform);
+    entities.collection.add_component<StaticBodyComponent>(entity, static_body);
+    entities.collection.add_component<TransformComponent>(entity, transform, transform);
+
+    return entity;
 }
 
-Model& Scene::add_dynamic_model(Mg::Identifier mesh_file,
-                                std::span<const MaterialFileAssignment> material_files,
-                                glm::vec3 position,
-                                Mg::Rotation rotation,
-                                glm::vec3 scale,
-                                bool enable_physics)
+Mg::ecs::Entity Scene::add_dynamic_object(Mg::Identifier mesh_file,
+                                          std::span<const MaterialFileAssignment> material_files,
+                                          glm::vec3 position,
+                                          Mg::Rotation rotation,
+                                          glm::vec3 scale,
+                                          bool enable_physics)
 {
-    const auto [it, inserted] =
-        dynamic_models.insert({ mesh_file, load_model(mesh_file, material_files) });
-    Model& model = it->second;
+    const auto entity = entities.collection.create_entity();
+    load_model(mesh_file, material_files, entity);
+
+    auto& mesh = entities.collection.get_component<MeshComponent>(entity);
+    auto& transform = entities.collection.add_component<TransformComponent>(entity);
 
     if (enable_physics) {
         const Mg::ResourceAccessGuard access =
@@ -485,24 +438,27 @@ Model& Scene::add_dynamic_model(Mg::Identifier mesh_file,
         body_params.friction = 0.5f;
 
         Mg::physics::Shape* shape =
-            physics_world->create_convex_hull(access->vertices(), model.centre, scale);
-        model.physics_body =
+            physics_world->create_convex_hull(access->vertices(), mesh.centre, scale);
+
+        auto dynamic_body =
             physics_world->create_dynamic_body(mesh_file,
                                                *shape,
                                                body_params,
                                                glm::translate(position) * rotation.to_matrix());
+        entities.collection.add_component<DynamicBodyComponent>(entity, dynamic_body);
 
         // Add visualization translation relative to centre of mass.
         // Note unusual order: for once we translate before the scale, since the translation is in
         // model space, not world space.
-        model.vis_transform = glm::scale(scale) * glm::translate(-model.centre);
+        mesh.mesh_transform = glm::scale(scale) * glm::translate(-mesh.centre);
     }
     else {
-        model.transform = glm::translate(position) * rotation.to_matrix();
-        model.vis_transform = glm::scale(scale);
+        transform.transform = glm::translate(position) * rotation.to_matrix();
+        transform.previous_transform = transform.transform;
+        mesh.mesh_transform = glm::scale(scale);
     }
 
-    return model;
+    return entity;
 }
 
 void Scene::make_hdr_target(Mg::VideoMode mode)
@@ -550,64 +506,65 @@ void Scene::render_skeleton_debug_geometry()
 {
     MG_GFX_DEBUG_GROUP("Scene::render_skeleton_debug_geometry")
 
-    for (const auto& [model_id, model] : dynamic_models) {
-        if (model.skeleton.has_value() && model.pose.has_value()) {
-            debug_renderer.draw_bones(app.window().render_target,
-                                      camera.view_proj_matrix(),
-                                      model.transform * model.vis_transform,
-                                      *model.skeleton,
-                                      *model.pose);
-        }
+    for (auto [entity, transform, mesh, animation] :
+         entities.collection.get_with<TransformComponent, MeshComponent, AnimationComponent>()) {
+        debug_renderer.draw_bones(app.window().render_target,
+                                  camera.view_proj_matrix(),
+                                  transform->transform * mesh->mesh_transform,
+                                  animation->skeleton,
+                                  animation->pose);
     }
 }
 
-void Scene::load_models()
+void Scene::create_entities()
 {
     using namespace Mg::literals;
 
-    scene_models.clear();
-    dynamic_models.clear();
+    entities.collection.reset();
 
-    add_scene_model(
+    add_static_object(
         "meshes/misc/test_scene_2.mgm",
         std::array{
             MaterialFileAssignment{ size_t{ 0 }, "materials/buildings/GreenBrick.hjson"_id },
             MaterialFileAssignment{ size_t{ 1 }, "materials/buildings/W31_1.hjson"_id },
             MaterialFileAssignment{ size_t{ 2 }, "materials/buildings/BigWhiteBricks.hjson"_id },
             MaterialFileAssignment{ size_t{ 3 }, "materials/buildings/GreenBrick.hjson"_id },
-        });
+        },
+        glm::mat4(1.0f));
 
-    add_dynamic_model("meshes/CesiumMan.mgm",
-                      std::array{
-                          MaterialFileAssignment{ size_t{ 0 }, "materials/actors/fox.hjson"_id } },
-                      { 2.0f, 0.0f, 0.0f },
-                      Mg::Rotation(),
-                      { 1.0f, 1.0f, 1.0f },
-                      false);
+    auto man_entity = add_dynamic_object("meshes/CesiumMan.mgm",
+                                         std::array{ MaterialFileAssignment{
+                                             size_t{ 0 }, "materials/actors/fox.hjson"_id } },
+                                         { 2.0f, 0.0f, 0.0f },
+                                         Mg::Rotation(),
+                                         { 1.0f, 1.0f, 1.0f },
+                                         false);
+    entities.collection.get_component<AnimationComponent>(man_entity).current_clip = 0;
 
-    add_dynamic_model("meshes/Fox.mgm",
-                      std::array{
-                          MaterialFileAssignment{ "fox1", "materials/actors/fox.hjson"_id } },
-                      { 1.0f, 1.0f, 0.0f },
-                      Mg::Rotation(),
-                      { 0.01f, 0.01f, 0.01f },
-                      false);
+    auto fox_entity = add_dynamic_object("meshes/Fox.mgm",
+                                         std::array{ MaterialFileAssignment{
+                                             "fox1", "materials/actors/fox.hjson"_id } },
+                                         { 1.0f, 1.0f, 0.0f },
+                                         Mg::Rotation(),
+                                         { 0.01f, 0.01f, 0.01f },
+                                         false);
+    entities.collection.get_component<AnimationComponent>(fox_entity).current_clip = 2;
 
-    add_dynamic_model("meshes/misc/hestdraugr.mgm"_id,
-                      std::array{ MaterialFileAssignment{
-                          size_t{ 0 }, "materials/actors/HestDraugr.hjson"_id } },
-                      { -2.0f, 2.0f, 1.05f },
-                      Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
-                      { 1.0f, 1.0f, 1.0f },
-                      true);
+    add_dynamic_object("meshes/misc/hestdraugr.mgm"_id,
+                       std::array{ MaterialFileAssignment{
+                           size_t{ 0 }, "materials/actors/HestDraugr.hjson"_id } },
+                       { -2.0f, 2.0f, 1.05f },
+                       Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
+                       { 1.0f, 1.0f, 1.0f },
+                       true);
 
-    add_dynamic_model("meshes/box.mgm",
-                      std::array{
-                          MaterialFileAssignment{ size_t{ 0 }, "materials/crate.hjson"_id } },
-                      { 0.0f, 2.0f, 0.5f },
-                      Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
-                      { 1.0f, 1.0f, 1.0f },
-                      true);
+    add_dynamic_object("meshes/box.mgm",
+                       std::array{
+                           MaterialFileAssignment{ size_t{ 0 }, "materials/crate.hjson"_id } },
+                       { 0.0f, 2.0f, 0.5f },
+                       Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
+                       { 1.0f, 1.0f, 1.0f },
+                       true);
 }
 
 void Scene::load_materials()

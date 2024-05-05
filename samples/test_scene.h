@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include "mg/ecs/mg_component.h"
+#include "mg/ecs/mg_entity.h"
+#include "mg/utils/mg_interpolate_transform.h"
 #include <mg/containers/mg_array.h>
 #include <mg/containers/mg_flat_map.h>
 #include <mg/core/mg_application_context.h>
@@ -37,25 +40,123 @@
 
 #include <variant>
 
-struct Model {
-    void update();
-
-    glm::mat4 transform = glm::mat4(1.0f);
-    glm::mat4 vis_transform = glm::mat4(1.0f);
-    Mg::gfx::MeshHandle mesh = {};
-    Mg::small_vector<Mg::gfx::MaterialAssignment, 10> material_assignments;
-    Mg::Opt<Mg::gfx::Skeleton> skeleton;
-    Mg::Opt<Mg::gfx::SkeletonPose> pose;
-    Mg::small_vector<Mg::gfx::Mesh::AnimationClip, 5> clips;
-    glm::vec3 centre = glm::vec3(0.0f);
-    Mg::AxisAlignedBoundingBox aabb;
-
-    Mg::Opt<Mg::physics::PhysicsBodyHandle> physics_body;
-};
-
 struct MaterialFileAssignment {
     std::variant<size_t, Mg::Identifier> submesh_index_or_name = size_t(0);
     Mg::Identifier material_fname = "";
+};
+
+struct TransformComponent : Mg::ecs::BaseComponent<1> {
+    glm::mat4 previous_transform = glm::mat4(1.0f);
+    glm::mat4 transform = glm::mat4(1.0f);
+};
+
+struct StaticBodyComponent : Mg::ecs::BaseComponent<2> {
+    Mg::physics::StaticBodyHandle physics_body;
+};
+
+struct DynamicBodyComponent : Mg::ecs::BaseComponent<3> {
+    Mg::physics::DynamicBodyHandle physics_body;
+};
+
+struct MeshComponent : Mg::ecs::BaseComponent<4> {
+    Mg::gfx::MeshHandle mesh = {};
+
+    // These probably don't make sense to have in a component. They can be shared among all users of
+    // a given mesh.
+    Mg::small_vector<Mg::gfx::MaterialAssignment, 10> material_assignments;
+    glm::vec3 centre = glm::vec3(0.0f);
+    Mg::AxisAlignedBoundingBox aabb;
+    glm::mat4 mesh_transform = glm::mat4(1.0f);
+};
+
+struct AnimationComponent : Mg::ecs::BaseComponent<5> {
+    Mg::Opt<uint32_t> current_clip;
+    float time_in_clip = 0.0f;
+    Mg::gfx::SkeletonPose pose;
+
+    // These probably don't make sense to have in a component. They can be shared among all users of
+    // a given set of animations.
+    Mg::gfx::Skeleton skeleton;
+    Mg::small_vector<Mg::gfx::Mesh::AnimationClip, 5> clips;
+};
+
+class Entities {
+public:
+    explicit Entities(const uint32_t max_num_entities) : collection{ max_num_entities }
+    {
+        collection.init<TransformComponent,
+                        StaticBodyComponent,
+                        DynamicBodyComponent,
+                        MeshComponent,
+                        AnimationComponent>();
+    }
+
+    void update()
+    {
+        for (auto [entity, dynamic_body, transform] :
+             collection.get_with<DynamicBodyComponent, TransformComponent>()) {
+            transform->previous_transform = transform->transform;
+            transform->transform = dynamic_body->physics_body.get_transform();
+        }
+    }
+
+    void animate(const float time)
+    {
+        for (auto [entity, animation] : collection.get_with<AnimationComponent>()) {
+            if (!animation->current_clip.has_value()) {
+                animation->pose = animation->skeleton.get_bind_pose();
+                continue;
+            }
+
+            animation->time_in_clip = time;
+
+            const auto clip_index = animation->current_clip.value();
+            Mg::gfx::animate_skeleton(animation->clips[clip_index],
+                                      animation->pose,
+                                      animation->time_in_clip);
+        }
+    }
+
+    void add_meshes_to_render_list(Mg::gfx::RenderCommandProducer& renderlist,
+                                   const float lerp_factor)
+    {
+        // Non-animated meshes.
+        for (auto [entity, transform, mesh] :
+             collection
+                 .get_with<TransformComponent, MeshComponent, Mg::ecs::Not<AnimationComponent>>()) {
+            const auto interpolated = Mg::interpolate_transforms(transform->previous_transform,
+                                                                 transform->transform,
+                                                                 lerp_factor) *
+                                      mesh->mesh_transform;
+
+            renderlist.add_mesh(mesh->mesh, interpolated, mesh->material_assignments);
+        }
+
+        // Animated meshes.
+        for (auto [entity, transform, mesh, animation] :
+             collection.get_with<TransformComponent, MeshComponent, AnimationComponent>()) {
+            const auto interpolated = Mg::interpolate_transforms(transform->previous_transform,
+                                                                 transform->transform,
+                                                                 lerp_factor) *
+                                      mesh->mesh_transform;
+
+            const auto num_joints = Mg::narrow<uint16_t>(animation->skeleton.joints().size());
+
+            auto palette = renderlist.allocate_skinning_matrix_palette(num_joints);
+
+            Mg::gfx::calculate_skinning_matrices(interpolated,
+                                                 animation->skeleton,
+                                                 animation->pose,
+                                                 palette.skinning_matrices());
+
+            renderlist.add_skinned_mesh(mesh->mesh,
+                                        interpolated,
+                                        mesh->material_assignments,
+                                        palette);
+        }
+    }
+
+    Mg::ecs::EntityCollection collection{ 1024 };
 };
 
 inline std::shared_ptr<Mg::ResourceCache> setup_resource_cache()
@@ -130,24 +231,26 @@ public:
 private:
     void setup_config();
 
-    bool load_mesh(Mg::Identifier file, Model& model);
+    Entities entities{ 1024 };
 
-    Model load_model(Mg::Identifier mesh_file,
-                     std::span<const MaterialFileAssignment> material_files);
+    void load_model(Mg::Identifier mesh_file,
+                    std::span<const MaterialFileAssignment> material_files,
+                    Mg::ecs::Entity entity);
 
-    Model& add_scene_model(Mg::Identifier mesh_file,
-                           std::span<const MaterialFileAssignment> material_files);
+    Mg::ecs::Entity add_static_object(Mg::Identifier mesh_file,
+                                      std::span<const MaterialFileAssignment> material_files,
+                                      const glm::mat4& transform);
 
-    Model& add_dynamic_model(Mg::Identifier mesh_file,
-                             std::span<const MaterialFileAssignment> material_files,
-                             glm::vec3 position,
-                             Mg::Rotation rotation,
-                             glm::vec3 scale,
-                             bool enable_physics);
+    Mg::ecs::Entity add_dynamic_object(Mg::Identifier mesh_file,
+                                       std::span<const MaterialFileAssignment> material_files,
+                                       glm::vec3 position,
+                                       Mg::Rotation rotation,
+                                       glm::vec3 scale,
+                                       bool enable_physics);
 
     void make_hdr_target(Mg::VideoMode mode);
 
-    void load_models();
+    void create_entities();
     void load_materials();
     void generate_lights();
 
@@ -155,13 +258,6 @@ private:
 
     void render_light_debug_geometry();
     void render_skeleton_debug_geometry();
-
-    using SceneModels = Mg::FlatMap<Mg::Identifier, Model, Mg::Identifier::HashCompare>;
-
-    using DynamicModels = Mg::FlatMap<Mg::Identifier, Model, Mg::Identifier::HashCompare>;
-
-    SceneModels scene_models;
-    DynamicModels dynamic_models;
 
     bool m_should_exit = false;
 };
