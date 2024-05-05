@@ -7,9 +7,17 @@
 #include <cstdio>
 #include <filesystem>
 
+// Test uses POSIX functions, so skip on Windows.
+#ifdef __linux__
+
+#    include <stdlib.h>
+
 TEST_CASE("filestream helpers")
 {
-    const auto file_path = std::string(std::tmpnam(nullptr));
+    char buf[] = "/tmp/mgtestXXXXXX";
+    char* directory = ::mkdtemp(buf);
+    REQUIRE(directory);
+    const auto file_path = std::string(directory) + "/test";
 
     SECTION("make_output_filestream, make_input_filestream text")
     {
@@ -20,14 +28,16 @@ TEST_CASE("filestream helpers")
         }
         {
             const bool overwrite = true;
-            auto [s, msg] = Mg::io::make_output_filestream(file_path, overwrite, Mg::io::Mode::text);
+            auto [s,
+                  msg] = Mg::io::make_output_filestream(file_path, overwrite, Mg::io::Mode::text);
             REQUIRE(s.has_value());
             s.value() << "Test";
         }
         {
             // Append
             const bool overwrite = false;
-            auto [s, msg] = Mg::io::make_output_filestream(file_path, overwrite, Mg::io::Mode::text);
+            auto [s,
+                  msg] = Mg::io::make_output_filestream(file_path, overwrite, Mg::io::Mode::text);
             REQUIRE(s.has_value());
             s.value() << "Test";
         }
@@ -40,7 +50,8 @@ TEST_CASE("filestream helpers")
         {
             // Overwrite
             const bool overwrite = true;
-            auto [s, msg] = Mg::io::make_output_filestream(file_path, overwrite, Mg::io::Mode::text);
+            auto [s,
+                  msg] = Mg::io::make_output_filestream(file_path, overwrite, Mg::io::Mode::text);
             REQUIRE(s.has_value());
             s.value() << "Overwritten";
         }
@@ -52,3 +63,5 @@ TEST_CASE("filestream helpers")
         }
     }
 }
+
+#endif
