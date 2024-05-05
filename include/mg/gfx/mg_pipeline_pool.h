@@ -58,7 +58,7 @@ struct PipelinePoolConfig {
     Array<PipelineInputDescriptor> shared_input_layout;
 };
 
-/** Check config for errors. Prints error and shuts down application if it fails.
+/** Check config for errors. Throws Mg::RuntimeError if it fails.
  * Public for testability.
  */
 void validate(const PipelinePoolConfig& config);

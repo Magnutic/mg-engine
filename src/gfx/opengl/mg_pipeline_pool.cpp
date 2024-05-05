@@ -32,7 +32,9 @@ namespace Mg::gfx {
 
 void validate(const PipelinePoolConfig& config)
 {
-    MG_ASSERT(!config.name.empty() && "PipelinePoolConfig should have a name.");
+    if (config.name.empty()) {
+        throw RuntimeError{ "PipelinePoolConfig should have a name." };
+    }
 
     // Check for binding location overlaps.
     {
@@ -46,7 +48,9 @@ void validate(const PipelinePoolConfig& config)
 
         rng::sort(binding_locations);
         const bool has_duplicate = rng::adjacent_find(binding_locations) != binding_locations.end();
-        MG_ASSERT(!has_duplicate && "PipelinePoolConfig has overlapping binding locations.");
+        if (has_duplicate) {
+            throw RuntimeError{ "PipelinePoolConfig has overlapping binding locations." };
+        }
     }
 
     // Check for incorrectly used texture binding locations.
@@ -56,8 +60,9 @@ void validate(const PipelinePoolConfig& config)
             [[fallthrough]];
 
         case PipelineInputType::Sampler2D:
-            MG_ASSERT(input_descriptor.location >= 8 &&
-                      "Texture slots [0,7] are reserved for material samplers.");
+            if (input_descriptor.location < 8) {
+                throw RuntimeError{ "Texture slots [0,7] are reserved for material samplers." };
+            }
 
         default:
             break;
@@ -66,8 +71,9 @@ void validate(const PipelinePoolConfig& config)
 
     // Check that all input descriptors have a name
     for (auto& input_descriptor : config.shared_input_layout) {
-        MG_ASSERT(!input_descriptor.input_name.str_view().empty() &&
-                  "PipelineInputDescriptors must have a name.");
+        if (input_descriptor.input_name.str_view().empty()) {
+            throw RuntimeError{ "PipelineInputDescriptors must have a name." };
+        }
     }
 }
 

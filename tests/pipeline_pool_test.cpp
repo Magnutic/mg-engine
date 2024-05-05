@@ -1,7 +1,5 @@
 #include "catch.hpp"
 
-#define MG_CONTRACT_VIOLATION_THROWS 1
-
 #include "mg/core/mg_identifier.h"
 #include "mg/gfx/mg_pipeline.h"
 
