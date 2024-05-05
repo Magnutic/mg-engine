@@ -34,13 +34,16 @@
 // requiring compile-time tricks is not worth it. I am thinking of things like usage across shared
 // library boundaries etc.
 
+#include "mg/core/mg_runtime_error.h"
 #include "mg/utils/mg_gsl.h"
 
 #include "mg/containers/mg_slot_map.h"
 #include "mg/ecs/mg_component.h"
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <type_traits>
 
@@ -62,53 +65,70 @@ private:
     Slot_map_handle m_handle;
 };
 
+template<Component... Cs> static consteval bool has_duplicate_component_ids()
+{
+    std::vector<size_t> component_ids;
+    component_ids.reserve(sizeof...(Cs));
+    (component_ids.push_back(Cs::component_type_id), ...);
+    std::ranges::sort(component_ids);
+    return std::ranges::adjacent_find(component_ids) != component_ids.end();
+}
+
 /** EntityCollection owns entities and their components. */
 class EntityCollection {
 public:
-    template<typename... Cs> class iterator;
-    template<typename... Cs> friend class iterator;
-    template<typename... Cs> class UnpackingView;
+    template<ComponentTypeDesignator... Cs> class iterator;
+    template<ComponentTypeDesignator... Cs> friend class iterator;
+    template<ComponentTypeDesignator... Cs> class UnpackingView;
 
     /** Construct a new EntityCollection.
      * @param entity_capacity Max simultaneous entities. The required memory for entities and
      * components is allocated immediately, so keep this value reasonably low.
+     *
+     * Must call init() with the set of component types you want to use before using the
+     * EntityCollection.
      */
     explicit EntityCollection(uint32_t entity_capacity)
         : m_entity_data{ entity_capacity }, m_component_lists{ entity_capacity }
     {}
 
+    template<Component... Cs>
+    void init()
+        requires(!has_duplicate_component_ids<Cs...>())
+    {
+        (add_component_collection<Cs>(), ...);
+    }
+
     /** Resets EntityCollection, destroying all entities and components. */
     void reset() noexcept;
 
     /** Creates a new entity with no components. */
-    Entity create_entity();
+    [[nodiscard]] Entity create_entity();
 
     /** Delete entity and its components. */
     void delete_entity(Entity entity);
 
     /** Add component to entity, constructed with args. */
-    template<typename C, typename... Ts> C& add_component(Entity entity, Ts&&... args);
+    template<Component C, typename... Ts> C& add_component(Entity entity, Ts&&... args);
 
     /** Remove component from entity. Requires that the component exists. */
-    template<typename C> void remove_component(Entity entity);
+    template<Component C> void remove_component(Entity entity);
 
     /** Get whether the entity has a component of a given type. */
-    template<typename C> bool has_component(Entity entity) const
+    template<Component C> bool has_component(Entity entity) const
     {
-        assert_is_component<C>();
-        return has_component(entity, C::ComponentTypeId);
+        return has_component(entity, C::component_type_id);
     }
 
     /** Get reference to component. Requires that the component exists. */
-    template<typename C> C& get_component(Entity entity)
+    template<Component C> C& get_component(Entity entity)
     {
-        assert_is_component<C>();
-        return get_component<C>(component_handle_ref(entity, C::ComponentTypeId));
+        return get_component<C>(component_handle_ref(entity, C::component_type_id));
     }
 
     /** Iterate over entities which have the requested set of components, e.g.:
      * @code
-     * for (auto cs : entity_collection.get_with_components<Position, Velocity>() {
+     * for (auto cs : entity_collection.get_with<Position, Velocity>() {
      *     auto entity   = std::get<Mg::ecs::Entity>(cs);
      *     auto position = std::get<Position*>(cs);
      *     auto velocity = std::get<Velocity*>(cs);
@@ -119,21 +139,32 @@ public:
      * Or, with C++17 structured bindings:
      * @code
      * for (auto[entity, position, velocity]
-     *     : entity_collection.get_with_components<Position, Velocity>()) { ... }
+     *     : entity_collection.get_with<Position, Velocity>()) { ... }
+     * @endcode
+     *
+     * One can also use `Mg::ecs::Not` to specify components that the entities shall not have:
+     *
+     * @code
+     * for (auto[entity, position]
+     *     : entity_collection.get_with<Position, Mg::ecs::Not<Velocity>>()) {
+     *         // Will ignore all entities that have a Velocity component.
+     *     }
      * @endcode
      *
      * @tparam Cs List of required components
      * @return Iterable view over entities with the required components
      * whose iterator dereferences to a tuple (Entity, Cs*...)
      */
-    template<typename... Cs> UnpackingView<Cs...> get_with_components() { return { *this }; }
+    template<ComponentTypeDesignator... Cs> [[nodiscard]] UnpackingView<Cs...> get_with()
+    {
+        return { *this };
+    }
 
     ComponentMask component_mask(Entity entity) const { return data(entity).mask; }
 
     /** Get the number of currently existing entities. */
     size_t num_entities() const noexcept { return m_entity_data.size(); }
 
-private:
     // Array of handles to all components associated with an entity
     using ComponentList = std::array<Slot_map_handle, k_max_component_types>;
 
@@ -141,6 +172,7 @@ private:
     using ComponentCollectionList =
         std::array<std::unique_ptr<IComponentCollection>, k_max_component_types>;
 
+private:
     // Meta-data associated with each entity
     struct EntityData {
         // Bitmask representing what components the entity holds. It is
@@ -157,7 +189,9 @@ private:
 
     EntityData& data(Entity entity) { return m_entity_data[entity.handle()]; }
 
-    template<typename C> ComponentCollection<C>& component_collection();
+    template<Component C> void add_component_collection();
+
+    template<Component C> ComponentCollection<C>& component_collection();
 
     bool has_component(Entity entity, size_t component_type_id) const
     {
@@ -166,7 +200,7 @@ private:
 
     Slot_map_handle& component_handle_ref(Entity entity, size_t component_type_id);
 
-    template<typename C> C& get_component(Slot_map_handle component_handle)
+    template<Component C> C& get_component(Slot_map_handle component_handle)
     {
         return component_collection<C>().get_component(component_handle);
     }
@@ -185,9 +219,26 @@ private:
 
 //--------------------------------------------------------------------------------------------------
 
+namespace detail {
+
+// Tuple type that contains the concatenation of element types of all the tuples in Tuples...
+template<typename... Tuples>
+using tuple_cat_t = decltype(std::tuple_cat(std::declval<Tuples>()...));
+
+// Converts a pack of ComponentTypeDesignator types to a tuple of pointers to components.
+// A ComponentTypeDesignator is either a component type or a component type wrapped in
+// `Mg::ecs::Not`. ComponentPtrs will ignore all `Mg::ecs::Not` elements, but convert the rest to
+// pointers.
+template<ComponentTypeDesignator... tags>
+using ComponentPtrs = tuple_cat_t<std::conditional_t<std::derived_from<tags, detail::NotTag>,
+                                                     std::tuple<>,
+                                                     std::tuple<tags*>>...>;
+
+} // namespace detail
+
 // Iterator over all entities with components Cs...
-// See UnpackingView and EntityCollection::get_with_components
-template<typename... Cs> class EntityCollection::iterator {
+// See UnpackingView and EntityCollection::get_with
+template<ComponentTypeDesignator... Cs> class EntityCollection::iterator {
 public:
     iterator(EntityCollection& collection, Slot_map<EntityData>::iterator it)
         : m_collection{ collection }, m_it{ it }
@@ -203,13 +254,35 @@ public:
         return *this;
     }
 
+    // Tuple of (Entity, Components*...)
+    using value_type = detail::tuple_cat_t<std::tuple<Entity>, detail::ComponentPtrs<Cs...>>;
+
     // Dereference into a tuple of (Entity, Components*...)
-    std::tuple<Entity, Cs*...> operator*();
+    value_type operator*()
+    {
+        Entity entity = m_collection.m_entity_data.make_handle(m_it);
+        ComponentList& component_list = m_collection.m_component_lists[m_it->component_list_handle];
+
+        return std::tuple_cat(std::tuple{ entity },
+                              get_tuple_with_pointer_to_component<Cs>(component_list)...);
+    }
 
     friend bool operator!=(iterator l, iterator r) { return l.m_it != r.m_it; }
 
 private:
-    bool match() { return (m_it->mask & m_mask) == m_mask; }
+    template<std::derived_from<detail::NotTag> C>
+    std::tuple<> get_tuple_with_pointer_to_component(ComponentList&)
+    {
+        return {};
+    }
+
+    template<Component C>
+    std::tuple<C*> get_tuple_with_pointer_to_component(ComponentList& component_list)
+    {
+        return &m_collection.get_component<C>(component_list[C::component_type_id]);
+    }
+
+    bool match() { return (m_it->mask & m_mask) == m_mask && (m_it->mask & m_not_mask) == 0u; }
 
     void find_match()
     {
@@ -220,24 +293,21 @@ private:
 
     EntityCollection& m_collection;
     Slot_map<EntityData>::iterator m_it;
+
+    // Bitmask indicating which components must exist in an entity to satisfy the conditions of this
+    // iterator.
     ComponentMask m_mask = create_mask(std::add_pointer_t<Cs>{ nullptr }...);
+
+    // Bitmask indicating which components must _not_ exist in an entity to satisfy the conditions
+    // of this iterator.
+    ComponentMask m_not_mask = create_not_mask(std::add_pointer_t<Cs>{ nullptr }...);
 };
 
-// Dereference iterator
-template<typename... Cs> std::tuple<Entity, Cs*...> EntityCollection::iterator<Cs...>::operator*()
-{
-    Entity entity = m_collection.m_entity_data.make_handle(m_it);
-    auto& components = m_collection.m_component_lists[m_it->component_list_handle];
-
-    return std::tuple<Entity, Cs*...>{
-        entity, &m_collection.get_component<Cs>(components[Cs::ComponentTypeId])...
-    };
-}
 
 /** UnpackingView allows iteration over entities with certain components.
- * @see EntityCollection::get_with_components()
+ * @see EntityCollection::get_with()
  */
-template<typename... Cs> class EntityCollection::UnpackingView {
+template<ComponentTypeDesignator... Cs> class EntityCollection::UnpackingView {
 public:
     UnpackingView(EntityCollection& collection) : m_owner{ collection } {}
 
@@ -253,53 +323,50 @@ private:
 //--------------------------------------------------------------------------------------------------
 
 // Add component to entity
-template<typename C, typename... Ts> C& EntityCollection::add_component(Entity entity, Ts&&... args)
+template<Component C, typename... Ts>
+C& EntityCollection::add_component(Entity entity, Ts&&... args)
 {
-    assert_is_component<C>();
-
-    static_assert(std::is_constructible<C, Ts...>::value,
-                  "Component can not be constructed with the given arguments.");
-
     // Make sure component does not already exist
-    MG_ASSERT(!has_component(entity, C::ComponentTypeId));
+    MG_ASSERT(!has_component(entity, C::component_type_id));
 
     auto& components = component_collection<C>();
     auto handle = components.emplace(std::forward<Ts>(args)...);
 
-    component_handle_ref(entity, C::ComponentTypeId) = handle;
-    component_mask_ref(entity).set(C::ComponentTypeId);
+    component_handle_ref(entity, C::component_type_id) = handle;
+    component_mask_ref(entity).set(C::component_type_id);
 
     return components.get_component(handle);
 }
 
 // Remove component from entity
-template<typename C> void EntityCollection::remove_component(Entity entity)
+template<Component C> void EntityCollection::remove_component(Entity entity)
 {
-    assert_is_component<C>();
     MG_ASSERT(has_component<C>(entity) && "Removing non-existent component.");
 
     auto& collection = component_collection<C>();
-    auto& handle = component_handle_ref(entity, C::ComponentTypeId);
+    auto& handle = component_handle_ref(entity, C::component_type_id);
     collection.erase(handle);
 
     // Reset component handle (not strictly necessary but safer)
     handle = {};
 
     // Clear component flag.
-    component_mask_ref(entity).reset(C::ComponentTypeId);
+    component_mask_ref(entity).reset(C::component_type_id);
+}
+
+template<Component C> void EntityCollection::add_component_collection()
+{
+    auto& p_collection = m_component_collections[C::component_type_id];
+    MG_ASSERT(p_collection == nullptr);
+    p_collection = std::make_unique<ComponentCollection<C>>(m_entity_data.capacity());
 }
 
 // Retrieve component collection for component type C
-template<typename C> ComponentCollection<C>& EntityCollection::component_collection()
+template<Component C> ComponentCollection<C>& EntityCollection::component_collection()
 {
-    assert_is_component<C>();
-
-    auto& p_collection = m_component_collections[C::ComponentTypeId];
-
-    // Lazy construction of ComponentCollections
-    if (p_collection == nullptr) {
-        p_collection = std::make_unique<ComponentCollection<C>>(m_entity_data.capacity());
-    }
+    auto& p_collection = m_component_collections[C::component_type_id];
+    MG_ASSERT(p_collection != nullptr &&
+              "EntityCollection does not contain a ComponentCollection for this component type.");
 
     // Cast to actual type and return
     auto& collection = *(p_collection.get());

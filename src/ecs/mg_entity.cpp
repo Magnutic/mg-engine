@@ -10,13 +10,13 @@
 
 namespace Mg::ecs {
 
-size_t ComponentTag::n_component_types = 0;
-
 // Reset EntityCollection, destroying all entities and components
 void EntityCollection::reset() noexcept
 {
     for (auto& ptr : m_component_collections) {
-        ptr.reset();
+        if (ptr != nullptr) {
+            ptr->clear();
+        }
     }
     m_entity_data.clear();
     m_component_lists.clear();

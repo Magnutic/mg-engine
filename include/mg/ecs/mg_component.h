@@ -12,16 +12,11 @@
 #pragma once
 
 #include <bitset>
+#include <concepts>
 
 #include "mg/containers/mg_slot_map.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
-
-/** Used to define new component types, e.g.
- *    MG_DEFINE_COMPONENT(Position) { float x, y; };
- */
-#define MG_DEFINE_COMPONENT(COMPONENT_TYPE_NAME) \
-    struct COMPONENT_TYPE_NAME : ::Mg::ecs::BaseComponent<COMPONENT_TYPE_NAME>
 
 namespace Mg::ecs {
 
@@ -31,35 +26,32 @@ namespace Mg::ecs {
  */
 constexpr size_t k_max_component_types = 64;
 
-struct ComponentTag {
-protected:
-    static size_t new_family_id() noexcept
-    {
-        MG_ASSERT(n_component_types < k_max_component_types - 1);
-        return n_component_types++;
-    }
+namespace detail {
 
-private:
-    static size_t n_component_types; // Defined in mg_entity.cpp
+struct ComponentTag {};
+
+struct NotTag {};
+
+} // namespace detail
+
+/** Component base class. */
+template<size_t _component_type_id> struct BaseComponent : detail::ComponentTag {
+    static constexpr size_t component_type_id = _component_type_id;
 };
 
-/** Component base class. Using the Curiously Recurring Template Pattern (CRTP)
- * in order to create unique ComponentTypeId for each derived type.
+/** Mg Engine component concept. */
+template<typename T>
+concept Component = std::derived_from<T, detail::ComponentTag>;
+
+/** Tag type used to indicate when we want entities containing a particular component to _not_ be
+ * included.
  */
-template<typename Derived> struct BaseComponent : ComponentTag {
-    static const size_t ComponentTypeId;
+template<Component C> struct Not : detail::NotTag {
+    using component_type = C;
 };
 
-template<typename Derived> const size_t BaseComponent<Derived>::ComponentTypeId = new_family_id();
-
-/** Mg Engine component type trait. */
-template<typename T> using IsComponent = std::is_base_of<ComponentTag, T>;
-
-/** Quick way to assert that a type T is an Mg Engine component type. */
-template<typename T> constexpr void assert_is_component()
-{
-    static_assert(IsComponent<T>::value, "Supplied type must be a Mg Engine ECS component type.");
-}
+template<typename T>
+concept ComponentTypeDesignator = Component<T> || std::derived_from<T, detail::NotTag>;
 
 /** ComponentMask is a bit mask representing the presence of a set of
  * component types within an Entity.
@@ -72,22 +64,47 @@ constexpr ComponentMask create_mask()
     return 0;
 }
 
-template<typename C> constexpr ComponentMask create_mask(const C*)
+constexpr ComponentMask create_not_mask()
 {
-    return size_t{ 1u } << C::ComponentTypeId;
+    return 0;
 }
 
-template<typename C, typename... Cs>
+template<Component C> constexpr ComponentMask create_mask(const C*)
+{
+    return size_t{ 1u } << C::component_type_id;
+}
+
+template<Component C, typename... Cs>
 constexpr ComponentMask create_mask(const C* dummy, const Cs*... rest)
 {
     return create_mask<C>(dummy) | create_mask(rest...);
+}
+
+template<std::derived_from<detail::NotTag> C, typename... Cs>
+constexpr ComponentMask create_mask(const C*, const Cs*... rest)
+{
+    return create_mask(rest...);
+}
+
+template<Component C, typename... Cs>
+constexpr ComponentMask create_not_mask(const C*, const Cs*... rest)
+{
+    return create_not_mask(rest...);
+}
+
+template<std::derived_from<detail::NotTag> C, typename... Cs>
+constexpr ComponentMask create_not_mask(const C*, const Cs*... rest)
+{
+    return create_mask(static_cast<typename C::component_type*>(nullptr)) |
+           create_not_mask(rest...);
 }
 
 /** Interface for ComponentCollection for any Component type. */
 class IComponentCollection {
 public:
     MG_INTERFACE_BOILERPLATE(IComponentCollection);
-    virtual void erase(Slot_map_handle handle) = 0;
+    virtual void erase(Slot_map_handle handle) noexcept = 0;
+    virtual void clear() noexcept = 0;
 };
 
 /** ComponentCollection creates, stores, and destroys Components. */
@@ -97,10 +114,12 @@ public:
 
     template<typename... Ts> Slot_map_handle emplace(Ts&&... args)
     {
-        return { m_data.insert(C{ std::forward<Ts>(args)... }) };
+        return { m_data.insert(C{ /*BaseComponent*/ {}, std::forward<Ts>(args)... }) };
     }
 
-    void erase(Slot_map_handle handle) override { m_data.erase(handle); }
+    void erase(Slot_map_handle handle) noexcept override { m_data.erase(handle); }
+
+    void clear() noexcept override { m_data.clear(); }
 
     C& get_component(Slot_map_handle handle) { return m_data[handle]; }
 
