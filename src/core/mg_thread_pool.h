@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include "mg/containers/mg_small_vector.h"
 #include "mg/utils/mg_assert.h"
 
 #include <function2/function2.hpp>
@@ -21,6 +22,8 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <ranges>
+#include <span>
 #include <thread>
 #include <vector>
 
@@ -49,19 +52,26 @@ public:
     /** Get the number of threads in this ThreadPool. */
     size_t size() const { return m_threads.size(); }
 
-    // Metafunction for getting appropriate return type for add_job.
-    template<typename Job>
-    using AddJobReturnT = std::conditional_t<std::is_void_v<std::invoke_result_t<Job>>,
-                                             void,
-                                             std::future<std::invoke_result_t<Job>>>;
+    /** Add function (object) as job to the pool.
+     * @remark: To pass arguments into the function, write a lambda as the job and capture the
+     * arguments. Make sure to by-value-capture arguments with short lifetimes!
+     * @return std::future for the return value of the function.
+     */
+    [[nodiscard]] auto add_job(std::invocable auto job)
+        -> std::future<std::invoke_result_t<decltype(job)>>;
 
     /** Add function (object) as job to the pool.
      * @remark: To pass arguments into the function, write a lambda as the job and capture the
      * arguments. Make sure to by-value-capture arguments with short lifetimes!
-     * @return std::future for the return value of the function, unless the return type is void, in
-     * which case add_job also returns also void.
      */
-    template<typename Job> auto add_job(Job) -> AddJobReturnT<Job>;
+    void add_job_fire_and_forget(std::invocable auto job) { enqueue_job(std::move(job)); }
+
+    /** Invoke func on all elements in range, distributing the invocations into multiple parallel
+     * jobs.
+     */
+    auto parallel_for(std::ranges::contiguous_range auto& range,
+                      size_t num_elems_per_job,
+                      const std::invocable<decltype(*std::ranges::data(range))> auto& func);
 
     /** Wait for all jobs in the pool to finish, locking the thread. */
     void await_all_jobs();
@@ -141,21 +151,54 @@ inline void ThreadPool::enqueue_job(fu2::unique_function<void()> job_wrapper)
     m_job_available_var.notify_one();
 }
 
-template<typename Job> auto ThreadPool::add_job(Job job) -> AddJobReturnT<Job>
+auto ThreadPool::add_job(std::invocable auto job)
+    -> std::future<std::invoke_result_t<decltype(job)>>
 {
-    using JobReturnT = std::invoke_result_t<Job>;
-    static constexpr bool returns_void = std::is_void_v<JobReturnT>;
+    using JobReturnT = std::invoke_result_t<decltype(job)>;
 
-    if constexpr (returns_void) {
-        enqueue_job(std::move(job));
+    auto packaged_task = std::packaged_task<JobReturnT()>(std::move(job));
+    std::future<JobReturnT> ret_val = packaged_task.get_future();
+    enqueue_job(std::move(packaged_task));
+    return ret_val;
+}
+
+auto ThreadPool::parallel_for(std::ranges::contiguous_range auto& range,
+                              const size_t num_elems_per_job,
+                              const std::invocable<decltype(*std::ranges::data(range))> auto& func)
+{
+    const auto span = std::span(range);
+    const size_t num_elems = span.size();
+
+    const size_t num_jobs_to_spawn = num_elems_per_job < num_elems
+                                         ? (num_elems + num_elems_per_job - size_t(1)) /
+                                               num_elems_per_job
+                                         : size_t(1);
+    std::atomic_size_t num_done = 0;
+
+    for (size_t i = 1; i < num_jobs_to_spawn; ++i) {
+        const auto start = i * num_elems_per_job;
+        const auto num = std::min(start + num_elems_per_job, num_elems) - start;
+        add_job_fire_and_forget([&num_done, subrange = span.subspan(start, num), func] {
+            for (auto& v : subrange) {
+                func(v);
+            }
+            ++num_done;
+        });
     }
-    else {
-        auto packaged_task = std::packaged_task<JobReturnT()>(std::move(job));
-        std::future<JobReturnT> ret_val = packaged_task.get_future();
-        enqueue_job(std::move(packaged_task));
-        return ret_val;
+
+    // Do some work on this thread, too.
+    const auto num = std::min(num_elems_per_job, num_elems);
+    for (auto&& v : span.subspan(0, num)) {
+        func(v);
+    }
+    ++num_done;
+
+    // Wait until all jobs are done.
+    while (num_done < num_jobs_to_spawn) {
+        std::this_thread::yield();
     }
 }
+
 
 inline void ThreadPool::await_all_jobs()
 {
