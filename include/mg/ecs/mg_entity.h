@@ -28,11 +28,6 @@
 //
 // Also, I should probably use plf::colony instead of Mg::Slot_map for this. Might even remove the
 // latter as I cannot think of any situation where it is better than colony.
-//
-// Finally, I no longer like the compile-time magic involved in this (like component id generation).
-// A little bit of boilerplate is not really that bad, and the lack of flexibility caused by
-// requiring compile-time tricks is not worth it. I am thinking of things like usage across shared
-// library boundaries etc.
 
 #include "mg/core/mg_runtime_error.h"
 #include "mg/utils/mg_gsl.h"

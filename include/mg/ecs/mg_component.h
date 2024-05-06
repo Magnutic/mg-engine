@@ -20,7 +20,7 @@
 
 namespace Mg::ecs {
 
-/** Maximum number of component types that may be declared. */
+/** Maximum number of component types that may be used in one EntityCollection. */
 constexpr size_t k_max_component_types = 64;
 
 /** ComponentMask is a bit mask representing the presence of a set of component types within an
@@ -30,14 +30,21 @@ using ComponentMask = uint64_t;
 
 namespace detail {
 
+// Identifies component types.
 struct ComponentTag {};
 
+// Identifies types that are instantiations of Mg::ecs::Not<>.
 struct NotTag {};
 
 } // namespace detail
 
-/** Component base class. */
+/** Component base class.
+ * All component types must publicly derive from this class, and set the _component_type_id to
+ * a value unique for this component type (among all the component types that will be used with the
+ * same EntityCollection).
+ */
 template<size_t _component_type_id> struct BaseComponent : detail::ComponentTag {
+    static_assert(_component_type_id < k_max_component_types);
     static constexpr size_t component_type_id = _component_type_id;
 };
 
@@ -52,6 +59,10 @@ template<Component C> struct Not : detail::NotTag {
     using component_type = C;
 };
 
+/** Tag-type used to designate which component types we want to include when iterating over
+ * entities. Those which we want to include are designated by the component type itself, and those
+ * we want to exclude are designated by wrapping the component type in Mg::ecs::Not<>.
+ */
 template<typename T>
 concept ComponentTypeDesignator = Component<T> || std::derived_from<T, detail::NotTag>;
 
