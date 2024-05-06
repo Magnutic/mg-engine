@@ -189,7 +189,9 @@ TEST_CASE("Entity")
         for (auto cs : entity_collection.get_with()) {
             auto entity = std::get<Mg::ecs::Entity>(cs);
             auto mask = entity_collection.component_mask(entity);
-            CHECK(mask[IndexPairComponent::component_type_id]);
+            auto expected_mask = Mg::ecs::ComponentMask{ 1 }
+                                 << IndexPairComponent::component_type_id;
+            CHECK(mask == expected_mask);
         }
     }
 } // TEST_CASE("Entity")

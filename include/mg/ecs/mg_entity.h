@@ -179,7 +179,7 @@ private:
         // technically redundant, but this compact representation allows very
         // fast iteration when searching for all entities with a certain set of
         // components.
-        ComponentMask mask;
+        ComponentMask mask{};
 
         // Handle to the ComponentList for this entity in m_component_lists
         Slot_map_handle component_list_handle;
@@ -195,7 +195,7 @@ private:
 
     bool has_component(Entity entity, size_t component_type_id) const
     {
-        return component_mask(entity).test(component_type_id);
+        return (component_mask(entity) & (ComponentMask{ 1u } << component_type_id)) != 0u;
     }
 
     Slot_map_handle& component_handle_ref(Entity entity, size_t component_type_id);
@@ -282,7 +282,26 @@ private:
         return m_collection.get_component<C>(component_list[C::component_type_id]);
     }
 
-    bool match() { return (m_it->mask & m_mask) == m_mask && (m_it->mask & m_not_mask) == 0u; }
+    // The byte mask indicating which components must be included.
+    static consteval ComponentMask mask()
+    {
+        if constexpr (sizeof...(Cs) > 0) {
+            return create_mask<Cs...>();
+        }
+        return 0;
+    }
+
+    // The byte mask indicating which components must be not included.
+    static consteval ComponentMask not_mask()
+    {
+        if constexpr (sizeof...(Cs) > 0) {
+            return create_not_mask<Cs...>();
+        }
+        return 0;
+    }
+
+    // Check if the iterator points to an entity which has the sought set of components.
+    bool match() { return (m_it->mask & mask()) == mask() && (m_it->mask & not_mask()) == 0u; }
 
     void find_match()
     {
@@ -293,14 +312,6 @@ private:
 
     EntityCollection& m_collection;
     Slot_map<EntityData>::iterator m_it;
-
-    // Bitmask indicating which components must exist in an entity to satisfy the conditions of this
-    // iterator.
-    ComponentMask m_mask = create_mask(std::add_pointer_t<Cs>{ nullptr }...);
-
-    // Bitmask indicating which components must _not_ exist in an entity to satisfy the conditions
-    // of this iterator.
-    ComponentMask m_not_mask = create_not_mask(std::add_pointer_t<Cs>{ nullptr }...);
 };
 
 
@@ -333,7 +344,7 @@ C& EntityCollection::add_component(Entity entity, Ts&&... args)
     auto handle = components.emplace(std::forward<Ts>(args)...);
 
     component_handle_ref(entity, C::component_type_id) = handle;
-    component_mask_ref(entity).set(C::component_type_id);
+    component_mask_ref(entity) |= (ComponentMask{ 1 } << C::component_type_id);
 
     return components.get_component(handle);
 }
@@ -351,7 +362,7 @@ template<Component C> void EntityCollection::remove_component(Entity entity)
     handle = {};
 
     // Clear component flag.
-    component_mask_ref(entity).reset(C::component_type_id);
+    component_mask_ref(entity) &= ~(ComponentMask{ 1 } << C::component_type_id);
 }
 
 template<Component C> void EntityCollection::add_component_collection()

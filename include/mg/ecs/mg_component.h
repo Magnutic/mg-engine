@@ -20,11 +20,13 @@
 
 namespace Mg::ecs {
 
-/** Maximum number of component types that may be declared.
- * Larger value means larger internal storage per entity, so keep reasonably
- * low.
- */
+/** Maximum number of component types that may be declared. */
 constexpr size_t k_max_component_types = 64;
+
+/** ComponentMask is a bit mask representing the presence of a set of component types within an
+ * Entity.
+ */
+using ComponentMask = uint64_t;
 
 namespace detail {
 
@@ -53,50 +55,42 @@ template<Component C> struct Not : detail::NotTag {
 template<typename T>
 concept ComponentTypeDesignator = Component<T> || std::derived_from<T, detail::NotTag>;
 
-/** ComponentMask is a bit mask representing the presence of a set of
- * component types within an Entity.
+/** Creates ComponentMask from a set of component type designators, including the designators that
+ * are Component types while ignoring those that are wrapped in Mg::ecs::Not<Component>.
  */
-using ComponentMask = std::bitset<k_max_component_types>;
-
-/** Creates ComponentMask from a set of component types (given as pointers). */
+template<ComponentTypeDesignator C, ComponentTypeDesignator... Cs>
 constexpr ComponentMask create_mask()
 {
-    return 0;
+    ComponentMask tail_mask{};
+    if constexpr (sizeof...(Cs) > 0) {
+        tail_mask = create_mask<Cs...>();
+    }
+
+    if constexpr (Component<C>) {
+        return (ComponentMask{ 1u } << C::component_type_id) | tail_mask;
+    }
+    else {
+        return tail_mask;
+    }
 }
 
+/** Creates ComponentMask from a set of component type designators, ignoring the designators that
+ * are Component types while including only those that are wrapped in Mg::ecs::Not<Component>.
+ */
+template<ComponentTypeDesignator C, ComponentTypeDesignator... Cs>
 constexpr ComponentMask create_not_mask()
 {
-    return 0;
-}
+    ComponentMask tail_mask{};
+    if constexpr (sizeof...(Cs) > 0) {
+        tail_mask = create_not_mask<Cs...>();
+    }
 
-template<Component C> constexpr ComponentMask create_mask(const C*)
-{
-    return size_t{ 1u } << C::component_type_id;
-}
-
-template<Component C, typename... Cs>
-constexpr ComponentMask create_mask(const C* dummy, const Cs*... rest)
-{
-    return create_mask<C>(dummy) | create_mask(rest...);
-}
-
-template<std::derived_from<detail::NotTag> C, typename... Cs>
-constexpr ComponentMask create_mask(const C*, const Cs*... rest)
-{
-    return create_mask(rest...);
-}
-
-template<Component C, typename... Cs>
-constexpr ComponentMask create_not_mask(const C*, const Cs*... rest)
-{
-    return create_not_mask(rest...);
-}
-
-template<std::derived_from<detail::NotTag> C, typename... Cs>
-constexpr ComponentMask create_not_mask(const C*, const Cs*... rest)
-{
-    return create_mask(static_cast<typename C::component_type*>(nullptr)) |
-           create_not_mask(rest...);
+    if constexpr (std::derived_from<C, detail::NotTag>) {
+        return (ComponentMask{ 1u } << C::component_type::component_type_id) | tail_mask;
+    }
+    else {
+        return tail_mask;
+    }
 }
 
 /** Interface for ComponentCollection for any Component type. */
