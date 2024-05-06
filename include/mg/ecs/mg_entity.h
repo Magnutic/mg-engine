@@ -225,14 +225,14 @@ namespace detail {
 template<typename... Tuples>
 using tuple_cat_t = decltype(std::tuple_cat(std::declval<Tuples>()...));
 
-// Converts a pack of ComponentTypeDesignator types to a tuple of pointers to components.
+// Converts a pack of ComponentTypeDesignator types to a tuple of references to components.
 // A ComponentTypeDesignator is either a component type or a component type wrapped in
-// `Mg::ecs::Not`. ComponentPtrs will ignore all `Mg::ecs::Not` elements, but convert the rest to
-// pointers.
+// `Mg::ecs::Not`. ComponentRefs will ignore all `Mg::ecs::Not` elements, but convert the rest to
+// references.
 template<ComponentTypeDesignator... tags>
-using ComponentPtrs = tuple_cat_t<std::conditional_t<std::derived_from<tags, detail::NotTag>,
+using ComponentRefs = tuple_cat_t<std::conditional_t<std::derived_from<tags, detail::NotTag>,
                                                      std::tuple<>,
-                                                     std::tuple<tags*>>...>;
+                                                     std::tuple<tags&>>...>;
 
 } // namespace detail
 
@@ -254,32 +254,32 @@ public:
         return *this;
     }
 
-    // Tuple of (Entity, Components*...)
-    using value_type = detail::tuple_cat_t<std::tuple<Entity>, detail::ComponentPtrs<Cs...>>;
+    // Tuple of (Entity, Components&...)
+    using value_type = detail::tuple_cat_t<std::tuple<Entity>, detail::ComponentRefs<Cs...>>;
 
-    // Dereference into a tuple of (Entity, Components*...)
+    // Dereference into a tuple of (Entity, Components&...)
     value_type operator*()
     {
         Entity entity = m_collection.m_entity_data.make_handle(m_it);
         ComponentList& component_list = m_collection.m_component_lists[m_it->component_list_handle];
 
         return std::tuple_cat(std::tuple{ entity },
-                              get_tuple_with_pointer_to_component<Cs>(component_list)...);
+                              get_tuple_with_reference_to_component<Cs>(component_list)...);
     }
 
     friend bool operator!=(iterator l, iterator r) { return l.m_it != r.m_it; }
 
 private:
     template<std::derived_from<detail::NotTag> C>
-    std::tuple<> get_tuple_with_pointer_to_component(ComponentList&)
+    std::tuple<> get_tuple_with_reference_to_component(ComponentList&)
     {
         return {};
     }
 
     template<Component C>
-    std::tuple<C*> get_tuple_with_pointer_to_component(ComponentList& component_list)
+    std::tuple<C&> get_tuple_with_reference_to_component(ComponentList& component_list)
     {
-        return &m_collection.get_component<C>(component_list[C::component_type_id]);
+        return m_collection.get_component<C>(component_list[C::component_type_id]);
     }
 
     bool match() { return (m_it->mask & m_mask) == m_mask && (m_it->mask & m_not_mask) == 0u; }

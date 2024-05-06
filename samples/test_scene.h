@@ -95,25 +95,25 @@ public:
     {
         for (auto [entity, dynamic_body, transform] :
              collection.get_with<DynamicBodyComponent, TransformComponent>()) {
-            transform->previous_transform = transform->transform;
-            transform->transform = dynamic_body->physics_body.get_transform();
+            transform.previous_transform = transform.transform;
+            transform.transform = dynamic_body.physics_body.get_transform();
         }
     }
 
     void animate(const float time)
     {
         for (auto [entity, animation] : collection.get_with<AnimationComponent>()) {
-            if (!animation->current_clip.has_value()) {
-                animation->pose = animation->skeleton.get_bind_pose();
+            if (!animation.current_clip.has_value()) {
+                animation.pose = animation.skeleton.get_bind_pose();
                 continue;
             }
 
-            animation->time_in_clip = time;
+            animation.time_in_clip = time;
 
-            const auto clip_index = animation->current_clip.value();
-            Mg::gfx::animate_skeleton(animation->clips[clip_index],
-                                      animation->pose,
-                                      animation->time_in_clip);
+            const auto clip_index = animation.current_clip.value();
+            Mg::gfx::animate_skeleton(animation.clips[clip_index],
+                                      animation.pose,
+                                      animation.time_in_clip);
         }
     }
 
@@ -124,34 +124,34 @@ public:
         for (auto [entity, transform, mesh] :
              collection
                  .get_with<TransformComponent, MeshComponent, Mg::ecs::Not<AnimationComponent>>()) {
-            const auto interpolated = Mg::interpolate_transforms(transform->previous_transform,
-                                                                 transform->transform,
+            const auto interpolated = Mg::interpolate_transforms(transform.previous_transform,
+                                                                 transform.transform,
                                                                  lerp_factor) *
-                                      mesh->mesh_transform;
+                                      mesh.mesh_transform;
 
-            renderlist.add_mesh(mesh->mesh, interpolated, mesh->material_assignments);
+            renderlist.add_mesh(mesh.mesh, interpolated, mesh.material_assignments);
         }
 
         // Animated meshes.
         for (auto [entity, transform, mesh, animation] :
              collection.get_with<TransformComponent, MeshComponent, AnimationComponent>()) {
-            const auto interpolated = Mg::interpolate_transforms(transform->previous_transform,
-                                                                 transform->transform,
+            const auto interpolated = Mg::interpolate_transforms(transform.previous_transform,
+                                                                 transform.transform,
                                                                  lerp_factor) *
-                                      mesh->mesh_transform;
+                                      mesh.mesh_transform;
 
-            const auto num_joints = Mg::narrow<uint16_t>(animation->skeleton.joints().size());
+            const auto num_joints = Mg::narrow<uint16_t>(animation.skeleton.joints().size());
 
             auto palette = renderlist.allocate_skinning_matrix_palette(num_joints);
 
             Mg::gfx::calculate_skinning_matrices(interpolated,
-                                                 animation->skeleton,
-                                                 animation->pose,
+                                                 animation.skeleton,
+                                                 animation.pose,
                                                  palette.skinning_matrices());
 
-            renderlist.add_skinned_mesh(mesh->mesh,
+            renderlist.add_skinned_mesh(mesh.mesh,
                                         interpolated,
-                                        mesh->material_assignments,
+                                        mesh.material_assignments,
                                         palette);
         }
     }

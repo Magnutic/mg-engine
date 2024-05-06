@@ -32,7 +32,7 @@ TEST_CASE("Entity")
     SECTION("create_entity")
     {
         for (size_t i = 0; i < 1024; ++i) {
-            entity_collection.create_entity();
+            [[maybe_unused]] auto handle = entity_collection.create_entity();
             REQUIRE(entity_collection.num_entities() - 1 == i);
         }
     }
@@ -122,7 +122,7 @@ TEST_CASE("Entity")
             CHECK(entity_collection.has_component<TestComponent>(entity));
             CHECK(entity_collection.has_component<Position>(entity));
 
-            auto& str = test_component->string;
+            auto& str = test_component.string;
             CHECK(str.find("handle") != str.npos);
         }
     }
@@ -149,7 +149,7 @@ TEST_CASE("Entity")
             CHECK(entity_collection.has_component<TestComponent>(entity));
             CHECK(!entity_collection.has_component<Position>(entity));
 
-            auto& str = test_component->string;
+            auto& str = test_component.string;
             CHECK(str.find("handle") != str.npos);
         }
     }

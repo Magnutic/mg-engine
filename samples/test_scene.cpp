@@ -510,9 +510,9 @@ void Scene::render_skeleton_debug_geometry()
          entities.collection.get_with<TransformComponent, MeshComponent, AnimationComponent>()) {
         debug_renderer.draw_bones(app.window().render_target,
                                   camera.view_proj_matrix(),
-                                  transform->transform * mesh->mesh_transform,
-                                  animation->skeleton,
-                                  animation->pose);
+                                  transform.transform * mesh.mesh_transform,
+                                  animation.skeleton,
+                                  animation.pose);
     }
 }
 
