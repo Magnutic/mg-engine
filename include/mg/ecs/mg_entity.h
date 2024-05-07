@@ -214,23 +214,6 @@ private:
 
 //--------------------------------------------------------------------------------------------------
 
-namespace detail {
-
-// Tuple type that contains the concatenation of element types of all the tuples in Tuples...
-template<typename... Tuples>
-using tuple_cat_t = decltype(std::tuple_cat(std::declval<Tuples>()...));
-
-// Converts a pack of ComponentTypeDesignator types to a tuple of references to components.
-// A ComponentTypeDesignator is either a component type or a component type wrapped in
-// `Mg::ecs::Not`. ComponentRefs will ignore all `Mg::ecs::Not` elements, but convert the rest to
-// references.
-template<ComponentTypeDesignator... tags>
-using ComponentRefs = tuple_cat_t<std::conditional_t<std::derived_from<tags, detail::NotTag>,
-                                                     std::tuple<>,
-                                                     std::tuple<tags&>>...>;
-
-} // namespace detail
-
 // Iterator over all entities with components Cs...
 // See UnpackingView and EntityCollection::get_with
 template<ComponentTypeDesignator... Cs> class EntityCollection::iterator {
@@ -249,11 +232,8 @@ public:
         return *this;
     }
 
-    // Tuple of (Entity, Components&...)
-    using value_type = detail::tuple_cat_t<std::tuple<Entity>, detail::ComponentRefs<Cs...>>;
-
     // Dereference into a tuple of (Entity, Components&...)
-    value_type operator*()
+    auto operator*()
     {
         Entity entity = m_collection.m_entity_data.make_handle(m_it);
         ComponentList& component_list = m_collection.m_component_lists[m_it->component_list_handle];
