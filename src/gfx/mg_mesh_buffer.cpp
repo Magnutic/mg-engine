@@ -41,20 +41,20 @@ public:
         MG_GFX_DEBUG_GROUP("MeshBuffer::Impl::create");
 
         if (mesh_data.vertices.size_bytes() + m_vertex_buffer_offset > m_vertex_buffer_size) {
-            return { nullopt, MeshBuffer::ReturnCode::Vertex_buffer_full };
+            return { nullptr, MeshBuffer::ReturnCode::Vertex_buffer_full };
         }
 
         if (mesh_data.indices.size_bytes() + m_index_buffer_offset > m_index_buffer_size) {
-            return { nullopt, MeshBuffer::ReturnCode::Index_buffer_full };
+            return { nullptr, MeshBuffer::ReturnCode::Index_buffer_full };
         }
 
         if (mesh_data.influences.size_bytes() + m_influences_buffer_offset >
             m_influences_buffer_size) {
-            return { nullopt, MeshBuffer::ReturnCode::Influences_buffer_full };
+            return { nullptr, MeshBuffer::ReturnCode::Influences_buffer_full };
         }
 
         MakeMeshParams params = mesh_params_from_mesh_data(*m_pool_impl, mesh_data);
-        const MeshHandle mesh_handle = make_mesh(*m_pool_impl, name, params);
+        const auto mesh_handle = make_mesh(*m_pool_impl, name, params);
 
         m_vertex_buffer_offset += mesh_data.vertices.size_bytes();
         m_index_buffer_offset += mesh_data.indices.size_bytes();

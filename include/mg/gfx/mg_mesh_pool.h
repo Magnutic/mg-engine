@@ -12,7 +12,6 @@
 
 #include "mg/gfx/mg_mesh_buffer.h"
 #include "mg/gfx/mg_mesh_data.h"
-#include "mg/gfx/mg_mesh_handle.h"
 #include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_optional.h"
@@ -42,21 +41,21 @@ public:
     ~MeshPool();
 
     /** Get or load a mesh using the given mesh resource. */
-    MeshHandle get_or_load(Identifier resource_id);
+    const Mesh* get_or_load(Identifier resource_id);
 
     /** Create a new mesh using the given mesh data. Expects that no mesh with the same
      * identifier already exists -- if one does, use update() instead.
      */
-    MeshHandle create(const mesh_data::MeshDataView& mesh_data, Identifier name);
+    const Mesh* create(const mesh_data::MeshDataView& mesh_data, Identifier name);
 
-    /** Find the mesh with the given name, if such a mesh exists. Otherwise, returns nullopt. */
-    Opt<MeshHandle> find(Identifier name) const;
+    /** Find the mesh with the given name, if such a mesh exists. Otherwise, returns nullptr. */
+    const Mesh* find(Identifier name) const;
 
     /** Destroy the given mesh. Unless another mesh uses the same GPU data buffers (as would be the
      * case if meshes were created using the same `Mg::gfx::MeshBuffer`), then the GPU buffers will
      * be freed.
      */
-    void destroy(MeshHandle handle);
+    void destroy(const Mesh* handle);
 
     /** Update an existing mesh using the given mesh data.
      * Returns true if a mesh was updated; false if no matching mesh existed in the repository.

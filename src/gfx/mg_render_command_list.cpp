@@ -10,9 +10,8 @@
 #include "mg/core/mg_transform.h"
 #include "mg/gfx/mg_camera.h"
 #include "mg/gfx/mg_frustum.h"
+#include "mg/gfx/mg_mesh.h"
 #include "mg/utils/mg_stl_helpers.h"
-
-#include "mg_mesh_internal.h"
 
 #include <fmt/core.h>
 
@@ -65,13 +64,11 @@ RenderCommandProducer::RenderCommandProducer() = default;
 
 RenderCommandProducer::~RenderCommandProducer() = default;
 
-void RenderCommandProducer::add_mesh(MeshHandle mesh_handle,
+void RenderCommandProducer::add_mesh(const Mesh& mesh,
                                      const glm::mat4& transform,
                                      std::span<const MaterialAssignment> material_assignment)
 {
     MG_ASSERT(m_impl->m_transforms_unsorted.size() == m_impl->render_commands_unsorted.size());
-
-    const MeshInternal& mesh = get_mesh(mesh_handle);
 
     for (size_t i = 0; i < mesh.submeshes.size(); ++i) {
         const auto* material = material_for_submesh(material_assignment, i);
@@ -98,7 +95,7 @@ void RenderCommandProducer::add_mesh(MeshHandle mesh_handle,
 }
 
 void RenderCommandProducer::add_skinned_mesh(
-    MeshHandle mesh,
+    const Mesh& mesh,
     const glm::mat4& transform,
     std::span<const MaterialAssignment> material_assignment,
     const SkinningMatrixPalette& skinning_matrix_palette)

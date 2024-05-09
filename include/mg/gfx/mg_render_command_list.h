@@ -12,7 +12,6 @@
 
 #include "mg/containers/mg_array.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
-#include "mg/gfx/mg_mesh_handle.h"
 #include "mg/mg_bounding_volumes.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_impl_ptr.h"
@@ -29,8 +28,9 @@ class Transform;
 namespace Mg::gfx {
 
 class Material;
+struct Mesh;
 class Skeleton;
-class SkeletonPose;
+struct SkeletonPose;
 
 /** Function for sorting draw calls */
 enum class SortingMode { unsorted, near_to_far, far_to_near };
@@ -136,14 +136,14 @@ public:
     /** Add a non-animated mesh to be rendered, with the given transformation and material
      * assignments.
      */
-    void add_mesh(MeshHandle mesh,
+    void add_mesh(const Mesh& mesh,
                   const glm::mat4& transform,
                   std::span<const MaterialAssignment> material_assignment);
 
     /** Add a skinned (animated) mesh to be rendered, with the given transformation and material
      * assignments.
      */
-    void add_skinned_mesh(MeshHandle mesh,
+    void add_skinned_mesh(const Mesh& mesh,
                           const glm::mat4& transform,
                           std::span<const MaterialAssignment> material_assignment,
                           const SkinningMatrixPalette& skinning_matrix_palette);

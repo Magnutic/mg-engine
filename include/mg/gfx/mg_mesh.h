@@ -4,7 +4,7 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-/** @file mg_mesh_internal.h
+/** @file mg_mesh.h
  * Internal mesh structure. @see MeshPool
  */
 
@@ -12,9 +12,10 @@
 
 #include "mg/containers/mg_small_vector.h"
 #include "mg/core/mg_identifier.h"
+#include "mg/gfx/mg_animation.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_mesh_data.h"
-#include "mg/gfx/mg_mesh_handle.h"
+#include "mg/gfx/mg_skeleton.h"
 
 #include <bit>
 #include <glm/vec3.hpp>
@@ -32,10 +33,19 @@ struct SharedBuffer {
     int32_t num_users = 0;
 };
 
+/** Animation data associated with a mesh. */
+struct AnimationData {
+    Mg::gfx::Skeleton skeleton;
+    Mg::small_vector<Mg::gfx::mesh_data::AnimationClip, 10> clips;
+
+    /** Buffer for per-vertex joint influences, for skeletal animation. */
+    SharedBuffer* influences_buffer = nullptr;
+};
+
 /** Internal mesh structure. @see MeshPool */
-struct MeshInternal {
+struct Mesh {
     /** Submeshes, defined as ranges in the index_buffer. */
-    small_vector<Mesh::SubmeshRange, 8> submeshes;
+    small_vector<mesh_data::SubmeshRange, 8> submeshes;
 
     /** Bounding sphere used for frustum culling. */
     BoundingSphere bounding_sphere;
@@ -55,22 +65,8 @@ struct MeshInternal {
     /** Index buffer, triangle list of indexes into vertex_buffer. */
     SharedBuffer* index_buffer = nullptr;
 
-    /** Buffer for per-vertex joint influences, for skeletal animation. May be nullptr. */
-    SharedBuffer* influences_buffer = nullptr;
+    /** Animation data associated with this mesh. May be nullptr, if the mesh has no animations. */
+    AnimationData* animation_data = nullptr;
 };
-
-/** Convert pointer to public opaque handle. */
-inline MeshHandle make_mesh_handle(const MeshInternal* p) noexcept
-{
-    return std::bit_cast<MeshHandle>(p);
-}
-
-/** Dereference mesh handle. */
-inline MeshInternal& get_mesh(MeshHandle handle) noexcept
-{
-    MG_ASSERT(handle != MeshHandle{}); // Not null
-    return *std::bit_cast<MeshInternal*>(handle);
-}
-
 
 } // namespace Mg::gfx

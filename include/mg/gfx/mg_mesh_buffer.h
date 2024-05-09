@@ -11,7 +11,6 @@
 #pragma once
 
 #include "mg/gfx/mg_mesh_data.h"
-#include "mg/gfx/mg_mesh_handle.h"
 #include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_optional.h"
 
@@ -21,6 +20,7 @@ class MeshResource;
 
 namespace Mg::gfx {
 
+struct Mesh;
 struct MeshPoolImpl;
 
 /** MeshBuffer allows creating meshes within pre-allocated buffers on the GPU. This is useful for
@@ -39,7 +39,7 @@ public:
     };
 
     struct CreateReturn {
-        Opt<MeshHandle> opt_mesh;
+        const Mesh* opt_mesh;
         ReturnCode return_code;
     };
 

@@ -59,7 +59,7 @@ struct DynamicBodyComponent : Mg::ecs::BaseComponent<3> {
 };
 
 struct MeshComponent : Mg::ecs::BaseComponent<4> {
-    Mg::gfx::MeshHandle mesh = {};
+    const Mg::gfx::Mesh* mesh = nullptr;
 
     // These probably don't make sense to have in a component. They can be shared among all users of
     // a given mesh.
@@ -138,13 +138,13 @@ public:
                                                      animation->pose,
                                                      palette.skinning_matrices());
 
-                renderlist.add_skinned_mesh(mesh.mesh,
+                renderlist.add_skinned_mesh(*mesh.mesh,
                                             interpolated,
                                             mesh.material_assignments,
                                             palette);
             }
             else {
-                renderlist.add_mesh(mesh.mesh, interpolated, mesh.material_assignments);
+                renderlist.add_mesh(*mesh.mesh, interpolated, mesh.material_assignments);
             }
         }
     }

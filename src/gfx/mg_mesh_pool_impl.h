@@ -12,10 +12,10 @@
 #include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_joint.h"
+#include "mg/gfx/mg_mesh.h"
 #include "mg/gfx/mg_mesh_data.h"
 #include "mg/utils/mg_assert.h"
 
-#include "mg_mesh_internal.h"
 #include "opengl/mg_glad.h"
 
 #include <plf_colony.h>
@@ -35,10 +35,10 @@ struct MeshPoolImpl {
 
     plf::colony<SharedBuffer> vertex_buffers;
     plf::colony<SharedBuffer> index_buffers;
-    plf::colony<MeshInternal> mesh_data;
+    plf::colony<Mesh> mesh_data;
 
     // Used for looking up a mesh by identifier.
-    FlatMap<Identifier, MeshHandle, Identifier::HashCompare> mesh_map;
+    FlatMap<Identifier, Mesh*, Identifier::HashCompare> mesh_map;
 };
 
 struct MakeMeshParams {
@@ -85,11 +85,11 @@ inline SharedBuffer* make_index_buffer(MeshPoolImpl& impl, size_t size)
     return &*it;
 }
 
-inline Opt<MeshHandle> find(const MeshPoolImpl& impl, Identifier name)
+inline Mesh* find(const MeshPoolImpl& impl, Identifier name)
 {
     const auto it = impl.mesh_map.find(name);
     if (it == impl.mesh_map.end()) {
-        return nullopt;
+        return nullptr;
     }
     return it->second;
 }
@@ -119,7 +119,7 @@ inline MakeMeshParams mesh_params_from_mesh_data(MeshPoolImpl& impl,
     return params;
 }
 
-inline void clear_mesh(MeshPoolImpl& impl, MeshInternal& mesh)
+inline void clear_mesh(MeshPoolImpl& impl, Mesh& mesh)
 {
     MG_GFX_DEBUG_GROUP("MeshPoolImpl::clear_mesh");
 
@@ -183,7 +183,7 @@ inline void setup_vertex_attributes(std::span<const VertexAttribute> vertex_attr
 
 // Create mesh GPU buffers inside `mesh` from the data referenced by `params`.
 inline void
-make_mesh_at(MeshPoolImpl& impl, MeshInternal& mesh, Identifier name, const MakeMeshParams& params)
+make_mesh_at(MeshPoolImpl& impl, Mesh& mesh, Identifier name, const MakeMeshParams& params)
 {
     MG_GFX_DEBUG_GROUP("MeshPoolImpl::make_mesh_at");
     const bool has_skeletal_animation_data = !params.mesh_data.influences.empty();
@@ -258,27 +258,24 @@ make_mesh_at(MeshPoolImpl& impl, MeshInternal& mesh, Identifier name, const Make
 }
 
 
-inline MeshHandle make_mesh(MeshPoolImpl& impl, Identifier name, const MakeMeshParams& params)
+inline const Mesh* make_mesh(MeshPoolImpl& impl, Identifier name, const MakeMeshParams& params)
 {
     MG_GFX_DEBUG_GROUP("MeshPoolImpl::make_mesh");
 
-    const auto it = impl.mesh_data.emplace();
+    Mesh& mesh = *impl.mesh_data.emplace();
 
-    MeshInternal& mesh = *it;
-
-    const MeshHandle handle = make_mesh_handle(&mesh);
-    const auto [map_it, inserted] = impl.mesh_map.insert({ name, handle });
+    const auto [map_it, inserted] = impl.mesh_map.insert({ name, &mesh });
 
     if (inserted) {
         make_mesh_at(impl, mesh, name, params);
-        return handle;
+        return &mesh;
     }
 
     throw RuntimeError{ "Creating mesh {}: a mesh by that identifier already exists.",
                         name.str_view() };
 }
 
-inline MeshHandle
+inline const Mesh*
 create(MeshPoolImpl& impl, const mesh_data::MeshDataView& mesh_data, Identifier name)
 {
     MG_GFX_DEBUG_GROUP("MeshPoolImpl::create");
@@ -296,19 +293,19 @@ create(MeshPoolImpl& impl, const mesh_data::MeshDataView& mesh_data, Identifier 
     return make_mesh(impl, name, params);
 }
 
-inline void destroy(MeshPoolImpl& impl, MeshHandle handle)
+inline void destroy(MeshPoolImpl& impl, const Mesh* handle)
 {
     MG_GFX_DEBUG_GROUP("MeshPoolImpl::destroy");
+    MG_ASSERT(handle != nullptr);
 
-    MeshInternal* p_mesh = &get_mesh(handle);
-    const Identifier name = p_mesh->name;
-
-    const auto it = impl.mesh_data.get_iterator(p_mesh);
-    clear_mesh(impl, *p_mesh);
-    impl.mesh_data.erase(it);
+    auto mesh_map_it = impl.mesh_map.find(handle->name);
+    clear_mesh(impl, *mesh_map_it->second);
 
     // Erase from resource_id -> Mesh map.
-    impl.mesh_map.erase(name);
+    impl.mesh_map.erase(mesh_map_it);
+
+    const auto mesh_data_it = impl.mesh_data.get_iterator(handle);
+    impl.mesh_data.erase(mesh_data_it);
 }
 
 } // namespace Mg::gfx

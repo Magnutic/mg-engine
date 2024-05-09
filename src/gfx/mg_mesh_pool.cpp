@@ -36,35 +36,35 @@ MeshPool::~MeshPool()
 {
     MG_GFX_DEBUG_GROUP("destroy MeshPool");
 
-    for (MeshInternal& mesh : m_impl->mesh_data) {
+    for (auto& mesh : m_impl->mesh_data) {
         clear_mesh(*m_impl, mesh);
     }
 
     m_impl->resource_cache->remove_resource_reload_callback("MeshResource"_id);
 }
 
-MeshHandle MeshPool::get_or_load(Identifier resource_id)
+const Mesh* MeshPool::get_or_load(Identifier resource_id)
 {
     MG_GFX_DEBUG_GROUP("MeshPool::create")
-    if (auto opt_handle = find(resource_id); opt_handle) {
-        return opt_handle.value();
+    if (auto* mesh = find(resource_id); mesh) {
+        return mesh;
     }
     auto access = m_impl->resource_cache->access_resource<MeshResource>(resource_id);
     return create(access->data_view(), access->resource_id());
 }
 
-MeshHandle MeshPool::create(const mesh_data::MeshDataView& mesh_data, Identifier name)
+const Mesh* MeshPool::create(const mesh_data::MeshDataView& mesh_data, Identifier name)
 {
     MG_GFX_DEBUG_GROUP("MeshPool::create")
     return ::Mg::gfx::create(*m_impl, mesh_data, name);
 }
 
-Opt<MeshHandle> MeshPool::find(Identifier name) const
+const Mesh* MeshPool::find(Identifier name) const
 {
     return ::Mg::gfx::find(*m_impl, name);
 }
 
-void MeshPool::destroy(MeshHandle handle)
+void MeshPool::destroy(const Mesh* handle)
 {
     MG_GFX_DEBUG_GROUP("MeshPool::destroy")
     ::Mg::gfx::destroy(*m_impl, handle);
@@ -74,18 +74,15 @@ bool MeshPool::update(const mesh_data::MeshDataView& mesh_data, Identifier name)
 {
     MG_GFX_DEBUG_GROUP("MeshPool::update")
 
-    Opt<MeshHandle> opt_handle = find(name);
+    Mesh* mesh = ::Mg::gfx::find(*m_impl, name);
 
     // If not found, then we do not have a mesh using the updated resource, so ignore.
-    if (!opt_handle) {
+    if (!mesh) {
         return false;
     }
 
     // Use the existing Mesh to ensure MeshHandles remain valid.
-    make_mesh_at(*m_impl,
-                 get_mesh(*opt_handle),
-                 name,
-                 mesh_params_from_mesh_data(*m_impl, mesh_data));
+    make_mesh_at(*m_impl, *mesh, name, mesh_params_from_mesh_data(*m_impl, mesh_data));
     log.verbose("MeshPool::update(): Updated {}", name.str_view());
     return true;
 }
