@@ -11,6 +11,7 @@
 #pragma once
 
 #include "mg/core/mg_identifier.h"
+#include "mg/gfx/mg_animation.h"
 #include "mg/gfx/mg_joint.h"
 #include "mg/gfx/mg_vertex_attribute.h"
 #include "mg/mg_bounding_volumes.h"
@@ -108,6 +109,18 @@ struct Submesh {
     Submesh(const SubmeshRange& range, const Identifier name_) : index_range(range), name(name_) {}
 };
 
+/** Non-owning view over the data required to define animations in a mesh. */
+struct AnimationDataView {
+    /** Per-vertex influences of skeleton joints for animation. Should either be empty (for
+     * non-animated meshes), or the same size as `MeshDataView::vertices`.
+     */
+    std::span<const Influences> influences;
+    std::span<const Joint> joints;
+    std::span<const AnimationClip> animation_clips;
+
+    glm::mat4 skeleton_root_transform;
+};
+
 /** Non-owning view over the data required to define a mesh. */
 struct MeshDataView {
     /** The vertices making up the mesh. */
@@ -119,10 +132,8 @@ struct MeshDataView {
     /** Submeshes as defined by a range of `indices`. */
     std::span<const Submesh> submeshes;
 
-    /** Per-vertex influences of skeleton joints for animation. Should either be empty (for
-     * non-animated meshes), or the same size as `MeshDataView::vertices`.
-     */
-    std::span<const Influences> influences;
+    /** Optionally store animation date here; if not present, the mesh has no animations. */
+    Opt<AnimationDataView> animation_data;
 
     /** Optionally store bounding sphere here; otherwise, it will be calculated when needed. */
     Opt<BoundingSphere> bounding_sphere;

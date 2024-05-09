@@ -148,6 +148,16 @@ public:
                           std::span<const MaterialAssignment> material_assignment,
                           const SkinningMatrixPalette& skinning_matrix_palette);
 
+    /** Add a skinned (animated) mesh to be rendered. Convenience overload that handles the
+     * allocation of matrix palette for the caller. See `allocate_skinning_matrix_palette` for
+     * reasons you might want to handle the allocation manually instead.
+     */
+    void add_skinned_mesh(const Mesh& mesh,
+                          const glm::mat4& transform,
+                          const Skeleton& skeleton,
+                          const SkeletonPose& pose,
+                          std::span<const MaterialAssignment> material_assignment);
+
     /** Allocate space for a skinning matrix palette, for use with `add_skinned_mesh`. The matrix
      * palette must be filled with the appropriate skinning matrix data.
      *
@@ -155,10 +165,11 @@ public:
      *
      * @note The reason for this interface -- letting the caller calculate the matrices, instead of
      * just calculating them automatically within this class -- is that the caller can then decide
-     * how and when to perform the calculations. For example, the jobs could then be divided to
-     * multiple threads.
+     * how and when to perform the calculations. For example, you can allocate the palettes for
+     * many meshes at once, and distribute the work of calculating the matrices over multiple
+     * threads.
      */
-    [[nodiscard]] SkinningMatrixPalette allocate_skinning_matrix_palette(uint16_t num_joints);
+    [[nodiscard]] SkinningMatrixPalette allocate_skinning_matrix_palette(const Skeleton& skeleton);
 
     /** Removes all added render commands, resetting the state of the RenderCommandProducer.
      * N.B. it is better to re-use the same RenderCommandProducer and clear each frame than to

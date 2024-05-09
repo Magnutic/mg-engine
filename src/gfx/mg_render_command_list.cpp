@@ -109,9 +109,23 @@ void RenderCommandProducer::add_skinned_mesh(
         as<uint16_t>(skinning_matrix_palette.m_skinning_matrices.size());
 }
 
-SkinningMatrixPalette
-RenderCommandProducer::allocate_skinning_matrix_palette(const uint16_t num_joints)
+void RenderCommandProducer::add_skinned_mesh(
+    const Mesh& mesh,
+    const glm::mat4& transform,
+    const Skeleton& skeleton,
+    const SkeletonPose& pose,
+    std::span<const MaterialAssignment> material_assignment)
 {
+    auto palette = allocate_skinning_matrix_palette(skeleton);
+    calculate_skinning_matrices(transform, skeleton, pose, palette.skinning_matrices());
+    add_skinned_mesh(mesh, transform, material_assignment, palette);
+}
+
+SkinningMatrixPalette
+RenderCommandProducer::allocate_skinning_matrix_palette(const Skeleton& skeleton)
+{
+    const auto num_joints = narrow<uint16_t>(skeleton.joints().size());
+
     const size_t skinning_matrices_begin = m_impl->commands.m_skinning_matrices.size();
     m_impl->commands.m_skinning_matrices.resize(skinning_matrices_begin + num_joints);
 

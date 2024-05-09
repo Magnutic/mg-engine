@@ -48,8 +48,10 @@ public:
             return { nullptr, MeshBuffer::ReturnCode::Index_buffer_full };
         }
 
-        if (mesh_data.influences.size_bytes() + m_influences_buffer_offset >
-            m_influences_buffer_size) {
+        const bool influences_buffer_is_full =
+            mesh_data.animation_data && (mesh_data.animation_data->influences.size_bytes() +
+                                         m_influences_buffer_offset) > m_influences_buffer_size;
+        if (influences_buffer_is_full) {
             return { nullptr, MeshBuffer::ReturnCode::Influences_buffer_full };
         }
 
@@ -58,7 +60,10 @@ public:
 
         m_vertex_buffer_offset += mesh_data.vertices.size_bytes();
         m_index_buffer_offset += mesh_data.indices.size_bytes();
-        m_influences_buffer_offset += mesh_data.influences.size_bytes();
+
+        if (mesh_data.animation_data) {
+            m_influences_buffer_offset += mesh_data.animation_data->influences.size_bytes();
+        }
 
         return { mesh_handle, MeshBuffer::ReturnCode::Success };
     }

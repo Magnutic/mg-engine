@@ -348,9 +348,13 @@ void Scene::load_model(Mg::Identifier mesh_file,
     auto& mesh = entities.collection.add_component<MeshComponent>(entity);
     mesh.mesh = mesh_pool->get_or_load(mesh_file);
 
+    if (mesh.mesh->animation_data) {
+        auto& animation = entities.collection.add_component<AnimationComponent>(entity);
+        animation.pose = mesh.mesh->animation_data->skeleton.get_bind_pose();
+    }
+
     const Mg::ResourceAccessGuard access =
         resource_cache->access_resource<Mg::MeshResource>(mesh_file);
-    mesh.centre = access->bounding_sphere().centre;
 
     // Assign materials to submeshes.
     for (auto&& [submesh_index_or_name, material_fname] : material_files) {
@@ -372,26 +376,6 @@ void Scene::load_model(Mg::Identifier mesh_file,
 
         mesh.material_assignments.push_back(
             { submesh_index, material_pool->get_or_load(material_fname) });
-    }
-
-    // Load animation data, if present.
-    if (!access->joints().empty() && !access->animation_clips().empty()) {
-        auto& animation = entities.collection.add_component<AnimationComponent>(entity);
-
-        animation.skeleton = Mg::gfx::Skeleton{ mesh_file,
-                                                access->skeleton_root_transform(),
-                                                access->joints().size() };
-
-        for (size_t i = 0; i < animation.skeleton.joints().size(); ++i) {
-            animation.skeleton.joints()[i] = access->joints()[i];
-        }
-
-        animation.pose = animation.skeleton.get_bind_pose();
-
-        // Load animation clips, if any.
-        for (const auto& clip : access->animation_clips()) {
-            animation.clips.push_back(clip);
-        }
     }
 }
 
@@ -431,13 +415,15 @@ Mg::ecs::Entity Scene::add_dynamic_object(Mg::Identifier mesh_file,
         const Mg::ResourceAccessGuard access =
             resource_cache->access_resource<Mg::MeshResource>(mesh_file);
 
+        const glm::vec3 centre = access->bounding_sphere().centre;
+
         Mg::physics::DynamicBodyParameters body_params = {};
         body_params.type = Mg::physics::DynamicBodyType::Dynamic;
         body_params.mass = 50.0f;
         body_params.friction = 0.5f;
 
         Mg::physics::Shape* shape =
-            physics_world->create_convex_hull(access->vertices(), mesh.centre, scale);
+            physics_world->create_convex_hull(access->vertices(), centre, scale);
 
         auto dynamic_body =
             physics_world->create_dynamic_body(mesh_file,
@@ -449,7 +435,7 @@ Mg::ecs::Entity Scene::add_dynamic_object(Mg::Identifier mesh_file,
         // Add visualization translation relative to centre of mass.
         // Note unusual order: for once we translate before the scale, since the translation is in
         // model space, not world space.
-        mesh.mesh_transform = glm::scale(scale) * glm::translate(-mesh.centre);
+        mesh.mesh_transform = glm::scale(scale) * glm::translate(-centre);
     }
     else {
         transform.transform = glm::translate(position) * rotation.to_matrix();
@@ -510,7 +496,7 @@ void Scene::render_skeleton_debug_geometry()
         debug_renderer.draw_bones(app.window().render_target,
                                   camera.view_proj_matrix(),
                                   transform.transform * mesh.mesh_transform,
-                                  animation.skeleton,
+                                  mesh.mesh->animation_data->skeleton,
                                   animation.pose);
     }
 }

@@ -4,6 +4,7 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
+#include "mg/gfx/mg_animation.h"
 #include "mg/gfx/mg_mesh_pool.h"
 
 #include "mg/containers/mg_flat_map.h"
@@ -36,6 +37,7 @@ struct MeshPoolImpl {
     plf::colony<SharedBuffer> vertex_buffers;
     plf::colony<SharedBuffer> index_buffers;
     plf::colony<Mesh> mesh_data;
+    plf::colony<AnimationData> animation_data;
 
     // Used for looking up a mesh by identifier.
     FlatMap<Identifier, Mesh*, Identifier::HashCompare> mesh_map;
@@ -99,15 +101,16 @@ inline MakeMeshParams mesh_params_from_mesh_data(MeshPoolImpl& impl,
 {
     MG_GFX_DEBUG_GROUP("MeshPoolImpl::make_mesh_from_mesh_data");
 
-    const bool has_influences = !mesh_data.influences.empty();
+    const bool has_animation_data = mesh_data.animation_data.has_value();
 
     MakeMeshParams params = {};
 
     params.vertex_buffer = make_vertex_buffer(impl, mesh_data.vertices.size_bytes());
     params.index_buffer = make_index_buffer(impl, mesh_data.indices.size_bytes());
-    params.influences_buffer = has_influences
-                                   ? make_vertex_buffer(impl, mesh_data.influences.size_bytes())
-                                   : nullptr;
+    params.influences_buffer =
+        has_animation_data
+            ? make_vertex_buffer(impl, mesh_data.animation_data->influences.size_bytes())
+            : nullptr;
     params.vertex_buffer_data_offset = 0;
     params.index_buffer_data_offset = 0;
     params.influences_buffer_data_offset = 0;
@@ -147,7 +150,12 @@ inline void clear_mesh(MeshPoolImpl& impl, Mesh& mesh)
 
     unref_buffer(mesh.vertex_buffer, impl.vertex_buffers);
     unref_buffer(mesh.index_buffer, impl.index_buffers);
-    unref_buffer(mesh.influences_buffer, impl.vertex_buffers);
+
+    if (mesh.animation_data) {
+        unref_buffer(mesh.animation_data->influences_buffer, impl.vertex_buffers);
+        const auto it = impl.animation_data.get_iterator(mesh.animation_data);
+        impl.animation_data.erase(it);
+    }
 }
 
 inline void
@@ -181,13 +189,26 @@ inline void setup_vertex_attributes(std::span<const VertexAttribute> vertex_attr
     }
 }
 
+inline AnimationData* make_animation_data(MeshPoolImpl& impl,
+                                          const Identifier name,
+                                          const mesh_data::AnimationDataView& data,
+                                          SharedBuffer* influences_buffer)
+{
+    AnimationData& result = *impl.animation_data.emplace();
+    result.clips.resize(data.animation_clips.size());
+    std::ranges::copy(data.animation_clips, result.clips.begin());
+    result.influences_buffer = influences_buffer;
+    ++influences_buffer->num_users;
+    result.skeleton = Skeleton{ name, data.skeleton_root_transform, data.joints.size() };
+    std::ranges::copy(data.joints, result.skeleton.joints().begin());
+    return &result;
+}
+
 // Create mesh GPU buffers inside `mesh` from the data referenced by `params`.
 inline void
 make_mesh_at(MeshPoolImpl& impl, Mesh& mesh, Identifier name, const MakeMeshParams& params)
 {
     MG_GFX_DEBUG_GROUP("MeshPoolImpl::make_mesh_at");
-    const bool has_skeletal_animation_data = !params.mesh_data.influences.empty();
-
     clear_mesh(impl, mesh);
 
     mesh.name = name;
@@ -236,14 +257,19 @@ make_mesh_at(MeshPoolImpl& impl, Mesh& mesh, Identifier name, const MakeMeshPara
 
 
     // For meshes with skeletal animation, we must also upload the joint influences for each vertex.
-    if (has_skeletal_animation_data) {
+    if (params.mesh_data.animation_data.has_value()) {
         MG_ASSERT(params.influences_buffer != nullptr);
 
-        mesh.influences_buffer = params.influences_buffer;
-        ++mesh.influences_buffer->num_users;
+        const auto skeleton_name =
+            Identifier::from_runtime_string(std::string{ name.str_view() } + "_skeleton");
 
-        const auto influences_data = std::as_bytes(params.mesh_data.influences);
-        const auto influences_buffer_id = mesh.influences_buffer->handle.as_gl_id();
+        mesh.animation_data = make_animation_data(impl,
+                                                  skeleton_name,
+                                                  params.mesh_data.animation_data.value(),
+                                                  params.influences_buffer);
+
+        const auto influences_data = std::as_bytes(params.mesh_data.animation_data->influences);
+        const auto influences_buffer_id = mesh.animation_data->influences_buffer->handle.as_gl_id();
 
         glBindBuffer(GL_ARRAY_BUFFER, influences_buffer_id);
         glBufferSubData(GL_ARRAY_BUFFER,

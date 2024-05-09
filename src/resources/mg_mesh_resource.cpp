@@ -289,14 +289,24 @@ MeshResource::~MeshResource() = default;
 
 MeshDataView MeshResource::data_view() const noexcept
 {
-    return {
+    MeshDataView result{
         .vertices = vertices(),
         .indices = indices(),
         .submeshes = submeshes(),
-        .influences = influences(),
+        .animation_data = nullopt,
         .bounding_sphere = bounding_sphere(),
         .aabb = axis_aligned_bounding_box(),
     };
+
+    if (!influences().empty() && !joints().empty()) {
+        result.animation_data.emplace();
+        result.animation_data->influences = influences();
+        result.animation_data->joints = joints();
+        result.animation_data->animation_clips = animation_clips();
+        result.animation_data->skeleton_root_transform = skeleton_root_transform();
+    }
+
+    return result;
 }
 
 std::span<const Vertex> MeshResource::vertices() const noexcept

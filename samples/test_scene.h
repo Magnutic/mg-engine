@@ -3,14 +3,13 @@
 
 #pragma once
 
-#include "mg/ecs/mg_component.h"
-#include "mg/ecs/mg_entity.h"
-#include "mg/utils/mg_interpolate_transform.h"
 #include <mg/containers/mg_array.h>
 #include <mg/containers/mg_flat_map.h>
 #include <mg/core/mg_application_context.h>
 #include <mg/core/mg_config.h>
 #include <mg/core/mg_window.h>
+#include <mg/ecs/mg_component.h>
+#include <mg/ecs/mg_entity.h>
 #include <mg/gfx/mg_animation.h>
 #include <mg/gfx/mg_billboard_renderer.h>
 #include <mg/gfx/mg_bitmap_font.h>
@@ -21,6 +20,7 @@
 #include <mg/gfx/mg_light_grid_config.h>
 #include <mg/gfx/mg_material.h>
 #include <mg/gfx/mg_material_pool.h>
+#include <mg/gfx/mg_mesh.h>
 #include <mg/gfx/mg_mesh_pool.h>
 #include <mg/gfx/mg_mesh_renderer.h>
 #include <mg/gfx/mg_post_process.h>
@@ -36,6 +36,7 @@
 #include <mg/mg_player_controller.h>
 #include <mg/physics/mg_physics.h>
 #include <mg/resource_cache/mg_resource_cache.h>
+#include <mg/utils/mg_interpolate_transform.h>
 #include <mg/utils/mg_optional.h>
 
 #include <variant>
@@ -64,7 +65,6 @@ struct MeshComponent : Mg::ecs::BaseComponent<4> {
     // These probably don't make sense to have in a component. They can be shared among all users of
     // a given mesh.
     Mg::small_vector<Mg::gfx::MaterialAssignment, 10> material_assignments;
-    glm::vec3 centre = glm::vec3(0.0f);
     glm::mat4 mesh_transform = glm::mat4(1.0f);
 };
 
@@ -72,11 +72,6 @@ struct AnimationComponent : Mg::ecs::BaseComponent<5> {
     Mg::Opt<uint32_t> current_clip;
     float time_in_clip = 0.0f;
     Mg::gfx::SkeletonPose pose;
-
-    // These probably don't make sense to have in a component. They can be shared among all users of
-    // a given set of animations.
-    Mg::gfx::Skeleton skeleton;
-    Mg::small_vector<Mg::gfx::Mesh::AnimationClip, 5> clips;
 };
 
 class Entities {
@@ -101,16 +96,17 @@ public:
 
     void animate(const float time)
     {
-        for (auto [entity, animation] : collection.get_with<AnimationComponent>()) {
+        for (auto [entity, mesh, animation] :
+             collection.get_with<MeshComponent, AnimationComponent>()) {
             if (!animation.current_clip.has_value()) {
-                animation.pose = animation.skeleton.get_bind_pose();
+                animation.pose = mesh.mesh->animation_data->skeleton.get_bind_pose();
                 continue;
             }
 
             animation.time_in_clip = time;
 
             const auto clip_index = animation.current_clip.value();
-            Mg::gfx::animate_skeleton(animation.clips[clip_index],
+            Mg::gfx::animate_skeleton(mesh.mesh->animation_data->clips[clip_index],
                                       animation.pose,
                                       animation.time_in_clip);
         }
@@ -129,19 +125,11 @@ public:
                                       mesh.mesh_transform;
 
             if (animation) {
-                const auto num_joints = Mg::narrow<uint16_t>(animation->skeleton.joints().size());
-
-                auto palette = renderlist.allocate_skinning_matrix_palette(num_joints);
-
-                Mg::gfx::calculate_skinning_matrices(interpolated,
-                                                     animation->skeleton,
-                                                     animation->pose,
-                                                     palette.skinning_matrices());
-
                 renderlist.add_skinned_mesh(*mesh.mesh,
                                             interpolated,
-                                            mesh.material_assignments,
-                                            palette);
+                                            mesh.mesh->animation_data->skeleton,
+                                            animation->pose,
+                                            mesh.material_assignments);
             }
             else {
                 renderlist.add_mesh(*mesh.mesh, interpolated, mesh.material_assignments);
