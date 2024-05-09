@@ -1,10 +1,9 @@
 #include "catch.hpp"
-#include "mg/ecs/mg_component.h"
+
+#include <mg/ecs/mg_entity.h>
 
 #include <utility>
 #include <vector>
-
-#include <mg/ecs/mg_entity.h>
 
 struct TestComponent : Mg::ecs::BaseComponent<1> {
     uint32_t value = 0;
@@ -16,16 +15,15 @@ struct Position : Mg::ecs::BaseComponent<2> {
     float y = 0.0f;
 };
 
-struct IndexPairComponent : Mg::ecs::BaseComponent<3> {
-    uint32_t elem1{ 0 };
-    uint32_t elem2{ 0 };
+struct IndexComponent : Mg::ecs::BaseComponent<3> {
+    uint32_t index{ 0 };
 };
 
 TEST_CASE("Entity")
 {
     constexpr static size_t num_elems = 8192;
     Mg::ecs::EntityCollection entity_collection{ num_elems };
-    entity_collection.init<TestComponent, Position, IndexPairComponent>();
+    entity_collection.init<TestComponent, Position, IndexComponent>();
 
     SECTION("constructible") {}
 
@@ -119,6 +117,9 @@ TEST_CASE("Entity")
 
         for (auto [entity, test_component, position] :
              entity_collection.get_with<TestComponent, Position>()) {
+            static_assert(std::is_reference_v<decltype(test_component)>);
+            static_assert(std::is_reference_v<decltype(position)>);
+
             CHECK(entity_collection.has_component<TestComponent>(entity));
             CHECK(entity_collection.has_component<Position>(entity));
 
@@ -146,6 +147,8 @@ TEST_CASE("Entity")
 
         for (auto [entity, test_component] :
              entity_collection.get_with<TestComponent, Mg::ecs::Not<Position>>()) {
+            static_assert(std::is_reference_v<decltype(test_component)>);
+
             CHECK(entity_collection.has_component<TestComponent>(entity));
             CHECK(!entity_collection.has_component<Position>(entity));
 
@@ -171,64 +174,62 @@ TEST_CASE("Entity")
         entity_collection.add_component<Position>(handle3, 5.0f, 5.0f);
         entity_collection.add_component<TestComponent>(handle3, 2u, "handle3");
 
-        size_t num_position_components = 0;
+        size_t num_test_components = 0;
 
         for (auto [entity, test_component, position] :
-             entity_collection.get_with<TestComponent, Mg::ecs::Maybe<Position>>()) {
-            CHECK(entity_collection.has_component<TestComponent>(entity));
+             entity_collection.get_with<Mg::ecs::Maybe<TestComponent>, Position>()) {
+            CHECK(entity_collection.has_component<Position>(entity));
 
-            static_assert(std::is_reference_v<decltype(test_component)>);
-            static_assert(std::is_pointer_v<decltype(position)>);
+            static_assert(std::is_pointer_v<decltype(test_component)>);
+            static_assert(std::is_reference_v<decltype(position)>);
 
-            if (position != nullptr) {
-                ++num_position_components;
-                CHECK(position->x == 4.0f);
-                CHECK(position->y == 4.0f);
+            if (test_component != nullptr) {
+                ++num_test_components;
+                auto& str = test_component->string;
+                CHECK(str.find("handle") != str.npos);
             }
-
-            auto& str = test_component.string;
-            CHECK(str.find("handle") != str.npos);
         }
 
-        CHECK(num_position_components == 1);
+        CHECK(num_test_components == 3);
     }
 
+    SECTION("maximum capacity")
     {
         std::array<Mg::ecs::Entity, num_elems> es;
 
+        // Fill EntityCollection to its maximum capacity.
         for (uint32_t i = 0; i < num_elems; ++i) {
             es[i] = entity_collection.create_entity();
-            const auto u = static_cast<uint32_t>(num_elems - i);
-            entity_collection.add_component<IndexPairComponent>(es[i], i, u);
+            entity_collection.add_component<IndexComponent>(es[i], i);
         }
 
+        // Verify each component is reachable through its entity handle.
         for (uint32_t i = 0; i < num_elems; ++i) {
-            auto& d = entity_collection.get_component<IndexPairComponent>(es[i]);
-            REQUIRE(d.elem1 == i);
-            REQUIRE(d.elem2 == num_elems - i);
+            auto& d = entity_collection.get_component<IndexComponent>(es[i]);
+            REQUIRE(d.index == i);
         }
 
+        // Modify each component
         for (auto cs : entity_collection.get_with()) {
             auto entity = std::get<Mg::ecs::Entity>(cs);
-            CHECK(entity_collection.has_component<IndexPairComponent>(entity));
+            CHECK(entity_collection.has_component<IndexComponent>(entity));
 
-            auto& d = entity_collection.get_component<IndexPairComponent>(entity);
-            uint32_t temp = d.elem1;
-            d.elem1 = d.elem2;
-            d.elem2 = temp;
+            auto& d = entity_collection.get_component<IndexComponent>(entity);
+            d.index = ~d.index;
         }
 
+        // Ensure modifications took place
         for (uint32_t i = 0; i < num_elems; ++i) {
-            auto& d = entity_collection.get_component<IndexPairComponent>(es[i]);
-            REQUIRE(d.elem2 == i);
-            REQUIRE(d.elem1 == num_elems - i);
+            auto& d = entity_collection.get_component<IndexComponent>(es[i]);
+            REQUIRE(d.index == ~i);
         }
 
+        // Check that all entities have the expected component mask.
+        constexpr auto expected_mask = Mg::ecs::ComponentMask{ 1 }
+                                       << IndexComponent::component_type_id;
         for (auto cs : entity_collection.get_with()) {
             auto entity = std::get<Mg::ecs::Entity>(cs);
             auto mask = entity_collection.component_mask(entity);
-            auto expected_mask = Mg::ecs::ComponentMask{ 1 }
-                                 << IndexPairComponent::component_type_id;
             CHECK(mask == expected_mask);
         }
     }
