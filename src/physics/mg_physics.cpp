@@ -226,13 +226,13 @@ private:
 
 class ConvexHullShape : public ShapeBase {
 public:
-    explicit ConvexHullShape(const std::span<const gfx::Mesh::Vertex> vertices,
+    explicit ConvexHullShape(const std::span<const gfx::mesh_data::Vertex> vertices,
                              const vec3& centre_of_mass,
                              const vec3& scale)
     {
         m_bt_shape.setLocalScaling(convert_vector(scale));
 
-        for (const gfx::Mesh::Vertex& vertex : vertices) {
+        for (const gfx::mesh_data::Vertex& vertex : vertices) {
             vec3 position = vertex.position;
             position -= centre_of_mass;
             m_bt_shape.addPoint(convert_vector(position));
@@ -251,7 +251,7 @@ private:
 
 class MeshShape : public ShapeBase {
 public:
-    explicit MeshShape(const gfx::Mesh::MeshDataView& mesh_data)
+    explicit MeshShape(const gfx::mesh_data::MeshDataView& mesh_data)
         : m_vertices{ copy_vertex_positions(mesh_data.vertices) }
         , m_indices{ Array<uint32_t>::make_copy(mesh_data.indices) }
         , m_bt_shape{ prepare_shape() }
@@ -262,7 +262,7 @@ public:
     Type type() const override { return Type::Mesh; }
 
     const Mg::Array<vec3>& vertices() const { return m_vertices; }
-    const Mg::Array<Mg::gfx::Mesh::Index>& indices() const { return m_indices; }
+    const Mg::Array<Mg::gfx::mesh_data::Index>& indices() const { return m_indices; }
 
 private:
     btBvhTriangleMeshShape prepare_shape()
@@ -282,7 +282,7 @@ private:
         return btBvhTriangleMeshShape{ &m_bt_triangle_mesh, true, true };
     }
 
-    static Array<vec3> copy_vertex_positions(std::span<const gfx::Mesh::Vertex> vertices)
+    static Array<vec3> copy_vertex_positions(std::span<const gfx::mesh_data::Vertex> vertices)
     {
         auto result = Array<vec3>::make_for_overwrite(vertices.size());
         for (size_t i = 0; i < result.size(); ++i) {
@@ -901,12 +901,12 @@ Shape* World::create_cone_shape(const float radius, const float height)
     return &*m_impl->cone_shapes.emplace(radius, height);
 }
 
-Shape* World::create_mesh_shape(const gfx::Mesh::MeshDataView& mesh_data)
+Shape* World::create_mesh_shape(const gfx::mesh_data::MeshDataView& mesh_data)
 {
     return &*m_impl->mesh_shapes.emplace(mesh_data);
 }
 
-Shape* World::create_convex_hull(const std::span<const gfx::Mesh::Vertex> vertices,
+Shape* World::create_convex_hull(const std::span<const gfx::mesh_data::Vertex> vertices,
                                  const vec3& centre_of_mass,
                                  const vec3& scale)
 {

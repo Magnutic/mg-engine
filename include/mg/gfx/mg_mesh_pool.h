@@ -47,7 +47,7 @@ public:
     /** Create a new mesh using the given mesh data. Expects that no mesh with the same
      * identifier already exists -- if one does, use update() instead.
      */
-    MeshHandle create(const Mesh::MeshDataView& mesh_data, Identifier name);
+    MeshHandle create(const mesh_data::MeshDataView& mesh_data, Identifier name);
 
     /** Find the mesh with the given name, if such a mesh exists. Otherwise, returns nullopt. */
     Opt<MeshHandle> find(Identifier name) const;
@@ -61,7 +61,7 @@ public:
     /** Update an existing mesh using the given mesh data.
      * Returns true if a mesh was updated; false if no matching mesh existed in the repository.
      */
-    bool update(const Mesh::MeshDataView& mesh_data, Identifier name);
+    bool update(const mesh_data::MeshDataView& mesh_data, Identifier name);
 
     /** Update the mesh that was created from resource.
      * Used for hot-reloading of mesh files.
@@ -72,10 +72,10 @@ public:
     /** Create a mesh buffer of given size. This buffer allows you to create meshes sharing the same
      * underlying GPU storage buffers.
      */
-    MeshBuffer new_mesh_buffer(
-        Mesh::VertexBufferSize vertex_buffer_size,
-        Mesh::IndexBufferSize index_buffer_size,
-        Mesh::InfluencesBufferSize influences_buffer_size = Mesh::InfluencesBufferSize{ 0 });
+    MeshBuffer new_mesh_buffer(mesh_data::VertexBufferSize vertex_buffer_size,
+                               mesh_data::IndexBufferSize index_buffer_size,
+                               mesh_data::InfluencesBufferSize influences_buffer_size =
+                                   mesh_data::InfluencesBufferSize{ 0 });
 
 private:
     ImplPtr<MeshPoolImpl> m_impl;

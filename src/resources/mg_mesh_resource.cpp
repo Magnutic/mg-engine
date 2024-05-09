@@ -20,8 +20,7 @@
 
 namespace Mg {
 
-using namespace gfx::Mesh;
-
+using namespace gfx::mesh_data;
 
 struct MeshResource::Data {
     Array<Vertex> vertices;
@@ -331,9 +330,7 @@ Opt<size_t> MeshResource::get_submesh_index(const Identifier& submesh_name) cons
         return nullopt;
     }
 
-    auto has_matching_name = [&](const gfx::Mesh::Submesh& submesh) {
-        return submesh.name == submesh_name;
-    };
+    auto has_matching_name = [&](const Submesh& submesh) { return submesh.name == submesh_name; };
     const auto [found, index] = index_where(m_data->submeshes, has_matching_name);
 
     return found ? Opt<size_t>(index) : nullopt;

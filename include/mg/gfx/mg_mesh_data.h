@@ -24,7 +24,7 @@
 #include <limits>
 
 /** Definitions related to meshes. */
-namespace Mg::gfx::Mesh {
+namespace Mg::gfx::mesh_data {
 
 //--------------------------------------------------------------------------------------------------
 // Fundamental mesh vertex definitions
@@ -149,4 +149,4 @@ enum class IndexBufferSize : size_t;
  */
 enum class InfluencesBufferSize : size_t;
 
-} // namespace Mg::gfx::Mesh
+} // namespace Mg::gfx::mesh_data

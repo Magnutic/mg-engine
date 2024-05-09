@@ -29,7 +29,7 @@
 
 namespace Mg::gfx {
 
-namespace Mesh {
+namespace mesh_data {
 using Index = uint32_t;
 }
 
@@ -258,9 +258,9 @@ BindMaterialPipelineSettings make_pipeline_settings(const IRenderTarget& render_
 
 void draw_elements(size_t num_elements, size_t starting_element) noexcept
 {
-    const uintptr_t begin = starting_element * sizeof(Mesh::Index);
+    const uintptr_t begin = starting_element * sizeof(mesh_data::Index);
 
-    static_assert(std::is_same_v<gfx::Mesh::Index, uint32_t>,
+    static_assert(std::is_same_v<gfx::mesh_data::Index, uint32_t>,
                   "Vertex index type must match enum value below.");
     constexpr GLenum gl_index_type = GL_UNSIGNED_INT;
 

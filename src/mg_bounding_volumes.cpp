@@ -11,7 +11,7 @@
 
 namespace Mg {
 
-using namespace Mg::gfx::Mesh;
+using namespace Mg::gfx::mesh_data;
 
 namespace {
 float calculate_radius(const glm::vec3 centre, const std::span<const Vertex> vertices)

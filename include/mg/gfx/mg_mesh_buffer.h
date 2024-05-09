@@ -47,7 +47,7 @@ public:
     CreateReturn create_in_buffer(const MeshResource& resource);
 
     /** Try to create a new mesh in this buffer using the given mesh data. */
-    CreateReturn create_in_buffer(const Mesh::MeshDataView& mesh_data, Identifier name);
+    CreateReturn create_in_buffer(const mesh_data::MeshDataView& mesh_data, Identifier name);
 
     class Impl;
 
@@ -55,9 +55,9 @@ private:
     friend class MeshPool;
 
     MeshBuffer(MeshPoolImpl& mesh_pool,
-               Mesh::VertexBufferSize vertex_buffer_size,
-               Mesh::IndexBufferSize index_buffer_size,
-               Mesh::InfluencesBufferSize influences_buffer_size);
+               mesh_data::VertexBufferSize vertex_buffer_size,
+               mesh_data::IndexBufferSize index_buffer_size,
+               mesh_data::InfluencesBufferSize influences_buffer_size);
 
     ImplPtr<Impl> m_impl;
 };

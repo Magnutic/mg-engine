@@ -19,32 +19,34 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 
-namespace Mg::gfx::Mesh {
+namespace Mg::gfx::mesh_data {
 struct AnimationChannel;
 struct AnimationClip;
-} // namespace Mg::gfx::Mesh
+} // namespace Mg::gfx::mesh_data
 
 namespace Mg::gfx {
 
 struct SkeletonPose;
 
 /** A skeleton is a posable structure that is used to animate a mesh. It is defined as a tree of
- * Mg::gfx::Mesh::Joint instances.
+ * Mg::gfx::mesh_data::Joint instances.
  */
 class Skeleton {
 public:
     Skeleton() = default;
 
     explicit Skeleton(const Identifier id, const glm::mat4& root_transform, const size_t num_joints)
-        : m_id(id), m_joints(Array<Mesh::Joint>::make(num_joints)), m_root_transform(root_transform)
+        : m_id(id)
+        , m_joints(Array<mesh_data::Joint>::make(num_joints))
+        , m_root_transform(root_transform)
     {}
 
     Identifier id() const { return m_id; }
 
-    std::span<Mesh::Joint> joints() { return m_joints; }
-    std::span<const Mesh::Joint> joints() const { return m_joints; }
+    std::span<mesh_data::Joint> joints() { return m_joints; }
+    std::span<const mesh_data::Joint> joints() const { return m_joints; }
 
-    Opt<Mesh::JointId> find_joint(Identifier joint_name) const;
+    Opt<mesh_data::JointId> find_joint(Identifier joint_name) const;
 
     const glm::mat4& root_transform() const { return m_root_transform; }
 
@@ -54,7 +56,7 @@ public:
 
 private:
     Identifier m_id;
-    Array<Mesh::Joint> m_joints;
+    Array<mesh_data::Joint> m_joints;
     glm::mat4 m_root_transform = glm::mat4(1.0f);
 };
 
@@ -105,11 +107,13 @@ bool calculate_pose_transformations(const Skeleton& skeleton,
                                     const SkeletonPose& pose,
                                     std::span<glm::mat4> matrices_out);
 
-void animate_joint(const Mesh::AnimationChannel& animation_channel,
+void animate_joint(const mesh_data::AnimationChannel& animation_channel,
                    double time_seconds,
                    JointPose& joint_pose_out);
 
-void animate_skeleton(const Mesh::AnimationClip& clip, SkeletonPose& pose, double time_seconds);
+void animate_skeleton(const mesh_data::AnimationClip& clip,
+                      SkeletonPose& pose,
+                      double time_seconds);
 
 void blend_joint_poses(const JointPose& first,
                        const JointPose& second,

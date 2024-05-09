@@ -376,10 +376,10 @@ mesh_renderer_vertex_shader_framework_code(const MeshRendererFrameworkShaderPara
     // Add #defines for vertex attribute binding locations.
     {
         std::vector<VertexAttributeBinding> bindings;
-        std::ranges::transform(Mesh::vertex_attributes,
+        std::ranges::transform(mesh_data::vertex_attributes,
                                std::back_inserter(bindings),
                                from_vertex_attribute);
-        std::ranges::transform(Mesh::influences_attributes,
+        std::ranges::transform(mesh_data::influences_attributes,
                                std::back_inserter(bindings),
                                from_vertex_attribute);
         bindings.push_back({ "MATRIX_INDEX", params.matrix_index_vertex_attrib_binding_location });

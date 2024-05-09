@@ -16,7 +16,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/vec3.hpp>
 
-namespace Mg::gfx::Mesh {
+namespace Mg::gfx::mesh_data {
 
 struct PositionKey {
     double time;
@@ -45,4 +45,4 @@ struct AnimationClip {
     float duration_seconds = 0.0;
 };
 
-} // namespace Mg::gfx::Mesh
+} // namespace Mg::gfx::mesh_data

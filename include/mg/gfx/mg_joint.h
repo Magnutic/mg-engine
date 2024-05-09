@@ -18,7 +18,7 @@
 #include <array>
 #include <cstdint>
 
-namespace Mg::gfx::Mesh {
+namespace Mg::gfx::mesh_data {
 
 /** Identifier for a joint (used for animated meshes). */
 using JointId = uint8_t;
@@ -68,4 +68,4 @@ struct Joint {
     Identifier name;
 };
 
-} // namespace Mg::gfx::Mesh
+} // namespace Mg::gfx::mesh_data

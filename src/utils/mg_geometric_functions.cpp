@@ -66,10 +66,10 @@ bool line_segments_intersect(const glm::vec3 start_1,
 }
 
 bool edges_intersect(const PolygonDataView& data,
-                     const gfx::Mesh::Index start_1_index,
-                     const gfx::Mesh::Index end_1_index,
-                     const gfx::Mesh::Index start_2_index,
-                     const gfx::Mesh::Index end_2_index)
+                     const gfx::mesh_data::Index start_1_index,
+                     const gfx::mesh_data::Index end_1_index,
+                     const gfx::mesh_data::Index start_2_index,
+                     const gfx::mesh_data::Index end_2_index)
 {
     const auto start_1 = position(data, start_1_index);
     const auto end_1 = position(data, end_1_index);
@@ -78,13 +78,13 @@ bool edges_intersect(const PolygonDataView& data,
     return line_segments_intersect(start_1, end_1, start_2, end_2);
 }
 
-void calculate_triangles(PolygonDataView data, std::vector<gfx::Mesh::Index>& triangles_out)
+void calculate_triangles(PolygonDataView data, std::vector<gfx::mesh_data::Index>& triangles_out)
 {
     if (data.polygon.size() < 3) {
         return;
     }
 
-    std::vector<std::pair<gfx::Mesh::Index, bool /* is_ear */>> unhandled;
+    std::vector<std::pair<gfx::mesh_data::Index, bool /* is_ear */>> unhandled;
     unhandled.reserve(data.polygon.size());
     for (const auto index : data.polygon) {
         unhandled.emplace_back(index, false);
@@ -96,9 +96,9 @@ void calculate_triangles(PolygonDataView data, std::vector<gfx::Mesh::Index>& tr
         const uint32_t prev = previous_index(unhandled_index, num_unhandled);
         const uint32_t next = next_index(unhandled_index, num_unhandled);
 
-        const gfx::Mesh::Index prev_vertex_index = unhandled[prev].first;
-        const gfx::Mesh::Index this_vertex_index = unhandled[unhandled_index].first;
-        const gfx::Mesh::Index next_vertex_index = unhandled[next].first;
+        const gfx::mesh_data::Index prev_vertex_index = unhandled[prev].first;
+        const gfx::mesh_data::Index this_vertex_index = unhandled[unhandled_index].first;
+        const gfx::mesh_data::Index next_vertex_index = unhandled[next].first;
 
         if (triangle_orientation(data.vertices[prev_vertex_index].position,
                                  data.vertices[this_vertex_index].position,
@@ -114,8 +114,8 @@ void calculate_triangles(PolygonDataView data, std::vector<gfx::Mesh::Index>& tr
                 continue;
             }
 
-            const gfx::Mesh::Index edge_start_vertex_index = unhandled[edge_start].first;
-            const gfx::Mesh::Index edge_end_vertex_index = unhandled[edge_end].first;
+            const gfx::mesh_data::Index edge_start_vertex_index = unhandled[edge_start].first;
+            const gfx::mesh_data::Index edge_end_vertex_index = unhandled[edge_end].first;
 
             if (edges_intersect(data,
                                 prev_vertex_index,

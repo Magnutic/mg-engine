@@ -18,9 +18,9 @@ namespace Mg::gfx {
 class MeshBuffer::Impl {
 public:
     Impl(MeshPoolImpl& pool_impl,
-         Mesh::VertexBufferSize vertex_buffer_size,
-         Mesh::IndexBufferSize index_buffer_size,
-         Mesh::InfluencesBufferSize influences_buffer_size)
+         mesh_data::VertexBufferSize vertex_buffer_size,
+         mesh_data::IndexBufferSize index_buffer_size,
+         mesh_data::InfluencesBufferSize influences_buffer_size)
         : m_pool_impl(&pool_impl)
         , m_vertex_buffer_size(static_cast<size_t>(vertex_buffer_size))
         , m_index_buffer_size(static_cast<size_t>(index_buffer_size))
@@ -35,7 +35,8 @@ public:
         MG_ASSERT(m_index_buffer_size > 0);
     }
 
-    MeshBuffer::CreateReturn create_in_buffer(const Mesh::MeshDataView& mesh_data, Identifier name)
+    MeshBuffer::CreateReturn create_in_buffer(const mesh_data::MeshDataView& mesh_data,
+                                              Identifier name)
     {
         MG_GFX_DEBUG_GROUP("MeshBuffer::Impl::create");
 
@@ -84,9 +85,9 @@ private:
 //--------------------------------------------------------------------------------------------------
 
 MeshBuffer::MeshBuffer(MeshPoolImpl& mesh_pool,
-                       Mesh::VertexBufferSize vertex_buffer_size,
-                       Mesh::IndexBufferSize index_buffer_size,
-                       Mesh::InfluencesBufferSize influences_buffer_size)
+                       mesh_data::VertexBufferSize vertex_buffer_size,
+                       mesh_data::IndexBufferSize index_buffer_size,
+                       mesh_data::InfluencesBufferSize influences_buffer_size)
     : m_impl(mesh_pool, vertex_buffer_size, index_buffer_size, influences_buffer_size)
 {}
 
@@ -95,7 +96,7 @@ MeshBuffer::CreateReturn MeshBuffer::create_in_buffer(const MeshResource& resour
     return m_impl->create_in_buffer(resource.data_view(), resource.resource_id());
 }
 
-MeshBuffer::CreateReturn MeshBuffer::create_in_buffer(const Mesh::MeshDataView& mesh_data,
+MeshBuffer::CreateReturn MeshBuffer::create_in_buffer(const mesh_data::MeshDataView& mesh_data,
                                                       Identifier name)
 {
     return m_impl->create_in_buffer(mesh_data, name);

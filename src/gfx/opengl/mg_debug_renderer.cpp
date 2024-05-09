@@ -460,10 +460,10 @@ void DebugRenderer::draw_bones(const IRenderTarget& render_target,
     };
 
     auto draw_bones_impl = [&](const vec4& parent_position,
-                               const Mesh::JointId parent_joint_id,
-                               const Mesh::JointId joint_id,
+                               const mesh_data::JointId parent_joint_id,
+                               const mesh_data::JointId joint_id,
                                auto&& recurse) -> void {
-        const bool is_root_joint = parent_joint_id == Mesh::joint_id_none;
+        const bool is_root_joint = parent_joint_id == mesh_data::joint_id_none;
 
         const mat4 matrix = M * joint_poses.at(joint_id);
         draw_joint_axes(matrix);
@@ -474,14 +474,14 @@ void DebugRenderer::draw_bones(const IRenderTarget& render_target,
                 render_target, view_proj, parent_position, position, bone_colour, bone_line_width);
         }
 
-        for (const Mesh::JointId child_id : skeleton.joints()[joint_id].children) {
-            if (child_id != Mesh::joint_id_none) {
+        for (const mesh_data::JointId child_id : skeleton.joints()[joint_id].children) {
+            if (child_id != mesh_data::joint_id_none) {
                 recurse(position, joint_id, child_id, recurse);
             }
         }
     };
 
-    draw_bones_impl({}, Mesh::joint_id_none, 0, draw_bones_impl);
+    draw_bones_impl({}, mesh_data::joint_id_none, 0, draw_bones_impl);
 }
 
 void DebugRenderer::draw_view_frustum(const IRenderTarget& render_target,

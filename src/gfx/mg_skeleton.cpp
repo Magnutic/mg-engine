@@ -53,12 +53,12 @@ JointPose affine_matrix_to_pose(const glm::mat4x4 m)
 }
 
 void calculate_pose_transformations_impl(const glm::mat4& parent_to_model,
-                                         const Mesh::JointId current,
-                                         const std::span<const Mesh::Joint> joints,
+                                         const mesh_data::JointId current,
+                                         const std::span<const mesh_data::Joint> joints,
                                          const std::span<const JointPose> joint_poses,
                                          const std::span<glm::mat4> matrices_out)
 {
-    if (current == Mesh::joint_id_none) {
+    if (current == mesh_data::joint_id_none) {
         return;
     }
 
@@ -69,7 +69,7 @@ void calculate_pose_transformations_impl(const glm::mat4& parent_to_model,
     const glm::mat4 joint_to_parent = pose_to_matrix(joint_poses[current]);
     matrices_out[current] = parent_to_model * joint_to_parent;
 
-    for (const Mesh::JointId& child : joints[current].children) {
+    for (const mesh_data::JointId& child : joints[current].children) {
         calculate_pose_transformations_impl(matrices_out[current],
                                             child,
                                             joints,
@@ -79,11 +79,11 @@ void calculate_pose_transformations_impl(const glm::mat4& parent_to_model,
 }
 
 void get_bind_pose_impl(const glm::mat4& inverse_parent_transformation,
-                        const Mesh::JointId current,
-                        const std::span<const Mesh::Joint> joints,
+                        const mesh_data::JointId current,
+                        const std::span<const mesh_data::Joint> joints,
                         const std::span<JointPose> joint_poses)
 {
-    if (current == Mesh::joint_id_none) {
+    if (current == mesh_data::joint_id_none) {
         return;
     }
 
@@ -95,17 +95,17 @@ void get_bind_pose_impl(const glm::mat4& inverse_parent_transformation,
     const glm::mat4 joint_to_parent_joint = model_to_parent_joint * joint_to_model;
     joint_poses[current] = affine_matrix_to_pose(joint_to_parent_joint);
 
-    for (const Mesh::JointId& child : joints[current].children) {
+    for (const mesh_data::JointId& child : joints[current].children) {
         get_bind_pose_impl(joints[current].inverse_bind_matrix, child, joints, joint_poses);
     }
 }
 
 } // namespace
 
-Opt<Mesh::JointId> Skeleton::find_joint(Identifier joint_name) const
+Opt<mesh_data::JointId> Skeleton::find_joint(Identifier joint_name) const
 {
-    Mesh::JointId id = 0;
-    for (const Mesh::Joint& joint : m_joints) {
+    mesh_data::JointId id = 0;
+    for (const mesh_data::Joint& joint : m_joints) {
         if (joint.name == joint_name) {
             return id;
         }
@@ -143,7 +143,7 @@ bool calculate_skinning_matrices(const glm::mat4& transform,
         return false;
     }
 
-    const std::span<const Mesh::Joint> joints = skeleton.joints();
+    const std::span<const mesh_data::Joint> joints = skeleton.joints();
 
     // At this point, skinning_matrices_out contains the accumulated pose (joint space to
     // model space) transformation, not the skinning (model space to model space) transformation.
@@ -204,7 +204,7 @@ bool calculate_pose_transformations(const Skeleton& skeleton,
     return true;
 }
 
-void animate_joint(const Mesh::AnimationChannel& animation_channel,
+void animate_joint(const mesh_data::AnimationChannel& animation_channel,
                    double time_seconds,
                    JointPose& joint_pose_out)
 
@@ -259,7 +259,7 @@ void animate_joint(const Mesh::AnimationChannel& animation_channel,
     }
 }
 
-void animate_skeleton(const Mesh::AnimationClip& clip, SkeletonPose& pose, double time_seconds)
+void animate_skeleton(const mesh_data::AnimationClip& clip, SkeletonPose& pose, double time_seconds)
 {
     MG_ASSERT(clip.channels.size() == pose.joint_poses.size());
     time_seconds = std::fmod(time_seconds, clip.duration_seconds);

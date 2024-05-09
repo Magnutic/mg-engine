@@ -53,7 +53,7 @@ MeshHandle MeshPool::get_or_load(Identifier resource_id)
     return create(access->data_view(), access->resource_id());
 }
 
-MeshHandle MeshPool::create(const Mesh::MeshDataView& mesh_data, Identifier name)
+MeshHandle MeshPool::create(const mesh_data::MeshDataView& mesh_data, Identifier name)
 {
     MG_GFX_DEBUG_GROUP("MeshPool::create")
     return ::Mg::gfx::create(*m_impl, mesh_data, name);
@@ -70,7 +70,7 @@ void MeshPool::destroy(MeshHandle handle)
     ::Mg::gfx::destroy(*m_impl, handle);
 }
 
-bool MeshPool::update(const Mesh::MeshDataView& mesh_data, Identifier name)
+bool MeshPool::update(const mesh_data::MeshDataView& mesh_data, Identifier name)
 {
     MG_GFX_DEBUG_GROUP("MeshPool::update")
 
@@ -96,9 +96,9 @@ bool MeshPool::update(const MeshResource& mesh_res)
     return update(mesh_res.data_view(), mesh_res.resource_id());
 }
 
-MeshBuffer MeshPool::new_mesh_buffer(Mesh::VertexBufferSize vertex_buffer_size,
-                                     Mesh::IndexBufferSize index_buffer_size,
-                                     Mesh::InfluencesBufferSize influences_buffer_size)
+MeshBuffer MeshPool::new_mesh_buffer(mesh_data::VertexBufferSize vertex_buffer_size,
+                                     mesh_data::IndexBufferSize index_buffer_size,
+                                     mesh_data::InfluencesBufferSize influences_buffer_size)
 {
     MG_GFX_DEBUG_GROUP("MeshPool::new_mesh_buffer")
     return MeshBuffer{ *m_impl, vertex_buffer_size, index_buffer_size, influences_buffer_size };

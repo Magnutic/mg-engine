@@ -19,7 +19,7 @@
 
 #include <memory>
 
-namespace Mg::gfx::Mesh {
+namespace Mg::gfx::mesh_data {
 struct Vertex;
 struct JointData;
 struct Submesh;
@@ -27,7 +27,7 @@ struct Joint;
 struct Influences;
 struct MeshDataView;
 using Index = uint32_t;
-} // namespace Mg::gfx::Mesh
+} // namespace Mg::gfx::mesh_data
 
 namespace Mg {
 
@@ -42,14 +42,14 @@ public:
     MG_MAKE_DEFAULT_MOVABLE(MeshResource);
     MG_MAKE_NON_COPYABLE(MeshResource);
 
-    gfx::Mesh::MeshDataView data_view() const noexcept;
+    gfx::mesh_data::MeshDataView data_view() const noexcept;
 
-    std::span<const gfx::Mesh::Vertex> vertices() const noexcept;
-    std::span<const gfx::Mesh::Index> indices() const noexcept;
-    std::span<const gfx::Mesh::Submesh> submeshes() const noexcept;
-    std::span<const gfx::Mesh::Influences> influences() const noexcept;
-    std::span<const gfx::Mesh::Joint> joints() const noexcept;
-    std::span<const gfx::Mesh::AnimationClip> animation_clips() const noexcept;
+    std::span<const gfx::mesh_data::Vertex> vertices() const noexcept;
+    std::span<const gfx::mesh_data::Index> indices() const noexcept;
+    std::span<const gfx::mesh_data::Submesh> submeshes() const noexcept;
+    std::span<const gfx::mesh_data::Influences> influences() const noexcept;
+    std::span<const gfx::mesh_data::Joint> joints() const noexcept;
+    std::span<const gfx::mesh_data::AnimationClip> animation_clips() const noexcept;
 
     Opt<size_t> get_submesh_index(const Identifier& submesh_name) const noexcept;
 

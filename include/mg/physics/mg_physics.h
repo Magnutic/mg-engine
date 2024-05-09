@@ -29,10 +29,10 @@ class ICamera;
 class IRenderTarget;
 } // namespace Mg::gfx
 
-namespace Mg::gfx::Mesh {
+namespace Mg::gfx::mesh_data {
 struct MeshDataView;
 struct Vertex;
-} // namespace Mg::gfx::Mesh
+} // namespace Mg::gfx::mesh_data
 
 /** Collision detection and rigid-body physics. */
 namespace Mg::physics {
@@ -436,10 +436,10 @@ public:
     // TODO: scaled instanced mesh shapes
     // IDEA: merge all world meshes into a big mesh, possibly split into tiles, and use it for
     // physics.
-    Shape* create_mesh_shape(const gfx::Mesh::MeshDataView& mesh_data);
+    Shape* create_mesh_shape(const gfx::mesh_data::MeshDataView& mesh_data);
 
     // TODO: generate convex hull in mesh converter.
-    Shape* create_convex_hull(std::span<const gfx::Mesh::Vertex> vertices,
+    Shape* create_convex_hull(std::span<const gfx::mesh_data::Vertex> vertices,
                               const glm::vec3& centre_of_mass,
                               const glm::vec3& scale);
 

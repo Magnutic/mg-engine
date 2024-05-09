@@ -51,7 +51,7 @@ struct MakeMeshParams {
     size_t influences_buffer_data_offset;
 
     // Data itself
-    Mesh::MeshDataView mesh_data;
+    mesh_data::MeshDataView mesh_data;
     BoundingSphere bounding_sphere;
     AxisAlignedBoundingBox aabb;
 };
@@ -95,7 +95,7 @@ inline Opt<MeshHandle> find(const MeshPoolImpl& impl, Identifier name)
 }
 
 inline MakeMeshParams mesh_params_from_mesh_data(MeshPoolImpl& impl,
-                                                 const Mesh::MeshDataView& mesh_data)
+                                                 const mesh_data::MeshDataView& mesh_data)
 {
     MG_GFX_DEBUG_GROUP("MeshPoolImpl::make_mesh_from_mesh_data");
 
@@ -194,7 +194,7 @@ make_mesh_at(MeshPoolImpl& impl, MeshInternal& mesh, Identifier name, const Make
     mesh.bounding_sphere = params.bounding_sphere;
     mesh.aabb = params.aabb;
 
-    for (const Mesh::Submesh& sm : params.mesh_data.submeshes) {
+    for (const mesh_data::Submesh& sm : params.mesh_data.submeshes) {
         mesh.submeshes.push_back({ sm.index_range.begin, sm.index_range.amount });
     }
 
@@ -217,7 +217,7 @@ make_mesh_at(MeshPoolImpl& impl, MeshInternal& mesh, Identifier name, const Make
                         as<GLsizeiptr>(vertex_data.size()),
                         vertex_data.data());
 
-        setup_vertex_attributes(Mesh::vertex_attributes);
+        setup_vertex_attributes(mesh_data::vertex_attributes);
     }
 
     { // Upload index data to GPU
@@ -251,7 +251,7 @@ make_mesh_at(MeshPoolImpl& impl, MeshInternal& mesh, Identifier name, const Make
                         as<GLsizeiptr>(influences_data.size()),
                         influences_data.data());
 
-        setup_vertex_attributes(Mesh::influences_attributes);
+        setup_vertex_attributes(mesh_data::influences_attributes);
     }
 
     glBindVertexArray(0);
@@ -278,7 +278,8 @@ inline MeshHandle make_mesh(MeshPoolImpl& impl, Identifier name, const MakeMeshP
                         name.str_view() };
 }
 
-inline MeshHandle create(MeshPoolImpl& impl, const Mesh::MeshDataView& mesh_data, Identifier name)
+inline MeshHandle
+create(MeshPoolImpl& impl, const mesh_data::MeshDataView& mesh_data, Identifier name)
 {
     MG_GFX_DEBUG_GROUP("MeshPoolImpl::create");
 

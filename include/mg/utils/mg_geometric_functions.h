@@ -24,21 +24,21 @@ namespace Mg {
 
 /** Non-owning view over data for a polygon. */
 struct PolygonDataView {
-    std::span<const gfx::Mesh::Vertex> vertices;
-    std::span<const gfx::Mesh::Index> polygon;
+    std::span<const gfx::mesh_data::Vertex> vertices;
+    std::span<const gfx::mesh_data::Index> polygon;
 };
 
 /** Get position for a vertex in the polygon. */
-inline glm::vec3 position(const PolygonDataView& data, gfx::Mesh::Index index)
+inline glm::vec3 position(const PolygonDataView& data, gfx::mesh_data::Index index)
 {
     return data.vertices[index].position;
 }
 
 /** Get signed angle between line bc to ba. */
 inline Angle vertex_angle(const PolygonDataView& data,
-                          gfx::Mesh::Index a,
-                          gfx::Mesh::Index b,
-                          gfx::Mesh::Index c)
+                          gfx::mesh_data::Index a,
+                          gfx::mesh_data::Index b,
+                          gfx::mesh_data::Index c)
 {
     const auto& pos_a = data.vertices[a].position;
     const auto& pos_b = data.vertices[b].position;
@@ -106,21 +106,21 @@ bool line_segments_intersect(glm::vec3 start_1,
  * a polygon, would intersect.
  */
 bool edges_intersect(const PolygonDataView& data,
-                     gfx::Mesh::Index start_1_index,
-                     gfx::Mesh::Index end_1_index,
-                     gfx::Mesh::Index start_2_index,
-                     gfx::Mesh::Index end_2_index);
+                     gfx::mesh_data::Index start_1_index,
+                     gfx::mesh_data::Index end_1_index,
+                     gfx::mesh_data::Index start_2_index,
+                     gfx::mesh_data::Index end_2_index);
 
 /** Get whether a vertex within a polygon is convex. */
 inline bool is_convex_vertex(const PolygonDataView& data,
-                             const gfx::Mesh::Index prev,
-                             const gfx::Mesh::Index current,
-                             const gfx::Mesh::Index next)
+                             const gfx::mesh_data::Index prev,
+                             const gfx::mesh_data::Index current,
+                             const gfx::mesh_data::Index next)
 {
     return vertex_angle(data, prev, current, next).radians() < 0.0f;
 }
 
 /** Triangulation using the ear-clipping algorithm. */
-void calculate_triangles(PolygonDataView data, std::vector<gfx::Mesh::Index>& triangles_out);
+void calculate_triangles(PolygonDataView data, std::vector<gfx::mesh_data::Index>& triangles_out);
 
 } // namespace Mg

@@ -28,23 +28,23 @@ namespace Mg::MeshResourceData {
 constexpr uint32_t fourcc = 0x444D474Du; // MGMD
 constexpr uint32_t version = 2;          // Current version of the file format.
 
-using gfx::Mesh::joint_id_none;
-using gfx::Mesh::max_num_children_per_joint;
-using gfx::Mesh::max_vertices_per_mesh;
-using gfx::Mesh::num_influences_per_vertex;
+using gfx::mesh_data::joint_id_none;
+using gfx::mesh_data::max_num_children_per_joint;
+using gfx::mesh_data::max_vertices_per_mesh;
+using gfx::mesh_data::num_influences_per_vertex;
 
-using gfx::Mesh::Index;
-using gfx::Mesh::Influences;
-using gfx::Mesh::JointChildren;
-using gfx::Mesh::JointId;
-using gfx::Mesh::JointIds;
-using gfx::Mesh::JointWeights;
-using gfx::Mesh::SubmeshRange;
-using gfx::Mesh::Vertex;
+using gfx::mesh_data::Index;
+using gfx::mesh_data::Influences;
+using gfx::mesh_data::JointChildren;
+using gfx::mesh_data::JointId;
+using gfx::mesh_data::JointIds;
+using gfx::mesh_data::JointWeights;
+using gfx::mesh_data::SubmeshRange;
+using gfx::mesh_data::Vertex;
 
-using gfx::Mesh::PositionKey;
-using gfx::Mesh::RotationKey;
-using gfx::Mesh::ScaleKey;
+using gfx::mesh_data::PositionKey;
+using gfx::mesh_data::RotationKey;
+using gfx::mesh_data::ScaleKey;
 
 struct Header {
     uint32_t four_cc;
@@ -81,7 +81,7 @@ struct Submesh {
 struct Joint {
     StringRange name;
     glm::mat4 inverse_bind_matrix{ 0.0f };
-    gfx::Mesh::JointChildren children = {};
+    JointChildren children = {};
 };
 
 struct AnimationClip {
