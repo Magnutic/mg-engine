@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2022, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2024, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -10,9 +10,9 @@
 
 #pragma once
 
+#include "mg/gfx/mg_mesh_buffer.h"
 #include "mg/gfx/mg_mesh_data.h"
 #include "mg/gfx/mg_mesh_handle.h"
-#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_optional.h"
@@ -29,23 +29,7 @@ namespace Mg::gfx {
 
 class MeshBuffer;
 
-/** Strongly typed size type for vertex buffers, specified in number of bytes.
- * Can be cast to and from size_t using static_cast.
- * Can also be constructed directly, for example: `VertexBufferSize{ 512 }`
- */
-enum class VertexBufferSize : size_t;
-
-/** Strongly typed size type for vertex index buffers, specified in number of bytes.
- * Can be cast to and from size_t using static_cast.
- * Can also be constructed directly, for example: `IndexBufferSize{ 512 }`
- */
-enum class IndexBufferSize : size_t;
-
-/** Strongly typed size type for vertex influences buffers, specified in number of bytes.
- * Can be cast to and from size_t using static_cast.
- * Can also be constructed directly, for example: `InfluencesBufferSize{ 512 }`
- */
-enum class InfluencesBufferSize : size_t;
+struct MeshPoolImpl;
 
 /** Creates, stores, and updates meshes. */
 class MeshPool {
@@ -88,56 +72,13 @@ public:
     /** Create a mesh buffer of given size. This buffer allows you to create meshes sharing the same
      * underlying GPU storage buffers.
      */
-    MeshBuffer new_mesh_buffer(VertexBufferSize vertex_buffer_size,
-                               IndexBufferSize index_buffer_size,
-                               InfluencesBufferSize influences_buffer_size = InfluencesBufferSize{
-                                   0 });
-
-    struct Impl;
+    MeshBuffer new_mesh_buffer(
+        Mesh::VertexBufferSize vertex_buffer_size,
+        Mesh::IndexBufferSize index_buffer_size,
+        Mesh::InfluencesBufferSize influences_buffer_size = Mesh::InfluencesBufferSize{ 0 });
 
 private:
-    ImplPtr<Impl> m_impl;
-};
-
-//--------------------------------------------------------------------------------------------------
-
-/** MeshBuffer allows creating meshes within pre-allocated buffers on the GPU. This is useful for
- * performance reasons -- keeping meshes that are often used together in the same buffer may result
- * in better performance.
- *
- * Construct using Mg::MeshPool::new_mesh_buffer()
- */
-class MeshBuffer {
-public:
-    enum class ReturnCode {
-        Success,
-        Vertex_buffer_full,
-        Index_buffer_full,
-        Influences_buffer_full
-    };
-
-    struct CreateReturn {
-        Opt<MeshHandle> opt_mesh;
-        ReturnCode return_code;
-    };
-
-    /** Try to create a new mesh in this buffer using the given mesh resource. */
-    CreateReturn create_in_buffer(const MeshResource& resource);
-
-    /** Try to create a new mesh in this buffer using the given mesh data. */
-    CreateReturn create_in_buffer(const Mesh::MeshDataView& mesh_data, Identifier name);
-
-    class Impl;
-
-private:
-    friend class MeshPool;
-
-    MeshBuffer(MeshPool::Impl& mesh_pool,
-               VertexBufferSize vertex_buffer_size,
-               IndexBufferSize index_buffer_size,
-               InfluencesBufferSize influences_buffer_size);
-
-    ImplPtr<Impl> m_impl;
+    ImplPtr<MeshPoolImpl> m_impl;
 };
 
 } // namespace Mg::gfx

@@ -28,6 +28,8 @@ add_library(mg_engine
     gfx/mg_material.cpp
     gfx/mg_material_pool.cpp
     gfx/mg_matrix_uniform_handler.cpp
+    gfx/mg_mesh_buffer.cpp
+    gfx/mg_mesh_pool.cpp
     gfx/mg_render_command_list.cpp
     gfx/mg_skeleton.cpp
     gfx/mg_texture_pool.cpp
@@ -38,7 +40,6 @@ add_library(mg_engine
     gfx/opengl/mg_gfx_debug_group.cpp
     gfx/opengl/mg_gfx_device.cpp
     gfx/opengl/mg_gl_debug.cpp
-    gfx/opengl/mg_mesh_pool.cpp
     gfx/opengl/mg_mesh_renderer.cpp
     gfx/opengl/mg_opengl_shader.cpp
     gfx/opengl/mg_pipeline.cpp
