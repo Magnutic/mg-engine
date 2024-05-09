@@ -120,39 +120,33 @@ public:
     void add_meshes_to_render_list(Mg::gfx::RenderCommandProducer& renderlist,
                                    const float lerp_factor)
     {
-        // Non-animated meshes.
-        for (auto [entity, transform, mesh] :
-             collection
-                 .get_with<TransformComponent, MeshComponent, Mg::ecs::Not<AnimationComponent>>()) {
-            const auto interpolated = Mg::interpolate_transforms(transform.previous_transform,
-                                                                 transform.transform,
-                                                                 lerp_factor) *
-                                      mesh.mesh_transform;
-
-            renderlist.add_mesh(mesh.mesh, interpolated, mesh.material_assignments);
-        }
-
-        // Animated meshes.
         for (auto [entity, transform, mesh, animation] :
-             collection.get_with<TransformComponent, MeshComponent, AnimationComponent>()) {
+             collection.get_with<TransformComponent,
+                                 MeshComponent,
+                                 Mg::ecs::Maybe<AnimationComponent>>()) {
             const auto interpolated = Mg::interpolate_transforms(transform.previous_transform,
                                                                  transform.transform,
                                                                  lerp_factor) *
                                       mesh.mesh_transform;
 
-            const auto num_joints = Mg::narrow<uint16_t>(animation.skeleton.joints().size());
+            if (animation) {
+                const auto num_joints = Mg::narrow<uint16_t>(animation->skeleton.joints().size());
 
-            auto palette = renderlist.allocate_skinning_matrix_palette(num_joints);
+                auto palette = renderlist.allocate_skinning_matrix_palette(num_joints);
 
-            Mg::gfx::calculate_skinning_matrices(interpolated,
-                                                 animation.skeleton,
-                                                 animation.pose,
-                                                 palette.skinning_matrices());
+                Mg::gfx::calculate_skinning_matrices(interpolated,
+                                                     animation->skeleton,
+                                                     animation->pose,
+                                                     palette.skinning_matrices());
 
-            renderlist.add_skinned_mesh(mesh.mesh,
-                                        interpolated,
-                                        mesh.material_assignments,
-                                        palette);
+                renderlist.add_skinned_mesh(mesh.mesh,
+                                            interpolated,
+                                            mesh.material_assignments,
+                                            palette);
+            }
+            else {
+                renderlist.add_mesh(mesh.mesh, interpolated, mesh.material_assignments);
+            }
         }
     }
 
