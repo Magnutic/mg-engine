@@ -9,40 +9,20 @@
 #include "mg/core/mg_window_settings.h"
 #include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_material.h"
+#include "mg/gfx/mg_material_pool.h"
 #include "mg/gfx/mg_post_process.h"
 #include "mg/gfx/mg_render_target.h"
 #include "mg/gfx/mg_texture2d.h"
 #include "mg/gfx/mg_texture_pool.h"
 #include "mg/utils/mg_math_utils.h"
 
-#include <vector>
-
 namespace Mg::gfx {
 
-namespace {
-
-using RenderPassTargets = std::vector<std::unique_ptr<TextureRenderTarget>>;
-
-struct BlurTargets {
-    RenderPassTargets hor_pass_targets;
-    RenderPassTargets vert_pass_targets;
-
-    Texture2D* hor_pass_target_texture;
-    Texture2D* vert_pass_target_texture;
-};
-
-} // namespace
-
-struct BlurRenderer::Impl {
-    std::shared_ptr<TexturePool> texture_pool;
-    BlurTargets targets;
-};
-
-BlurRenderer::BlurRenderer(std::shared_ptr<TexturePool> texture_pool, const VideoMode& video_mode)
+BlurRenderTarget::BlurRenderTarget(std::shared_ptr<TexturePool> texture_pool,
+                                   const VideoMode& video_mode)
+    : m_texture_pool{ std::move(texture_pool) }
 {
-    m_impl->texture_pool = std::move(texture_pool);
-
-    MG_GFX_DEBUG_GROUP("BlurRenderer::BlurRenderer")
+    MG_GFX_DEBUG_GROUP("BlurRenderTarget::BlurRenderTarget")
 
     static constexpr int32_t k_num_mip_levels = 4;
 
@@ -52,40 +32,48 @@ BlurRenderer::BlurRenderer(std::shared_ptr<TexturePool> texture_pool, const Vide
     params.height = video_mode.height >> 2;
     params.num_mip_levels = k_num_mip_levels;
     params.texture_format = RenderTargetParams::Format::RGBA16F;
-    params.render_target_id = "Blur_horizontal";
 
-    m_impl->targets.hor_pass_target_texture = m_impl->texture_pool->create_render_target(params);
-
-    params.render_target_id = "Blur_vertical";
-    m_impl->targets.vert_pass_target_texture = m_impl->texture_pool->create_render_target(params);
+    m_horizontal_pass_target_texture = m_texture_pool->create_render_target(params);
+    m_vertical_pass_target_texture = m_texture_pool->create_render_target(params);
 
     for (int32_t mip_level = 0; mip_level < k_num_mip_levels; ++mip_level) {
-        m_impl->targets.hor_pass_targets.emplace_back(
-            TextureRenderTarget::with_colour_target(m_impl->targets.hor_pass_target_texture,
+        m_horizontal_pass_targets.emplace_back(
+            TextureRenderTarget::with_colour_target(m_horizontal_pass_target_texture,
                                                     TextureRenderTarget::DepthType::None,
                                                     mip_level));
 
-        m_impl->targets.vert_pass_targets.emplace_back(
-            TextureRenderTarget::with_colour_target(m_impl->targets.vert_pass_target_texture,
+        m_vertical_pass_targets.emplace_back(
+            TextureRenderTarget::with_colour_target(m_vertical_pass_target_texture,
                                                     TextureRenderTarget::DepthType::None,
                                                     mip_level));
     }
 }
 
+BlurRenderTarget::~BlurRenderTarget()
+{
+    m_texture_pool->destroy(m_horizontal_pass_target_texture);
+    m_texture_pool->destroy(m_vertical_pass_target_texture);
+}
+
+BlurRenderer::BlurRenderer(std::shared_ptr<MaterialPool> material_pool,
+                           const ResourceHandle<ShaderResource>& blur_shader)
+    : m_material_pool{ std::move(material_pool) }
+    , m_blur_material{ m_material_pool->create_anonymous(blur_shader) }
+{}
+
 BlurRenderer::~BlurRenderer()
 {
-    m_impl->texture_pool->destroy(m_impl->targets.hor_pass_target_texture);
-    m_impl->texture_pool->destroy(m_impl->targets.vert_pass_target_texture);
+    m_material_pool->destroy(m_blur_material);
 }
 
 void BlurRenderer::render(PostProcessRenderer& renderer,
                           const TextureRenderTarget& source,
-                          Material& blur_material)
+                          BlurRenderTarget& destination)
 {
     MG_GFX_DEBUG_GROUP("BlurRenderer::render")
 
     constexpr size_t k_num_blur_iterations = 2;
-    const size_t num_blur_targets = m_impl->targets.hor_pass_targets.size();
+    const size_t num_blur_targets = destination.m_horizontal_pass_targets.size();
 
     TextureRenderTarget::BlitSettings blit_settings = {};
     blit_settings.colour = true;
@@ -94,42 +82,37 @@ void BlurRenderer::render(PostProcessRenderer& renderer,
     blit_settings.filter = TextureRenderTarget::BlitFilter::linear;
 
     // Init first pass by blitting to ping-pong buffers.
-    TextureRenderTarget::blit(source, *m_impl->targets.vert_pass_targets[0], blit_settings);
+    TextureRenderTarget::blit(source, *destination.m_vertical_pass_targets[0], blit_settings);
 
     PostProcessRenderer::Context post_render_context = renderer.make_context();
 
     for (size_t mip_i = 0; mip_i < num_blur_targets; ++mip_i) {
-        TextureRenderTarget& hor_target = *m_impl->targets.hor_pass_targets[mip_i];
-        TextureRenderTarget& vert_target = *m_impl->targets.vert_pass_targets[mip_i];
+        TextureRenderTarget& horizontal_target = *destination.m_horizontal_pass_targets[mip_i];
+        TextureRenderTarget& vertical_target = *destination.m_vertical_pass_targets[mip_i];
 
         // Source mip-level will be [0, 0, 1, 2, 3, ...]
-        blur_material.set_parameter("source_mip_level", max(0, static_cast<int>(mip_i) - 1));
-        blur_material.set_parameter("destination_mip_level", static_cast<int>(mip_i));
+        m_blur_material->set_parameter("source_mip_level", max(0, static_cast<int>(mip_i) - 1));
+        m_blur_material->set_parameter("destination_mip_level", static_cast<int>(mip_i));
 
         // Render gaussian blur in separate horizontal and vertical passes.
         for (size_t u = 0; u < k_num_blur_iterations; ++u) {
             // Horizontal pass
-            blur_material.set_option("HORIZONTAL", true);
+            m_blur_material->set_option("HORIZONTAL", true);
             renderer.post_process(post_render_context,
-                                  blur_material,
-                                  hor_target,
-                                  vert_target.colour_target()->handle());
+                                  *m_blur_material,
+                                  horizontal_target,
+                                  vertical_target.colour_target()->handle());
 
-            blur_material.set_parameter("source_mip_level", static_cast<int>(mip_i));
+            m_blur_material->set_parameter("source_mip_level", static_cast<int>(mip_i));
 
             // Vertical pass
-            blur_material.set_option("HORIZONTAL", false);
+            m_blur_material->set_option("HORIZONTAL", false);
             renderer.post_process(post_render_context,
-                                  blur_material,
-                                  vert_target,
-                                  hor_target.colour_target()->handle());
+                                  *m_blur_material,
+                                  vertical_target,
+                                  horizontal_target.colour_target()->handle());
         }
     }
-}
-
-Texture2D* BlurRenderer::target_texture() const
-{
-    return m_impl->targets.vert_pass_target_texture;
 }
 
 } // namespace Mg::gfx

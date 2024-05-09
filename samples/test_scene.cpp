@@ -95,8 +95,8 @@ void Scene::init()
 
     make_hdr_target(app.window().settings().video_mode);
 
-    blur_renderer = std::make_unique<Mg::gfx::BlurRenderer>(texture_pool,
-                                                            app.window().settings().video_mode);
+    blur_target = std::make_unique<Mg::gfx::BlurRenderTarget>(texture_pool,
+                                                              app.window().settings().video_mode);
 
     app.gfx_device().set_clear_colour(0.0125f, 0.01275f, 0.025f, 1.0f);
 
@@ -177,10 +177,10 @@ void Scene::simulation_step()
 
         make_hdr_target(app.window().settings().video_mode);
 
-        // Recreate BlurRenderer, to make new state matching new video mode.
-        blur_renderer.reset();
-        blur_renderer = std::make_unique<Mg::gfx::BlurRenderer>(texture_pool,
-                                                                app.window().settings().video_mode);
+        // Recreate blur_target, to make new state matching new video mode.
+        blur_target =
+            std::make_unique<Mg::gfx::BlurRenderTarget>(texture_pool,
+                                                        app.window().settings().video_mode);
 
         if (app.window().is_cursor_locked_to_window() && !s.fullscreen) {
             app.window().release_cursor();
@@ -257,13 +257,13 @@ void Scene::render(const double lerp_factor)
                                   *particle_material);
     }
 
-    blur_renderer->render(post_renderer, *hdr_target, *blur_material);
+    blur_renderer.render(post_renderer, *hdr_target, *blur_target);
 
     // Apply tonemap and render to window render target.
     {
         app.gfx_device().clear(app.window().render_target);
 
-        bloom_material->set_sampler("sampler_bloom", blur_renderer->target_texture());
+        bloom_material->set_sampler("sampler_bloom", blur_target->target_texture());
 
         post_renderer.post_process(post_renderer.make_context(),
                                    *bloom_material,
@@ -558,11 +558,6 @@ void Scene::load_materials()
         resource_cache->resource_handle<Mg::ShaderResource>("shaders/post_process_bloom.hjson");
 
     bloom_material = material_pool->create("bloom_material", bloom_handle);
-
-    const auto blur_handle =
-        resource_cache->resource_handle<Mg::ShaderResource>("shaders/post_process_blur.hjson");
-
-    blur_material = material_pool->create("blur_material", blur_handle);
 
     // Create billboard material
     const auto billboard_handle =

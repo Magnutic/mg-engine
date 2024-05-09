@@ -1,8 +1,6 @@
-// This test scene ties many components together to create a simple scene. The more features become
-// properly integrated into the engine, the smaller this sample becomes.
-
 #pragma once
 
+#include "mg/resources/mg_shader_resource.h"
 #include <mg/containers/mg_array.h>
 #include <mg/containers/mg_flat_map.h>
 #include <mg/core/mg_application_context.h>
@@ -166,10 +164,13 @@ public:
 
     std::unique_ptr<Mg::gfx::BitmapFont> font;
 
+    Mg::ResourceHandle<Mg::ShaderResource> blur_shader_handle =
+        resource_cache->resource_handle<Mg::ShaderResource>("shaders/post_process_blur.hjson");
+
     Mg::gfx::MeshRenderer mesh_renderer{ Mg::gfx::LightGridConfig{} };
     Mg::gfx::DebugRenderer debug_renderer;
     Mg::gfx::BillboardRenderer billboard_renderer;
-    std::unique_ptr<Mg::gfx::BlurRenderer> blur_renderer;
+    Mg::gfx::BlurRenderer blur_renderer{ material_pool, blur_shader_handle };
     Mg::gfx::PostProcessRenderer post_renderer;
     Mg::gfx::UIRenderer ui_renderer{ { 1024, 768 } };
     Mg::gfx::SkyboxRenderer skybox_renderer;
@@ -177,6 +178,7 @@ public:
     Mg::gfx::RenderCommandProducer render_command_producer;
     std::vector<Mg::gfx::Billboard> billboard_render_list;
 
+    std::unique_ptr<Mg::gfx::BlurRenderTarget> blur_target;
     std::unique_ptr<Mg::gfx::TextureRenderTarget> hdr_target;
 
     Mg::gfx::Camera camera;
@@ -190,7 +192,6 @@ public:
     std::vector<Mg::gfx::Light> scene_lights;
 
     Mg::gfx::Material* bloom_material = nullptr;
-    Mg::gfx::Material* blur_material = nullptr;
     Mg::gfx::Material* billboard_material = nullptr;
     Mg::gfx::Material* particle_material = nullptr;
     const Mg::gfx::Material* sky_material = nullptr;
