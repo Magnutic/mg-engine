@@ -29,6 +29,17 @@ using namespace std::literals;
 
 namespace Mg::gfx {
 
+struct MeshPool::Impl {
+    std::shared_ptr<ResourceCache> resource_cache;
+
+    plf::colony<SharedBuffer> vertex_buffers;
+    plf::colony<SharedBuffer> index_buffers;
+    plf::colony<MeshInternal> mesh_data;
+
+    // Used for looking up a mesh by identifier.
+    FlatMap<Identifier, MeshHandle, Identifier::HashCompare> mesh_map;
+};
+
 namespace {
 
 struct MakeMeshParams {
@@ -46,208 +57,98 @@ struct MakeMeshParams {
     AxisAlignedBoundingBox aabb;
 };
 
-} // namespace
-
-class MeshPool::Impl {
-public:
-    Impl(std::shared_ptr<ResourceCache> resource_cache)
-        : m_resource_cache(std::move(resource_cache))
-    {
-        auto reload_callback = [](void* pool_impl, const Mg::FileChangedEvent& event) {
-            try {
-                ResourceAccessGuard<MeshResource> access{ event.resource };
-                static_cast<Impl*>(pool_impl)->update(access->resource_id(), access->data_view());
-            }
-            catch (...) {
-                Mg::log.error("Failed to reload MeshResource '{}'. Keeping old version.",
-                              event.resource.resource_id().str_view());
-            }
-        };
-
-        m_resource_cache->set_resource_reload_callback("MeshResource"_id, reload_callback, this);
-    }
-
-    ~Impl()
-    {
-        MG_GFX_DEBUG_GROUP("destroy MeshPool");
-
-        for (MeshInternal& mesh : m_mesh_data) {
-            _clear_mesh(mesh);
-        }
-
-        m_resource_cache->remove_resource_reload_callback("MeshResource"_id);
-    }
-
-    MG_MAKE_NON_COPYABLE(Impl);
-    MG_MAKE_NON_MOVABLE(Impl);
-
-    MeshHandle create(Identifier name, const Mesh::MeshDataView& data);
-
-    bool update(Identifier name, const Mesh::MeshDataView& new_data);
-
-    void destroy(MeshHandle handle);
-
-    Opt<MeshHandle> find(Identifier name) const
-    {
-        const auto it = m_mesh_map.find(name);
-        if (it == m_mesh_map.end()) {
-            return nullopt;
-        }
-        return it->second;
-    }
-
-    ResourceCache& resource_cache() { return *m_resource_cache; }
-
-private:
-    friend class MeshBuffer::Impl;
-
-    SharedBuffer* _make_vertex_buffer(size_t size);
-    SharedBuffer* _make_index_buffer(size_t size);
-
-    MakeMeshParams _mesh_params_from_mesh_data(const Mesh::MeshDataView& data)
-    {
-        MG_GFX_DEBUG_GROUP("MeshPool::Impl::_make_mesh_from_mesh_data");
-
-        const bool has_influences = !data.influences.empty();
-
-        MakeMeshParams params = {};
-
-        params.vertex_buffer = _make_vertex_buffer(data.vertices.size_bytes());
-        params.index_buffer = _make_index_buffer(data.indices.size_bytes());
-        params.influences_buffer = has_influences
-                                       ? _make_vertex_buffer(data.influences.size_bytes())
-                                       : nullptr;
-        params.vertex_buffer_data_offset = 0;
-        params.index_buffer_data_offset = 0;
-        params.influences_buffer_data_offset = 0;
-        params.mesh_data = data;
-        params.bounding_sphere =
-            data.bounding_sphere.value_or(calculate_mesh_bounding_sphere(data.vertices));
-        params.aabb = data.aabb.value_or(calculate_mesh_bounding_box(data.vertices));
-
-        return params;
-    }
-
-    void _make_mesh_at(MeshInternal& mesh, Identifier name, const MakeMeshParams& params);
-
-    MeshHandle _make_mesh(Identifier name, const MakeMeshParams& params)
-    {
-        MG_GFX_DEBUG_GROUP("MeshPool::Impl::_make_mesh");
-
-        const auto it = m_mesh_data.emplace();
-
-        MeshInternal& mesh = *it;
-
-        const MeshHandle handle = _ptr_to_handle(&mesh);
-        const auto [map_it, inserted] = m_mesh_map.insert({ name, handle });
-
-        if (inserted) {
-            _make_mesh_at(mesh, name, params);
-            return handle;
-        }
-
-        throw RuntimeError{ "Creating mesh {}: a mesh by that identifier already exists.",
-                            name.str_view() };
-    }
-
-    static MeshHandle _ptr_to_handle(MeshInternal* ptr)
-    {
-        uintptr_t handle_value;
-        std::memcpy(&handle_value, &ptr, sizeof(uintptr_t));
-        return MeshHandle{ handle_value };
-    }
-
-    void _clear_mesh(MeshInternal& mesh);
-
-    std::shared_ptr<ResourceCache> m_resource_cache;
-
-    plf::colony<SharedBuffer> m_vertex_buffers;
-    plf::colony<SharedBuffer> m_index_buffers;
-    plf::colony<MeshInternal> m_mesh_data;
-
-    // Used for looking up a mesh by identifier.
-    FlatMap<Identifier, MeshHandle, Identifier::HashCompare> m_mesh_map;
-};
-
-MeshHandle MeshPool::Impl::create(Identifier name, const Mesh::MeshDataView& mesh_data)
-{
-    MG_GFX_DEBUG_GROUP("MeshPool::Impl::create");
-
-    // Check precondition
-    const bool has_vertices = !mesh_data.vertices.empty();
-    const bool has_indices = !mesh_data.indices.empty();
-
-    if (!has_vertices || !has_indices) {
-        const auto problem = (!has_vertices) ? "no vertex data"sv : "no index data"sv;
-        throw RuntimeError{ "MeshPool: cannot create mesh '{}': {}.", name.str_view(), problem };
-    }
-
-    const MakeMeshParams params = _mesh_params_from_mesh_data(mesh_data);
-    return _make_mesh(name, params);
-}
-
-bool MeshPool::Impl::update(Identifier name, const Mesh::MeshDataView& data)
-{
-    MG_GFX_DEBUG_GROUP("MeshPool::Impl::update");
-
-    Opt<MeshHandle> opt_handle = find(name);
-
-    // If not found, then we do not have a mesh using the updated resource, so ignore.
-    if (!opt_handle) {
-        return false;
-    }
-
-    // Use the existing Mesh to ensure MeshHandles remain valid.
-    _make_mesh_at(get_mesh(*opt_handle), name, _mesh_params_from_mesh_data(data));
-    log.verbose("MeshPool::update(): Updated {}", name.str_view());
-    return true;
-}
-
-void MeshPool::Impl::destroy(MeshHandle handle)
-{
-    MG_GFX_DEBUG_GROUP("MeshPool::Impl::destroy");
-
-    MeshInternal* p_mesh = &get_mesh(handle);
-    const Identifier name = p_mesh->name;
-
-    const auto it = m_mesh_data.get_iterator(p_mesh);
-    _clear_mesh(*p_mesh);
-    m_mesh_data.erase(it);
-
-    // Erase from resource_id -> Mesh map.
-    m_mesh_map.erase(name);
-}
-
-SharedBuffer* MeshPool::Impl::_make_vertex_buffer(size_t size)
+SharedBuffer* make_vertex_buffer(MeshPool::Impl& impl, size_t size)
 {
     MG_ASSERT(size > 0);
-    MG_GFX_DEBUG_GROUP("MeshPool::Impl::_make_vertex_buffer");
+    MG_GFX_DEBUG_GROUP("MeshPool::Impl::make_vertex_buffer");
 
     GLuint vertex_buffer_id = 0;
     glGenBuffers(1, &vertex_buffer_id);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_id);
     glBufferData(GL_ARRAY_BUFFER, as<GLsizeiptr>(size), nullptr, GL_STATIC_DRAW);
 
-    const auto it = m_vertex_buffers.emplace();
+    const auto it = impl.vertex_buffers.emplace();
     it->handle.set(vertex_buffer_id);
     return &*it;
 }
 
-SharedBuffer* MeshPool::Impl::_make_index_buffer(size_t size)
+SharedBuffer* make_index_buffer(MeshPool::Impl& impl, size_t size)
 {
-    MG_GFX_DEBUG_GROUP("MeshPool::Impl::_make_index_buffer");
+    MG_GFX_DEBUG_GROUP("MeshPool::Impl::make_index_buffer");
 
     GLuint index_buffer_id = 0;
     glGenBuffers(1, &index_buffer_id);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_id);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, as<GLsizeiptr>(size), nullptr, GL_STATIC_DRAW);
 
-    const auto it = m_index_buffers.emplace();
+    const auto it = impl.index_buffers.emplace();
     it->handle.set(index_buffer_id);
     return &*it;
 }
 
-namespace {
+Opt<MeshHandle> find(const MeshPool::Impl& impl, Identifier name)
+{
+    const auto it = impl.mesh_map.find(name);
+    if (it == impl.mesh_map.end()) {
+        return nullopt;
+    }
+    return it->second;
+}
+
+MakeMeshParams mesh_params_from_mesh_data(MeshPool::Impl& impl, const Mesh::MeshDataView& mesh_data)
+{
+    MG_GFX_DEBUG_GROUP("MeshPool::Impl::make_mesh_from_mesh_data");
+
+    const bool has_influences = !mesh_data.influences.empty();
+
+    MakeMeshParams params = {};
+
+    params.vertex_buffer = make_vertex_buffer(impl, mesh_data.vertices.size_bytes());
+    params.index_buffer = make_index_buffer(impl, mesh_data.indices.size_bytes());
+    params.influences_buffer = has_influences
+                                   ? make_vertex_buffer(impl, mesh_data.influences.size_bytes())
+                                   : nullptr;
+    params.vertex_buffer_data_offset = 0;
+    params.index_buffer_data_offset = 0;
+    params.influences_buffer_data_offset = 0;
+    params.mesh_data = mesh_data;
+    params.bounding_sphere =
+        mesh_data.bounding_sphere.value_or(calculate_mesh_bounding_sphere(mesh_data.vertices));
+    params.aabb = mesh_data.aabb.value_or(calculate_mesh_bounding_box(mesh_data.vertices));
+
+    return params;
+}
+
+void clear_mesh(MeshPool::Impl& impl, MeshInternal& mesh)
+{
+    MG_GFX_DEBUG_GROUP("MeshPool::Impl::clear_mesh");
+
+    const auto vertex_array_id = mesh.vertex_array.as_gl_id();
+    mesh.vertex_array.set(0);
+
+    if (vertex_array_id == 0) {
+        return;
+    }
+
+    MG_LOG_DEBUG("Unloading mesh '{}' (VAO {})", mesh.name.str_view(), vertex_array_id);
+    glDeleteVertexArrays(1, &vertex_array_id);
+
+    MG_ASSERT(mesh.vertex_buffer && mesh.index_buffer);
+
+    // Un-reference shared buffer and delete, if this was the only referer.
+    auto unref_buffer = [](SharedBuffer* buffer, auto& buffer_container) {
+        if (buffer && --buffer->num_users == 0) {
+            const auto buffer_id = buffer->handle.as_gl_id();
+            glDeleteBuffers(1, &buffer_id);
+            const auto it = buffer_container.get_iterator(buffer);
+            buffer_container.erase(it);
+        }
+    };
+
+    unref_buffer(mesh.vertex_buffer, impl.vertex_buffers);
+    unref_buffer(mesh.index_buffer, impl.index_buffers);
+    unref_buffer(mesh.influences_buffer, impl.vertex_buffers);
+}
 
 void setup_vertex_attribute(const VertexAttribute& attribute,
                             const int32_t stride,
@@ -265,7 +166,7 @@ void setup_vertex_attribute(const VertexAttribute& attribute,
     glEnableVertexAttribArray(attribute.binding_location);
 }
 
-// Set up vertex attributes (how OpenGL is to interpret the vertex data).
+// Set up vertex attributes (how OpenGL is to interpret the vertex impl).
 void setup_vertex_attributes(std::span<const VertexAttribute> vertex_attributes)
 {
     int32_t stride = 0;
@@ -281,17 +182,16 @@ void setup_vertex_attributes(std::span<const VertexAttribute> vertex_attributes)
     }
 }
 
-} // namespace
-
 // Create mesh GPU buffers inside `mesh` from the data referenced by `params`.
-void MeshPool::Impl::_make_mesh_at(MeshInternal& mesh,
-                                   Identifier name,
-                                   const MakeMeshParams& params)
+void make_mesh_at(MeshPool::Impl& impl,
+                  MeshInternal& mesh,
+                  Identifier name,
+                  const MakeMeshParams& params)
 {
-    MG_GFX_DEBUG_GROUP("MeshPool::Impl::_make_mesh_at");
+    MG_GFX_DEBUG_GROUP("MeshPool::Impl::make_mesh_at");
     const bool has_skeletal_animation_data = !params.mesh_data.influences.empty();
 
-    _clear_mesh(mesh);
+    clear_mesh(impl, mesh);
 
     mesh.name = name;
     mesh.bounding_sphere = params.bounding_sphere;
@@ -360,85 +260,110 @@ void MeshPool::Impl::_make_mesh_at(MeshInternal& mesh,
     glBindVertexArray(0);
 }
 
-void MeshPool::Impl::_clear_mesh(MeshInternal& mesh)
+
+MeshHandle make_mesh(MeshPool::Impl& impl, Identifier name, const MakeMeshParams& params)
 {
-    MG_GFX_DEBUG_GROUP("MeshPool::Impl::_clear_mesh");
+    MG_GFX_DEBUG_GROUP("MeshPool::Impl::make_mesh");
 
-    const auto vertex_array_id = mesh.vertex_array.as_gl_id();
-    mesh.vertex_array.set(0);
+    const auto it = impl.mesh_data.emplace();
 
-    if (vertex_array_id == 0) {
-        return;
+    MeshInternal& mesh = *it;
+
+    const MeshHandle handle = make_mesh_handle(&mesh);
+    const auto [map_it, inserted] = impl.mesh_map.insert({ name, handle });
+
+    if (inserted) {
+        make_mesh_at(impl, mesh, name, params);
+        return handle;
     }
 
-    MG_LOG_DEBUG("Unloading mesh '{}' (VAO {})", mesh.name.str_view(), vertex_array_id);
-    glDeleteVertexArrays(1, &vertex_array_id);
-
-    MG_ASSERT(mesh.vertex_buffer && mesh.index_buffer);
-
-    // Un-reference shared buffer and delete, if this was the only referer.
-    auto unref_buffer = [](SharedBuffer* buffer, auto& buffer_container) {
-        if (buffer && --buffer->num_users == 0) {
-            const auto buffer_id = buffer->handle.as_gl_id();
-            glDeleteBuffers(1, &buffer_id);
-            const auto it = buffer_container.get_iterator(buffer);
-            buffer_container.erase(it);
-        }
-    };
-
-    unref_buffer(mesh.vertex_buffer, m_vertex_buffers);
-    unref_buffer(mesh.index_buffer, m_index_buffers);
-    unref_buffer(mesh.influences_buffer, m_vertex_buffers);
+    throw RuntimeError{ "Creating mesh {}: a mesh by that identifier already exists.",
+                        name.str_view() };
 }
+
+MeshHandle create(MeshPool::Impl& impl, const Mesh::MeshDataView& mesh_data, Identifier name)
+{
+    MG_GFX_DEBUG_GROUP("MeshPool::Impl::create");
+
+    // Check precondition
+    const bool has_vertices = !mesh_data.vertices.empty();
+    const bool has_indices = !mesh_data.indices.empty();
+
+    if (!has_vertices || !has_indices) {
+        const auto problem = (!has_vertices) ? "no vertex data"sv : "no index data"sv;
+        throw RuntimeError{ "MeshPool: cannot create mesh '{}': {}.", name.str_view(), problem };
+    }
+
+    const MakeMeshParams params = mesh_params_from_mesh_data(impl, mesh_data);
+    return make_mesh(impl, name, params);
+}
+
+void destroy(MeshPool::Impl& impl, MeshHandle handle)
+{
+    MG_GFX_DEBUG_GROUP("MeshPool::Impl::destroy");
+
+    MeshInternal* p_mesh = &get_mesh(handle);
+    const Identifier name = p_mesh->name;
+
+    const auto it = impl.mesh_data.get_iterator(p_mesh);
+    clear_mesh(impl, *p_mesh);
+    impl.mesh_data.erase(it);
+
+    // Erase from resource_id -> Mesh map.
+    impl.mesh_map.erase(name);
+}
+
+} // namespace
 
 class MeshBuffer::Impl {
 public:
-    Impl(MeshPool::Impl& mesh_pool,
+    Impl(MeshPool::Impl& pool_impl,
          VertexBufferSize vertex_buffer_size,
          IndexBufferSize index_buffer_size,
          InfluencesBufferSize influences_buffer_size)
-        : m_mesh_pool(&mesh_pool)
+        : m_pool_impl(&pool_impl)
         , m_vertex_buffer_size(static_cast<size_t>(vertex_buffer_size))
         , m_index_buffer_size(static_cast<size_t>(index_buffer_size))
         , m_influences_buffer_size(static_cast<size_t>(influences_buffer_size))
-        , m_vertex_buffer(mesh_pool._make_vertex_buffer(m_vertex_buffer_size))
-        , m_index_buffer(mesh_pool._make_index_buffer(m_index_buffer_size))
+        , m_vertex_buffer(make_vertex_buffer(pool_impl, m_vertex_buffer_size))
+        , m_index_buffer(make_index_buffer(pool_impl, m_index_buffer_size))
         , m_influences_buffer(m_influences_buffer_size > 0
-                                  ? mesh_pool._make_vertex_buffer(m_influences_buffer_size)
+                                  ? make_vertex_buffer(pool_impl, m_influences_buffer_size)
                                   : nullptr)
     {
         MG_ASSERT(m_vertex_buffer_size > 0);
         MG_ASSERT(m_index_buffer_size > 0);
     }
 
-    MeshBuffer::CreateReturn create_in_buffer(const Mesh::MeshDataView& data, Identifier name)
+    MeshBuffer::CreateReturn create_in_buffer(const Mesh::MeshDataView& mesh_data, Identifier name)
     {
         MG_GFX_DEBUG_GROUP("MeshBuffer::Impl::create");
 
-        if (data.vertices.size_bytes() + m_vertex_buffer_offset > m_vertex_buffer_size) {
+        if (mesh_data.vertices.size_bytes() + m_vertex_buffer_offset > m_vertex_buffer_size) {
             return { nullopt, MeshBuffer::ReturnCode::Vertex_buffer_full };
         }
 
-        if (data.indices.size_bytes() + m_index_buffer_offset > m_index_buffer_size) {
+        if (mesh_data.indices.size_bytes() + m_index_buffer_offset > m_index_buffer_size) {
             return { nullopt, MeshBuffer::ReturnCode::Index_buffer_full };
         }
 
-        if (data.influences.size_bytes() + m_influences_buffer_offset > m_influences_buffer_size) {
+        if (mesh_data.influences.size_bytes() + m_influences_buffer_offset >
+            m_influences_buffer_size) {
             return { nullopt, MeshBuffer::ReturnCode::Influences_buffer_full };
         }
 
-        MakeMeshParams params = m_mesh_pool->_mesh_params_from_mesh_data(data);
-        const MeshHandle mesh_handle = m_mesh_pool->_make_mesh(name, params);
+        MakeMeshParams params = mesh_params_from_mesh_data(*m_pool_impl, mesh_data);
+        const MeshHandle mesh_handle = make_mesh(*m_pool_impl, name, params);
 
-        m_vertex_buffer_offset += data.vertices.size_bytes();
-        m_index_buffer_offset += data.indices.size_bytes();
-        m_influences_buffer_offset += data.influences.size_bytes();
+        m_vertex_buffer_offset += mesh_data.vertices.size_bytes();
+        m_index_buffer_offset += mesh_data.indices.size_bytes();
+        m_influences_buffer_offset += mesh_data.influences.size_bytes();
 
         return { mesh_handle, MeshBuffer::ReturnCode::Success };
     }
 
 private:
-    MeshPool::Impl* m_mesh_pool = nullptr;
+    MeshPool::Impl* m_pool_impl = nullptr;
 
     // Data offsets; where to put next mesh's data.
     size_t m_vertex_buffer_offset = 0;     // Current offset into vertex buffer
@@ -476,8 +401,34 @@ MeshBuffer::CreateReturn MeshBuffer::create_in_buffer(const Mesh::MeshDataView& 
 //--------------------------------------------------------------------------------------------------
 
 MeshPool::MeshPool(std::shared_ptr<ResourceCache> resource_cache)
-    : m_impl{ std::move(resource_cache) }
-{}
+{
+    m_impl->resource_cache = std::move(resource_cache);
+
+    // Set up callback to regenerate mesh when its originating MeshResource has changed.
+    auto reload_callback = [](void* pool, const Mg::FileChangedEvent& event) {
+        try {
+            ResourceAccessGuard<MeshResource> access{ event.resource };
+            static_cast<MeshPool*>(pool)->update(access->data_view(), access->resource_id());
+        }
+        catch (...) {
+            Mg::log.error("Failed to reload MeshResource '{}'. Keeping old version.",
+                          event.resource.resource_id().str_view());
+        }
+    };
+
+    m_impl->resource_cache->set_resource_reload_callback("MeshResource"_id, reload_callback, this);
+}
+
+MeshPool::~MeshPool()
+{
+    MG_GFX_DEBUG_GROUP("destroy MeshPool");
+
+    for (MeshInternal& mesh : m_impl->mesh_data) {
+        clear_mesh(*m_impl, mesh);
+    }
+
+    m_impl->resource_cache->remove_resource_reload_callback("MeshResource"_id);
+}
 
 MeshHandle MeshPool::get_or_load(Identifier resource_id)
 {
@@ -485,37 +436,51 @@ MeshHandle MeshPool::get_or_load(Identifier resource_id)
     if (auto opt_handle = find(resource_id); opt_handle) {
         return opt_handle.value();
     }
-    auto access = m_impl->resource_cache().access_resource<MeshResource>(resource_id);
-    return m_impl->create(access->resource_id(), access->data_view());
+    auto access = m_impl->resource_cache->access_resource<MeshResource>(resource_id);
+    return create(access->data_view(), access->resource_id());
 }
 
 MeshHandle MeshPool::create(const Mesh::MeshDataView& mesh_data, Identifier name)
 {
     MG_GFX_DEBUG_GROUP("MeshPool::create")
-    return m_impl->create(name, mesh_data);
+    return ::Mg::gfx::create(*m_impl, mesh_data, name);
 }
 
 Opt<MeshHandle> MeshPool::find(Identifier name) const
 {
-    return m_impl->find(name);
+    return ::Mg::gfx::find(*m_impl, name);
 }
 
 void MeshPool::destroy(MeshHandle handle)
 {
     MG_GFX_DEBUG_GROUP("MeshPool::destroy")
-    m_impl->destroy(handle);
+    ::Mg::gfx::destroy(*m_impl, handle);
 }
 
 bool MeshPool::update(const Mesh::MeshDataView& mesh_data, Identifier name)
 {
     MG_GFX_DEBUG_GROUP("MeshPool::update")
-    return m_impl->update(name, mesh_data);
+
+    Opt<MeshHandle> opt_handle = find(name);
+
+    // If not found, then we do not have a mesh using the updated resource, so ignore.
+    if (!opt_handle) {
+        return false;
+    }
+
+    // Use the existing Mesh to ensure MeshHandles remain valid.
+    make_mesh_at(*m_impl,
+                 get_mesh(*opt_handle),
+                 name,
+                 mesh_params_from_mesh_data(*m_impl, mesh_data));
+    log.verbose("MeshPool::update(): Updated {}", name.str_view());
+    return true;
 }
 
 bool MeshPool::update(const MeshResource& mesh_res)
 {
     MG_GFX_DEBUG_GROUP("MeshPool::update")
-    return m_impl->update(mesh_res.resource_id(), mesh_res.data_view());
+    return update(mesh_res.data_view(), mesh_res.resource_id());
 }
 
 MeshBuffer MeshPool::new_mesh_buffer(VertexBufferSize vertex_buffer_size,

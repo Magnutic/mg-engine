@@ -16,6 +16,7 @@
 #include "mg/gfx/mg_mesh_data.h"
 #include "mg/gfx/mg_mesh_handle.h"
 
+#include <bit>
 #include <glm/vec3.hpp>
 
 #include <cstdint>
@@ -61,19 +62,14 @@ struct MeshInternal {
 /** Convert pointer to public opaque handle. */
 inline MeshHandle make_mesh_handle(const MeshInternal* p) noexcept
 {
-    MeshHandle handle{};
-    static_assert(sizeof(handle) >= sizeof(p)); // NOLINT(bugprone-sizeof-expression)
-    std::memcpy(&handle, &p, sizeof(p));        // NOLINT(bugprone-sizeof-expression)
-    return handle;
+    return std::bit_cast<MeshHandle>(p);
 }
 
 /** Dereference mesh handle. */
 inline MeshInternal& get_mesh(MeshHandle handle) noexcept
 {
-    MeshInternal* p = nullptr;
-    std::memcpy(&p, &handle, sizeof(p)); // NOLINT(bugprone-sizeof-expression)
-    MG_ASSERT(p != nullptr);
-    return *p;
+    MG_ASSERT(handle != MeshHandle{}); // Not null
+    return *std::bit_cast<MeshInternal*>(handle);
 }
 
 

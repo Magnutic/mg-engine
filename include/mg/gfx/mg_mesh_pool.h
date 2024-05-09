@@ -50,7 +50,12 @@ enum class InfluencesBufferSize : size_t;
 /** Creates, stores, and updates meshes. */
 class MeshPool {
 public:
+    MG_MAKE_NON_COPYABLE(MeshPool);
+    MG_MAKE_NON_MOVABLE(MeshPool);
+
     explicit MeshPool(std::shared_ptr<ResourceCache> resource_cache);
+
+    ~MeshPool();
 
     /** Get or load a mesh using the given mesh resource. */
     MeshHandle get_or_load(Identifier resource_id);
@@ -88,7 +93,7 @@ public:
                                InfluencesBufferSize influences_buffer_size = InfluencesBufferSize{
                                    0 });
 
-    class Impl;
+    struct Impl;
 
 private:
     ImplPtr<Impl> m_impl;
