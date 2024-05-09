@@ -154,7 +154,45 @@ TEST_CASE("Entity")
         }
     }
 
-    SECTION("brim_filling_test")
+    SECTION("component_iteration with Maybe<>")
+    {
+        auto handle0 = entity_collection.create_entity();
+        entity_collection.add_component<Position>(handle0, 2.0f, 2.0f);
+        entity_collection.add_component<TestComponent>(handle0, 0u, "handle0");
+
+        auto handle1 = entity_collection.create_entity();
+        entity_collection.add_component<Position>(handle1, 3.0f, 3.0f);
+        entity_collection.add_component<TestComponent>(handle1, 1u, "handle1");
+
+        auto handle2 = entity_collection.create_entity();
+        entity_collection.add_component<Position>(handle2, 4.0f, 4.0f);
+
+        auto handle3 = entity_collection.create_entity();
+        entity_collection.add_component<Position>(handle3, 5.0f, 5.0f);
+        entity_collection.add_component<TestComponent>(handle3, 2u, "handle3");
+
+        size_t num_position_components = 0;
+
+        for (auto [entity, test_component, position] :
+             entity_collection.get_with<TestComponent, Mg::ecs::Maybe<Position>>()) {
+            CHECK(entity_collection.has_component<TestComponent>(entity));
+
+            static_assert(std::is_reference_v<decltype(test_component)>);
+            static_assert(std::is_pointer_v<decltype(position)>);
+
+            if (position != nullptr) {
+                ++num_position_components;
+                CHECK(position->x == 4.0f);
+                CHECK(position->y == 4.0f);
+            }
+
+            auto& str = test_component.string;
+            CHECK(str.find("handle") != str.npos);
+        }
+
+        CHECK(num_position_components == 1);
+    }
+
     {
         std::array<Mg::ecs::Entity, num_elems> es;
 

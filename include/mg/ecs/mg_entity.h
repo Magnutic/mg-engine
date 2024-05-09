@@ -123,16 +123,6 @@ public:
 
     /** Iterate over entities which have the requested set of components, e.g.:
      * @code
-     * for (auto cs : entity_collection.get_with<Position, Velocity>() {
-     *     auto entity   = std::get<Mg::ecs::Entity>(cs);
-     *     auto position = std::get<Position*>(cs);
-     *     auto velocity = std::get<Velocity*>(cs);
-     *     ...
-     * }
-     * @endcode
-     *
-     * Or, with C++17 structured bindings:
-     * @code
      * for (auto[entity, position, velocity]
      *     : entity_collection.get_with<Position, Velocity>()) { ... }
      * @endcode
@@ -143,6 +133,17 @@ public:
      * for (auto[entity, position]
      *     : entity_collection.get_with<Position, Mg::ecs::Not<Velocity>>()) {
      *         // Will ignore all entities that have a Velocity component.
+     *     }
+     * @endcode
+     *
+     * And `Mg::ecs::Maybe` to specify components that shall be included if the entity has them, but
+     * if the entity does not have them, the entity will not be skipped, but the corresponding value
+     * will be nullptr.
+     *
+     * @code
+     * for (auto[entity, position, velocity]
+     *     : entity_collection.get_with<Position, Mg::ecs::Maybe<Velocity>>()) {
+     *         // Use entity, position, and velocity -- but check whether velocity is nullptr first.
      *     }
      * @endcode
      *
@@ -249,6 +250,16 @@ private:
     std::tuple<> get_tuple_with_reference_to_component(ComponentList&)
     {
         return {};
+    }
+
+    template<std::derived_from<detail::MaybeTag> C>
+    std::tuple<typename C::component_type*>
+    get_tuple_with_reference_to_component(ComponentList& component_list)
+    {
+        constexpr auto id = C::component_type::component_type_id;
+        return component_list[id]
+                   ? &m_collection.get_component<typename C::component_type>(component_list[id])
+                   : nullptr;
     }
 
     template<Component C>

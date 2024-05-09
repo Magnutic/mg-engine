@@ -36,6 +36,9 @@ struct ComponentTag {};
 // Identifies types that are instantiations of Mg::ecs::Not<>.
 struct NotTag {};
 
+// Identifies types that are instantiations of Mg::ecs::Maybe<>.
+struct MaybeTag {};
+
 } // namespace detail
 
 /** Component base class.
@@ -59,12 +62,21 @@ template<Component C> struct Not : detail::NotTag {
     using component_type = C;
 };
 
+/** Tag type used to indicate when we want particular component to be included when iterating over
+ * an entity if it is present, without disqualifying the entity if the component is not included.
+ */
+template<Component C> struct Maybe : detail::MaybeTag {
+    using component_type = C;
+};
+
 /** Tag-type used to designate which component types we want to include when iterating over
  * entities. Those which we want to include are designated by the component type itself, and those
- * we want to exclude are designated by wrapping the component type in Mg::ecs::Not<>.
+ * we want to exclude are designated by wrapping the component type in Mg::ecs::Not<> or
+ * Mg::ecs::Maybe<>.
  */
 template<typename T>
-concept ComponentTypeDesignator = Component<T> || std::derived_from<T, detail::NotTag>;
+concept ComponentTypeDesignator = Component<T> || std::derived_from<T, detail::NotTag> ||
+                                  std::derived_from<T, detail::MaybeTag>;
 
 /** Creates ComponentMask from a set of component type designators, including the designators that
  * are Component types while ignoring those that are wrapped in Mg::ecs::Not<Component>.
