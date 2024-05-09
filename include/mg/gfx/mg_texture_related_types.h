@@ -71,7 +71,7 @@ struct RenderTargetParams {
         Depth24,
     };
 
-    Identifier render_target_id{ "<anonymous render target texture>" };
+    Opt<Identifier> render_target_id;
 
     int32_t width = 0;
     int32_t height = 0;

@@ -241,7 +241,7 @@ Texture2D Texture2D::render_target(const RenderTargetParams& params)
 {
     Texture2D tex(generate_gl_render_target_texture(params));
 
-    tex.m_id = params.render_target_id;
+    tex.m_id = params.render_target_id ? *params.render_target_id : "<anonymous render target>"_id;
     tex.m_image_size.width = params.width;
     tex.m_image_size.height = params.height;
 

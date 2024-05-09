@@ -127,16 +127,18 @@ TexturesById::iterator try_insert_into_id_map(TexturesById& textures_by_id, Iden
 
 template<typename TextureT>
 TextureT* create_texture_impl(TexturePool::Impl& data,
-                              const Identifier id,
+                              const Opt<Identifier> id,
                               const std::function<TextureT()>& texture_create_func,
                               const TextureSettings& settings)
 {
     auto& texture_storage = data.storage_for<TextureT>();
     TextureT& texture = *texture_storage.emplace(texture_create_func());
 
-    const auto id_map_it = try_insert_into_id_map(data.textures_by_id, id);
-    id_map_it->second.instance = &texture;
-    id_map_it->second.settings = settings;
+    if (id) {
+        const auto id_map_it = try_insert_into_id_map(data.textures_by_id, *id);
+        id_map_it->second.instance = &texture;
+        id_map_it->second.settings = settings;
+    }
     return &texture;
 }
 
@@ -185,10 +187,13 @@ TextureT* load_impl(TexturePool::Impl& data, const Identifier& texture_id)
 template<typename TextureT> void destroy_impl(TexturePool::Impl& data, TextureT* texture)
 {
     auto& texture_storage = data.storage_for<TextureT>();
-    const auto it = texture_storage.get_iterator(texture);
-    const Identifier texture_id = it->id();
-    texture_storage.erase(it);
-    data.textures_by_id.erase(texture_id);
+    const auto storage_it = texture_storage.get_iterator(texture);
+    texture_storage.erase(storage_it);
+
+    auto it = data.textures_by_id.find(texture->id());
+    if (it != data.textures_by_id.end()) {
+        data.textures_by_id.erase(it);
+    }
 }
 
 constexpr std::array<Identifier, enum_utils::count<DefaultTexture>> default_texture_identifiers = {

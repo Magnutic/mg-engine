@@ -69,7 +69,13 @@ Material* MaterialPool::create(Identifier id, ResourceHandle<ShaderResource> sha
         throw RuntimeError{ "A material with id '{}' already exists.", id.str_view() };
     }
     const auto it = m_impl->materials.emplace(Material{ id, shader_resource_handle });
-    return &(*it);
+    return std::to_address(it);
+}
+
+Material* MaterialPool::create_anonymous(ResourceHandle<ShaderResource> shader_resource_handle)
+{
+    const auto it = m_impl->materials.emplace(Material{ "<anonymous>"_id, shader_resource_handle });
+    return std::to_address(it);
 }
 
 namespace {
@@ -180,8 +186,7 @@ void MaterialPool::update(const MaterialResource& material_resource)
 
 void MaterialPool::destroy(const Material* handle)
 {
-    Material* non_const_ptr = const_cast<Material*>(handle); // NOLINT
-    m_impl->materials.erase(m_impl->materials.get_iterator(non_const_ptr));
+    m_impl->materials.erase(m_impl->materials.get_iterator(handle));
 }
 
 const Material* MaterialPool::find(Identifier id) const

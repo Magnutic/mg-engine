@@ -40,6 +40,9 @@ public:
      */
     Material* create(Identifier id, ResourceHandle<ShaderResource> shader_resource_handle);
 
+    /** Create a new Material (without an id), using the specified ShaderResource. */
+    Material* create_anonymous(ResourceHandle<ShaderResource> shader_resource_handle);
+
     /** Get (if already loaded) or else load a Material from the ResourceCache.
      * Note that this returns an immutable const Material*. The reason for this is so that future
      * calls to this function do not return a mutated version of the Material. If you need to edit
