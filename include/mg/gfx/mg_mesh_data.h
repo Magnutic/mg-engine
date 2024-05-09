@@ -126,6 +126,9 @@ struct MeshDataView {
 
     /** Optionally store bounding sphere here; otherwise, it will be calculated when needed. */
     Opt<BoundingSphere> bounding_sphere;
+
+    /** Optionally store bounding box; otherwise, it will be calculated when needed. */
+    Opt<AxisAlignedBoundingBox> aabb;
 };
 
 } // namespace Mg::gfx::Mesh

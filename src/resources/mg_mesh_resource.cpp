@@ -291,7 +291,14 @@ MeshResource::~MeshResource() = default;
 
 MeshDataView MeshResource::data_view() const noexcept
 {
-    return { vertices(), indices(), submeshes(), influences(), bounding_sphere() };
+    return {
+        .vertices = vertices(),
+        .indices = indices(),
+        .submeshes = submeshes(),
+        .influences = influences(),
+        .bounding_sphere = bounding_sphere(),
+        .aabb = axis_aligned_bounding_box(),
+    };
 }
 
 std::span<const Vertex> MeshResource::vertices() const noexcept

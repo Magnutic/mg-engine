@@ -351,7 +351,6 @@ void Scene::load_model(Mg::Identifier mesh_file,
     const Mg::ResourceAccessGuard access =
         resource_cache->access_resource<Mg::MeshResource>(mesh_file);
     mesh.centre = access->bounding_sphere().centre;
-    mesh.aabb = access->axis_aligned_bounding_box();
 
     // Assign materials to submeshes.
     for (auto&& [submesh_index_or_name, material_fname] : material_files) {

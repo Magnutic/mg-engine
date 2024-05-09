@@ -39,6 +39,9 @@ struct MeshInternal {
     /** Bounding sphere used for frustum culling. */
     BoundingSphere bounding_sphere;
 
+    /** Bounding box covering all vertices in the mesh. */
+    AxisAlignedBoundingBox aabb;
+
     /** Mesh identifier, for debugging purposes. */
     Identifier name{ "" };
 

@@ -43,6 +43,7 @@ struct MakeMeshParams {
     // Data itself
     Mesh::MeshDataView mesh_data;
     BoundingSphere bounding_sphere;
+    AxisAlignedBoundingBox aabb;
 };
 
 } // namespace
@@ -122,6 +123,7 @@ private:
         params.mesh_data = data;
         params.bounding_sphere =
             data.bounding_sphere.value_or(calculate_mesh_bounding_sphere(data.vertices));
+        params.aabb = data.aabb.value_or(calculate_mesh_bounding_box(data.vertices));
 
         return params;
     }
@@ -293,6 +295,7 @@ void MeshPool::Impl::_make_mesh_at(MeshInternal& mesh,
 
     mesh.name = name;
     mesh.bounding_sphere = params.bounding_sphere;
+    mesh.aabb = params.aabb;
 
     for (const Mesh::Submesh& sm : params.mesh_data.submeshes) {
         mesh.submeshes.push_back({ sm.index_range.begin, sm.index_range.amount });

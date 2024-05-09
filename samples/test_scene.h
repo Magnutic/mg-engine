@@ -65,7 +65,6 @@ struct MeshComponent : Mg::ecs::BaseComponent<4> {
     // a given mesh.
     Mg::small_vector<Mg::gfx::MaterialAssignment, 10> material_assignments;
     glm::vec3 centre = glm::vec3(0.0f);
-    Mg::AxisAlignedBoundingBox aabb;
     glm::mat4 mesh_transform = glm::mat4(1.0f);
 };
 
