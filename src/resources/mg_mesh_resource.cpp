@@ -22,7 +22,6 @@ namespace Mg {
 
 using namespace gfx::Mesh;
 
-// TODO allocate all mesh data with one joint allocation
 
 struct MeshResource::Data {
     Array<Vertex> vertices;

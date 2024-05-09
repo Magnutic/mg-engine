@@ -33,9 +33,6 @@ struct ScaleKey {
     float value;
 };
 
-// TODO there are a lot of arrays here. It would be better to allocate them all at once with the old
-// 'joint allocation' code I wrote a long time ago, if I can find that.
-
 struct AnimationChannel {
     Array<PositionKey> position_keys;
     Array<RotationKey> rotation_keys;
