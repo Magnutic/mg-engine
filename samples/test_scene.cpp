@@ -272,8 +272,7 @@ void Scene::render(const double lerp_factor)
     }
 
     // Draw UI
-    ui_renderer.resolution(
-        { app.window().frame_buffer_size().width, app.window().frame_buffer_size().height });
+    ui_renderer.resolution(app.window().frame_buffer_size());
 
     {
         Mg::gfx::UIPlacement placement = {};
@@ -282,7 +281,7 @@ void Scene::render(const double lerp_factor)
 
         Mg::gfx::TypeSetting typesetting = {};
         typesetting.line_spacing_factor = 1.25f;
-        typesetting.max_width_pixels = ui_renderer.resolution().x;
+        typesetting.max_width_pixels = ui_renderer.resolution().width;
 
         const glm::vec3 v = character_controller->velocity();
         const glm::vec3 p = character_controller->get_position();

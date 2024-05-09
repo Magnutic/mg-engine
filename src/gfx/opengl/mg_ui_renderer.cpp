@@ -152,14 +152,16 @@ Pipeline make_text_pipeline()
 
 mat4 make_transform_matrix(const UIPlacement& placement,
                            const vec2 scale,
-                           const ivec2 resolution,
+                           const VideoMode& resolution,
                            const float scaling_factor)
 {
-    const float aspect_ratio = static_cast<float>(resolution.x) / static_cast<float>(resolution.y);
+    const float aspect_ratio = static_cast<float>(resolution.width) /
+                               static_cast<float>(resolution.height);
 
     // Factors of 2.0f convert from [0.0, 1.0f] range into OpenGL's [-1.0f, 1.0f] range.
-    const vec2 size{ 2.0f * scale.x * scaling_factor / static_cast<float>(resolution.y),
-                     2.0f * scale.y * scaling_factor / static_cast<float>(resolution.y) };
+    // Using height for both x and y is intentional -- aspect ratio is handled in the final step.
+    const vec2 size{ 2.0f * scale.x * scaling_factor / static_cast<float>(resolution.height),
+                     2.0f * scale.y * scaling_factor / static_cast<float>(resolution.height) };
     mat4 scale_matrix(1.0f);
     scale_matrix[0][0] = size.x;
     scale_matrix[1][1] = size.y;
@@ -167,7 +169,8 @@ mat4 make_transform_matrix(const UIPlacement& placement,
     const vec2 anchor_offset = size * placement.anchor;
 
     vec2 position = 2.0f * (vec2{ placement.position.x, placement.position.y } +
-                            (placement.position_pixel_offset * scaling_factor / vec2(resolution))) -
+                            (placement.position_pixel_offset * scaling_factor /
+                             vec2(resolution.width, resolution.height))) -
                     vec2{ 1.0f, 1.0f };
 
     position.x *= aspect_ratio;
@@ -211,13 +214,13 @@ struct UIRenderer::Impl {
     BufferHandle quad_vbo;
     VertexArrayHandle quad_vao;
 
-    ivec2 resolution = { 0, 0 };
+    VideoMode resolution = { 0, 0 };
     float scaling_factor = 1.0;
 
     Pipeline text_pipeline = make_text_pipeline();
 };
 
-UIRenderer::UIRenderer(const ivec2 resolution, const float scaling_factor)
+UIRenderer::UIRenderer(const VideoMode& resolution, const float scaling_factor)
 {
     MG_GFX_DEBUG_GROUP("init UIRenderer")
 
@@ -250,11 +253,11 @@ UIRenderer::~UIRenderer()
     glDeleteVertexArrays(1, &quad_vao_id);
 }
 
-void UIRenderer::resolution(const ivec2 resolution)
+void UIRenderer::resolution(const VideoMode& resolution)
 {
     m_impl->resolution = resolution;
 }
-ivec2 UIRenderer::resolution() const
+VideoMode UIRenderer::resolution() const
 {
     return m_impl->resolution;
 }

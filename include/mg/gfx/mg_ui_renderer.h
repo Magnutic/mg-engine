@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "mg/core/mg_window_settings.h"
 #include "mg/gfx/mg_blend_modes.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/utils/mg_angle.h"
@@ -56,14 +57,14 @@ struct UIPlacement {
 /** 2D user-interface renderer. */
 class UIRenderer {
 public:
-    explicit UIRenderer(glm::ivec2 resolution, float scaling_factor = 1.0);
+    explicit UIRenderer(const VideoMode& resolution, float scaling_factor = 1.0);
     ~UIRenderer();
 
     MG_MAKE_NON_COPYABLE(UIRenderer);
     MG_MAKE_NON_MOVABLE(UIRenderer);
 
-    void resolution(glm::ivec2 resolution);
-    glm::ivec2 resolution() const;
+    void resolution(const VideoMode& resolution);
+    VideoMode resolution() const;
 
     void scaling_factor(float scaling_factor);
     float scaling_factor() const;
