@@ -118,6 +118,7 @@ public:
     /** Get reference to component. Requires that the component exists. */
     template<Component C> C& get_component(Entity entity)
     {
+        MG_ASSERT(has_component<C>(entity));
         return get_component<C>(component_handle_ref(entity, C::component_type_id));
     }
 
