@@ -1,29 +1,13 @@
 #include "test_scene.h"
 #include "mg/physics/mg_character_controller.h"
 
-#include <mg/core/mg_application_context.h>
 #include <mg/core/mg_config.h>
-#include <mg/core/mg_identifier.h>
 #include <mg/core/mg_log.h>
-#include <mg/core/mg_runtime_error.h>
-#include <mg/gfx/mg_animation.h>
-#include <mg/gfx/mg_blend_modes.h>
-#include <mg/gfx/mg_debug_renderer.h>
+#include <mg/core/mg_window.h>
 #include <mg/gfx/mg_gfx_debug_group.h>
-#include <mg/gfx/mg_mesh_renderer.h>
-#include <mg/gfx/mg_render_command_list.h>
-#include <mg/gfx/mg_render_target.h>
-#include <mg/gfx/mg_skeleton.h>
-#include <mg/gfx/mg_texture2d.h>
-#include <mg/gfx/mg_texture_pool.h>
-#include <mg/gfx/mg_texture_related_types.h>
-#include <mg/gfx/mg_ui_renderer.h>
-#include <mg/input/mg_input.h>
-#include <mg/mg_bounding_volumes.h>
+#include <mg/gfx/mg_gfx_device.h>
+#include <mg/gfx/mg_light.h>
 #include <mg/mg_unicode.h>
-#include <mg/physics/mg_physics.h>
-#include <mg/resource_cache/internal/mg_resource_entry_base.h>
-#include <mg/resource_cache/mg_resource_access_guard.h>
 #include <mg/resources/mg_font_resource.h>
 #include <mg/resources/mg_material_resource.h>
 #include <mg/resources/mg_mesh_resource.h>
@@ -31,13 +15,9 @@
 #include <mg/resources/mg_sound_resource.h>
 #include <mg/resources/mg_texture_resource.h>
 #include <mg/utils/mg_angle.h>
-#include <mg/utils/mg_math_utils.h>
 #include <mg/utils/mg_rand.h>
-#include <mg/utils/mg_string_utils.h>
 
 #include <fmt/core.h>
-
-#include <numeric>
 
 namespace {
 
