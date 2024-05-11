@@ -10,6 +10,7 @@
 #include "mg/core/mg_rotation.h"
 #include "mg/gfx/mg_blend_modes.h"
 #include "mg/gfx/mg_joint.h"
+#include "mg/gfx/mg_mesh_data.h"
 #include "mg/gfx/mg_pipeline.h"
 #include "mg/gfx/mg_render_target.h"
 #include "mg/gfx/mg_skeleton.h"
