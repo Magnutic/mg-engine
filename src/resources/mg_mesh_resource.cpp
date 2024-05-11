@@ -227,6 +227,11 @@ LoadResult load_version_2(ResourceLoadingInput& input, [[maybe_unused]] std::str
     result.data->bounding_sphere.radius = header.radius;
     result.data->skeleton_root_transform = header.skeleton_root_transform;
 
+    MG_LOG_DEBUG("Number of vertices: {}, indices: {}, triangles: {}",
+                 result.data->vertices.size(),
+                 result.data->indices.size(),
+                 result.data->indices.size() / 3u);
+
     auto submesh_records = read_range<MeshResourceData::Submesh>(bytestream, header.submeshes);
     result.data->submeshes = Array<Submesh>::make_for_overwrite(submesh_records.size());
 
@@ -238,6 +243,8 @@ LoadResult load_version_2(ResourceLoadingInput& input, [[maybe_unused]] std::str
         submesh.index_range.amount = record.num_indices;
         submesh.name = Identifier::from_runtime_string(get_string(record.name));
         MG_LOG_DEBUG("Loading mesh '{}': found sub-mesh '{}'", meshname, submesh.name.str_view());
+        MG_LOG_DEBUG("Submesh range {}:{}", record.begin, record.begin + record.num_indices);
+        MG_ASSERT_DEBUG(record.begin + record.num_indices <= result.data->indices.size());
         // TODO record.material
     }
 

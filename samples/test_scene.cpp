@@ -346,6 +346,9 @@ void Scene::load_model(Mg::Identifier mesh_file,
                                                     mesh_file.str_view());
                                 })
                                 .value_or(0);
+            Mg::log.message("Assigning material {} to submesh {}",
+                            material_fname.str_view(),
+                            submesh_name.str_view());
         }
 
         mesh.material_assignments.push_back(
