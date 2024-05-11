@@ -473,7 +473,9 @@ PreparedText BitmapFont::prepare_text(std::string_view text_utf8,
             // not present.
             const auto packedchar_index =
                 get_packedchar_index(*m_impl, codepoint)
-                    .value_or(get_packedchar_index(*m_impl, k_substitution_character).value());
+                    .or_else(
+                        [&] { return get_packedchar_index(*m_impl, k_substitution_character); })
+                    .value();
 
             constexpr int align_to_integer = 0;
             stbtt_GetPackedQuad(m_impl->packed_chars.data(),

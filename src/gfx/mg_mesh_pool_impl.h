@@ -116,8 +116,12 @@ inline MakeMeshParams mesh_params_from_mesh_data(MeshPoolImpl& impl,
     params.influences_buffer_data_offset = 0;
     params.mesh_data = mesh_data;
     params.bounding_sphere =
-        mesh_data.bounding_sphere.value_or(calculate_mesh_bounding_sphere(mesh_data.vertices));
-    params.aabb = mesh_data.aabb.value_or(calculate_mesh_bounding_box(mesh_data.vertices));
+        mesh_data.bounding_sphere
+            .or_else([&] { return calculate_mesh_bounding_sphere(mesh_data.vertices); })
+            .value();
+    params.aabb = mesh_data.aabb
+                      .or_else([&] { return calculate_mesh_bounding_box(mesh_data.vertices); })
+                      .value();
 
     return params;
 }
