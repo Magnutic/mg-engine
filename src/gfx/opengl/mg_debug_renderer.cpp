@@ -554,6 +554,30 @@ void DebugRenderer::draw_view_frustum(const IRenderTarget& render_target,
     }
 }
 
+void DebugRenderer::draw_normals(const IRenderTarget& render_target,
+                                 const glm::mat4& view_proj,
+                                 const glm::mat4& M,
+                                 const mesh_data::MeshDataView& mesh_data)
+{
+    for (const auto& vertex : mesh_data.vertices) {
+        draw_line(render_target,
+                  view_proj * M,
+                  vertex.position,
+                  vertex.position + vertex.normal.get() * 0.1f,
+                  vec4(0.0f, 0.0f, 1.0f, 1.0f));
+        draw_line(render_target,
+                  view_proj * M,
+                  vertex.position,
+                  vertex.position + vertex.tangent.get() * 0.1f,
+                  vec4(1.0f, 0.0f, 0.0f, 1.0f));
+        draw_line(render_target,
+                  view_proj * M,
+                  vertex.position,
+                  vertex.position + vertex.bitangent.get() * 0.1f,
+                  vec4(0.0f, 1.0f, 0.0f, 1.0f));
+    }
+}
+
 //--------------------------------------------------------------------------------------------------
 // DebugRenderQueue implementation
 //--------------------------------------------------------------------------------------------------

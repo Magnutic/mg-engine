@@ -19,6 +19,10 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
+namespace Mg::gfx::mesh_data {
+struct MeshDataView;
+}
+
 namespace Mg::gfx {
 
 class IRenderTarget;
@@ -83,6 +87,11 @@ public:
                            const glm::mat4& view_projection,
                            const glm::mat4& view_projection_frustum,
                            float max_distance = 0.0f);
+
+    void draw_normals(const IRenderTarget& render_target,
+                      const glm::mat4& view_proj,
+                      const glm::mat4& M,
+                      const mesh_data::MeshDataView& mesh_data);
 
     struct Impl;
 
