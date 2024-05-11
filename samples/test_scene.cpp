@@ -87,8 +87,7 @@ void Scene::init()
     sample_control_button_tracker->bind("lock_camera", Mg::input::Key::E);
     sample_control_button_tracker->bind("fullscreen", Mg::input::Key::F4);
     sample_control_button_tracker->bind("exit", Mg::input::Key::Esc);
-    sample_control_button_tracker->bind("toggle_debug_vis", Mg::input::Key::F);
-    sample_control_button_tracker->bind("toggle_animations", Mg::input::Key::Tab);
+    sample_control_button_tracker->bind("next_debug_visualization", Mg::input::Key::F);
     sample_control_button_tracker->bind("reset", Mg::input::Key::R);
 
     physics_world = std::make_unique<Mg::physics::World>();
@@ -121,10 +120,6 @@ void Scene::simulation_step()
 
     if (button_states["exit"].was_pressed || app.window().should_close_flag()) {
         m_should_exit = true;
-    }
-
-    if (button_states["toggle_animations"].was_pressed) {
-        animate_skinned_meshes = !animate_skinned_meshes;
     }
 
     entities.update();
@@ -167,7 +162,7 @@ void Scene::simulation_step()
         }
     }
 
-    if (button_states["toggle_debug_vis"].was_pressed) {
+    if (button_states["next_debug_visualization"].was_pressed) {
         ++debug_visualization;
     }
     if (button_states["lock_camera"].was_pressed) {

@@ -192,8 +192,6 @@ public:
 
     int debug_visualization = 0;
 
-    bool animate_skinned_meshes = true;
-
     void init();
     void simulation_step() override;
     void render(double lerp_factor) override;
