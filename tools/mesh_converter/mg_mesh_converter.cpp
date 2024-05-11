@@ -77,11 +77,16 @@ inline mat4 convert_matrix(const aiMatrix4x4& aiMat)
     return to_mg_space * result * from_mg_space;
 }
 
-inline vec3 convert_vector(const aiVector3D& ai_vector)
+inline vec3 convert_position(const aiVector3D& ai_vector)
 {
     return { -ai_vector.x * k_scaling_factor,
              ai_vector.z * k_scaling_factor,
              ai_vector.y * k_scaling_factor };
+}
+
+inline vec3 convert_direction(const aiVector3D& ai_vector)
+{
+    return { -ai_vector.x, ai_vector.z, ai_vector.y };
 }
 
 // TODO verify, very unsure about this
@@ -469,7 +474,7 @@ void AnimationData::add_animation_clip(const JointData& joint_data,
         for_each_position_key(channel, [&](const aiVectorKey& ai_key) {
             PositionKey& key = position_channel.emplace_back();
             key.time = ticks_to_seconds(ai_key.mTime);
-            key.value = convert_vector(ai_key.mValue);
+            key.value = convert_position(ai_key.mValue);
         });
 
         for_each_scaling_key(channel, [&](const aiVectorKey& ai_key) {
@@ -558,7 +563,8 @@ void MeshData::visit(const aiMesh& mesh)
 
     for_each_face(mesh, [&](const aiFace& face) {
         MG_ASSERT(face.mNumIndices == 3);
-        for_each_index(face, [&](const uint32_t index) {
+        for_each_index(face, [&](const uint32_t relative_index) {
+            const auto index = vertices_begin + relative_index;
             const auto max_index = std::numeric_limits<Index>::max();
             if (index > max_index) {
                 log_error("Vertex index out of bounds (limit: ", max_index, ", was: ", index, ").");
@@ -626,7 +632,7 @@ void MeshData::visit(const aiMesh& mesh)
 void MeshData::add_vertex(const aiMesh& mesh, const uint32_t index)
 {
     Vertex& vertex = m_vertices.emplace_back();
-    vertex.position = convert_vector(mesh.mVertices[index]); // NOLINT
+    vertex.position = convert_position(mesh.mVertices[index]); // NOLINT
 
     if (mesh.HasTextureCoords(0)) {
         vertex.tex_coord.x = mesh.mTextureCoords[0][index].x;        // NOLINT
@@ -634,11 +640,19 @@ void MeshData::add_vertex(const aiMesh& mesh, const uint32_t index)
     }
 
     if (mesh.HasNormals()) {
-        vertex.normal = convert_vector(mesh.mNormals[index]); // NOLINT
+        vertex.normal = convert_direction(mesh.mNormals[index]); // NOLINT
 
         if (mesh.HasTangentsAndBitangents()) {
-            vertex.tangent = convert_vector(mesh.mTangents[index]);      // NOLINT
-            vertex.bitangent = -convert_vector(mesh.mBitangents[index]); // Note: inverted. //NOLINT
+            vertex.tangent = convert_direction(mesh.mTangents[index]); // NOLINT
+            // For some reason, I get bad non-orthogonal bitangents in some situations.
+            // Resolve this by calculating a definitely orthogonal bitangent, but use the original
+            // one to find the correct orientation.
+            auto bitangent = glm::cross(vertex.normal.get(), vertex.tangent.get());
+            const auto original_bitangent = convert_direction(mesh.mBitangents[index]); // NOLINT
+            if (glm::dot(original_bitangent, bitangent) < 0.0f) {
+                bitangent = -bitangent;
+            }
+            vertex.bitangent = bitangent;
         }
     }
 }
@@ -705,6 +719,10 @@ void dump_scene(const aiScene& scene)
 {
     print_heading("Input node tree");
     dump_node_tree(scene, *scene.mRootNode);
+    print_heading("Input materials");
+    for (size_t i = 0; i < scene.mNumMaterials; ++i) {
+        notify(scene.mMaterials[i]->GetName().C_Str());
+    }
 }
 
 void dump_joints(const JointData& joint_data)
@@ -762,15 +780,13 @@ const aiScene* load_file(Assimp::Importer& importer, const std::filesystem::path
     importer.SetPropertyInteger(AI_CONFIG_PP_SLM_VERTEX_LIMIT, UINT16_MAX);
     importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, ai_settings);
     importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, ai_exclude);
-    importer.SetPropertyFloat(AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE, 90.0f);
 
     static const unsigned int common_flags =
-        aiProcess_ValidateDataStructure | aiProcess_RemoveRedundantMaterials |
-        aiProcess_CalcTangentSpace | aiProcess_FindDegenerates | aiProcess_FindInvalidData |
-        aiProcess_FindInstances | aiProcess_ImproveCacheLocality | aiProcess_JoinIdenticalVertices |
-        aiProcess_OptimizeMeshes | aiProcess_RemoveComponent | aiProcess_SortByPType |
-        aiProcess_SplitLargeMeshes | aiProcess_GenUVCoords | aiProcess_GenSmoothNormals |
-        aiProcess_Triangulate;
+        aiProcess_ValidateDataStructure | aiProcess_CalcTangentSpace | aiProcess_FindDegenerates |
+        aiProcess_FindInvalidData | aiProcess_FindInstances | aiProcess_ImproveCacheLocality |
+        aiProcess_JoinIdenticalVertices | aiProcess_OptimizeMeshes | aiProcess_RemoveComponent |
+        aiProcess_SortByPType | aiProcess_SplitLargeMeshes | aiProcess_GenUVCoords |
+        aiProcess_GenSmoothNormals | aiProcess_Triangulate;
 
     static const unsigned int skinned_model_flags = common_flags | aiProcess_LimitBoneWeights |
                                                     aiProcess_OptimizeGraph;
@@ -789,7 +805,7 @@ const aiScene* load_file(Assimp::Importer& importer, const std::filesystem::path
 
     // If the scene has no animations, re-load it with settings for static mesh instead.
     if (scene->mNumAnimations == 0) {
-        notify("Scene has no animations; re-loading as static model.");
+        notify("Scene has no animations. Re-loading as static model.");
         importer.FreeScene();
         scene = importer.ReadFile(file_path, static_model_flags);
     }
@@ -919,6 +935,29 @@ bool convert_mesh(const std::filesystem::path& path_in,
         }
 
         MeshData mesh_data(*scene, (joint_data ? &joint_data.value() : nullptr), string_data);
+
+        logging::print_heading("Output mesh information");
+        notify(mesh_data.vertices().size(),
+               " vertices, ",
+               mesh_data.indices().size() / 3u,
+               " triangles (",
+               mesh_data.indices().size(),
+               " indices)");
+
+        for (const auto& submesh : mesh_data.submeshes()) {
+            notify("Submesh \'",
+                   string_data.get(submesh.name),
+                   "\': ",
+                   submesh.num_indices / 3u,
+                   " tris, ",
+                   "index range ",
+                   submesh.begin,
+                   ":",
+                   submesh.begin + submesh.num_indices,
+                   ", material: \'",
+                   string_data.get(submesh.material),
+                   '\'');
+        }
 
         // Release imported data now.
         importer.reset();
