@@ -142,10 +142,11 @@ LoadResult load_version_2(ResourceLoadingInput& input, [[maybe_unused]] std::str
         submesh.index_range.begin = record.begin;
         submesh.index_range.amount = record.num_indices;
         submesh.name = Identifier::from_runtime_string(get_string(record.name));
+        submesh.material_binding_id = Identifier::from_runtime_string(get_string(record.material));
         MG_LOG_DEBUG("Loading mesh '{}': found sub-mesh '{}'", meshname, submesh.name.str_view());
         MG_LOG_DEBUG("Submesh range {}:{}", record.begin, record.begin + record.num_indices);
+        MG_LOG_DEBUG("Submesh material binding: {}", get_string(record.material));
         MG_ASSERT_DEBUG(record.begin + record.num_indices <= result.data->indices.size());
-        // TODO record.material
     }
 
     auto joint_records = read_range<MeshResourceData::Joint>(bytestream, header.joints);
