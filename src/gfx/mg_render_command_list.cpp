@@ -100,13 +100,16 @@ void RenderCommandProducer::add_skinned_mesh(
     std::span<const MaterialAssignment> material_assignment,
     const SkinningMatrixPalette& skinning_matrix_palette)
 {
-    add_mesh(mesh, transform, material_assignment);
-    RenderCommand& command = m_impl->render_commands_unsorted.back();
+    const size_t num_commands_before = m_impl->render_commands_unsorted.size();
+    add_mesh(mesh, transform, material_bindings);
 
     // Keep track of where the skinning matrix palette's data resides.
-    command.skinning_matrices_begin = as<uint16_t>(skinning_matrix_palette.m_start_index);
-    command.num_skinning_matrices =
-        as<uint16_t>(skinning_matrix_palette.m_skinning_matrices.size());
+    for (size_t i = num_commands_before; i < m_impl->render_commands_unsorted.size(); ++i) {
+        RenderCommand& command = m_impl->render_commands_unsorted[i];
+        command.skinning_matrices_begin = as<uint16_t>(skinning_matrix_palette.m_start_index);
+        command.num_skinning_matrices =
+            as<uint16_t>(skinning_matrix_palette.m_skinning_matrices.size());
+    }
 }
 
 void RenderCommandProducer::add_skinned_mesh(
