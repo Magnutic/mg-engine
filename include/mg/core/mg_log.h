@@ -144,10 +144,10 @@ public:
      * often.
      */
     template<typename T, typename... Ts>
-    void error_once(fmt::format_string<T, Ts...> msg,
+    void error_once(float duplicate_message_timeout_seconds,
+                    fmt::format_string<T, Ts...> msg,
                     T&& arg,
-                    Ts&&... args,
-                    float duplicate_message_timeout_seconds)
+                    Ts&&... args)
     {
         write_impl(Prio::Error,
                    fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
@@ -167,10 +167,10 @@ public:
      * often.
      */
     template<typename T, typename... Ts>
-    void warning_once(fmt::format_string<T, Ts...> msg,
+    void warning_once(float duplicate_message_timeout_seconds,
+                      fmt::format_string<T, Ts...> msg,
                       T&& arg,
-                      Ts&&... args,
-                      float duplicate_message_timeout_seconds)
+                      Ts&&... args)
     {
         write_impl(Prio::Warning,
                    fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
@@ -190,10 +190,10 @@ public:
      * often.
      */
     template<typename T, typename... Ts>
-    void message_once(fmt::format_string<T, Ts...> msg,
+    void message_once(float duplicate_message_timeout_seconds,
+                      fmt::format_string<T, Ts...> msg,
                       T&& arg,
-                      Ts&&... args,
-                      float duplicate_message_timeout_seconds)
+                      Ts&&... args)
     {
         write_impl(Prio::Message,
                    fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
@@ -213,10 +213,10 @@ public:
      * often.
      */
     template<typename T, typename... Ts>
-    void verbose_once(fmt::format_string<T, Ts...> msg,
+    void verbose_once(float duplicate_message_timeout_seconds,
+                      fmt::format_string<T, Ts...> msg,
                       T&& arg,
-                      Ts&&... args,
-                      float duplicate_message_timeout_seconds)
+                      Ts&&... args)
     {
         write_impl(Prio::Verbose,
                    fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
