@@ -1,4 +1,4 @@
-shader: shaders/skybox.hjson
+shader: shaders/post_process_bloom.hjson
 blend_mode: {
   BlendMode: {
     colour_blend_op: add
@@ -10,12 +10,8 @@ blend_mode: {
   }
 }
 parameters: {
-  sampler_diffuse: {
-    type: samplerCube
-    value: textures/cubemap/test_sky_d.dds
-  }
-  exposure: {
-    type: float
-    value: 1.0
+  sampler_bloom: {
+    type: sampler2D
+    value: "__default_texture_rgba_white"
   }
 }

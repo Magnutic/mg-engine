@@ -1,0 +1,23 @@
+shader: shaders/simple_billboard.hjson
+blend_mode: {
+  BlendMode: {
+    colour_blend_op: add
+    alpha_blend_op: add
+    src_colour_factor: one
+    dst_colour_factor: one
+    src_alpha_factor: one
+    dst_alpha_factor: one
+  }
+}
+options: {
+  A_TEST: false
+  FADE_WHEN_CLOSE: true
+  FIXED_SIZE: false
+  SHRINK_WHEN_CLOSE: true
+}
+parameters: {
+  sampler_diffuse: {
+    type: sampler2D
+    value: textures/particle_t.dds
+  }
+}

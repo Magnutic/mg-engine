@@ -1,4 +1,4 @@
-shader: shaders/skybox.hjson
+shader: shaders/simple_billboard.hjson
 blend_mode: {
   BlendMode: {
     colour_blend_op: add
@@ -9,13 +9,15 @@ blend_mode: {
     dst_alpha_factor: zero
   }
 }
+options: {
+  A_TEST: true
+  FADE_WHEN_CLOSE: false
+  FIXED_SIZE: false
+  SHRINK_WHEN_CLOSE: true
+}
 parameters: {
   sampler_diffuse: {
-    type: samplerCube
-    value: textures/cubemap/test_sky_d.dds
-  }
-  exposure: {
-    type: float
-    value: 1.0
+    type: sampler2D
+    value: textures/light_t.dds
   }
 }

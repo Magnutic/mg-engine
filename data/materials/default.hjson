@@ -1,4 +1,3 @@
-// Material id: 'buildings/W31_1'
 shader: shaders/default_specular_workflow.hjson
 options: {
   PARALLAX: true
