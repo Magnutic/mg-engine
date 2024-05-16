@@ -27,13 +27,6 @@
 #include <mg/utils/mg_interpolate_transform.h>
 #include <mg/utils/mg_optional.h>
 
-#include <variant>
-
-struct MaterialFileAssignment {
-    std::variant<size_t, Mg::Identifier> submesh_index_or_name = size_t(0);
-    Mg::Identifier material_fname = "";
-};
-
 struct TransformComponent : Mg::ecs::BaseComponent<1> {
     glm::mat4 previous_transform = glm::mat4(1.0f);
     glm::mat4 transform = glm::mat4(1.0f);
@@ -49,10 +42,7 @@ struct DynamicBodyComponent : Mg::ecs::BaseComponent<3> {
 
 struct MeshComponent : Mg::ecs::BaseComponent<4> {
     const Mg::gfx::Mesh* mesh = nullptr;
-
-    // These probably don't make sense to have in a component. They can be shared among all users of
-    // a given mesh.
-    Mg::small_vector<Mg::gfx::MaterialAssignment, 10> material_assignments;
+    Mg::small_vector<Mg::gfx::MaterialBinding, 4> material_bindings;
     glm::mat4 mesh_transform = glm::mat4(1.0f);
 };
 
@@ -117,15 +107,15 @@ public:
                                             interpolated,
                                             mesh.mesh->animation_data->skeleton,
                                             animation->pose,
-                                            mesh.material_assignments);
+                                            mesh.material_bindings);
             }
             else {
-                renderlist.add_mesh(*mesh.mesh, interpolated, mesh.material_assignments);
+                renderlist.add_mesh(*mesh.mesh, interpolated, mesh.material_bindings);
             }
         }
     }
 
-    Mg::ecs::EntityCollection collection{ 1024 };
+    Mg::ecs::EntityCollection collection;
 };
 
 inline std::shared_ptr<Mg::ResourceCache> setup_resource_cache()
@@ -162,7 +152,7 @@ public:
     Mg::gfx::BillboardRenderer billboard_renderer;
     Mg::gfx::BlurRenderer blur_renderer{ material_pool, blur_shader_handle };
     Mg::gfx::PostProcessRenderer post_renderer;
-    Mg::gfx::UIRenderer ui_renderer{ { 1024, 768 } };
+    Mg::gfx::UIRenderer ui_renderer{ {} };
     Mg::gfx::SkyboxRenderer skybox_renderer;
 
     Mg::gfx::RenderCommandProducer render_command_producer;
@@ -181,10 +171,15 @@ public:
 
     std::vector<Mg::gfx::Light> scene_lights;
 
-    Mg::gfx::Material* bloom_material = nullptr;
-    Mg::gfx::Material* billboard_material = nullptr;
-    Mg::gfx::Material* particle_material = nullptr;
-    const Mg::gfx::Material* sky_material = nullptr;
+    Mg::gfx::Material* bloom_material =
+        material_pool->copy("bloom", material_pool->get_or_load("materials/bloom.hjson"));
+
+    const Mg::gfx::Material* billboard_material =
+        material_pool->get_or_load("materials/billboard.hjson");
+    const Mg::gfx::Material* particle_material =
+        material_pool->get_or_load("materials/particle.hjson");
+    const Mg::gfx::Material* sky_material = material_pool->get_or_load("materials/skybox.hjson");
+
 
     Mg::gfx::ParticleSystem particle_system;
 
@@ -204,15 +199,15 @@ private:
     Entities entities{ 1024 };
 
     void load_model(Mg::Identifier mesh_file,
-                    std::span<const MaterialFileAssignment> material_files,
+                    std::span<const Mg::gfx::MaterialBinding> material_bindings,
                     Mg::ecs::Entity entity);
 
     Mg::ecs::Entity add_static_object(Mg::Identifier mesh_file,
-                                      std::span<const MaterialFileAssignment> material_files,
+                                      std::span<const Mg::gfx::MaterialBinding> material_bindings,
                                       const glm::mat4& transform);
 
     Mg::ecs::Entity add_dynamic_object(Mg::Identifier mesh_file,
-                                       std::span<const MaterialFileAssignment> material_files,
+                                       std::span<const Mg::gfx::MaterialBinding> material_bindings,
                                        glm::vec3 position,
                                        Mg::Rotation rotation,
                                        glm::vec3 scale,
@@ -221,7 +216,6 @@ private:
     void make_hdr_target(Mg::VideoMode mode);
 
     void create_entities();
-    void load_materials();
     void generate_lights();
 
     void on_window_focus_change(bool is_focused);

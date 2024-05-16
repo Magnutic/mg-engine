@@ -45,7 +45,7 @@ struct AnimationData {
 /** Internal mesh structure. @see MeshPool */
 struct Mesh {
     /** Submeshes, defined as ranges in the index_buffer. */
-    small_vector<mesh_data::SubmeshRange, 8> submeshes;
+    small_vector<mesh_data::Submesh, 8> submeshes;
 
     /** Bounding sphere used for frustum culling. */
     BoundingSphere bounding_sphere;

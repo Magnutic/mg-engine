@@ -4,15 +4,16 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-#include "mg/gfx/mg_animation.h"
 #include "mg/gfx/mg_mesh_pool.h"
 
 #include "mg/containers/mg_flat_map.h"
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
+#include "mg/gfx/mg_animation.h"
 #include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/gfx/mg_joint.h"
+#include "mg/gfx/mg_material_pool.h"
 #include "mg/gfx/mg_mesh.h"
 #include "mg/gfx/mg_mesh_data.h"
 #include "mg/utils/mg_assert.h"
@@ -33,6 +34,7 @@ namespace Mg::gfx {
 
 struct MeshPoolImpl {
     std::shared_ptr<ResourceCache> resource_cache;
+    std::shared_ptr<MaterialPool> material_pool;
 
     plf::colony<SharedBuffer> vertex_buffers;
     plf::colony<SharedBuffer> index_buffers;
@@ -219,9 +221,8 @@ make_mesh_at(MeshPoolImpl& impl, Mesh& mesh, Identifier name, const MakeMeshPara
     mesh.bounding_sphere = params.bounding_sphere;
     mesh.aabb = params.aabb;
 
-    for (const mesh_data::Submesh& sm : params.mesh_data.submeshes) {
-        mesh.submeshes.push_back({ sm.index_range.begin, sm.index_range.amount });
-    }
+    mesh.submeshes.resize(params.mesh_data.submeshes.size());
+    std::ranges::copy(params.mesh_data.submeshes, mesh.submeshes.begin());
 
     GLuint vertex_array_id = 0;
     glGenVertexArrays(1, &vertex_array_id);

@@ -21,22 +21,18 @@ namespace Mg::gfx {
 
 namespace {
 
-const Material* material_for_submesh(std::span<const MaterialAssignment> assignment,
-                                     size_t sub_mesh_index)
+const Material* material_for_submesh(std::span<const MaterialBinding> bindings,
+                                     const mesh_data::Submesh& submesh)
 {
-    auto it = find_if(assignment, [&](const MaterialAssignment& mb) {
-        return mb.sub_mesh_index == sub_mesh_index;
+    auto it = find_if(bindings, [&](const MaterialBinding& mb) {
+        return mb.material_binding_id == submesh.material_binding_id;
     });
 
-    if (it != assignment.end()) {
+    if (it != bindings.end()) {
         return it->material;
     }
 
-    if (sub_mesh_index == 0) {
-        return nullptr;
-    }
-
-    return material_for_submesh(assignment, 0);
+    return nullptr;
 }
 
 // Key used for sorting render commands.
@@ -66,17 +62,18 @@ RenderCommandProducer::~RenderCommandProducer() = default;
 
 void RenderCommandProducer::add_mesh(const Mesh& mesh,
                                      const glm::mat4& transform,
-                                     std::span<const MaterialAssignment> material_assignment)
+                                     std::span<const MaterialBinding> material_bindings)
 {
     MG_ASSERT(m_impl->m_transforms_unsorted.size() == m_impl->render_commands_unsorted.size());
 
-    for (size_t i = 0; i < mesh.submeshes.size(); ++i) {
-        const auto* material = material_for_submesh(material_assignment, i);
+    for (const auto& submesh : mesh.submeshes) {
+        const auto* material = material_for_submesh(material_bindings, submesh);
 
         if (material == nullptr) {
-            log.warning("No material specified for mesh '{}', submesh {}. Skipping.",
-                        mesh.name.str_view(),
-                        i);
+            log.warning_once(10.0f,
+                             "No material specified for mesh '{}', material binding {}. Skipping.",
+                             mesh.name.str_view(),
+                             submesh.material_binding_id.str_view());
             continue;
         }
 
@@ -87,18 +84,17 @@ void RenderCommandProducer::add_mesh(const Mesh& mesh,
 
             command.vertex_array = mesh.vertex_array;
             command.bounding_sphere = mesh.bounding_sphere;
-            command.begin = mesh.submeshes[i].begin;
-            command.amount = mesh.submeshes[i].amount;
+            command.begin = submesh.index_range.begin;
+            command.amount = submesh.index_range.amount;
             command.material = material;
         }
     }
 }
 
-void RenderCommandProducer::add_skinned_mesh(
-    const Mesh& mesh,
-    const glm::mat4& transform,
-    std::span<const MaterialAssignment> material_assignment,
-    const SkinningMatrixPalette& skinning_matrix_palette)
+void RenderCommandProducer::add_skinned_mesh(const Mesh& mesh,
+                                             const glm::mat4& transform,
+                                             std::span<const MaterialBinding> material_bindings,
+                                             const SkinningMatrixPalette& skinning_matrix_palette)
 {
     const size_t num_commands_before = m_impl->render_commands_unsorted.size();
     add_mesh(mesh, transform, material_bindings);
@@ -112,16 +108,15 @@ void RenderCommandProducer::add_skinned_mesh(
     }
 }
 
-void RenderCommandProducer::add_skinned_mesh(
-    const Mesh& mesh,
-    const glm::mat4& transform,
-    const Skeleton& skeleton,
-    const SkeletonPose& pose,
-    std::span<const MaterialAssignment> material_assignment)
+void RenderCommandProducer::add_skinned_mesh(const Mesh& mesh,
+                                             const glm::mat4& transform,
+                                             const Skeleton& skeleton,
+                                             const SkeletonPose& pose,
+                                             std::span<const MaterialBinding> material_bindings)
 {
     auto palette = allocate_skinning_matrix_palette(skeleton);
     calculate_skinning_matrices(transform, skeleton, pose, palette.skinning_matrices());
-    add_skinned_mesh(mesh, transform, material_assignment, palette);
+    add_skinned_mesh(mesh, transform, material_bindings, palette);
 }
 
 SkinningMatrixPalette

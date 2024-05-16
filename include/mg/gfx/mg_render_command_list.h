@@ -11,6 +11,7 @@
 #pragma once
 
 #include "mg/containers/mg_array.h"
+#include "mg/core/mg_identifier.h"
 #include "mg/gfx/mg_gfx_object_handles.h"
 #include "mg/mg_bounding_volumes.h"
 #include "mg/utils/mg_gsl.h"
@@ -57,11 +58,15 @@ struct RenderCommand {
     uint16_t num_skinning_matrices{};
 };
 
-/** Tells which material to use for a given submesh (by numeric index). */
-struct MaterialAssignment {
-    size_t sub_mesh_index = 0;
-    const Material* material{};
+/** Tells which material to use when rendering. */
+struct MaterialBinding {
+    /** Binding id in the mesh. This identifies which submeshes shall use the material. */
+    Identifier material_binding_id;
+
+    /** Material to use. */
+    const Material* material = nullptr;
 };
+
 
 class ICamera;
 
@@ -134,18 +139,18 @@ public:
     MG_MAKE_NON_MOVABLE(RenderCommandProducer);
 
     /** Add a non-animated mesh to be rendered, with the given transformation and material
-     * assignments.
+     * bindings.
      */
     void add_mesh(const Mesh& mesh,
                   const glm::mat4& transform,
-                  std::span<const MaterialAssignment> material_assignment);
+                  std::span<const MaterialBinding> material_bindings);
 
     /** Add a skinned (animated) mesh to be rendered, with the given transformation and material
-     * assignments.
+     * bindings.
      */
     void add_skinned_mesh(const Mesh& mesh,
                           const glm::mat4& transform,
-                          std::span<const MaterialAssignment> material_assignment,
+                          std::span<const MaterialBinding> material_bindings,
                           const SkinningMatrixPalette& skinning_matrix_palette);
 
     /** Add a skinned (animated) mesh to be rendered. Convenience overload that handles the
@@ -156,7 +161,7 @@ public:
                           const glm::mat4& transform,
                           const Skeleton& skeleton,
                           const SkeletonPose& pose,
-                          std::span<const MaterialAssignment> material_assignment);
+                          std::span<const MaterialBinding> material_bindings);
 
     /** Allocate space for a skinning matrix palette, for use with `add_skinned_mesh`. The matrix
      * palette must be filled with the appropriate skinning matrix data.
