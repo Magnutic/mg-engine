@@ -30,6 +30,6 @@ build/my_configure.sh
 
 tests/catch.hpp
 
-data/textures/contexture*
-data/meshes/mg_mesh_converter
-data/unused/
+samples/data/textures/contexture*
+samples/data/meshes/mg_mesh_converter
+samples/data/unused/
