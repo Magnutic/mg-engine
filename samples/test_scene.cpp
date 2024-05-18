@@ -33,24 +33,10 @@ constexpr float k_light_radius = 3.0f;
 
 } // namespace
 
-Scene::Scene() : app(config_file, window_title)
-{
-    resource_cache->set_resource_reload_callback(
-        "ShaderResource"_id,
-        [](void* data, const Mg::FileChangedEvent&) {
-            auto& scene = *static_cast<Scene*>(data);
-            scene.mesh_renderer.drop_shaders();
-            scene.billboard_renderer.drop_shaders();
-            scene.post_renderer.drop_shaders();
-            scene.ui_renderer.drop_shaders();
-            scene.skybox_renderer.drop_shaders();
-        },
-        this);
-}
+Scene::Scene() : app(config_file, window_title) {}
 
 Scene::~Scene()
 {
-    resource_cache->remove_resource_reload_callback("ShaderResource"_id);
     Mg::write_display_settings(app.config(), app.window().settings());
     app.config().write_to_file(config_file);
 }
@@ -73,11 +59,6 @@ void Scene::init()
         app.window().apply_settings(window_settings);
         app.window().set_cursor_lock_mode(Mg::CursorLockMode::LOCKED);
     }
-
-    make_hdr_target(app.window().settings().video_mode);
-
-    blur_target = std::make_unique<Mg::gfx::BlurRenderTarget>(texture_pool,
-                                                              app.window().settings().video_mode);
 
     app.gfx_device().set_clear_colour(0.0125f, 0.01275f, 0.025f, 1.0f);
 
@@ -144,19 +125,6 @@ void Scene::simulation_step()
         app.window().apply_settings(s);
         camera.set_aspect_ratio(app.window().aspect_ratio());
 
-        // Dispose of old render target textures. TODO: RAII
-        {
-            texture_pool->destroy(hdr_target->colour_target());
-            texture_pool->destroy(hdr_target->depth_target());
-        }
-
-        make_hdr_target(app.window().settings().video_mode);
-
-        // Recreate blur_target, to make new state matching new video mode.
-        blur_target =
-            std::make_unique<Mg::gfx::BlurRenderTarget>(texture_pool,
-                                                        app.window().settings().video_mode);
-
         if (app.window().is_cursor_locked_to_window() && !s.fullscreen) {
             app.window().release_cursor();
         }
@@ -201,10 +169,10 @@ void Scene::render(const double lerp_factor)
         Mg::gfx::make_point_light(camera.position, glm::vec3(25.0f), 2.0f * k_light_radius);
 
     // Clear render target.
-    app.gfx_device().clear(*hdr_target);
+    app.gfx_device().clear(*render_targets.hdr_target);
 
     // Draw sky.
-    skybox_renderer.draw(*hdr_target, camera, *sky_material);
+    renderers.skybox_renderer.draw(*render_targets.hdr_target, camera, *sky_material);
 
     entities.animate(float(app.time_since_init()));
 
@@ -221,33 +189,42 @@ void Scene::render(const double lerp_factor)
         params.current_time = Mg::narrow_cast<float>(app.time_since_init());
         params.camera_exposure = -5.0;
 
-        mesh_renderer.render(camera, commands, scene_lights, *hdr_target, params);
+        renderers.mesh_renderer.render(camera,
+                                       commands,
+                                       scene_lights,
+                                       *render_targets.hdr_target,
+                                       params);
 
-        billboard_renderer.render(*hdr_target, camera, billboard_render_list, *billboard_material);
+        renderers.billboard_renderer.render(*render_targets.hdr_target,
+                                            camera,
+                                            billboard_render_list,
+                                            *billboard_material);
 
         particle_system.update(static_cast<float>(app.performance_info().last_frame_time_seconds));
-        billboard_renderer.render(*hdr_target,
-                                  camera,
-                                  particle_system.particles(),
-                                  *particle_material);
+        renderers.billboard_renderer.render(*render_targets.hdr_target,
+                                            camera,
+                                            particle_system.particles(),
+                                            *particle_material);
     }
 
-    blur_renderer.render(post_renderer, *hdr_target, *blur_target);
+    renderers.blur_renderer.render(renderers.post_renderer,
+                                   *render_targets.hdr_target,
+                                   *render_targets.blur_target);
 
     // Apply tonemap and render to window render target.
     {
         app.gfx_device().clear(app.window().render_target);
 
-        bloom_material->set_sampler("sampler_bloom", blur_target->target_texture());
+        bloom_material->set_sampler("sampler_bloom", render_targets.blur_target->target_texture());
 
-        post_renderer.post_process(post_renderer.make_context(),
-                                   *bloom_material,
-                                   app.window().render_target,
-                                   hdr_target->colour_target()->handle());
+        renderers.post_renderer.post_process(renderers.post_renderer.make_context(),
+                                             *bloom_material,
+                                             app.window().render_target,
+                                             render_targets.hdr_target->colour_target()->handle());
     }
 
     // Draw UI
-    ui_renderer.resolution(app.window().frame_buffer_size());
+    renderers.ui_renderer.resolution(app.window().frame_buffer_size());
 
     {
         Mg::gfx::UIPlacement placement = {};
@@ -256,7 +233,7 @@ void Scene::render(const double lerp_factor)
 
         Mg::gfx::TypeSetting typesetting = {};
         typesetting.line_spacing_factor = 1.25f;
-        typesetting.max_width_pixels = ui_renderer.resolution().width;
+        typesetting.max_width_pixels = renderers.ui_renderer.resolution().width;
 
         const glm::vec3 v = character_controller->velocity();
         const glm::vec3 p = character_controller->get_position();
@@ -269,9 +246,9 @@ void Scene::render(const double lerp_factor)
         text += fmt::format("\nGrounded: {:b}", character_controller->is_on_ground());
         text += fmt::format("\nNum particles: {}", particle_system.particles().size());
 
-        ui_renderer.draw_text(app.window().render_target,
-                              placement,
-                              font->prepare_text(text, typesetting));
+        renderers.ui_renderer.draw_text(app.window().render_target,
+                                        placement,
+                                        font->prepare_text(text, typesetting));
     }
 
     // Debug geometry
@@ -284,7 +261,7 @@ void Scene::render(const double lerp_factor)
         break;
     case 3:
         physics_world->draw_debug(app.window().render_target,
-                                  debug_renderer,
+                                  renderers.debug_renderer,
                                   camera.view_proj_matrix());
         break;
     default:
@@ -292,7 +269,7 @@ void Scene::render(const double lerp_factor)
     }
 
     Mg::gfx::get_debug_render_queue().dispatch(app.window().render_target,
-                                               debug_renderer,
+                                               renderers.debug_renderer,
                                                camera.view_proj_matrix());
 
     app.window().swap_buffers();
@@ -400,28 +377,6 @@ Scene::add_dynamic_object(Mg::Identifier mesh_file,
     return entity;
 }
 
-void Scene::make_hdr_target(Mg::VideoMode mode)
-{
-    MG_GFX_DEBUG_GROUP("Scene::make_hdr_target")
-
-    Mg::gfx::RenderTargetParams params{};
-    params.filter_mode = Mg::gfx::TextureFilterMode::Linear;
-    params.width = mode.width;
-    params.height = mode.height;
-    params.render_target_id = "HDR.colour";
-    params.texture_format = Mg::gfx::RenderTargetParams::Format::RGBA16F;
-
-    Mg::gfx::Texture2D* colour_target = texture_pool->create_render_target(params);
-
-    params.render_target_id = "HDR.depth";
-    params.texture_format = Mg::gfx::RenderTargetParams::Format::Depth24;
-
-    Mg::gfx::Texture2D* depth_target = texture_pool->create_render_target(params);
-
-    hdr_target = Mg::gfx::TextureRenderTarget::with_colour_and_depth_targets(colour_target,
-                                                                             depth_target);
-}
-
 void Scene::render_light_debug_geometry()
 {
     MG_GFX_DEBUG_GROUP("Scene::render_light_debug_geometry")
@@ -435,9 +390,9 @@ void Scene::render_light_debug_geometry()
         params.colour = glm::vec4(normalize(light.colour), 0.05f);
         params.dimensions = glm::vec3(std::sqrt(light.range_sqr));
         params.wireframe = true;
-        debug_renderer.draw_ellipsoid(app.window().render_target,
-                                      camera.view_proj_matrix(),
-                                      params);
+        renderers.debug_renderer.draw_ellipsoid(app.window().render_target,
+                                                camera.view_proj_matrix(),
+                                                params);
     }
 }
 
@@ -447,11 +402,11 @@ void Scene::render_skeleton_debug_geometry()
 
     for (auto [entity, transform, mesh, animation] :
          entities.collection.get_with<TransformComponent, MeshComponent, AnimationComponent>()) {
-        debug_renderer.draw_bones(app.window().render_target,
-                                  camera.view_proj_matrix(),
-                                  transform.transform * mesh.mesh_transform,
-                                  mesh.mesh->animation_data->skeleton,
-                                  animation.pose);
+        renderers.debug_renderer.draw_bones(app.window().render_target,
+                                            camera.view_proj_matrix(),
+                                            transform.transform * mesh.mesh_transform,
+                                            mesh.mesh->animation_data->skeleton,
+                                            animation.pose);
     }
 }
 
@@ -486,7 +441,7 @@ void Scene::create_entities()
     auto man_entity =
         add_dynamic_object("meshes/CesiumMan.mgm",
                            std::array{
-                           Mg::gfx::MaterialBinding{
+                               Mg::gfx::MaterialBinding{
                                    "Cesium_Man-effect",
                                    material_pool->get_or_load("materials/actors/fox.hjson"),
                                },
@@ -500,7 +455,7 @@ void Scene::create_entities()
     auto fox_entity =
         add_dynamic_object("meshes/Fox.mgm",
                            std::array{
-                           Mg::gfx::MaterialBinding{
+                               Mg::gfx::MaterialBinding{
                                    "fox_material",
                                    material_pool->get_or_load("materials/actors/fox.hjson"),
                                },
@@ -513,7 +468,7 @@ void Scene::create_entities()
 
     add_dynamic_object("meshes/misc/hestdraugr.mgm"_id,
                        std::array{
-                       Mg::gfx::MaterialBinding{
+                           Mg::gfx::MaterialBinding{
                                "hestdraugr_material",
                                material_pool->get_or_load("materials/actors/HestDraugr.hjson"),
                            },
@@ -525,7 +480,7 @@ void Scene::create_entities()
 
     add_dynamic_object("meshes/box.mgm",
                        std::array{
-                       Mg::gfx::MaterialBinding{
+                           Mg::gfx::MaterialBinding{
                                "cube_material",
                                material_pool->get_or_load("materials/crate.hjson"),
                            },

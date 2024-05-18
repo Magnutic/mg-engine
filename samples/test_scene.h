@@ -5,27 +5,22 @@
 #include <mg/core/mg_identifier.h>
 #include <mg/core/mg_window_settings.h>
 #include <mg/ecs/mg_entity.h>
-#include <mg/gfx/mg_billboard_renderer.h>
 #include <mg/gfx/mg_bitmap_font.h>
-#include <mg/gfx/mg_blur_renderer.h>
-#include <mg/gfx/mg_debug_renderer.h>
 #include <mg/gfx/mg_material.h>
 #include <mg/gfx/mg_material_pool.h>
 #include <mg/gfx/mg_mesh.h>
 #include <mg/gfx/mg_mesh_pool.h>
-#include <mg/gfx/mg_mesh_renderer.h>
-#include <mg/gfx/mg_post_process.h>
 #include <mg/gfx/mg_render_command_list.h>
 #include <mg/gfx/mg_render_target.h>
-#include <mg/gfx/mg_skybox_renderer.h>
 #include <mg/gfx/mg_texture_pool.h>
-#include <mg/gfx/mg_ui_renderer.h>
 #include <mg/input/mg_input.h>
 #include <mg/mg_player_controller.h>
 #include <mg/physics/mg_physics.h>
 #include <mg/resource_cache/mg_resource_cache.h>
 #include <mg/utils/mg_interpolate_transform.h>
 #include <mg/utils/mg_optional.h>
+
+#include "shared/renderers.h"
 
 struct TransformComponent : Mg::ecs::BaseComponent<1> {
     glm::mat4 previous_transform = glm::mat4(1.0f);
@@ -120,7 +115,8 @@ public:
 
 inline std::shared_ptr<Mg::ResourceCache> setup_resource_cache()
 {
-    return std::make_shared<Mg::ResourceCache>(std::make_unique<Mg::BasicFileLoader>("../data"));
+    return std::make_shared<Mg::ResourceCache>(
+        std::make_unique<Mg::BasicFileLoader>("../samples/data"));
 }
 
 class Scene : public Mg::IApplication {
@@ -147,19 +143,12 @@ public:
     Mg::ResourceHandle<Mg::ShaderResource> blur_shader_handle =
         resource_cache->resource_handle<Mg::ShaderResource>("shaders/post_process_blur.hjson");
 
-    Mg::gfx::MeshRenderer mesh_renderer{ Mg::gfx::LightGridConfig{} };
-    Mg::gfx::DebugRenderer debug_renderer;
-    Mg::gfx::BillboardRenderer billboard_renderer;
-    Mg::gfx::BlurRenderer blur_renderer{ material_pool, blur_shader_handle };
-    Mg::gfx::PostProcessRenderer post_renderer;
-    Mg::gfx::UIRenderer ui_renderer{ {} };
-    Mg::gfx::SkyboxRenderer skybox_renderer;
+    Renderers renderers{ app.window(), resource_cache, material_pool, blur_shader_handle };
 
     Mg::gfx::RenderCommandProducer render_command_producer;
     std::vector<Mg::gfx::Billboard> billboard_render_list;
 
-    std::unique_ptr<Mg::gfx::BlurRenderTarget> blur_target;
-    std::unique_ptr<Mg::gfx::TextureRenderTarget> hdr_target;
+    RenderTargets render_targets{ app.window(), texture_pool };
 
     Mg::gfx::Camera camera;
 
@@ -212,8 +201,6 @@ private:
                                        Mg::Rotation rotation,
                                        glm::vec3 scale,
                                        bool enable_physics);
-
-    void make_hdr_target(Mg::VideoMode mode);
 
     void create_entities();
     void generate_lights();
