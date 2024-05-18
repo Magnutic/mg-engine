@@ -14,6 +14,7 @@
 #include "mg/core/mg_window_settings.h"
 #include "mg/gfx/mg_render_target.h"
 #include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_observer.h"
 
 #include <cstdint>
 #include <functional>
@@ -124,6 +125,12 @@ public:
     /** Get (const reference to) settings struct for this Window. */
     const WindowSettings& settings() const noexcept { return m_settings; }
 
+    /** Observe changes to window settings. */
+    void observe_settings(Observer<WindowSettings>& observer)
+    {
+        m_window_settings_subject.add_observer(observer);
+    }
+
     /** Set the settings for this Window. Takes immediate effect. */
     void apply_settings(WindowSettings s);
 
@@ -158,6 +165,7 @@ private:
 
 private:
     FocusCallbackT m_focus_callback{};
+    Subject<WindowSettings> m_window_settings_subject;
     WindowSettings m_settings;
     std::string m_title;
 

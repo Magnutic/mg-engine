@@ -323,6 +323,9 @@ void Window::reset()
                          GLFW_DONT_CARE); // Refresh rate: 'don't care' -> use highest available
 
     set_vsync(m_window, m_settings.vsync);
+
+    // Notify observers of new settings.
+    m_window_settings_subject.notify(m_settings);
 }
 
 void Window::set_title(std::string title) noexcept
