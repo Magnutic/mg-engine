@@ -174,14 +174,9 @@ TextureT* load_impl(TexturePool::Impl& data, const Identifier& texture_id)
         return result;
     }
 
-    try {
-        auto access_guard = data.resource_cache->access_resource<TextureResource>(texture_id);
-        const auto settings = deduce_texture_settings(*access_guard);
-        return from_resource_impl<TextureT>(data, *access_guard, settings);
-    }
-    catch (const ResourceNotFound&) {
-        return nullptr;
-    }
+    auto access_guard = data.resource_cache->access_resource<TextureResource>(texture_id);
+    const auto settings = deduce_texture_settings(*access_guard);
+    return from_resource_impl<TextureT>(data, *access_guard, settings);
 }
 
 template<typename TextureT> void destroy_impl(TexturePool::Impl& data, TextureT* texture)

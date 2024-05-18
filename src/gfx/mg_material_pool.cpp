@@ -177,6 +177,7 @@ void MaterialPool::update(const MaterialResource& material_resource)
     }
     catch (Mg::RuntimeError&) {
         log.error("Failed to update Material '{}'.", material_id.str_view());
+        return;
     }
 
     // Swap into place.
