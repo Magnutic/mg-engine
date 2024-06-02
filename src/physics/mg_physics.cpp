@@ -1272,7 +1272,7 @@ public:
             const auto v1 = mesh_shape->vertices()[i1];
             const auto v2 = mesh_shape->vertices()[i2];
             hit.hit_normal_worldspace = hit.body.get_transform() *
-                                        vec4(glm::normalize(glm::cross(v1 - v0, v2 - v0)), 1.0f);
+                                        vec4(glm::normalize(glm::cross(v1 - v0, v2 - v0)), 0.0f);
         }
         else {
             hit.hit_normal_worldspace =

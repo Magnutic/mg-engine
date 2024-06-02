@@ -280,7 +280,7 @@ void push_back_against_penetrating_object(const Collision& collision,
         const vec3 contact_point_on_other = other_is_b ? collision.contact_point_on_b
                                                        : collision.contact_point_on_a;
         const vec3 relative_position = contact_point_on_other - other_dynamic.get_position();
-        other_dynamic.apply_impulse(-recovery_offset / time_step * other_dynamic.mass(),
+        other_dynamic.apply_impulse(-(recovery_offset / time_step) * other_dynamic.mass(),
                                     relative_position);
     }
 }
@@ -678,6 +678,7 @@ void CharacterController::set_position(const vec3& position)
 
 void CharacterController::update(const float time_step)
 {
+    MG_ASSERT(time_step > 0.0f);
     m_time_step = time_step;
     m_current_position = collision_body().get_position();
     m_last_position = m_current_position;
