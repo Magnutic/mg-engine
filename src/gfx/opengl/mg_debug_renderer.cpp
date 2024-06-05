@@ -309,9 +309,6 @@ Pipeline make_debug_pipeline()
 //--------------------------------------------------------------------------------------------------
 
 struct DebugRenderer::Impl {
-    VertexShaderHandle::Owner vs = compile_vertex_shader(vs_code).value();
-    FragmentShaderHandle::Owner fs = compile_fragment_shader(fs_code).value();
-
     DebugMesh box = generate_mesh(box_vertices, box_indices);
     FlatMap<size_t, Sphere> spheres;
     DebugMesh line = generate_mesh({}, {});
