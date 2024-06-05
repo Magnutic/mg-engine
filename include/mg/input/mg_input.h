@@ -12,6 +12,7 @@
 
 #include "mg/containers/mg_flat_map.h"
 #include "mg/core/mg_identifier.h"
+#include "mg/input/mg_input_source.h"
 #include "mg/input/mg_keyboard.h"
 #include "mg/input/mg_mouse.h"
 #include "mg/utils/mg_macros.h"
@@ -19,31 +20,7 @@
 
 #include <glm/vec2.hpp>
 
-namespace Mg {
-class Window;
-}
-
 namespace Mg::input {
-
-enum class InputEvent {
-    Press,
-    Release,
-};
-
-class IButtonEventHandler {
-public:
-    MG_INTERFACE_BOILERPLATE(IButtonEventHandler);
-
-    virtual void handle_key_event(Key key, InputEvent event) = 0;
-    virtual void handle_mouse_button_event(MouseButton button, InputEvent event) = 0;
-};
-
-class IMouseMovementEventHandler {
-public:
-    MG_INTERFACE_BOILERPLATE(IMouseMovementEventHandler);
-
-    virtual void handle_mouse_move_event(float x, float y, bool is_cursor_locked_to_window) = 0;
-};
 
 struct ButtonState {
     bool was_pressed = false;
@@ -55,14 +32,14 @@ class ButtonTracker : public IButtonEventHandler {
 public:
     using ButtonStates = FlatMap<Identifier, ButtonState, Identifier::HashCompare>;
 
-    explicit ButtonTracker(Window& window);
+    explicit ButtonTracker(IInputSource& input_source);
     ~ButtonTracker() override;
 
     MG_MAKE_NON_MOVABLE(ButtonTracker);
     MG_MAKE_NON_COPYABLE(ButtonTracker);
 
     // Implementation of IButtonEventHandler.
-    // Mg::Window calls these functions to notify ButtonTracker of button events.
+    // The input source calls these functions to notify ButtonTracker of button events.
     void handle_key_event(Key key, InputEvent event) override;
     void handle_mouse_button_event(MouseButton button, InputEvent event) override;
 
@@ -83,7 +60,7 @@ public:
     }
 
 private:
-    Window& m_window;
+    IInputSource& m_input_source;
     ButtonStates m_states;
     FlatMap<MouseButton, Identifier> m_mouse_button_bindings;
     FlatMap<Key, Identifier> m_key_bindings;
@@ -91,14 +68,14 @@ private:
 
 class MouseMovementTracker : public IMouseMovementEventHandler {
 public:
-    explicit MouseMovementTracker(Window& window);
+    explicit MouseMovementTracker(IInputSource& input_source);
     ~MouseMovementTracker() override;
 
     MG_MAKE_NON_MOVABLE(MouseMovementTracker);
     MG_MAKE_NON_COPYABLE(MouseMovementTracker);
 
     // Implementation of IMouseMovementEventHandler.
-    // Mg::Window calls these functions to notify MouseMovementTracker of input events.
+    // The input source calls these functions to notify MouseMovementTracker of input events.
     void handle_mouse_move_event(float x, float y, bool is_cursor_locked_to_window) override;
 
     /** Get mouse cursor position in screen coordinates, relative to upper left corner of the
@@ -112,7 +89,7 @@ public:
     glm::vec2 mouse_delta() { return std::exchange(m_cursor_delta, { 0.0f, 0.0f }); }
 
 private:
-    Window& m_window;
+    IInputSource& m_input_source;
     glm::vec2 m_cursor_position = { 0.0f, 0.0f };
     glm::vec2 m_cursor_delta = { 0.0f, 0.0f };
 };

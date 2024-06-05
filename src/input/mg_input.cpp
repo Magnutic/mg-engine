@@ -27,14 +27,14 @@ void update_button_state(ButtonState& state, const InputEvent event)
 } // namespace
 
 
-ButtonTracker::ButtonTracker(Window& window) : m_window{ window }
+ButtonTracker::ButtonTracker(IInputSource& input_source) : m_input_source{ input_source }
 {
-    m_window.register_button_event_handler(*this);
+    m_input_source.register_button_event_handler(*this);
 }
 
 ButtonTracker::~ButtonTracker()
 {
-    m_window.deregister_button_event_handler(*this);
+    m_input_source.deregister_button_event_handler(*this);
 }
 
 void ButtonTracker::handle_key_event(const Key key, const InputEvent event)
@@ -69,14 +69,15 @@ void ButtonTracker::bind(Identifier button_action_id, MouseButton button, bool o
     m_states[button_action_id] = {};
 }
 
-MouseMovementTracker::MouseMovementTracker(Window& window) : m_window{ window }
+MouseMovementTracker::MouseMovementTracker(IInputSource& input_source)
+    : m_input_source{ input_source }
 {
-    m_window.register_mouse_movement_event_handler(*this);
+    m_input_source.register_mouse_movement_event_handler(*this);
 }
 
 MouseMovementTracker::~MouseMovementTracker()
 {
-    m_window.deregister_mouse_movement_event_handler(*this);
+    m_input_source.deregister_mouse_movement_event_handler(*this);
 }
 
 void MouseMovementTracker::handle_mouse_move_event(const float x,

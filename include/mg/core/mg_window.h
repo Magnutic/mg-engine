@@ -1,5 +1,5 @@
 //**************************************************************************************************
-// This file is part of Mg Engine. Copyright (c) 2020, Magnus Bergsten.
+// This file is part of Mg Engine. Copyright (c) 2024, Magnus Bergsten.
 // Mg Engine is made available under the terms of the 3-Clause BSD License.
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
@@ -13,6 +13,7 @@
 #include "mg/containers/mg_array.h"
 #include "mg/core/mg_window_settings.h"
 #include "mg/gfx/mg_render_target.h"
+#include "mg/input/mg_input_source.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_observer.h"
 
@@ -44,7 +45,7 @@ VideoMode current_monitor_video_mode() noexcept;
 enum class CursorLockMode { UNLOCKED, LOCKED };
 
 /** Window handling class. Presently, there is no support for multiple windows. */
-class Window {
+class Window : public input::IInputSource {
     struct ConstructKey {}; // Limits access to Window constructor
 
 public:
@@ -59,7 +60,7 @@ public:
     /** Restricted constructor (see Window::make()). */
     explicit Window(ConstructKey, GLFWwindow* handle, WindowSettings settings);
 
-    ~Window();
+    ~Window() override;
 
     // Do not allow copying or moving: Window must be findable by address.
     MG_MAKE_NON_COPYABLE(Window);
@@ -139,11 +140,12 @@ public:
     /** Polls input events for this window. Should be done every frame. */
     void poll_input_events();
 
-    void register_button_event_handler(input::IButtonEventHandler& handler);
-    void deregister_button_event_handler(input::IButtonEventHandler& handler);
+    void register_button_event_handler(input::IButtonEventHandler& handler) override;
+    void deregister_button_event_handler(input::IButtonEventHandler& handler) override;
 
-    void register_mouse_movement_event_handler(input::IMouseMovementEventHandler& handler);
-    void deregister_mouse_movement_event_handler(input::IMouseMovementEventHandler& handler);
+    void register_mouse_movement_event_handler(input::IMouseMovementEventHandler& handler) override;
+    void
+    deregister_mouse_movement_event_handler(input::IMouseMovementEventHandler& handler) override;
 
     /** Render target for this window. */
     gfx::WindowRenderTarget render_target{};
