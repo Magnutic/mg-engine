@@ -99,4 +99,10 @@ inline T cubic_bezier(const T& p0, const T& p1, const T& p2, const T& p3, float 
            (3 * one_minus_t * t_sqr * p2) + (t_cube * p3);
 }
 
+template<typename IntT> inline int positive_modulo(IntT i, IntT n)
+{
+    static_assert(std::is_integral_v<IntT>, "IntT must be integral type.");
+    return (i % n + n) % n;
+}
+
 } // namespace Mg
