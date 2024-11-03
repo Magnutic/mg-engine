@@ -560,7 +560,7 @@ void CharacterController::step_down()
     m_is_on_ground = drop_sweep_result.has_value() && m_jump_velocity <= 0.0f;
 
     // Slide down slopes
-    if (!m_is_on_ground) {
+    if (!drop_sweep_result.has_value()) {
         // If the drop sweeps did not find any results before, it may be because the surface below
         // slopes too much. Try another sweep, but this time _only_ look for surfaces that slope too
         // much to stand on.
