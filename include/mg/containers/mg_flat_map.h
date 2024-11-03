@@ -81,6 +81,23 @@ public:
         return it->second;
     }
 
+    Opt<mapped_type&> try_get(const key_type& key)
+    {
+        auto it = find(key);
+        if (it == end()) {
+            return nullopt;
+        }
+        return it->second;
+    }
+    Opt<const mapped_type&> try_get(const key_type& key) const
+    {
+        auto it = find(key);
+        if (it == end()) {
+            return nullopt;
+        }
+        return it->second;
+    }
+
     iterator erase(const_iterator pos) noexcept
     {
         MG_ASSERT_DEBUG(pos >= cbegin() && pos < end());
