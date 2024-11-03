@@ -147,6 +147,9 @@ public:
     void
     deregister_mouse_movement_event_handler(input::IMouseMovementEventHandler& handler) override;
 
+    void register_scroll_event_handler(input::IScrollEventHandler& handler) override;
+    void deregister_scroll_event_handler(input::IScrollEventHandler& handler) override;
+
     /** Render target for this window. */
     gfx::WindowRenderTarget render_target{};
 
@@ -156,6 +159,7 @@ public:
 private:
     void mouse_button_callback(int button, int action, int mods);
     void cursor_position_callback(float x, float y);
+    void scroll_callback(float xoffset, float yoffset);
     void key_callback(int key, int scancode, int action, int mods);
     void focus_callback(bool focused);
     void frame_buffer_size_callback(int width, int height);
@@ -175,6 +179,7 @@ private:
 
     std::vector<input::IButtonEventHandler*> m_button_event_handlers;
     std::vector<input::IMouseMovementEventHandler*> m_mouse_movement_event_handlers;
+    std::vector<input::IScrollEventHandler*> m_scroll_event_handlers;
 
     CursorLockMode m_cursor_lock_mode = CursorLockMode::UNLOCKED;
     bool m_is_cursor_locked = false;

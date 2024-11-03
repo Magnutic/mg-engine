@@ -36,6 +36,13 @@ public:
     virtual void handle_mouse_move_event(float x, float y, bool is_cursor_locked_to_window) = 0;
 };
 
+class IScrollEventHandler {
+public:
+    MG_INTERFACE_BOILERPLATE(IScrollEventHandler);
+
+    virtual void handle_scroll_event(float xoffset, float yoffset) = 0;
+};
+
 class IInputSource {
 public:
     MG_INTERFACE_BOILERPLATE(IInputSource);
@@ -47,6 +54,9 @@ public:
     register_mouse_movement_event_handler(input::IMouseMovementEventHandler& handler) = 0;
     virtual void
     deregister_mouse_movement_event_handler(input::IMouseMovementEventHandler& handler) = 0;
+
+    virtual void register_scroll_event_handler(input::IScrollEventHandler& handler) = 0;
+    virtual void deregister_scroll_event_handler(input::IScrollEventHandler& handler) = 0;
 };
 
 } // namespace Mg::input

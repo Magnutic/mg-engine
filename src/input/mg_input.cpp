@@ -93,4 +93,19 @@ void MouseMovementTracker::handle_mouse_move_event(const float x,
     }
 }
 
+ScrollTracker::ScrollTracker(IInputSource& input_source) : m_input_source{ input_source }
+{
+    m_input_source.register_scroll_event_handler(*this);
+}
+
+ScrollTracker::~ScrollTracker()
+{
+    m_input_source.deregister_scroll_event_handler(*this);
+}
+
+void ScrollTracker::handle_scroll_event(const float xoffset, const float yoffset)
+{
+    m_scroll_delta = { xoffset, yoffset };
+}
+
 } // namespace Mg::input

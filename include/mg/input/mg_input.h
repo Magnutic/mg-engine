@@ -75,7 +75,7 @@ public:
     MG_MAKE_NON_COPYABLE(MouseMovementTracker);
 
     // Implementation of IMouseMovementEventHandler.
-    // The input source calls these functions to notify MouseMovementTracker of input events.
+    // The input source calls this function to notify MouseMovementTracker of input events.
     void handle_mouse_move_event(float x, float y, bool is_cursor_locked_to_window) override;
 
     /** Get mouse cursor position in screen coordinates, relative to upper left corner of the
@@ -92,6 +92,26 @@ private:
     IInputSource& m_input_source;
     glm::vec2 m_cursor_position = { 0.0f, 0.0f };
     glm::vec2 m_cursor_delta = { 0.0f, 0.0f };
+};
+
+class ScrollTracker : public IScrollEventHandler {
+public:
+    explicit ScrollTracker(IInputSource& input_source);
+    ~ScrollTracker() override;
+
+    MG_MAKE_NON_MOVABLE(ScrollTracker);
+    MG_MAKE_NON_COPYABLE(ScrollTracker);
+
+    // Implementation of IScrollEeventHandler.
+    // The input source calls this function to notify ScrollTracker of input events.
+    void handle_scroll_event(float xoffset, float yoffset) override;
+
+    /** Get scroll offset last call to this function. */
+    glm::vec2 scroll_delta() { return std::exchange(m_scroll_delta, { 0.0f, 0.0f }); }
+
+private:
+    IInputSource& m_input_source;
+    glm::vec2 m_scroll_delta = { 0.0f, 0.0f };
 };
 
 } // namespace Mg::input
