@@ -1,6 +1,4 @@
 #include "test_scene.h"
-#include "mg/physics/mg_character_controller.h"
-#include "mg/utils/mg_file_io.h"
 
 #include <mg/core/mg_config.h>
 #include <mg/core/mg_log.h>
@@ -8,7 +6,7 @@
 #include <mg/gfx/mg_gfx_debug_group.h>
 #include <mg/gfx/mg_gfx_device.h>
 #include <mg/gfx/mg_light.h>
-#include <mg/mg_unicode.h>
+#include <mg/physics/mg_character_controller.h>
 #include <mg/resources/mg_font_resource.h>
 #include <mg/resources/mg_material_resource.h>
 #include <mg/resources/mg_mesh_resource.h>
@@ -16,6 +14,7 @@
 #include <mg/resources/mg_sound_resource.h>
 #include <mg/resources/mg_texture_resource.h>
 #include <mg/utils/mg_angle.h>
+#include <mg/utils/mg_file_io.h>
 #include <mg/utils/mg_rand.h>
 
 #include <fmt/core.h>
@@ -66,16 +65,22 @@ void Scene::init()
     camera.field_of_view = 80_degrees;
 
     sample_control_button_tracker = std::make_shared<Mg::input::ButtonTracker>(app.window());
-    sample_control_button_tracker->bind("lock_camera", Mg::input::Key::E);
+    sample_control_button_tracker->bind("swap_movement_mode", Mg::input::Key::E);
     sample_control_button_tracker->bind("fullscreen", Mg::input::Key::F4);
     sample_control_button_tracker->bind("exit", Mg::input::Key::Esc);
     sample_control_button_tracker->bind("next_debug_visualization", Mg::input::Key::F);
     sample_control_button_tracker->bind("reset", Mg::input::Key::R);
 
+    auto button_tracker = std::make_shared<Mg::input::ButtonTracker>(app.window());
+    auto mouse_movement_tracker = std::make_shared<Mg::input::MouseMovementTracker>(app.window());
+    player_controller = std::make_unique<Mg::PlayerController>(button_tracker,
+                                                               mouse_movement_tracker);
+    editor_controller = std::make_unique<Mg::EditorController>(button_tracker,
+                                                               mouse_movement_tracker);
+    current_controller = player_controller.get();
+
     physics_world = std::make_unique<Mg::physics::World>();
-    player_controller = std::make_unique<Mg::PlayerController>(
-        std::make_shared<Mg::input::ButtonTracker>(app.window()),
-        std::make_shared<Mg::input::MouseMovementTracker>(app.window()));
+
     character_controller = std::make_unique<Mg::physics::CharacterController>(
         "Actor"_id, *physics_world, Mg::physics::CharacterControllerSettings{});
 
@@ -133,18 +138,31 @@ void Scene::simulation_step()
     if (button_states["next_debug_visualization"].was_pressed) {
         ++debug_visualization;
     }
-    if (button_states["lock_camera"].was_pressed) {
-        camera_locked = !camera_locked;
+
+    if (button_states["swap_movement_mode"].was_pressed) {
+        if (current_controller == player_controller.get()) {
+            current_controller = editor_controller.get();
+        }
+        else {
+            current_controller = player_controller.get();
+        }
     }
+
     if (button_states["reset"].was_pressed) {
         character_controller->reset();
         character_controller->set_position({ 0.0f, 0.0f, 0.0f });
         create_entities();
     }
 
-    player_controller->handle_movement_inputs(*character_controller);
+    current_controller->handle_movement_inputs(*character_controller);
     physics_world->update(1.0f / k_steps_per_second);
     character_controller->update(1.0f / k_steps_per_second);
+
+    if (editor.update(camera.position, camera.rotation.forward())) {
+        block_scene_mesh_data = block_scene.make_mesh();
+        mesh_pool->update(block_scene_mesh_data.view(), "BlockScene");
+        make_block_scene_entity();
+    }
 }
 
 void Scene::render(const double lerp_factor)
@@ -154,16 +172,13 @@ void Scene::render(const double lerp_factor)
     // Mouselook. Doing this in render step instead of in simulation_step to minimize input lag.
     {
         app.window().poll_input_events();
-        player_controller->handle_rotation_inputs(app.config().as<float>("mouse_sensitivity_x"),
-                                                  app.config().as<float>("mouse_sensitivity_y"));
-        camera.rotation = player_controller->rotation;
+        current_controller->handle_rotation_inputs(app.config().as<float>("mouse_sensitivity_x"),
+                                                   app.config().as<float>("mouse_sensitivity_y"));
+        camera.rotation = current_controller->get_rotation();
     }
 
-    if (!camera_locked) {
-        camera.position = character_controller->get_position(float(lerp_factor));
-        camera.position.z += character_controller->current_height_smooth(float(lerp_factor)) *
-                             0.95f;
-    }
+    camera.position = character_controller->get_position(float(lerp_factor));
+    camera.position.z += character_controller->current_height_smooth(float(lerp_factor)) * 0.95f;
 
     scene_lights.back() =
         Mg::gfx::make_point_light(camera.position, glm::vec3(25.0f), 2.0f * k_light_radius);
