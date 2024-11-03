@@ -495,8 +495,9 @@ void CharacterController::step_down()
 
     // If we are not moving upwards, and the floor is close beneath us, clamp down to the floor, so
     // that we follow stairs and ledges down.
-    const bool try_clamping_to_floor = !drop_sweep_result && m_vertical_velocity <= 0.0f &&
-                                       m_is_on_ground && m_jump_velocity == 0.0f;
+    const bool is_moving_upward = m_vertical_velocity + m_desired_velocity.z > 0.0f &&
+                                  m_jump_velocity <= 0.0f;
+    const bool try_clamping_to_floor = !drop_sweep_result && !is_moving_upward && m_is_on_ground;
     if (try_clamping_to_floor) {
         // Double step_height: once to compensate for the character controller floating step_height
         // units in the air, and once again to check for floors up to step_height units beneath.
@@ -647,21 +648,27 @@ bool CharacterController::set_is_standing(bool v)
 
 void CharacterController::jump(const float velocity)
 {
-    if (velocity > 0.0f) {
-        m_jump_velocity += velocity;
-        const auto sweep_target = m_current_position - vec3(0.0f, 0.0f, 2.0f * step_height());
-        auto sweep_result = character_sweep_test(m_current_position, sweep_target, world_up, -1.0f);
-        if (sweep_result) {
-            if (auto dynamic_body = sweep_result->body.as_dynamic_body(); dynamic_body) {
-                const vec3 relative_position = sweep_result->hit_point_worldspace -
-                                               dynamic_body->get_position();
-                apply_impulse_to_object_below(dynamic_body.value(),
-                                              relative_position,
-                                              sweep_result->hit_normal_worldspace,
-                                              -m_jump_velocity,
-                                              m_settings.mass);
-            }
-        }
+    if (velocity <= 0.0f) {
+        return;
+    }
+
+    m_jump_velocity += velocity;
+
+    // Check if we are standing on a dynamic object, and if so apply a downward impulse.
+    const auto sweep_target = m_current_position - vec3(0.0f, 0.0f, 2.0f * step_height());
+    auto sweep_result = character_sweep_test(m_current_position, sweep_target, world_up, -1.0f);
+    if (!sweep_result) {
+        return;
+    }
+
+    if (auto dynamic_body = sweep_result->body.as_dynamic_body(); dynamic_body) {
+        const vec3 relative_position = sweep_result->hit_point_worldspace -
+                                       dynamic_body->get_position();
+        apply_impulse_to_object_below(dynamic_body.value(),
+                                      relative_position,
+                                      sweep_result->hit_normal_worldspace,
+                                      -m_jump_velocity,
+                                      m_settings.mass);
     }
 }
 
@@ -684,9 +691,14 @@ void CharacterController::update(const float time_step)
     m_last_position = m_current_position;
 
     // Update fall velocity.
-    m_vertical_velocity -= m_settings.gravity * m_time_step;
-    if (m_vertical_velocity < -m_settings.max_fall_speed) {
-        m_vertical_velocity = -m_settings.max_fall_speed;
+    if (std::exchange(m_ignore_gravity, false)) {
+        m_vertical_velocity = 0.0f;
+    }
+    else {
+        m_vertical_velocity -= m_settings.gravity * m_time_step;
+        if (m_vertical_velocity < -m_settings.max_fall_speed) {
+            m_vertical_velocity = -m_settings.max_fall_speed;
+        }
     }
 
     step_up();

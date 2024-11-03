@@ -35,8 +35,7 @@
 
 namespace Mg::physics {
 
-/** Settings for `CharacterController`. */
-struct CharacterControllerSettings {
+struct ImmutableCharacterControllerSettings {
     /** Radius of the character's collision body. */
     float radius = 0.5f;
 
@@ -51,7 +50,9 @@ struct CharacterControllerSettings {
 
     /** The maximum height difference that the character may step over when crouching. */
     float crouching_step_height = 0.3f;
+};
 
+struct MutableCharacterControllerSettings {
     /** The maximum slope angle that the character can walk up. */
     Angle max_walkable_slope = Angle::from_degrees(45.0f);
 
@@ -75,6 +76,10 @@ struct CharacterControllerSettings {
      */
     float vertical_interpolation_factor = 0.35f;
 };
+
+/** Settings for `CharacterController`. */
+struct CharacterControllerSettings : ImmutableCharacterControllerSettings,
+                                     MutableCharacterControllerSettings {};
 
 /** CharacterController is a collision-handling physical body that can be controlled for example by
  * a player or by an AI.
@@ -115,6 +120,9 @@ public:
      * jumping mid-air, check `is_on_ground()` first.
      */
     void jump(float velocity);
+
+    /** Ignore gravity during the next update. */
+    void ignore_gravity() { m_ignore_gravity = true; }
 
     /** Clear all motion state. */
     void reset();
@@ -169,6 +177,9 @@ public:
 
     /** Get the settings with which this character controller was constructed. */
     const CharacterControllerSettings& settings() const { return m_settings; }
+
+    /** Get those settings which can be changed even after the controller is constructed. */
+    MutableCharacterControllerSettings& mutable_settings() { return m_settings; }
 
 private:
     void init(const glm::vec3& initial_position);
@@ -230,6 +241,7 @@ private:
     float m_current_height_interpolated = 0.0f;
     bool m_is_standing = true;
     bool m_is_on_ground = false;
+    bool m_ignore_gravity = false;
 
     /// The desired velocity and its normalized direction, as set by the user.
     glm::vec3 m_desired_velocity = glm::vec3(0.0f);

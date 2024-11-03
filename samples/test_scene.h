@@ -156,6 +156,8 @@ public:
 
     std::unique_ptr<Mg::physics::World> physics_world;
     std::unique_ptr<Mg::PlayerController> player_controller;
+    std::unique_ptr<Mg::EditorController> editor_controller;
+    Mg::IPlayerController* current_controller = nullptr;
     std::unique_ptr<Mg::physics::CharacterController> character_controller;
 
     std::vector<Mg::gfx::Light> scene_lights;
@@ -171,8 +173,6 @@ public:
 
 
     Mg::gfx::ParticleSystem particle_system;
-
-    bool camera_locked = false;
 
     int debug_visualization = 0;
 
