@@ -39,7 +39,7 @@ template<typename ContT, typename F> auto find_if(ContT&& container, F&& predica
 template<typename MapT,
          typename KeyT = typename MapT::key_type,
          typename ElemT = typename MapT::mapped_type>
-ElemT* find_in_map(MapT& map, const KeyT& key)
+auto find_in_map(MapT& map, const KeyT& key) -> decltype(std::addressof(map.find(key)->second))
 {
     auto it = map.find(key);
 
