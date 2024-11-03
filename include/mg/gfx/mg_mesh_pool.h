@@ -46,7 +46,7 @@ public:
     /** Create a new mesh using the given mesh data. Expects that no mesh with the same
      * identifier already exists -- if one does, use update() instead.
      */
-    const Mesh* create(const mesh_data::MeshDataView& mesh_data, Identifier name);
+    [[nodiscard]] const Mesh* create(const mesh_data::MeshDataView& mesh_data, Identifier name);
 
     /** Find the mesh with the given name, if such a mesh exists. Otherwise, returns nullptr. */
     const Mesh* find(Identifier name) const;

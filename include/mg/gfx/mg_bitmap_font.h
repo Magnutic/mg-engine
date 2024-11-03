@@ -97,7 +97,8 @@ public:
      * "text shaping". Therefore it works with text in e.g. English, Swedish, Russian, and Korean,
      * but it does not currently work for e.g. Arabic or Thai.
      */
-    PreparedText prepare_text(std::string_view text_utf8, const TypeSetting& typesetting) const;
+    [[nodiscard]] PreparedText prepare_text(std::string_view text_utf8,
+                                            const TypeSetting& typesetting) const;
 
     std::span<const UnicodeRange> contained_ranges() const;
 

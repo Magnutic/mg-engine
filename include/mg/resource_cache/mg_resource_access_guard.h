@@ -38,7 +38,7 @@ namespace Mg {
  */
 template<typename ResT> class ResourceAccessGuard {
 public:
-    explicit ResourceAccessGuard(BaseResourceHandle handle)
+    [[nodiscard]] explicit ResourceAccessGuard(BaseResourceHandle handle)
         : m_entry(handle.m_p_entry), m_lock(handle.m_p_entry->mutex)
     {
         if (!m_entry->is_loaded()) {
@@ -53,7 +53,7 @@ public:
     }
 
     // Constructor taking specific resource handle type allows argument deduction.
-    explicit ResourceAccessGuard(ResourceHandle<ResT> handle)
+    [[nodiscard]] explicit ResourceAccessGuard(ResourceHandle<ResT> handle)
         : ResourceAccessGuard(BaseResourceHandle(handle))
     {}
 
