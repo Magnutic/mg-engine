@@ -84,14 +84,18 @@ void Scene::init()
     character_controller = std::make_unique<Mg::physics::CharacterController>(
         "Actor"_id, *physics_world, Mg::physics::CharacterControllerSettings{});
 
+    {
+        block_scene.try_insert(0, 0, { 2.0f, 3.0f });
+        block_scene.try_insert(0, 1, { 0.0f, 2.0f });
+        block_scene.try_insert(1, 0, { 0.0f, 1.0f });
+        block_scene.try_insert(1, 1, { 0.5f, 1.0f });
+        block_scene.try_insert(3, 0, { -1.0f, 0.0f });
+        block_scene_mesh_data = block_scene.make_mesh();
+        block_scene_mesh = mesh_pool->create(block_scene_mesh_data.view(), "BlockScene");
+    }
+
     create_entities();
     generate_lights();
-
-    const auto font_resource =
-        resource_cache->resource_handle<Mg::FontResource>("fonts/elstob/Elstob-Regular.ttf");
-    std::vector<Mg::UnicodeRange> unicode_ranges = { Mg::get_unicode_range(
-        Mg::UnicodeBlock::Basic_Latin) };
-    font = std::make_unique<Mg::gfx::BitmapFont>(font_resource, 24, unicode_ranges);
 }
 
 void Scene::simulation_step()
@@ -146,6 +150,7 @@ void Scene::simulation_step()
         else {
             current_controller = player_controller.get();
         }
+        current_controller->set_rotation(camera.rotation);
     }
 
     if (button_states["reset"].was_pressed) {
@@ -220,6 +225,8 @@ void Scene::render(const double lerp_factor)
                                             camera,
                                             particle_system.particles(),
                                             *particle_material);
+
+        editor.render(camera, *render_targets.hdr_target);
     }
 
     renderers.blur_renderer.render(renderers.post_renderer,
@@ -238,9 +245,28 @@ void Scene::render(const double lerp_factor)
                                              render_targets.hdr_target->colour_target()->handle());
     }
 
-    // Draw UI
-    renderers.ui_renderer.resolution(app.window().frame_buffer_size());
+    // Debug geometry
+    switch (debug_visualization % 4) {
+    case 1:
+        render_light_debug_geometry();
+        break;
+    case 2:
+        render_skeleton_debug_geometry();
+        break;
+    case 3:
+        physics_world->draw_debug(app.window().render_target,
+                                  renderers.debug_renderer,
+                                  camera.view_proj_matrix());
+        break;
+    default:
+        break;
+    }
 
+    Mg::gfx::get_debug_render_queue().dispatch(app.window().render_target,
+                                               renderers.debug_renderer,
+                                               camera.view_proj_matrix());
+
+    // Draw UI
     {
         Mg::gfx::UIPlacement placement = {};
         placement.position = Mg::gfx::UIPlacement::top_left + glm::vec2(0.01f, -0.01f);
@@ -264,28 +290,9 @@ void Scene::render(const double lerp_factor)
         renderers.ui_renderer.draw_text(app.window().render_target,
                                         placement,
                                         font->prepare_text(text, typesetting));
-    }
 
-    // Debug geometry
-    switch (debug_visualization % 4) {
-    case 1:
-        render_light_debug_geometry();
-        break;
-    case 2:
-        render_skeleton_debug_geometry();
-        break;
-    case 3:
-        physics_world->draw_debug(app.window().render_target,
-                                  renderers.debug_renderer,
-                                  camera.view_proj_matrix());
-        break;
-    default:
-        break;
+        editor.render_ui(app.window().render_target, renderers.ui_renderer);
     }
-
-    Mg::gfx::get_debug_render_queue().dispatch(app.window().render_target,
-                                               renderers.debug_renderer,
-                                               camera.view_proj_matrix());
 
     app.window().swap_buffers();
 }
@@ -425,11 +432,35 @@ void Scene::render_skeleton_debug_geometry()
     }
 }
 
+void Scene::make_block_scene_entity()
+{
+    if (block_scene_entity) {
+        entities.collection.delete_entity(*block_scene_entity);
+    }
+
+    block_scene_entity = entities.collection.create_entity();
+    entities.collection.add_component<TransformComponent>(*block_scene_entity);
+    auto& scene_mesh_component =
+        entities.collection.add_component<MeshComponent>(*block_scene_entity);
+    scene_mesh_component.mesh = block_scene_mesh;
+    scene_mesh_component.material_bindings.push_back(Mg::gfx::MaterialBinding{
+        "SceneMaterial0",
+        material_pool->get_or_load("materials/crate.hjson"),
+    });
+    auto block_scene_shape = physics_world->create_mesh_shape(block_scene_mesh_data.view());
+    auto block_scene_body =
+        physics_world->create_static_body("BlockScene", *block_scene_shape, glm::mat4{ 1.0f });
+    entities.collection.add_component<StaticBodyComponent>(*block_scene_entity, block_scene_body);
+}
+
 void Scene::create_entities()
 {
     using namespace Mg::literals;
 
     entities.collection.reset();
+    block_scene_entity.reset();
+
+    make_block_scene_entity();
 
     add_static_object("meshes/misc/test_scene_2.mgm",
                       std::array{
@@ -451,7 +482,7 @@ void Scene::create_entities()
                               material_pool->get_or_load("materials/buildings/GreenBrick.hjson"),
                           },
                       },
-                      glm::mat4(1.0f));
+                      glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
 
     auto man_entity =
         add_dynamic_object("meshes/CesiumMan.mgm",

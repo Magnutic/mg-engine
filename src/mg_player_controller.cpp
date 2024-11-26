@@ -41,13 +41,12 @@ PlayerController::PlayerController(
 {
     MG_ASSERT(m_button_tracker && m_mouse_movement_tracker);
 
-    const bool overwrite = false;
-    m_button_tracker->bind("forward", input::Key::W, overwrite);
-    m_button_tracker->bind("backward", input::Key::S, overwrite);
-    m_button_tracker->bind("left", input::Key::A, overwrite);
-    m_button_tracker->bind("right", input::Key::D, overwrite);
-    m_button_tracker->bind("jump", input::Key::Space, overwrite);
-    m_button_tracker->bind("crouch", input::Key::LeftControl, overwrite);
+    m_button_tracker->bind("forward", input::Key::W);
+    m_button_tracker->bind("backward", input::Key::S);
+    m_button_tracker->bind("left", input::Key::A);
+    m_button_tracker->bind("right", input::Key::D);
+    m_button_tracker->bind("jump", input::Key::Space);
+    m_button_tracker->bind("crouch", input::Key::LeftControl);
 }
 
 PlayerController::~PlayerController() = default;
@@ -140,14 +139,13 @@ EditorController::EditorController(
 {
     MG_ASSERT(m_button_tracker && m_mouse_movement_tracker);
 
-    const bool overwrite = false;
-    m_button_tracker->bind("forward", input::Key::W, overwrite);
-    m_button_tracker->bind("backward", input::Key::S, overwrite);
-    m_button_tracker->bind("left", input::Key::A, overwrite);
-    m_button_tracker->bind("right", input::Key::D, overwrite);
-    m_button_tracker->bind("float_up", input::Key::Space, overwrite);
-    m_button_tracker->bind("float_down", input::Key::LeftControl, overwrite);
-    m_button_tracker->bind("fast_switch", input::Key::LeftShift, overwrite);
+    m_button_tracker->bind("forward", input::Key::W);
+    m_button_tracker->bind("backward", input::Key::S);
+    m_button_tracker->bind("left", input::Key::A);
+    m_button_tracker->bind("right", input::Key::D);
+    m_button_tracker->bind("float_up", input::Key::Space);
+    m_button_tracker->bind("float_down", input::Key::LeftControl);
+    m_button_tracker->bind("fast_switch", input::Key::LeftShift);
 }
 
 EditorController::~EditorController() = default;
@@ -164,10 +162,9 @@ void EditorController::handle_movement_inputs(physics::CharacterController& char
     const auto forward_acc = acceleration * (get_is_held("forward") - get_is_held("backward"));
     const auto right_acc = acceleration * (get_is_held("right") - get_is_held("left"));
 
-    const auto vec_up = world_vector::up;
     const auto vec_forward = rotation.forward();
     const auto vec_right = rotation.right();
-    const auto acceleration_vector = vec_up * up_acc + vec_forward * forward_acc +
+    const auto acceleration_vector = world_vector::up * up_acc + vec_forward * forward_acc +
                                      vec_right * right_acc;
 
     auto velocity = character_controller.velocity() + acceleration_vector;

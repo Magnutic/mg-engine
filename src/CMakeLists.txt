@@ -75,6 +75,7 @@ add_library(mg_engine
     resources/mg_shader_resource.cpp
     resources/mg_sound_resource.cpp
     resources/mg_texture_resource.cpp
+    scene/mg_block_scene.cpp
     utils/mg_file_io.cpp
     utils/mg_file_time_helper.cpp
     utils/mg_geometric_functions.cpp

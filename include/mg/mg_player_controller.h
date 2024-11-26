@@ -46,6 +46,8 @@ public:
     virtual void handle_rotation_inputs(float sensitivity_x, float sensitivity_y) = 0;
 
     virtual Rotation get_rotation() const = 0;
+
+    virtual void set_rotation(Rotation) = 0;
 };
 
 class PlayerController : public IPlayerController {
@@ -63,6 +65,8 @@ public:
     void handle_rotation_inputs(float sensitivity_x, float sensitivity_y) override;
 
     Rotation get_rotation() const override { return rotation; }
+
+    void set_rotation(Rotation rotation_) override { rotation = rotation_; }
 
     Rotation rotation;
     float acceleration = 0.6f;
@@ -89,6 +93,8 @@ public:
     void handle_rotation_inputs(float sensitivity_x, float sensitivity_y) override;
 
     Rotation get_rotation() const override { return rotation; }
+
+    void set_rotation(Rotation rotation_) override { rotation = rotation_; }
 
     Rotation rotation;
     float acceleration = 0.6f;

@@ -15,11 +15,14 @@
 #include <mg/gfx/mg_texture_pool.h>
 #include <mg/input/mg_input.h>
 #include <mg/mg_player_controller.h>
+#include <mg/mg_unicode.h>
 #include <mg/physics/mg_physics.h>
 #include <mg/resource_cache/mg_resource_cache.h>
+#include <mg/scene/mg_block_scene.h>
 #include <mg/utils/mg_interpolate_transform.h>
 #include <mg/utils/mg_optional.h>
 
+#include "mg/resources/mg_font_resource.h"
 #include "shared/renderers.h"
 
 struct TransformComponent : Mg::ecs::BaseComponent<1> {
@@ -138,8 +141,6 @@ public:
     std::shared_ptr<Mg::gfx::MaterialPool> material_pool =
         std::make_shared<Mg::gfx::MaterialPool>(resource_cache, texture_pool);
 
-    std::unique_ptr<Mg::gfx::BitmapFont> font;
-
     Mg::ResourceHandle<Mg::ShaderResource> blur_shader_handle =
         resource_cache->resource_handle<Mg::ShaderResource>("shaders/post_process_blur.hjson");
 
@@ -176,6 +177,20 @@ public:
 
     int debug_visualization = 0;
 
+    Mg::ResourceHandle<Mg::FontResource> font_resource =
+        resource_cache->resource_handle<Mg::FontResource>("fonts/elstob/Elstob-Regular.ttf");
+    std::unique_ptr<Mg::gfx::BitmapFont> font =
+        std::make_unique<Mg::gfx::BitmapFont>(font_resource,
+                                              24,
+                                              std::vector<Mg::UnicodeRange>{ Mg::get_unicode_range(
+                                                  Mg::UnicodeBlock::Basic_Latin) });
+
+    Mg::BlockScene block_scene{ 1.5f };
+    Mg::BlockSceneMesh block_scene_mesh_data;
+    const Mg::gfx::Mesh* block_scene_mesh = nullptr;
+    Mg::BlockSceneEditor editor{ block_scene, app.window(), font_resource };
+    Mg::Opt<Mg::ecs::Entity> block_scene_entity;
+
     void init();
     void simulation_step() override;
     void render(double lerp_factor) override;
@@ -183,6 +198,8 @@ public:
     Mg::UpdateTimerSettings update_timer_settings() const override;
 
 private:
+    void make_block_scene_entity();
+
     void setup_config();
 
     Entities entities{ 1024 };
