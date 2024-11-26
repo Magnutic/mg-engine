@@ -7,12 +7,12 @@
 #include "mg_light_buffers.h"
 
 #include "mg/core/containers/mg_small_vector.h"
-#include "mg/core/mg_log.h"
 #include "mg/core/gfx/mg_camera.h"
 #include "mg/core/gfx/mg_gfx_debug_group.h"
 #include "mg/core/gfx/mg_light.h"
 #include "mg/core/gfx/mg_light_grid_config.h"
 #include "mg/core/mg_defs.h"
+#include "mg/core/mg_log.h"
 #include "mg_light_grid.h"
 
 #ifndef GLM_ENABLE_EXPERIMENTAL
@@ -153,8 +153,6 @@ void LightBuffers::update(std::span<const Light> lights, const ICamera& cam)
         datum.light_indices.clear();
     }
 
-    bool has_warned_about_too_many_lights = false;
-
     // Find which clusters each light intersects, and for each intersected cluster, write into the
     // corresponding cluster_working_data. This will be used below to build up the buffers which
     // will be uploaded to the GPU.
@@ -188,9 +186,8 @@ void LightBuffers::update(std::span<const Light> lights, const ICamera& cam)
                     if (datum.light_indices.size() < grid_config.max_lights_per_cluster) {
                         datum.light_indices.push_back(as<uint16_t>(light_index));
                     }
-                    else if (!has_warned_about_too_many_lights) {
-                        log.warning("Too many light sources in cluster.");
-                        has_warned_about_too_many_lights = true;
+                    else {
+                        log.warning_once("Too many light sources in cluster.", 10.0f);
                     }
                 }
             }

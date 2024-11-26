@@ -80,7 +80,7 @@ PipelinePool make_skybox_pipeline_pool()
     {
         PipelineInputDescriptor& camera_block_descriptor = config.shared_input_layout[0];
         camera_block_descriptor.input_name = "CameraBlock";
-        camera_block_descriptor.type = PipelineInputType::UniformBuffer;
+        camera_block_descriptor.type = PipelineInputDescriptor::Type::UniformBuffer;
         camera_block_descriptor.location = k_camera_descriptor_location;
         camera_block_descriptor.mandatory = true;
     }

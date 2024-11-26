@@ -1,0 +1,31 @@
+shader: shaders/default_specular_workflow_texture_array.hjson
+options: {
+  PARALLAX: true
+  RIM_LIGHT: true
+}
+parameters: {
+  sampler_diffuse: {
+    type: sampler2DArray
+    value: textures/buildings/building_texture_array_da.hjson
+  }
+  sampler_specular: {
+    type: "sampler2DArray"
+    value: textures/buildings/building_texture_array_s.hjson
+  }
+  sampler_normal: {
+    type: "sampler2DArray" 
+    value: textures/buildings/building_texture_array_n.hjson
+  }
+  ambient_colour: {
+    type: vec4
+    value: [ 1.0, 1.0, 1.0, 1.0 ]
+  }
+  rim_intensity: {
+    type: float
+    value: 10.0
+  }
+  rim_power: {
+    type: float
+    value: 2.0
+  }
+}

@@ -37,6 +37,7 @@ class MaterialResource;
 namespace Mg::gfx {
 
 class Texture2D;
+class Texture2DArray;
 class TextureCube;
 class TexturePool;
 
@@ -107,6 +108,8 @@ public:
 
     /** Assign a texture to a sampler. */
     void set_sampler(Identifier sampler_name, const Texture2D* texture);
+
+    void set_sampler(Identifier sampler_name, const Texture2DArray* texture);
 
     /** Assign a cube map texture to a sampler. */
     void set_sampler(Identifier sampler_name, const TextureCube* texture);

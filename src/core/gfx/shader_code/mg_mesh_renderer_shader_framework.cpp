@@ -39,7 +39,7 @@ layout(std140) uniform FrameBlock {
 
 constexpr const auto vertex_framework_code = R"(
 layout(location = POSITION_BINDING_LOCATION) in vec3 vert_position;
-layout(location = TEX_COORD_BINDING_LOCATION) in vec2 vert_tex_coord;
+layout(location = TEX_COORD_BINDING_LOCATION) in vec3 vert_tex_coord;
 layout(location = NORMAL_BINDING_LOCATION) in vec3 vert_normal;
 layout(location = TANGENT_BINDING_LOCATION) in vec3 vert_tangent;
 layout(location = BITANGENT_BINDING_LOCATION) in vec3 vert_bitangent;
@@ -72,7 +72,7 @@ layout(std140) uniform MatrixBlock {
 #define VIEWPORT_SIZE (_frame_block.viewport_size)
 
 out v2f {
-    vec2 tex_coord; // Primary texture coordinate
+    vec3 tex_coord; // Primary texture coordinate
     vec3 position;  // Position (world space)
     vec3 normal;    // Surface normal (world space)
     mat3 TBN;       // Tangent space basis matrix
@@ -80,7 +80,7 @@ out v2f {
 
 struct VertexParams {
     vec3 position;
-    vec2 tex_coord;
+    vec3 tex_coord;
     vec3 normal;
     vec3 tangent;
     vec3 bitangent;
@@ -175,7 +175,7 @@ void main()
 
 constexpr const auto fragment_framework_code = R"(
 in v2f {
-    vec2 tex_coord; // Primary texture coordinate
+    vec3 tex_coord; // Primary texture coordinate
     vec3 position;  // Position (world space)
     vec3 normal;    // Surface normal (world space)
     mat3 TBN;       // Tangent space basis matrix

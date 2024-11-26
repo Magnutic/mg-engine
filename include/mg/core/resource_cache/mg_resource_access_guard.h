@@ -16,6 +16,7 @@
 #include "mg/core/resource_cache/internal/mg_resource_entry.h"
 #include "mg/core/resource_cache/mg_resource_handle.h"
 #include "mg/utils/mg_macros.h"
+#include <type_traits>
 
 namespace Mg {
 
@@ -59,10 +60,8 @@ public:
 
     ~ResourceAccessGuard() { --m_entry->ref_count; }
 
-    // Not copyable or movable -- ResourceAccessGuard should only be placed on the stack, not be
-    // stored or passed around.
     MG_MAKE_NON_COPYABLE(ResourceAccessGuard);
-    MG_MAKE_NON_MOVABLE(ResourceAccessGuard);
+    MG_MAKE_DEFAULT_MOVABLE(ResourceAccessGuard);
 
     std::time_t file_time_stamp() const noexcept { return m_entry->time_stamp(); }
 

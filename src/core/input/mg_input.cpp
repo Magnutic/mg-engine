@@ -40,32 +40,30 @@ ButtonTracker::~ButtonTracker()
 void ButtonTracker::handle_key_event(const Key key, const InputEvent event)
 {
     if (auto it = m_key_bindings.find(key); it != m_key_bindings.end()) {
-        update_button_state(m_states[it->second], event);
+        for (const auto& action_id : it->second) {
+            update_button_state(m_states[action_id], event);
+        }
     }
 }
 
 void ButtonTracker::handle_mouse_button_event(const MouseButton button, const InputEvent event)
 {
     if (auto it = m_mouse_button_bindings.find(button); it != m_mouse_button_bindings.end()) {
-        update_button_state(m_states[it->second], event);
+        for (const auto& action_id : it->second) {
+            update_button_state(m_states[action_id], event);
+        }
     }
 }
 
-void ButtonTracker::bind(Identifier button_action_id, Key key, bool overwrite)
+void ButtonTracker::bind(Identifier button_action_id, Key key)
 {
-    if (!overwrite && m_key_bindings.find(key) != m_key_bindings.end()) {
-        return;
-    }
-    m_key_bindings[key] = button_action_id;
+    m_key_bindings[key].push_back(button_action_id);
     m_states[button_action_id] = {};
 }
 
-void ButtonTracker::bind(Identifier button_action_id, MouseButton button, bool overwrite)
+void ButtonTracker::bind(Identifier button_action_id, MouseButton button)
 {
-    if (!overwrite && m_mouse_button_bindings.find(button) != m_mouse_button_bindings.end()) {
-        return;
-    }
-    m_mouse_button_bindings[button] = button_action_id;
+    m_mouse_button_bindings[button].push_back(button_action_id);
     m_states[button_action_id] = {};
 }
 

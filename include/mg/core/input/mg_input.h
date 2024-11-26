@@ -43,8 +43,8 @@ public:
     void handle_key_event(Key key, InputEvent event) override;
     void handle_mouse_button_event(MouseButton button, InputEvent event) override;
 
-    void bind(Identifier button_action_id, Key key, bool overwrite = true);
-    void bind(Identifier button_action_id, MouseButton button, bool overwrite = true);
+    void bind(Identifier button_action_id, Key key);
+    void bind(Identifier button_action_id, MouseButton button);
 
     // Get button events for each binding since last call to this function.
     [[nodiscard]] ButtonStates get_button_events()
@@ -62,8 +62,8 @@ public:
 private:
     IInputSource& m_input_source;
     ButtonStates m_states;
-    FlatMap<MouseButton, Identifier> m_mouse_button_bindings;
-    FlatMap<Key, Identifier> m_key_bindings;
+    FlatMap<MouseButton, std::vector<Identifier>> m_mouse_button_bindings;
+    FlatMap<Key, std::vector<Identifier>> m_key_bindings;
 };
 
 class MouseMovementTracker : public IMouseMovementEventHandler {

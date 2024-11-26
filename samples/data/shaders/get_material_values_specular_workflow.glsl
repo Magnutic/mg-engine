@@ -9,9 +9,9 @@ struct MaterialValues {
 
 void get_material_values(vec3 tex_coord, out MaterialValues m_out)
 {
-    vec4 albedo_alpha = texture(sampler_diffuse, tex_coord.xy);
-    vec4 specular_glossiness = texture(sampler_specular, tex_coord.xy);
-    vec3 normal = unpack_normal(texture(sampler_normal, tex_coord.xy).xyz);
+    vec4 albedo_alpha = GET_SAMPLER_VALUE(sampler_diffuse, tex_coord);
+    vec4 specular_glossiness = GET_SAMPLER_VALUE(sampler_specular, tex_coord);
+    vec3 normal = unpack_normal(GET_SAMPLER_VALUE(sampler_normal, tex_coord).xyz);
 
     m_out.albedo = albedo_alpha.rgb;
     m_out.normal = normal;

@@ -85,7 +85,7 @@ public:
      * @param z_range Depth clipping range. */
     explicit Camera(Angle fov = 75_degrees,
                     float aspect_ratio = 4.0f / 3.0f,
-                    DepthRange z_range = DepthRange{ 0.1f, 2000.0f }) noexcept
+                    DepthRange z_range = DepthRange{ 0.01f, 2000.0f }) noexcept
         : field_of_view(fov), m_depth_range{ z_range }
     {
         set_aspect_ratio(aspect_ratio);

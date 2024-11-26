@@ -11,20 +11,20 @@ options: {
 // vec2, and vec4 (vec3 is currently unsupported -- use vec4).
 // Samplers may be of type sampler2D or samplerCube.
 parameters: {
-    sampler_diffuse: { type: "sampler2D" }
-    sampler_normal: { type: "sampler2D" }
-    sampler_ao_roughness_metallic: { type: "sampler2D" }
+    sampler_diffuse: { type: "sampler2DArray" }
+    sampler_ao_roughness_metallic: { type: "sampler2DArray" }
+    sampler_normal: { type: "sampler2DArray" }
 
     rim_intensity: { type: "float", default: 10.0 }
     rim_power: { type: "float", default: 2.0 }
 
-    ambient_colour: { type: "vec4", default: [0.75, 1.07, 1.5, 1.0] }
+    ambient_colour: { type: "vec4", default: [0.0, 0.0, 0.0, 1.0] }
 }
 
 fragment_code:
     '''
-    #define SAMPLER_TYPE sampler2D
-    #define GET_SAMPLER_VALUE(sampler, tex_coord) texture(sampler, tex_coord.xy)
+    #define SAMPLER_TYPE sampler2DArray
+    #define GET_SAMPLER_VALUE(sampler, tex_coord) texture(sampler, tex_coord.xyz)
     #include <shader_stdlib.glsl>
     #include <default_light_model.glsl>
     #include <get_material_values_metallic_workflow.glsl>

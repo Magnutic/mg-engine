@@ -7,6 +7,8 @@
 #include "mg/core/gfx/mg_texture2d.h"
 
 #include "mg/core/mg_runtime_error.h"
+#include "mg/core/resource_cache/mg_resource_access_guard.h"
+#include "mg/core/resources/mg_texture_array_resource.h"
 #include "mg/core/resources/mg_texture_resource.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_gsl.h"
@@ -16,6 +18,8 @@
 
 #include "mg_gl_debug.h"
 #include "mg_opengl_loader_glad.h"
+
+#include <algorithm>
 
 namespace Mg::gfx {
 
@@ -121,6 +125,11 @@ TextureHandle generate_gl_render_target_texture(const RenderTargetParams& params
     return TextureHandle{ id };
 }
 
+std::pair<int32_t, int32_t> mip_size(const GlTextureInfo& info, const int32_t mip_index)
+{
+    return { max(1, info.width >> mip_index), max(1, info.height) >> mip_index };
+}
+
 //--------------------------------------------------------------------------------------------------
 // Helpers for creating texture from TextureResource
 //--------------------------------------------------------------------------------------------------
@@ -128,34 +137,60 @@ TextureHandle generate_gl_render_target_texture(const RenderTargetParams& params
 void upload_compressed_mip(int32_t mip_index,
                            const GlTextureInfo& info,
                            int32_t size,
-                           const GLvoid* data) noexcept
+                           const GLvoid* data)
 {
-    const auto width = max(1, info.width >> mip_index);
-    const auto height = max(1, info.height >> mip_index);
-
-    // N.B. OpenGL docs are misleading about the 'format' param, it should have been called
-    // 'internalformat' to avoid confusion with glTexImage2D's 'format' parameter.
+    const auto [w, h] = mip_size(info, mip_index);
     glCompressedTexSubImage2D(
-        GL_TEXTURE_2D, mip_index, 0, 0, width, height, info.internal_format, size, data);
-
+        GL_TEXTURE_2D, mip_index, 0, 0, w, h, info.internal_format, size, data);
     MG_CHECK_GL_ERROR();
 }
 
 void upload_uncompressed_mip(int32_t mip_index,
                              const GlTextureInfo& info,
                              int32_t /* size */,
-                             const GLvoid* data) noexcept
+                             const GLvoid* data)
 {
-    const auto width = max(1, info.width >> mip_index);
-    const auto height = max(1, info.height >> mip_index);
+    const auto [w, h] = mip_size(info, mip_index);
+    glTexSubImage2D(GL_TEXTURE_2D, mip_index, 0, 0, w, h, info.format, info.type, data);
+    MG_CHECK_GL_ERROR();
+}
 
-    glTexSubImage2D(GL_TEXTURE_2D, mip_index, 0, 0, width, height, info.format, info.type, data);
+void upload_compressed_mip_for_layer(int32_t mip_index,
+                                     int32_t layer_index,
+                                     const GlTextureInfo& info,
+                                     int32_t size,
+                                     const GLvoid* data)
+{
+    const auto [w, h] = mip_size(info, mip_index);
+    glCompressedTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+                              mip_index,
+                              0,
+                              0,
+                              layer_index,
+                              w,
+                              h,
+                              1,
+                              info.internal_format,
+                              size,
+                              data);
 
     MG_CHECK_GL_ERROR();
 }
 
+void upload_uncompressed_mip_for_layer(int32_t mip_index,
+                                       int32_t layer_index,
+                                       const GlTextureInfo& info,
+                                       int32_t /* size */,
+                                       const GLvoid* data)
+{
+    const auto [w, h] = mip_size(info, mip_index);
+    glTexSubImage3D(
+        GL_TEXTURE_2D, mip_index, 0, 0, layer_index, w, h, 1, info.format, info.type, data);
+    MG_CHECK_GL_ERROR();
+}
+
 TextureHandle generate_gl_texture_from(const TextureResource& resource,
-                                       const TextureSettings& settings) noexcept
+                                       const TextureSettings& settings)
 {
     const GlTextureInfo info = gl_texture_info(resource, settings);
 
@@ -169,8 +204,7 @@ TextureHandle generate_gl_texture_from(const TextureResource& resource,
     // Allocate storage.
     glTexStorage2D(GL_TEXTURE_2D, info.mip_levels, info.internal_format, info.width, info.height);
 
-    decltype(upload_compressed_mip)* upload_function = (info.compressed ? upload_compressed_mip
-                                                                        : upload_uncompressed_mip);
+    auto* upload_function = info.compressed ? upload_compressed_mip : upload_uncompressed_mip;
 
     // Upload texture data, mipmap by mipmap
     for (int32_t mip_index = 0; mip_index < info.mip_levels; ++mip_index) {
@@ -184,6 +218,68 @@ TextureHandle generate_gl_texture_from(const TextureResource& resource,
     set_sampling_params(GL_TEXTURE_2D, settings);
     MG_CHECK_GL_ERROR();
 
+    return TextureHandle{ texture_id };
+}
+
+TextureHandle generate_gl_texture_array_from(std::span<const TextureResource*> resources,
+                                             const TextureSettings& settings)
+{
+    MG_ASSERT(!resources.empty());
+    const GlTextureInfo info = gl_texture_info(*resources.front(), settings);
+
+    auto has_wrong_size = [&](const TextureResource* t) {
+        return t->format().width != resources.front()->format().width ||
+               t->format().height != resources.front()->format().height ||
+               t->format().mip_levels != resources.front()->format().mip_levels ||
+               t->format().pixel_format != resources.front()->format().pixel_format;
+    };
+    if (auto it = std::ranges::find_if(resources, has_wrong_size); it != resources.end()) {
+        auto msg = format(
+            "Cannot construct texture array: Texture '{}' does not match Texture '{}' in width, "
+            "height, number of mip levels, or pixel format.",
+            resources.front()->resource_id().str_view(),
+            (*it)->resource_id().str_view());
+        log.error(msg);
+        throw RuntimeError{ msg };
+    }
+
+    const auto layer_count = narrow<GLsizei>(resources.size());
+
+    GLuint texture_id{};
+    glGenTextures(1, &texture_id);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
+
+    // Set anisotropic filtering level
+    glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY, info.aniso);
+
+    // Allocate storage.
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY,
+                   info.mip_levels,
+                   info.internal_format,
+                   info.width,
+                   info.height,
+                   layer_count);
+
+    auto* upload_function = info.compressed ? upload_compressed_mip_for_layer
+                                            : upload_uncompressed_mip_for_layer;
+
+    // Upload texture data, level by level, mipmap by mipmap
+    for (size_t level = 0; level < resources.size(); ++level) {
+        const auto& resource = resources[level];
+
+        for (int32_t mip_index = 0; mip_index < info.mip_levels; ++mip_index) {
+            const auto mip_data = resource->pixel_data(as<uint32_t>(mip_index));
+            auto pixels = mip_data.data.data();
+            auto size = as<int32_t>(mip_data.data.size_bytes());
+
+            upload_function(mip_index, as<int32_t>(level), info, size, pixels);
+        }
+    }
+
+    set_sampling_params(GL_TEXTURE_2D_ARRAY, settings);
+    MG_CHECK_GL_ERROR();
+
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
     return TextureHandle{ texture_id };
 }
 
@@ -265,6 +361,33 @@ Texture2D Texture2D::from_rgba8_buffer(Identifier id,
 
 // Unload texture from OpenGL context
 void Texture2D::unload() noexcept
+{
+    const auto tex_id = m_handle.as_gl_id();
+
+    if (tex_id != 0) {
+        glDeleteTextures(1, &tex_id);
+    }
+}
+
+Texture2DArray Texture2DArray::from_texture_resource(const TextureArrayResource& resource,
+                                                     const TextureSettings& settings)
+{
+    std::vector<ResourceAccessGuard<TextureResource>> guards;
+    std::vector<const TextureResource*> textures;
+
+    textures.reserve(resource.textures().size());
+    guards.reserve(resource.textures().size());
+
+    for (const auto& handle : resource.textures()) {
+        guards.emplace_back(handle);
+        textures.push_back(guards.back().get());
+    }
+
+    return Texture2DArray{ resource.resource_id(),
+                           generate_gl_texture_array_from(textures, settings) };
+}
+
+void Texture2DArray::unload() noexcept
 {
     const auto tex_id = m_handle.as_gl_id();
 

@@ -39,9 +39,7 @@ constexpr auto max_vertices_per_mesh = std::numeric_limits<Index>::max();
 
 struct Vertex {
     glm::vec3 position = glm::vec3(0.0f);
-    glm::vec2 tex_coord = glm::vec2(0.0f);
-
-    uint32_t padding = 0; // TODO temp for compatibility.
+    glm::vec3 tex_coord = glm::vec3(0.0f);
 
     vec3_normalized normal;
     vec3_normalized tangent;
@@ -58,8 +56,8 @@ constexpr std::array<VertexAttribute, 5> vertex_attributes = {
 
     VertexAttribute{ .identifier = "tex_coord",
                      .binding_location = 1,
-                     .num_elements = 2,
-                     .size = sizeof(Vertex::tex_coord) + sizeof(Vertex::padding),
+                     .num_elements = 3,
+                     .size = sizeof(Vertex::tex_coord),
                      .type = VertexAttributeType::f32 },
 
     VertexAttribute{ .identifier = "normal",

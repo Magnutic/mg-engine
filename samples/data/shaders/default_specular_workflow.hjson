@@ -23,6 +23,8 @@ parameters: {
 
 fragment_code:
     '''
+    #define SAMPLER_TYPE sampler2D
+    #define GET_SAMPLER_VALUE(sampler, tex_coord) texture(sampler, tex_coord.xy)
     #include <shader_stdlib.glsl>
     #include <default_light_model.glsl>
     #include <get_material_values_specular_workflow.glsl>

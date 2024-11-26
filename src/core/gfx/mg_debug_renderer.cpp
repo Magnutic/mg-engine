@@ -295,7 +295,7 @@ Pipeline make_debug_pipeline()
     params.vertex_shader = vs.value().handle;
     params.fragment_shader = fs.value().handle;
     std::array<PipelineInputDescriptor, 2> input_descriptors;
-    input_descriptors[0] = { "DrawParamsBlock", PipelineInputType::UniformBuffer, 0, true };
+    input_descriptors[0] = { "DrawParamsBlock", PipelineInputDescriptor::Type::UniformBuffer, 0, true };
     params.shared_input_layout = input_descriptors;
 
     return Pipeline::make(params).value();

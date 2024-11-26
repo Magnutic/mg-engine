@@ -20,13 +20,15 @@
 /** Types and utilities related to shaders. */
 namespace Mg::shader {
 
-enum class SamplerType { Sampler2D, SamplerCube };
+enum class SamplerType { Sampler2D, Sampler2DArray, SamplerCube };
 
 inline std::string_view sampler_type_to_string(SamplerType type) noexcept
 {
     switch (type) {
     case SamplerType::Sampler2D:
         return "sampler2D";
+    case SamplerType::Sampler2DArray:
+        return "sampler2DArray";
     case SamplerType::SamplerCube:
         return "samplerCube";
     }
@@ -37,6 +39,9 @@ inline Opt<SamplerType> string_to_sampler_type(std::string_view str) noexcept
 {
     if (str == "sampler2D") {
         return SamplerType::Sampler2D;
+    }
+    if (str == "sampler2DArray") {
+        return SamplerType::Sampler2DArray;
     }
     if (str == "samplerCube") {
         return SamplerType::SamplerCube;

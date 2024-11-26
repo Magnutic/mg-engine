@@ -6,12 +6,12 @@
 
 #include "mg/core/gfx/mg_material_pool.h"
 
-#include "mg/core/mg_log.h"
-#include "mg/core/mg_runtime_error.h"
 #include "mg/core/gfx/mg_material.h"
 #include "mg/core/gfx/mg_shader_related_types.h"
 #include "mg/core/gfx/mg_texture2d.h"
 #include "mg/core/gfx/mg_texture_pool.h"
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg/core/resource_cache/mg_resource_access_guard.h"
 #include "mg/core/resource_cache/mg_resource_cache.h"
 #include "mg/core/resource_cache/mg_resource_exceptions.h"
@@ -101,6 +101,15 @@ void init_material_from_resource(Material& material,
             case Sampler2D:
                 if (sampler.texture_resource_id) {
                     Texture2D* texture = texture_pool.get_texture2d(*sampler.texture_resource_id);
+                    MG_ASSERT(texture);
+                    material.set_sampler(sampler.name, texture);
+                }
+                break;
+
+            case Sampler2DArray:
+                if (sampler.texture_resource_id) {
+                    Texture2DArray* texture =
+                        texture_pool.get_texture2d_array(*sampler.texture_resource_id);
                     MG_ASSERT(texture);
                     material.set_sampler(sampler.name, texture);
                 }

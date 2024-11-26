@@ -25,7 +25,6 @@
 namespace Mg::gfx {
 
 class Material;
-class Texture2D;
 class PreparedText;
 class IRenderTarget;
 

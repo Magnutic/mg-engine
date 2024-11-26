@@ -7,15 +7,16 @@
 #include "mg/core/gfx/mg_texture_pool.h"
 
 #include "mg/core/containers/mg_flat_map.h"
-#include "mg/core/mg_identifier.h"
-#include "mg/core/mg_log.h"
-#include "mg/core/mg_runtime_error.h"
 #include "mg/core/gfx/mg_gfx_debug_group.h"
 #include "mg/core/gfx/mg_texture2d.h"
 #include "mg/core/gfx/mg_texture_cube.h"
 #include "mg/core/gfx/mg_texture_related_types.h"
+#include "mg/core/mg_identifier.h"
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg/core/resource_cache/mg_resource_cache.h"
 #include "mg/core/resource_cache/mg_resource_exceptions.h"
+#include "mg/core/resources/mg_texture_array_resource.h"
 #include "mg/core/resources/mg_texture_resource.h"
 #include "mg/utils/mg_enum.h"
 #include "mg/utils/mg_string_utils.h"
@@ -33,7 +34,7 @@ namespace {
 
 // Information about a texture within the pool.
 struct TextureNode {
-    std::variant<Texture2D*, TextureCube*> instance{};
+    std::variant<Texture2D*, Texture2DArray*, TextureCube*> instance{};
     TextureSettings settings{};
 };
 
@@ -50,14 +51,18 @@ struct TexturePool::Impl {
     // pointers.
     plf::colony<Texture2D> textures;
     plf::colony<TextureCube> cubemaps;
+    plf::colony<Texture2DArray> texture_arrays;
 
     template<typename TextureT> plf::colony<TextureT>& storage_for()
     {
         if constexpr (std::is_same_v<TextureT, Texture2D>) {
             return textures;
         }
-        else {
+        else if constexpr (std::is_same_v<TextureT, TextureCube>) {
             return cubemaps;
+        }
+        else {
+            return texture_arrays;
         }
     }
 
@@ -74,10 +79,9 @@ namespace {
 
 // Deduce texture settings given a TextureResource.
 // Based on a system of convention where the filename suffix indicates its intended use.
-TextureSettings deduce_texture_settings(const TextureResource& texture_resource)
+TextureSettings deduce_texture_settings(Identifier id)
 {
     TextureSettings settings = {};
-    const Identifier id = texture_resource.resource_id();
 
     Opt<TextureCategory> category = deduce_texture_category(id.str_view());
     if (!category.has_value()) {
@@ -157,9 +161,9 @@ TextureT* find_impl(const TexturePool::Impl& data, const Identifier& texture_id)
     return nullptr;
 }
 
-template<typename TextureT>
+template<typename TextureT, typename TextureResourceT>
 TextureT* from_resource_impl(TexturePool::Impl& data,
-                             const TextureResource& resource,
+                             const TextureResourceT& resource,
                              const TextureSettings& settings)
 {
     auto generate_texture = [&resource, &settings] {
@@ -168,15 +172,15 @@ TextureT* from_resource_impl(TexturePool::Impl& data,
     return create_texture_impl<TextureT>(data, resource.resource_id(), generate_texture, settings);
 }
 
-template<typename TextureT>
+template<typename TextureT, typename TextureResourceT>
 TextureT* load_impl(TexturePool::Impl& data, const Identifier& texture_id)
 {
     if (auto* result = find_impl<TextureT>(data, texture_id); result) {
         return result;
     }
 
-    auto access_guard = data.resource_cache->access_resource<TextureResource>(texture_id);
-    const auto settings = deduce_texture_settings(*access_guard);
+    auto access_guard = data.resource_cache->access_resource<TextureResourceT>(texture_id);
+    const auto settings = deduce_texture_settings(texture_id);
     return from_resource_impl<TextureT>(data, *access_guard, settings);
 }
 
@@ -286,12 +290,17 @@ TexturePool::~TexturePool() = default;
 
 Texture2D* TexturePool::get_texture2d(const Identifier& texture_id)
 {
-    return load_impl<Texture2D>(*m_impl, texture_id);
+    return load_impl<Texture2D, TextureResource>(*m_impl, texture_id);
+}
+
+Texture2DArray* TexturePool::get_texture2d_array(const Identifier& texture_id)
+{
+    return load_impl<Texture2DArray, TextureArrayResource>(*m_impl, texture_id);
 }
 
 TextureCube* TexturePool::get_cubemap(const Identifier& texture_id)
 {
-    return load_impl<TextureCube>(*m_impl, texture_id);
+    return load_impl<TextureCube, TextureResource>(*m_impl, texture_id);
 }
 
 Texture2D* TexturePool::create_render_target(const RenderTargetParams& params)
@@ -324,11 +333,16 @@ void TexturePool::update(const TextureResource& resource)
 
     TextureNode& node = it->second;
 
-    std::visit(
-        [&]<typename TextureT>(TextureT* texture) {
-            *texture = TextureT::from_texture_resource(resource, node.settings);
-        },
-        node.instance);
+    if (auto** texture2d = std::get_if<Texture2D*>(&node.instance); texture2d) {
+        **texture2d = Texture2D::from_texture_resource(resource, node.settings);
+    }
+    else if (auto* texture_cube = std::get_if<TextureCube*>(&node.instance); texture_cube) {
+        **texture_cube = TextureCube::from_texture_resource(resource, node.settings);
+    }
+    else if (std::holds_alternative<Texture2DArray*>(node.instance)) {
+        log.warning("Cannot update texture array {} using non-array texture resource",
+                    resource_id.str_view());
+    }
 
     log.verbose("TexturePool::update(): Updated {}", resource_id.str_view());
 }

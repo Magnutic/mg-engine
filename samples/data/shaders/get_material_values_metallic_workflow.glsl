@@ -9,9 +9,9 @@ struct MaterialValues {
 
 void get_material_values(vec3 tex_coord, out MaterialValues m_out)
 {
-    vec4 albedo_alpha = texture(sampler_diffuse, tex_coord.xy);
-    vec3 arm = texture(sampler_ao_roughness_metallic, tex_coord.xy).rgb;
-    vec3 normal = unpack_normal(texture(sampler_normal, tex_coord.xy).xyz);
+    vec4 albedo_alpha = GET_SAMPLER_VALUE(sampler_diffuse, tex_coord);
+    vec3 arm = GET_SAMPLER_VALUE(sampler_ao_roughness_metallic, tex_coord).rgb;
+    vec3 normal = unpack_normal(GET_SAMPLER_VALUE(sampler_normal, tex_coord).xyz);
     float metallic_factor = arm.b;
 
     m_out.albedo = albedo_alpha.rgb - albedo_alpha.rgb * metallic_factor;

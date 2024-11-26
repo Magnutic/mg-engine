@@ -1,5 +1,5 @@
 #include "test_scene.h"
-#include "mg/mg_game.h"
+#include "mg/core/gfx/mg_texture2d.h"
 
 #include <mg/components/mg_advance_animations.h>
 #include <mg/components/mg_animation_component.h>
@@ -11,6 +11,7 @@
 #include <mg/core/gfx/mg_debug_renderer.h>
 #include <mg/core/gfx/mg_gfx_debug_group.h>
 #include <mg/core/gfx/mg_light.h>
+#include <mg/core/gfx/mg_ui_renderer.h>
 #include <mg/core/mg_application_context.h>
 #include <mg/core/mg_log.h>
 #include <mg/core/mg_unicode.h>
@@ -21,7 +22,11 @@
 #include <mg/core/resources/mg_mesh_resource.h>
 #include <mg/core/resources/mg_shader_resource.h>
 #include <mg/core/resources/mg_sound_resource.h>
+#include <mg/core/resources/mg_texture_array_resource.h>
 #include <mg/core/resources/mg_texture_resource.h>
+#include <mg/mg_game.h>
+#include <mg/scene/mg_block_scene.h>
+#include <mg/scene/mg_block_scene_serialization.h>
 #include <mg/utils/mg_angle.h>
 #include <mg/utils/mg_file_io.h>
 #include <mg/utils/mg_rand.h>
@@ -29,14 +34,12 @@
 #include <fmt/core.h>
 
 namespace {
-using namespace Mg::literals;
-
 constexpr auto config_file = "mg_engine.cfg";
 constexpr auto window_title = "Mg Engine Test Scene";
 constexpr auto data_path = "../samples/data";
 
 constexpr int k_steps_per_second = 60.0;
-constexpr size_t k_num_lights = 128;
+constexpr size_t k_num_lights = 384;
 constexpr float k_light_radius = 3.0f;
 
 std::vector<std::unique_ptr<Mg::IFileLoader>> make_file_loaders()
@@ -64,7 +67,8 @@ TestScene::TestScene()
     camera.set_aspect_ratio(window().aspect_ratio());
     camera.field_of_view = 80_degrees;
 
-    m_renderer_data = make_renderer_data();
+    m_renderer_data->editors_to_render->editors.push_back(editor);
+
     Mg::gfx::SimpleSceneRendererConfig renderer_config = {
         .sky_material = material_pool()->get_or_load("materials/skybox.hjson"),
         .blur_material = material_pool()->load_as_mutable("blur", "materials/blur.hjson"),
@@ -83,18 +87,33 @@ TestScene::TestScene()
     sample_control_button_tracker->bind("next_debug_visualization", Mg::input::Key::F);
     sample_control_button_tracker->bind("reset", Mg::input::Key::R);
 
+    auto mouse_tracker = std::make_shared<Mg::input::MouseMovementTracker>(window());
+
     player_controller =
         std::make_unique<Mg::PlayerController>(std::make_shared<Mg::input::ButtonTracker>(window()),
-                                               std::make_shared<Mg::input::MouseMovementTracker>(
-                                                   window()));
+                                               mouse_tracker);
     editor_controller =
         std::make_unique<Mg::EditorController>(std::make_shared<Mg::input::ButtonTracker>(window()),
-                                               std::make_shared<Mg::input::MouseMovementTracker>(
-                                                   window()));
+                                               mouse_tracker);
     current_controller = player_controller.get();
 
-    character_controller = std::make_unique<Mg::physics::CharacterController>(
-        "Actor"_id, physics_world(), Mg::physics::CharacterControllerSettings{});
+    character_controller =
+        std::make_unique<Mg::physics::CharacterController>("Actor"_id,
+                                                           physics_world(),
+                                                           Mg::physics::CharacterControllerSettings{
+                                                               { .radius = 0.4f } });
+
+    {
+        block_scene = Mg::read_block_scene("test_block_scene.mgb").value_or(Mg::BlockScene{ 1.0f });
+        if (block_scene.internal_representation().empty()) {
+            block_scene.try_insert(0, 0, { -1.0f, 0.0f, {} });
+            block_scene.try_insert(0, -1, { -1.0f, 0.0f, {} });
+            block_scene.try_insert(-1, 0, { -1.0f, 0.0f, {} });
+            block_scene.try_insert(-1, -1, { -1.0f, 0.0f, {} });
+        }
+        block_scene_mesh_data = block_scene.make_mesh(3);
+        block_scene_mesh = mesh_pool()->create(block_scene_mesh_data.view(), "BlockScene");
+    }
 
     create_entities();
     generate_lights();
@@ -103,6 +122,7 @@ TestScene::TestScene()
 TestScene::~TestScene()
 {
     Mg::write_display_settings(config(), window().settings());
+    Mg::write_block_scene(block_scene, "test_block_scene.mgb", true);
     config().write_to_file(config_file);
 }
 
@@ -142,6 +162,7 @@ void TestScene::on_simulation_step(const Mg::ApplicationTimeInfo& /*time_info*/)
             current_controller = player_controller.get();
             character_controller->mutable_settings().collision_enabled = true;
         }
+        current_controller->set_rotation(camera.rotation);
     }
 
     if (button_states["reset"].was_pressed) {
@@ -152,11 +173,19 @@ void TestScene::on_simulation_step(const Mg::ApplicationTimeInfo& /*time_info*/)
 
     current_controller->handle_movement_inputs(*character_controller);
     character_controller->update(1.0f / k_steps_per_second);
+
+    if (editor->update(camera.get_position(), camera.rotation.forward())) {
+        block_scene_mesh_data = block_scene.make_mesh(3);
+        mesh_pool()->update(block_scene_mesh_data.view(), "BlockScene");
+        make_block_scene_entity();
+    }
 }
 
 void TestScene::on_render(const double lerp_factor, const Mg::ApplicationTimeInfo& time_info)
 {
     MG_GFX_DEBUG_GROUP_BY_FUNCTION
+
+    m_renderer_data->scene_lights->point_lights.back().vector = glm::vec4(camera.position, 1.0f);
 
     // Mouselook. Doing this in render step instead of in simulation_step to minimize input lag.
     {
@@ -178,16 +207,22 @@ void TestScene::on_render(const double lerp_factor, const Mg::ApplicationTimeInf
 
     // Draw UI
     {
+        m_renderer_data->ui_render_list->text_render_commands.clear();
+
         const glm::vec3 v = character_controller->velocity();
         const glm::vec3 p = character_controller->get_position();
 
-        auto text = fmt::format("FPS: {:.2f}", time_info.frames_per_second);
-        text += fmt::format("\nLast frame time: {:.2f} ms",
-                            time_info.last_frame_time_seconds * 1'000);
-        text += fmt::format("\nVelocity: {{{:.2f}, {:.2f}, {:.2f}}}", v.x, v.y, v.z);
-        text += fmt::format("\nPosition: {{{:.2f}, {:.2f}, {:.2f}}}", p.x, p.y, p.z);
-        text += fmt::format("\nGrounded: {:b}", character_controller->is_on_ground());
-        m_renderer_data->ui_render_list->text_to_draw = std::move(text);
+        auto& info_cmd = m_renderer_data->ui_render_list->text_render_commands.emplace_back();
+        info_cmd.font = font;
+        info_cmd.text = fmt::format("FPS: {:.2f}", time_info.frames_per_second);
+        info_cmd.text += fmt::format("\nLast frame time: {:.2f} ms",
+                                     time_info.last_frame_time_seconds * 1'000);
+        info_cmd.text += fmt::format("\nVelocity: {{{:.2f}, {:.2f}, {:.2f}}}", v.x, v.y, v.z);
+        info_cmd.text += fmt::format("\nPosition: {{{:.2f}, {:.2f}, {:.2f}}}", p.x, p.y, p.z);
+        info_cmd.text += fmt::format("\nGrounded: {:b}", character_controller->is_on_ground());
+        info_cmd.placement.anchor = Mg::gfx::UIPlacement::top_left;
+        info_cmd.placement.position = Mg::gfx::UIPlacement::top_left;
+        info_cmd.placement.position_pixel_offset = { 10.0f, -10.0f };
     }
 
     // Debug geometry
@@ -204,9 +239,6 @@ void TestScene::on_render(const double lerp_factor, const Mg::ApplicationTimeInf
     default:
         break;
     }
-
-    m_renderer->render({ .camera = camera, .time_since_init = float(time_info.time_since_init) });
-    window().swap_buffers();
 }
 
 Mg::UpdateTimerConfig TestScene::update_timer_config() const
@@ -219,24 +251,13 @@ Mg::UpdateTimerConfig TestScene::update_timer_config() const
     };
 }
 
-std::unique_ptr<Mg::gfx::BitmapFont> TestScene::make_font() const
+std::shared_ptr<Mg::gfx::BitmapFont> TestScene::make_font() const
 {
-    const auto font_resource =
+    Mg::ResourceHandle<Mg::FontResource> font_resource =
         resource_cache()->resource_handle<Mg::FontResource>("fonts/elstob/Elstob-Regular.ttf");
     std::vector<Mg::UnicodeRange> unicode_ranges = { Mg::get_unicode_range(
         Mg::UnicodeBlock::Basic_Latin) };
-    return std::make_unique<Mg::gfx::BitmapFont>(font_resource, 24, unicode_ranges);
-}
-
-std::shared_ptr<Mg::gfx::SimpleSceneRendererData> TestScene::make_renderer_data()
-{
-    auto data = std::make_shared<Mg::gfx::SimpleSceneRendererData>();
-    data->scene_lights = std::make_shared<Mg::gfx::SceneLights>();
-    data->mesh_render_command_producer = std::make_shared<Mg::gfx::RenderCommandProducer>();
-    data->billboard_render_list = std::make_shared<Mg::gfx::BillboardRenderList>();
-    data->ui_render_list = std::make_shared<Mg::gfx::UIRenderList>();
-    data->ui_render_list->font = make_font();
-    return data;
+    return std::make_shared<Mg::gfx::BitmapFont>(font_resource, 24, unicode_ranges);
 }
 
 void TestScene::render_light_debug_geometry()
@@ -268,62 +289,37 @@ void TestScene::render_skeleton_debug_geometry()
     }
 }
 
+void TestScene::make_block_scene_entity()
+{
+    if (block_scene_entity) {
+        entities().delete_entity(*block_scene_entity);
+    }
+
+    block_scene_entity = entities().create_entity();
+    entities().add_component<Mg::TransformComponent>(*block_scene_entity);
+    auto& scene_mesh_component = entities().add_component<Mg::MeshComponent>(*block_scene_entity);
+    scene_mesh_component.mesh = block_scene_mesh;
+
+    auto* material = material_pool()->get_or_load("materials/block_scene.hjson");
+    scene_mesh_component.material_bindings.push_back(Mg::gfx::MaterialBinding{
+        "SceneMaterial0",
+        material,
+    });
+
+    auto block_scene_shape = physics_world().create_mesh_shape(block_scene_mesh_data.view());
+    auto block_scene_body =
+        physics_world().create_static_body("BlockScene", *block_scene_shape, glm::mat4{ 1.0f });
+    entities().add_component<Mg::StaticBodyComponent>(*block_scene_entity, block_scene_body);
+}
+
 void TestScene::create_entities()
 {
     using namespace Mg::literals;
 
     entities().reset();
+    block_scene_entity.reset();
 
-    add_static_object(
-        { .mesh_file = "meshes/misc/test_scene_2.mgm",
-          .material_bindings = { { "FloorMaterial", "materials/buildings/GreenBrick.hjson" },
-                                 { "WallMaterial", "materials/buildings/W31_1.hjson" },
-                                 { "PillarsAndStepsMaterial",
-                                   "materials/buildings/BigWhiteBricks.hjson" },
-                                 { "AltarBorderMaterial",
-                                   "materials/buildings/GreenBrick.hjson" } } },
-        {});
-
-    auto fox_entity =
-        add_dynamic_object("fox",
-                           {
-                               .mesh_file = "meshes/Fox.mgm",
-                               .material_bindings = { { "fox_material",
-                                                        "materials/actors/fox.hjson" } },
-                           },
-                           {
-                               .position = { 1.0f, 1.0f, 0.0f },
-                               .rotation = {},
-                               .scale = { 0.01f, 0.01f, 0.01f },
-                           },
-                           Mg::nullopt);
-
-    entities().get_component<Mg::AnimationComponent>(fox_entity).current_clip = 2;
-
-    add_dynamic_object("hest",
-                       {
-                           .mesh_file = "meshes/misc/hestdraugr.mgm"_id,
-                           .material_bindings = { { "hestdraugr_material",
-                                                    "materials/actors/HestDraugr.hjson" } },
-                       },
-                       {
-                           .position{ -2.0f, 2.0f, 1.05f },
-                           .rotation = Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
-                           .scale = { 1.0f, 1.0f, 1.0f },
-                       },
-                       Mg::physics::DynamicBodyParameters{ .mass = 150 });
-
-    add_dynamic_object("box",
-                       {
-                           .mesh_file = "meshes/box.mgm",
-                           .material_bindings = { { "cube_material", "materials/crate.hjson" } },
-                       },
-                       {
-                           .position = { 0.0f, 2.0f, 0.5f },
-                           .rotation = Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
-                           .scale = { 1.0f, 1.0f, 1.0f },
-                       },
-                       Mg::physics::DynamicBodyParameters{ .mass = 30 });
+    make_block_scene_entity();
 }
 
 // Create a lot of random lights
@@ -336,30 +332,29 @@ void TestScene::generate_lights()
     material = material_pool()->get_or_load("materials/billboard.hjson");
 
     for (size_t i = 0; i < k_num_lights; ++i) {
-        auto r1 = rand.range(-7.5f, 7.5f);
+        auto r1 = rand.range(-27.5f, 7.5f);
         auto r2 = rand.range(-7.5f, 7.5f);
-        auto pos = glm::vec3(r1, r2, 1.125f);
+        auto pos = glm::vec3(r1, r2, rand.normal_distributed(2.0f, 1.5f));
         auto r3 = rand.f32();
         auto r4 = rand.f32();
         auto r5 = rand.f32();
         glm::vec4 light_colour(r3, r4, r5, 1.0f);
-
-        const auto s = Mg::narrow_cast<float>(std::sin(double(i) * 0.2));
-
-        pos.z += s;
 
         // Draw a billboard sprite for each light
         {
             auto& billboard = billboards.emplace_back();
             billboard.pos = pos;
             billboard.colour = light_colour * 10.0f;
-            billboard.colour.w = 1.0f;
+            billboard.colour.w = 0.2f;
             billboard.radius = 0.05f;
         }
 
         m_renderer_data->scene_lights->point_lights.push_back(
             Mg::gfx::make_point_light(pos, light_colour * 10.0f, k_light_radius));
     }
+
+    m_renderer_data->scene_lights->point_lights.push_back(
+        Mg::gfx::make_point_light(camera.position, glm::vec4(10.0f), k_light_radius * 2.0f));
 }
 
 int main(int /*argc*/, char* /*argv*/[])

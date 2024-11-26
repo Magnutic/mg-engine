@@ -6,10 +6,11 @@
 
 #include "mg/core/resources/mg_texture_resource.h"
 
+#include "mg/core/gfx/mg_texture_related_types.h"
 #include "mg/core/mg_file_loader.h"
 #include "mg/core/mg_log.h"
-#include "mg/core/gfx/mg_texture_related_types.h"
 #include "mg/core/resource_cache/mg_resource_loading_input.h"
+#include "mg/utils/mg_fourcc.h"
 #include "mg/utils/mg_math_utils.h"
 
 #include <cstring> // memcpy
@@ -239,30 +240,6 @@ struct PixelFormatResult {
     bool valid;
     gfx::PixelFormat format;
 };
-
-constexpr uint32_t make_fourcc(const std::span<const char> four_chars)
-{
-    MG_ASSERT(four_chars.size() == 4 || (four_chars.size() == 5 && four_chars.back() == '\0'));
-    uint32_t out = 0u;
-    out |= (static_cast<uint32_t>(four_chars[0]));
-    out |= (static_cast<uint32_t>(four_chars[1]) << 8u);
-    out |= (static_cast<uint32_t>(four_chars[2]) << 16u);
-    out |= (static_cast<uint32_t>(four_chars[3]) << 24u);
-    return out;
-}
-
-constexpr std::array<char, 4> decompose_fourcc(const uint32_t fourcc)
-{
-    std::array<char, 4> out{};
-    out[0] = static_cast<char>(fourcc & 0xff);
-    out[1] = static_cast<char>((fourcc >> 8u) & 0xff);
-    out[2] = static_cast<char>((fourcc >> 16u) & 0xff);
-    out[3] = static_cast<char>((fourcc >> 24u) & 0xff);
-    return out;
-}
-
-static_assert(make_fourcc("DDS ") == 0x20534444);
-static_assert(decompose_fourcc(0x20534444) == std::array<char, 4>{ 'D', 'D', 'S', ' ' });
 
 /** Determine pixel format of DDS file. Nullopt if format is unsupported. */
 PixelFormatResult dds_pf_to_pixel_format(const DDS_PIXELFORMAT& pf)

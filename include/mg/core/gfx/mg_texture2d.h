@@ -10,16 +10,17 @@
 
 #pragma once
 
-#include "mg/core/mg_identifier.h"
 #include "mg/core/gfx/mg_gfx_object_handles.h"
 #include "mg/core/gfx/mg_texture_related_types.h"
+#include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_macros.h"
 
 #include <cstdint>
 
 namespace Mg {
 class TextureResource;
-}
+class TextureArrayResource;
+} // namespace Mg
 
 namespace Mg::gfx {
 
@@ -34,7 +35,6 @@ public:
     static Texture2D render_target(const RenderTargetParams& params);
 
     /** Create a texture from RGBA8 buffer. */
-    // TODO parameters, mipmaps, compression?
     static Texture2D from_rgba8_buffer(Identifier id,
                                        std::span<const uint8_t> rgba8_buffer,
                                        int32_t width,
@@ -61,6 +61,32 @@ private:
 
     ImageSize m_image_size{};
 
+    Identifier m_id{ "" };
+};
+
+class Texture2DArray {
+public:
+    /** Create a texture from the given resource. */
+    static Texture2DArray from_texture_resource(const TextureArrayResource& resource,
+                                                const TextureSettings& settings);
+
+    Identifier id() const noexcept { return m_id; }
+
+    TextureHandle handle() const { return m_handle; }
+
+    MG_MAKE_DEFAULT_MOVABLE(Texture2DArray);
+    MG_MAKE_NON_COPYABLE(Texture2DArray);
+
+    ~Texture2DArray() { unload(); }
+
+private:
+    explicit Texture2DArray(Identifier id, TextureHandle&& handle) noexcept
+        : m_handle{ std::move(handle) }, m_id{ id }
+    {}
+
+    void unload() noexcept;
+
+    TextureHandle m_handle;
     Identifier m_id{ "" };
 };
 

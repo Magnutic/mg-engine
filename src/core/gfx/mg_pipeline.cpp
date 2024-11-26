@@ -6,31 +6,36 @@
 
 #include "mg/core/gfx/mg_pipeline.h"
 
-#include "mg/core/mg_runtime_error.h"
 #include "mg/core/gfx/mg_shader_related_types.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg_gl_debug.h"
 #include "mg_shader.h"
 #include "mg_opengl_loader_glad.h"
 
-#include "mg/core/mg_log.h"
 #include "mg/core/gfx/mg_buffer_texture.h"
 #include "mg/core/gfx/mg_gfx_debug_group.h"
 #include "mg/core/gfx/mg_texture2d.h"
 #include "mg/core/gfx/mg_uniform_buffer.h"
+#include "mg/core/mg_log.h"
 
 #include "fmt/core.h"
 
 namespace Mg::gfx {
 
 namespace {
-PipelineInputType pipeline_input_type_for(shader::SamplerType sampler_type)
+PipelineInputBinding::Type pipeline_input_type_for(shader::SamplerType sampler_type)
 {
+    using Type = PipelineInputBinding::Type;
+
     switch (sampler_type) {
     case shader::SamplerType::Sampler2D:
-        return PipelineInputType::Sampler2D;
+        return Type::Sampler2D;
+
+    case shader::SamplerType::Sampler2DArray:
+        return Type::Sampler2DArray;
 
     case shader::SamplerType::SamplerCube:
-        return PipelineInputType::SamplerCube;
+        return Type::SamplerCube;
     }
 
     MG_ASSERT(false && "Unexpected sampler_type");
@@ -42,9 +47,7 @@ PipelineInputType pipeline_input_type_for(shader::SamplerType sampler_type)
 //--------------------------------------------------------------------------------------------------
 
 PipelineInputBinding::PipelineInputBinding(uint32_t location, const BufferTexture& buffer_texture)
-    : PipelineInputBinding(location,
-                           buffer_texture.handle().get(),
-                           PipelineInputType::BufferTexture)
+    : PipelineInputBinding(location, buffer_texture.handle().get(), Type::BufferTexture)
 {}
 
 PipelineInputBinding::PipelineInputBinding(uint32_t location,
@@ -54,7 +57,7 @@ PipelineInputBinding::PipelineInputBinding(uint32_t location,
 {}
 
 PipelineInputBinding::PipelineInputBinding(uint32_t location, const UniformBuffer& ubo)
-    : PipelineInputBinding(location, ubo.handle().get(), PipelineInputType::UniformBuffer)
+    : PipelineInputBinding(location, ubo.handle().get(), Type::UniformBuffer)
 {}
 
 //--------------------------------------------------------------------------------------------------
@@ -80,27 +83,34 @@ namespace {
 // Shared implementation used for both pipeline-input binding functions in OpenGL.
 void bind_pipeline_input_set(std::span<const PipelineInputBinding> bindings)
 {
+    using Type = PipelineInputBinding::Type;
+
     for (const PipelineInputBinding& binding : bindings) {
         const auto gl_object_id = static_cast<GLuint>(binding.gfx_resource_handle());
         const uint32_t location = binding.location();
 
         switch (binding.type()) {
-        case PipelineInputType::BufferTexture: {
+        case Type::BufferTexture: {
             glActiveTexture(GL_TEXTURE0 + location);
             glBindTexture(GL_TEXTURE_BUFFER, gl_object_id);
             break;
         }
-        case PipelineInputType::Sampler2D: {
+        case Type::Sampler2D: {
             glActiveTexture(GL_TEXTURE0 + location);
             glBindTexture(GL_TEXTURE_2D, gl_object_id);
             break;
         }
-        case PipelineInputType::SamplerCube: {
+        case Type::Sampler2DArray: {
+            glActiveTexture(GL_TEXTURE0 + location);
+            glBindTexture(GL_TEXTURE_2D_ARRAY, gl_object_id);
+            break;
+        }
+        case Type::SamplerCube: {
             glActiveTexture(GL_TEXTURE0 + location);
             glBindTexture(GL_TEXTURE_CUBE_MAP, gl_object_id);
             break;
         }
-        case PipelineInputType::UniformBuffer: {
+        case Type::UniformBuffer: {
             glBindBufferBase(GL_UNIFORM_BUFFER, location, gl_object_id);
             break;
         }
@@ -120,13 +130,7 @@ void apply_input_descriptor(const ShaderProgramHandle& shader_handle,
     bool success = false;
 
     switch (type) {
-    case PipelineInputType::BufferTexture:
-        [[fallthrough]];
-
-    case PipelineInputType::SamplerCube:
-        [[fallthrough]];
-
-    case PipelineInputType::Sampler2D: {
+    case PipelineInputDescriptor::Type::Sampler: {
         const Opt<UniformLocation> uniform_index = uniform_location(shader_handle, name);
         if (uniform_index) {
             set_sampler_binding(*uniform_index, TextureUnit{ location });
@@ -135,9 +139,10 @@ void apply_input_descriptor(const ShaderProgramHandle& shader_handle,
         break;
     }
 
-    case PipelineInputType::UniformBuffer:
+    case PipelineInputDescriptor::Type::UniformBuffer: {
         success = set_uniform_block_binding(shader_handle, name, UniformBufferSlot{ location });
         break;
+    }
     }
 
     if (!success && mandatory) {

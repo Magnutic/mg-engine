@@ -118,7 +118,7 @@ PipelinePool make_ui_pipeline_pool()
     {
         PipelineInputDescriptor& draw_params_block_descriptor = config.shared_input_layout[0];
         draw_params_block_descriptor.input_name = "DrawParamsBlock";
-        draw_params_block_descriptor.type = PipelineInputType::UniformBuffer;
+        draw_params_block_descriptor.type = PipelineInputDescriptor::Type::UniformBuffer;
         draw_params_block_descriptor.location = k_draw_params_descriptor_location;
         draw_params_block_descriptor.mandatory = true;
     }
@@ -143,8 +143,8 @@ Pipeline make_text_pipeline()
     params.vertex_shader = vs.value().handle;
     params.fragment_shader = fs.value().handle;
     std::array<PipelineInputDescriptor, 2> input_descriptors;
-    input_descriptors[0] = { "DrawParamsBlock", PipelineInputType::UniformBuffer, 0, true };
-    input_descriptors[1] = { "font_texture", PipelineInputType::Sampler2D, 0, true };
+    input_descriptors[0] = { "DrawParamsBlock", PipelineInputDescriptor::Type::UniformBuffer, 0, true };
+    input_descriptors[1] = { "font_texture", PipelineInputDescriptor::Type::Sampler, 0, true };
     params.shared_input_layout = input_descriptors;
 
     return Pipeline::make(params).value();

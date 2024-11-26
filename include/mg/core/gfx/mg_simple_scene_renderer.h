@@ -15,6 +15,7 @@
 #include "mg/core/gfx/render_passes/mg_blur_pass.h"
 #include "mg/core/gfx/render_passes/mg_clear_pass.h"
 #include "mg/core/gfx/render_passes/mg_debug_pass.h"
+#include "mg/core/gfx/render_passes/mg_editor_render_pass.h"
 #include "mg/core/gfx/render_passes/mg_mesh_pass.h"
 #include "mg/core/gfx/render_passes/mg_sky_pass.h"
 #include "mg/core/gfx/render_passes/mg_tonemap_and_bloom_pass.h"
@@ -72,10 +73,13 @@ struct SimpleSceneRendererConfig {
 };
 
 struct SimpleSceneRendererData {
-    std::shared_ptr<SceneLights> scene_lights;
-    std::shared_ptr<RenderCommandProducer> mesh_render_command_producer;
-    std::shared_ptr<BillboardRenderList> billboard_render_list;
-    std::shared_ptr<UIRenderList> ui_render_list;
+    std::shared_ptr<SceneLights> scene_lights = std::make_shared<SceneLights>();
+    std::shared_ptr<RenderCommandProducer> mesh_render_command_producer =
+        std::make_shared<RenderCommandProducer>();
+    std::shared_ptr<BillboardRenderList> billboard_render_list =
+        std::make_shared<BillboardRenderList>();
+    std::shared_ptr<UIRenderList> ui_render_list = std::make_shared<UIRenderList>();
+    std::shared_ptr<EditorsToRender> editors_to_render = std::make_shared<EditorsToRender>();
 };
 
 class SimpleSceneRenderer : public SceneRenderer {
@@ -119,6 +123,9 @@ private:
         passes.push_back(std::make_unique<BillboardPass>(m_render_targets->hdr_target(),
                                                          m_data->billboard_render_list));
 
+        passes.push_back(std::make_unique<Editor3DPass>(m_render_targets->hdr_target(),
+                                                        m_data->editors_to_render));
+
         passes.push_back(std::make_unique<BlurPass>(m_render_targets->blur_target(),
                                                     m_render_targets->hdr_target(),
                                                     m_config.blur_material));
@@ -133,6 +140,10 @@ private:
         passes.push_back(std::make_unique<UIPass>(m_window_render_target,
                                                   m_data->ui_render_list,
                                                   settings.video_mode));
+
+        passes.push_back(std::make_unique<EditorUIPass>(m_window_render_target,
+                                                        m_data->editors_to_render,
+                                                        settings.video_mode));
 
         return passes;
     }

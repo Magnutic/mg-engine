@@ -163,31 +163,31 @@ PipelinePool make_mesh_pipeline_pool(const MeshPipelinePoolKind kind,
 
     matrix_block_descriptor.input_name = "MatrixBlock";
     matrix_block_descriptor.location = k_matrix_descriptor_location;
-    matrix_block_descriptor.type = PipelineInputType::UniformBuffer;
+    matrix_block_descriptor.type = PipelineInputDescriptor::Type::UniformBuffer;
     matrix_block_descriptor.mandatory = true;
 
     skinning_matrix_block_descriptor.input_name = "SkinningMatrixBlock";
     skinning_matrix_block_descriptor.location = k_skinning_matrices_descriptor_location;
-    skinning_matrix_block_descriptor.type = PipelineInputType::UniformBuffer;
+    skinning_matrix_block_descriptor.type = PipelineInputDescriptor::Type::UniformBuffer;
     skinning_matrix_block_descriptor.mandatory = false;
 
     frame_block_descriptor.input_name = "FrameBlock";
     frame_block_descriptor.location = k_frame_descriptor_location;
-    frame_block_descriptor.type = PipelineInputType::UniformBuffer;
+    frame_block_descriptor.type = PipelineInputDescriptor::Type::UniformBuffer;
     frame_block_descriptor.mandatory = true;
 
     light_block_descriptor.input_name = "LightBlock";
-    light_block_descriptor.type = PipelineInputType::UniformBuffer;
+    light_block_descriptor.type = PipelineInputDescriptor::Type::UniformBuffer;
     light_block_descriptor.location = k_light_descriptor_location;
     light_block_descriptor.mandatory = false;
 
     sampler_tile_data_descriptor.input_name = "_sampler_tile_data";
-    sampler_tile_data_descriptor.type = PipelineInputType::BufferTexture;
+    sampler_tile_data_descriptor.type = PipelineInputDescriptor::Type::Sampler;
     sampler_tile_data_descriptor.location = k_sampler_tile_data_index;
     sampler_tile_data_descriptor.mandatory = false;
 
     sampler_light_index_descriptor.input_name = "_sampler_light_index";
-    sampler_light_index_descriptor.type = PipelineInputType::BufferTexture;
+    sampler_light_index_descriptor.type = PipelineInputDescriptor::Type::Sampler;
     sampler_light_index_descriptor.location = k_sampler_light_index_index;
     sampler_light_index_descriptor.mandatory = false;
 

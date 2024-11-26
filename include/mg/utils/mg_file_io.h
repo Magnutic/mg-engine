@@ -25,12 +25,14 @@ enum class Mode { text, binary };
 /** Portably creates ofstream from UTF-8 filepath, with stream exceptions enabled. Returns nullopt
  * along with error reason if creating the filestream fails.
  */
-std::pair<Opt<std::ofstream>, std::string> make_output_filestream(std::string_view filepath, bool overwrite, Mode mode);
+std::pair<Opt<std::ofstream>, std::string>
+make_output_filestream(std::string_view filepath, bool overwrite, Mode mode);
 
 /** Portably creates ifstream from UTF-8 filepath, with stream exceptions enabled. Returns nullopt
  * along with error reason if creating the filestream fails.
  */
-std::pair<Opt<std::ifstream>, std::string> make_input_filestream(std::string_view filepath, Mode mode);
+std::pair<Opt<std::ifstream>, std::string> make_input_filestream(std::string_view filepath,
+                                                                 Mode mode);
 
 std::string get_all_text(std::istream& stream);
 
@@ -102,7 +104,7 @@ template<typename T> size_t read_binary_array(std::istream& stream, std::span<T>
 template<typename T> void write_binary(std::ostream& stream, const T& value)
 {
     static_assert(std::is_trivially_copyable<T>::value, "Source type is not trivially copyable.");
-    stream.write(reinterpret_cast<const char*>(value), narrow<std::streamsize>(sizeof(value)));
+    stream.write(reinterpret_cast<const char*>(&value), narrow<std::streamsize>(sizeof(value)));
 }
 
 /** Writes an array of values to the file stream. It is the user's responsibility to avoid
@@ -110,7 +112,8 @@ template<typename T> void write_binary(std::ostream& stream, const T& value)
  * @param values std::span of values to write.
  * @return Number of bytes that where successfully written.
  */
-template<typename T> size_t write_binary_array(std::ostream& stream, const std::span<T> values)
+template<typename T>
+size_t write_binary_array(std::ostream& stream, std::span<const T> values)
 {
     static_assert(std::is_trivially_copyable<T>::value, "Source type is not trivially copyable.");
 

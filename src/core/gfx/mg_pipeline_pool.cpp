@@ -9,21 +9,21 @@
 #include "mg_shader.h"
 
 #include "mg/core/containers/mg_flat_map.h"
-#include "mg/core/mg_log.h"
-#include "mg/core/mg_runtime_error.h"
 #include "mg/core/gfx/mg_blend_modes.h"
 #include "mg/core/gfx/mg_gfx_debug_group.h"
 #include "mg/core/gfx/mg_material.h"
 #include "mg/core/gfx/mg_pipeline.h"
 #include "mg/core/gfx/mg_uniform_buffer.h"
 #include "mg/core/mg_defs.h"
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg/core/resource_cache/mg_resource_access_guard.h"
 #include "mg/core/resources/mg_shader_resource.h"
 #include "mg/utils/mg_iteration_utils.h"
 #include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_stl_helpers.h"
 
-#include <bits/ranges_algo.h>
+#include <algorithm>
 #include <fmt/core.h>
 
 namespace rng = std::ranges;
@@ -56,10 +56,7 @@ void validate(const PipelinePoolConfig& config)
     // Check for incorrectly used texture binding locations.
     for (auto& input_descriptor : config.shared_input_layout) {
         switch (input_descriptor.type) {
-        case PipelineInputType::BufferTexture:
-            [[fallthrough]];
-
-        case PipelineInputType::Sampler2D:
+        case PipelineInputDescriptor::Type::Sampler:
             if (input_descriptor.location < 8) {
                 throw RuntimeError{ "Texture slots [0,7] are reserved for material samplers." };
             }
@@ -287,14 +284,14 @@ generate_material_input_layout(const Material& material,
 
     for (size_t i = 0; i < samplers.size(); ++i) {
         descriptors[i].input_name = samplers[i].name;
-        descriptors[i].type = PipelineInputType::Sampler2D;
+        descriptors[i].type = PipelineInputDescriptor::Type::Sampler;
         descriptors[i].location = as<uint32_t>(i);
         descriptors[i].mandatory = false;
     }
 
     PipelineInputDescriptor& material_params_descriptor = descriptors.back();
     material_params_descriptor.input_name = "MaterialParams";
-    material_params_descriptor.type = PipelineInputType::UniformBuffer;
+    material_params_descriptor.type = PipelineInputDescriptor::Type::UniformBuffer;
     material_params_descriptor.location = material_parameters_binding_location;
     material_params_descriptor.mandatory = false;
 

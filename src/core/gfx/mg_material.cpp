@@ -120,6 +120,11 @@ void Material::set_sampler(Identifier sampler_name, const Texture2D* texture)
     set_sampler_impl(m_id, m_samplers, sampler_name, texture);
 }
 
+void Material::set_sampler(Identifier sampler_name, const Texture2DArray* texture)
+{
+    set_sampler_impl(m_id, m_samplers, sampler_name, texture);
+}
+
 void Material::set_sampler(Identifier sampler_name, const TextureCube* texture)
 {
     set_sampler_impl(m_id, m_samplers, sampler_name, texture);

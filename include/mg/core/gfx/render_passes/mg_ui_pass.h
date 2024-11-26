@@ -17,10 +17,15 @@
 
 namespace Mg::gfx {
 
+struct TextRenderCommand {
+    std::shared_ptr<BitmapFont> font;
+    TypeSetting typesetting = {};
+    UIPlacement placement = {};
+    std::string text;
+};
+
 struct UIRenderList {
-    // Temporary; should be a command list (of some type yet to be defined as of writing).
-    std::unique_ptr<BitmapFont> font;
-    std::string text_to_draw;
+    std::vector<TextRenderCommand> text_render_commands;
 };
 
 class UIPass : public IRenderPass {
@@ -37,17 +42,12 @@ public:
 
     void render(const RenderParams& /*params*/) override
     {
-        // Temporarily just drawing text
-        UIPlacement placement = {};
-        placement.position = UIPlacement::top_left + glm::vec2(0.01f, -0.01f);
-        placement.anchor = UIPlacement::top_left;
-
-        TypeSetting typesetting = {};
-        typesetting.line_spacing_factor = 1.25f;
-        typesetting.max_width_pixels = m_renderer.resolution().width;
-
-        auto text = m_render_list->font->prepare_text(m_render_list->text_to_draw, typesetting);
-        m_renderer.draw_text(*m_target, placement, text);
+        for (const auto& text_render_command : m_render_list->text_render_commands) {
+            auto prepared_text =
+                text_render_command.font->prepare_text(text_render_command.text,
+                                                       text_render_command.typesetting);
+            m_renderer.draw_text(*m_target, text_render_command.placement, prepared_text);
+        }
     }
 
 private:

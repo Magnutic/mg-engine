@@ -10,11 +10,11 @@
 
 #pragma once
 
-#include "mg/core/mg_identifier.h"
 #include "mg/core/gfx/mg_blend_modes.h"
 #include "mg/core/gfx/mg_gfx_object_handles.h"
 #include "mg/core/gfx/mg_shader_related_types.h"
 #include "mg/core/gfx/mg_texture_related_types.h"
+#include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_enum.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_optional.h"
@@ -37,16 +37,15 @@ MG_ENUM(DepthTestCondition, (less, equal, less_equal, greater, not_equal, greate
 /** Which side of polygons to cull. */
 MG_ENUM(CullingMode, (none, front, back))
 
-/** The type of an input to a rendering pipeline. */
-MG_ENUM(PipelineInputType, (BufferTexture, Sampler2D, SamplerCube, UniformBuffer))
-
 /** Describes an input to a pipeline: the input's type, name, and its binding location. */
 struct PipelineInputDescriptor {
+    enum class Type { Sampler, UniformBuffer };
+
     /** The name of the input as defined in shader code. */
     Identifier input_name;
 
     /** What type of input. */
-    PipelineInputType type = {};
+    Type type = {};
 
     /** Binding location to assign this input. */
     uint32_t location = 0;
@@ -64,21 +63,25 @@ struct PipelineInputDescriptor {
  */
 class PipelineInputBinding {
 public:
+    enum class Type { BufferTexture, Sampler2D, Sampler2DArray, SamplerCube, UniformBuffer };
+
     PipelineInputBinding(uint32_t location, const BufferTexture& buffer_texture);
-    PipelineInputBinding(uint32_t location, TextureHandle texture, shader::SamplerType sampler_type);
+    PipelineInputBinding(uint32_t location,
+                         TextureHandle texture,
+                         shader::SamplerType sampler_type);
     PipelineInputBinding(uint32_t location, const UniformBuffer& ubo);
 
     GfxObjectHandleValue gfx_resource_handle() const { return m_gfx_resource_handle; }
-    PipelineInputType type() const { return m_type; }
+    Type type() const { return m_type; }
     uint32_t location() const { return m_location; }
 
 private:
-    PipelineInputBinding(uint32_t location, GfxObjectHandleValue handle, PipelineInputType type)
+    PipelineInputBinding(uint32_t location, GfxObjectHandleValue handle, Type type)
         : m_gfx_resource_handle(handle), m_type(type), m_location(location)
     {}
 
     GfxObjectHandleValue m_gfx_resource_handle;
-    PipelineInputType m_type;
+    Type m_type;
     uint32_t m_location;
 };
 

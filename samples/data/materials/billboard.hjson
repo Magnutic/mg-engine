@@ -3,10 +3,10 @@ blend_mode: {
   BlendMode: {
     colour_blend_op: add
     alpha_blend_op: add
-    src_colour_factor: one
-    dst_colour_factor: zero
+    src_colour_factor: src_alpha
+    dst_colour_factor: one_minus_src_alpha
     src_alpha_factor: one
-    dst_alpha_factor: zero
+    dst_alpha_factor: one
   }
 }
 options: {

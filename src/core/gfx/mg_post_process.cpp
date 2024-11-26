@@ -100,19 +100,19 @@ PipelinePool make_post_process_pipeline_pool()
     {
         PipelineInputDescriptor& frame_block_descriptor = config.shared_input_layout[0];
         frame_block_descriptor.input_name = "FrameBlock";
-        frame_block_descriptor.type = PipelineInputType::UniformBuffer;
+        frame_block_descriptor.type = PipelineInputDescriptor::Type::UniformBuffer;
         frame_block_descriptor.location = k_frame_block_descriptor_location;
         frame_block_descriptor.mandatory = false;
 
         PipelineInputDescriptor& sampler_colour_descriptor = config.shared_input_layout[1];
         sampler_colour_descriptor.input_name = "sampler_colour";
-        sampler_colour_descriptor.type = PipelineInputType::Sampler2D;
+        sampler_colour_descriptor.type = PipelineInputDescriptor::Type::Sampler;
         sampler_colour_descriptor.location = k_sampler_colour_texture_unit;
         sampler_colour_descriptor.mandatory = false;
 
         PipelineInputDescriptor& sampler_depth_descriptor = config.shared_input_layout[2];
         sampler_depth_descriptor.input_name = "sampler_depth";
-        sampler_depth_descriptor.type = PipelineInputType::Sampler2D;
+        sampler_depth_descriptor.type = PipelineInputDescriptor::Type::Sampler;
         sampler_depth_descriptor.location = k_sampler_depth_texture_unit;
         sampler_depth_descriptor.mandatory = false;
     }
