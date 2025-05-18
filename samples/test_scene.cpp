@@ -6,6 +6,7 @@
 #include <mg/gfx/mg_gfx_debug_group.h>
 #include <mg/gfx/mg_gfx_device.h>
 #include <mg/gfx/mg_light.h>
+#include <mg/mg_unicode.h>
 #include <mg/physics/mg_character_controller.h>
 #include <mg/resources/mg_font_resource.h>
 #include <mg/resources/mg_material_resource.h>
@@ -301,9 +302,10 @@ void Scene::setup_config()
     cfg.set_default_value("mouse_sensitivity_y", 0.4f);
 }
 
-void Scene::load_model(Mg::Identifier mesh_file,
-                       std::span<const Mg::gfx::MaterialBinding> material_bindings,
-                       Mg::ecs::Entity entity)
+void Scene::load_model(
+    Mg::Identifier mesh_file,
+    std::initializer_list<std::pair<Mg::Identifier, Mg::Identifier>> material_bindings,
+    Mg::ecs::Entity entity)
 {
     auto& mesh = entities.collection.add_component<MeshComponent>(entity);
     mesh.mesh = mesh_pool->get_or_load(mesh_file);
@@ -314,13 +316,28 @@ void Scene::load_model(Mg::Identifier mesh_file,
     }
 
     mesh.material_bindings.resize(material_bindings.size());
-    std::ranges::copy(material_bindings, mesh.material_bindings.begin());
+    for (auto&& [binding_id, filename] : material_bindings) {
+        mesh.material_bindings.push_back({ .material_binding_id = binding_id,
+                                           .material = material_pool->get_or_load(filename) });
+    }
+
+    for (auto&& submesh : mesh.mesh->submeshes) {
+        auto has_binding_for_submesh = [&](const Mg::gfx::MaterialBinding& binding) {
+            return binding.material_binding_id == submesh.material_binding_id;
+        };
+        if (std::ranges::find_if(mesh.material_bindings, has_binding_for_submesh) !=
+            mesh.material_bindings.end()) {
+            continue;
+        }
+        mesh.material_bindings.push_back(
+            { .material_binding_id = submesh.material_binding_id, .material = default_material });
+    }
 }
 
-Mg::ecs::Entity
-Scene::add_static_object(Mg::Identifier mesh_file,
-                         std::span<const Mg::gfx::MaterialBinding> material_bindings,
-                         const glm::mat4& transform)
+Mg::ecs::Entity Scene::add_static_object(
+    Mg::Identifier mesh_file,
+    std::initializer_list<std::pair<Mg::Identifier, Mg::Identifier>> material_bindings,
+    const glm::mat4& transform)
 {
     const auto entity = entities.collection.create_entity();
     load_model(mesh_file, material_bindings, entity);
@@ -337,13 +354,13 @@ Scene::add_static_object(Mg::Identifier mesh_file,
     return entity;
 }
 
-Mg::ecs::Entity
-Scene::add_dynamic_object(Mg::Identifier mesh_file,
-                          std::span<const Mg::gfx::MaterialBinding> material_bindings,
-                          glm::vec3 position,
-                          Mg::Rotation rotation,
-                          glm::vec3 scale,
-                          bool enable_physics)
+Mg::ecs::Entity Scene::add_dynamic_object(
+    Mg::Identifier mesh_file,
+    std::initializer_list<std::pair<Mg::Identifier, Mg::Identifier>> material_bindings,
+    glm::vec3 position,
+    Mg::Rotation rotation,
+    glm::vec3 scale,
+    bool enable_physics)
 {
     const auto entity = entities.collection.create_entity();
     load_model(mesh_file, material_bindings, entity);
@@ -426,74 +443,31 @@ void Scene::create_entities()
     entities.collection.reset();
 
     add_static_object("meshes/misc/test_scene_2.mgm",
-                      std::array{
-                          Mg::gfx::MaterialBinding{
-                              "FloorMaterial",
-                              material_pool->get_or_load("materials/buildings/GreenBrick.hjson"),
-                          },
-                          Mg::gfx::MaterialBinding{
-                              "WallMaterial",
-                              material_pool->get_or_load("materials/buildings/W31_1.hjson"),
-                          },
-                          Mg::gfx::MaterialBinding{
-                              "PillarsAndStepsMaterial",
-                              material_pool->get_or_load(
-                                  "materials/buildings/BigWhiteBricks.hjson"),
-                          },
-                          Mg::gfx::MaterialBinding{
-                              "AltarBorderMaterial",
-                              material_pool->get_or_load("materials/buildings/GreenBrick.hjson"),
-                          },
+                      {
+                          { "FloorMaterial", "materials/buildings/GreenBrick.hjson" },
+                          { "WallMaterial", "materials/buildings/W31_1.hjson" },
+                          { "PillarsAndStepsMaterial", "materials/buildings/BigWhiteBricks.hjson" },
+                          { "AltarBorderMaterial", "materials/buildings/GreenBrick.hjson" },
                       },
                       glm::mat4(1.0f));
 
-    auto man_entity =
-        add_dynamic_object("meshes/CesiumMan.mgm",
-                           std::array{
-                               Mg::gfx::MaterialBinding{
-                                   "Cesium_Man-effect",
-                                   material_pool->get_or_load("materials/actors/fox.hjson"),
-                               },
-                           },
-                           { 2.0f, 0.0f, 0.0f },
-                           Mg::Rotation(),
-                           { 1.0f, 1.0f, 1.0f },
-                           false);
-    entities.collection.get_component<AnimationComponent>(man_entity).current_clip = 0;
-
-    auto fox_entity =
-        add_dynamic_object("meshes/Fox.mgm",
-                           std::array{
-                               Mg::gfx::MaterialBinding{
-                                   "fox_material",
-                                   material_pool->get_or_load("materials/actors/fox.hjson"),
-                               },
-                           },
-                           { 1.0f, 1.0f, 0.0f },
-                           Mg::Rotation(),
-                           { 0.01f, 0.01f, 0.01f },
-                           false);
+    auto fox_entity = add_dynamic_object("meshes/Fox.mgm",
+                                         { { "fox_material", "materials/actors/fox.hjson" } },
+                                         { 1.0f, 1.0f, 0.0f },
+                                         Mg::Rotation(),
+                                         { 0.01f, 0.01f, 0.01f },
+                                         false);
     entities.collection.get_component<AnimationComponent>(fox_entity).current_clip = 2;
 
     add_dynamic_object("meshes/misc/hestdraugr.mgm"_id,
-                       std::array{
-                           Mg::gfx::MaterialBinding{
-                               "hestdraugr_material",
-                               material_pool->get_or_load("materials/actors/HestDraugr.hjson"),
-                           },
-                       },
+                       { { "hestdraugr_material", "materials/actors/HestDraugr.hjson" } },
                        { -2.0f, 2.0f, 1.05f },
                        Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
                        { 1.0f, 1.0f, 1.0f },
                        true);
 
     add_dynamic_object("meshes/box.mgm",
-                       std::array{
-                           Mg::gfx::MaterialBinding{
-                               "cube_material",
-                               material_pool->get_or_load("materials/crate.hjson"),
-                           },
-                       },
+                       { { "cube_material", "materials/crate.hjson" } },
                        { 0.0f, 2.0f, 0.5f },
                        Mg::Rotation({ 0.0f, 0.0f, glm::radians(90.0f) }),
                        { 1.0f, 1.0f, 1.0f },

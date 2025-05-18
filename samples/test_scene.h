@@ -171,6 +171,8 @@ public:
         material_pool->get_or_load("materials/particle.hjson");
     const Mg::gfx::Material* sky_material = material_pool->get_or_load("materials/skybox.hjson");
 
+    const Mg::gfx::Material* default_material =
+        material_pool->get_or_load("materials/default.hjson");
 
     Mg::gfx::ParticleSystem particle_system;
 
@@ -187,20 +189,23 @@ private:
 
     Entities entities{ 1024 };
 
-    void load_model(Mg::Identifier mesh_file,
-                    std::span<const Mg::gfx::MaterialBinding> material_bindings,
-                    Mg::ecs::Entity entity);
+    void
+    load_model(Mg::Identifier mesh_file,
+               std::initializer_list<std::pair<Mg::Identifier, Mg::Identifier>> material_bindings,
+               Mg::ecs::Entity entity);
 
-    Mg::ecs::Entity add_static_object(Mg::Identifier mesh_file,
-                                      std::span<const Mg::gfx::MaterialBinding> material_bindings,
-                                      const glm::mat4& transform);
+    Mg::ecs::Entity add_static_object(
+        Mg::Identifier mesh_file,
+        std::initializer_list<std::pair<Mg::Identifier, Mg::Identifier>> material_bindings,
+        const glm::mat4& transform);
 
-    Mg::ecs::Entity add_dynamic_object(Mg::Identifier mesh_file,
-                                       std::span<const Mg::gfx::MaterialBinding> material_bindings,
-                                       glm::vec3 position,
-                                       Mg::Rotation rotation,
-                                       glm::vec3 scale,
-                                       bool enable_physics);
+    Mg::ecs::Entity add_dynamic_object(
+        Mg::Identifier mesh_file,
+        std::initializer_list<std::pair<Mg::Identifier, Mg::Identifier>> material_bindings,
+        glm::vec3 position,
+        Mg::Rotation rotation,
+        glm::vec3 scale,
+        bool enable_physics);
 
     void create_entities();
     void generate_lights();
