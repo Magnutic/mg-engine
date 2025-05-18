@@ -2,6 +2,8 @@
 
 #include "../shared/mg_file_writer.h"
 #include "mg_assimp_utils.h"
+#include "glm/gtc/constants.hpp"
+#include "glm/gtx/quaternion.hpp"
 
 #include <mg/resources/mg_mesh_resource_data.h>
 #include <mg/utils/mg_assert.h>
@@ -28,20 +30,6 @@
 #include <sstream>
 #include <type_traits>
 
-// Note: there are a lot of 'NOLINT' in this file, to suppress warnings about using pointer
-// arithmetic. It is very difficult to use AssImp without pointer arithmetic, so I chose to suppress
-// those warnings.
-
-// TODO: There is still something wrong about transformations for skinned models, I know it.
-// With input GLTF files that are supposed to all face +Z, I get some facing -Y and some facing +X.
-// I would expect them to face +Y, so I must be missing some transform I am supposed to apply.
-//
-// Hypothesis: I am probably not including the right set of nodes in the joint hierarchy. For
-// skinned models, I should include those node subtrees that are siblings of or children of the
-// mesh, but nothing else. The effect I am seeing might be that the root nodes transform such that
-// the mesh will be correctly oriented if rendered without skinning, whereas those transformations
-// should be ignored for correct results with skinning. Then again, this is just speculation.
-
 namespace Mg {
 
 using namespace Mg::gfx;
@@ -53,16 +41,13 @@ namespace {
 
 constexpr float k_scaling_factor = 1.00f; // TODO configurable or deduced somehow?
 
-constexpr mat4 rotate_z_180({ -1, 0, 0, 0 }, { 0, -1, 0, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0, 1 });
+// AssImp always imports as Y-up, so we have to rotate to compensate.
+const mat4 to_z_up = glm::toMat4(glm::quat(vec3{ -glm::half_pi<float>(), 0.0f, 0.0f }));
 
-constexpr mat4 y_up_to_z_up({ -1, 0, 0, 0 }, { 0, 0, 1, 0 }, { 0, 1, 0, 0 }, { 0, 0, 0, 1 });
-
-// Converts from AssImp's Y-up coordinate system to Mg's Z-up coordinate system and applies scaling
-// factor.
-constexpr mat4 to_mg_space({ -k_scaling_factor, 0, 0, 0 },
-                           { 0, 0, k_scaling_factor, 0 },
-                           { 0, k_scaling_factor, 0, 0 },
-                           { 0, 0, 0, 1 });
+const mat4 to_mg_space = to_z_up * mat4({ k_scaling_factor, 0, 0, 0 },
+                                        { 0, k_scaling_factor, 0, 0 },
+                                        { 0, 0, k_scaling_factor, 0 },
+                                        { 0, 0, 0, 1 });
 
 const mat4 from_mg_space = glm::inverse(to_mg_space);
 
@@ -79,20 +64,21 @@ inline mat4 convert_matrix(const aiMatrix4x4& aiMat)
 
 inline vec3 convert_position(const aiVector3D& ai_vector)
 {
-    return { -ai_vector.x * k_scaling_factor,
-             ai_vector.z * k_scaling_factor,
-             ai_vector.y * k_scaling_factor };
+    return vec4{ ai_vector.x * k_scaling_factor,
+                 ai_vector.y * k_scaling_factor,
+                 ai_vector.z * k_scaling_factor,
+                 1.0f } *
+           to_mg_space;
 }
 
 inline vec3 convert_direction(const aiVector3D& ai_vector)
 {
-    return { -ai_vector.x, ai_vector.z, ai_vector.y };
+    return vec4{ ai_vector.x, ai_vector.y, ai_vector.z, 0.0f } * to_mg_space;
 }
 
-// TODO verify, very unsure about this
 inline quat convert_quaternion(const aiQuaternion& quaternion)
 {
-    return { quaternion.w, -quaternion.x, quaternion.z, quaternion.y };
+    return { quaternion.w, quaternion.x, quaternion.y, quaternion.z };
 }
 
 template<typename... Ts> void notify(const Ts&... what)
@@ -213,13 +199,11 @@ private:
     // children.
     JointId add_dummy_joint(std::string_view name);
 
+    mat4 m_skeleton_root_transform = mat4(1.0f);
+
     std::vector<Joint> m_joints;
     std::map<const aiBone*, JointId> m_joint_id_for_bone;
     StringData* m_string_data = nullptr;
-
-    // Rotating by 180 degrees around the Z-axis seems to make most skinned meshes face the intended
-    // direction. I am not sure why. TODO figure out and fix this.
-    mat4 m_skeleton_root_transform = rotate_z_180 * y_up_to_z_up;
 };
 
 JointId JointData::add_joint(const aiBone& bone)
