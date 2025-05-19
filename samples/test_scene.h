@@ -17,101 +17,11 @@
 #include <mg/mg_player_controller.h>
 #include <mg/physics/mg_physics.h>
 #include <mg/resource_cache/mg_resource_cache.h>
+#include <mg/scene/mg_common_scene_components.h>
 #include <mg/utils/mg_interpolate_transform.h>
 #include <mg/utils/mg_optional.h>
 
 #include "shared/renderers.h"
-
-struct TransformComponent : Mg::ecs::BaseComponent<1> {
-    glm::mat4 previous_transform = glm::mat4(1.0f);
-    glm::mat4 transform = glm::mat4(1.0f);
-};
-
-struct StaticBodyComponent : Mg::ecs::BaseComponent<2> {
-    Mg::physics::StaticBodyHandle physics_body;
-};
-
-struct DynamicBodyComponent : Mg::ecs::BaseComponent<3> {
-    Mg::physics::DynamicBodyHandle physics_body;
-};
-
-struct MeshComponent : Mg::ecs::BaseComponent<4> {
-    const Mg::gfx::Mesh* mesh = nullptr;
-    Mg::small_vector<Mg::gfx::MaterialBinding, 4> material_bindings;
-    glm::mat4 mesh_transform = glm::mat4(1.0f);
-};
-
-struct AnimationComponent : Mg::ecs::BaseComponent<5> {
-    Mg::Opt<uint32_t> current_clip;
-    float time_in_clip = 0.0f;
-    Mg::gfx::SkeletonPose pose;
-};
-
-class Entities {
-public:
-    explicit Entities(const uint32_t max_num_entities) : collection{ max_num_entities }
-    {
-        collection.init<TransformComponent,
-                        StaticBodyComponent,
-                        DynamicBodyComponent,
-                        MeshComponent,
-                        AnimationComponent>();
-    }
-
-    void update()
-    {
-        for (auto [entity, dynamic_body, transform] :
-             collection.get_with<DynamicBodyComponent, TransformComponent>()) {
-            transform.previous_transform = transform.transform;
-            transform.transform = dynamic_body.physics_body.get_transform();
-        }
-    }
-
-    void animate(const float time)
-    {
-        for (auto [entity, mesh, animation] :
-             collection.get_with<MeshComponent, AnimationComponent>()) {
-            if (!animation.current_clip.has_value()) {
-                animation.pose = mesh.mesh->animation_data->skeleton.get_bind_pose();
-                continue;
-            }
-
-            animation.time_in_clip = time;
-
-            const auto clip_index = animation.current_clip.value();
-            Mg::gfx::animate_skeleton(mesh.mesh->animation_data->clips[clip_index],
-                                      animation.pose,
-                                      animation.time_in_clip);
-        }
-    }
-
-    void add_meshes_to_render_list(Mg::gfx::RenderCommandProducer& renderlist,
-                                   const float lerp_factor)
-    {
-        for (auto [entity, transform, mesh, animation] :
-             collection.get_with<TransformComponent,
-                                 MeshComponent,
-                                 Mg::ecs::Maybe<AnimationComponent>>()) {
-            const auto interpolated = Mg::interpolate_transforms(transform.previous_transform,
-                                                                 transform.transform,
-                                                                 lerp_factor) *
-                                      mesh.mesh_transform;
-
-            if (animation) {
-                renderlist.add_skinned_mesh(*mesh.mesh,
-                                            interpolated,
-                                            mesh.mesh->animation_data->skeleton,
-                                            animation->pose,
-                                            mesh.material_bindings);
-            }
-            else {
-                renderlist.add_mesh(*mesh.mesh, interpolated, mesh.material_bindings);
-            }
-        }
-    }
-
-    Mg::ecs::EntityCollection collection;
-};
 
 inline std::shared_ptr<Mg::ResourceCache> setup_resource_cache()
 {
@@ -187,7 +97,7 @@ public:
 private:
     void setup_config();
 
-    Entities entities{ 1024 };
+    Mg::ecs::EntityCollection entities{ 1024 };
 
     void
     load_model(Mg::Identifier mesh_file,

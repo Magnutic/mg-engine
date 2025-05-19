@@ -1,4 +1,5 @@
 #include "test_scene.h"
+#include "mg/scene/mg_common_scene_components.h"
 
 #include <mg/core/mg_config.h>
 #include <mg/core/mg_log.h>
@@ -85,6 +86,11 @@ void Scene::init()
     character_controller = std::make_unique<Mg::physics::CharacterController>(
         "Actor"_id, *physics_world, Mg::physics::CharacterControllerSettings{});
 
+    entities.init<Mg::scene::TransformComponent,
+                  Mg::scene::StaticBodyComponent,
+                  Mg::scene::DynamicBodyComponent,
+                  Mg::scene::MeshComponent,
+                  Mg::scene::AnimationComponent>();
     create_entities();
     generate_lights();
 
@@ -109,7 +115,7 @@ void Scene::simulation_step()
         m_should_exit = true;
     }
 
-    entities.update();
+    Mg::scene::update_dynamic_body_transforms(entities);
 
     // Particle system
 #if 0
@@ -184,13 +190,13 @@ void Scene::render(const double lerp_factor)
     // Draw sky.
     renderers.skybox_renderer.draw(*render_targets.hdr_target, camera, *sky_material);
 
-    entities.animate(float(app.time_since_init()));
+    Mg::scene::advance_animations(entities, float(app.time_since_init()));
 
     // Draw meshes and billboards.
     {
         render_command_producer.clear();
 
-        entities.add_meshes_to_render_list(render_command_producer, float(lerp_factor));
+        Mg::scene::add_meshes_to_render_list(entities, render_command_producer, float(lerp_factor));
 
         const auto& commands = render_command_producer.finalize(camera,
                                                                 Mg::gfx::SortingMode::near_to_far);
@@ -307,11 +313,11 @@ void Scene::load_model(
     std::initializer_list<std::pair<Mg::Identifier, Mg::Identifier>> material_bindings,
     Mg::ecs::Entity entity)
 {
-    auto& mesh = entities.collection.add_component<MeshComponent>(entity);
+    auto& mesh = entities.add_component<Mg::scene::MeshComponent>(entity);
     mesh.mesh = mesh_pool->get_or_load(mesh_file);
 
     if (mesh.mesh->animation_data) {
-        auto& animation = entities.collection.add_component<AnimationComponent>(entity);
+        auto& animation = entities.add_component<Mg::scene::AnimationComponent>(entity);
         animation.pose = mesh.mesh->animation_data->skeleton.get_bind_pose();
     }
 
@@ -339,7 +345,7 @@ Mg::ecs::Entity Scene::add_static_object(
     std::initializer_list<std::pair<Mg::Identifier, Mg::Identifier>> material_bindings,
     const glm::mat4& transform)
 {
-    const auto entity = entities.collection.create_entity();
+    const auto entity = entities.create_entity();
     load_model(mesh_file, material_bindings, entity);
 
     const Mg::ResourceAccessGuard access =
@@ -348,8 +354,8 @@ Mg::ecs::Entity Scene::add_static_object(
     Mg::physics::Shape* shape = physics_world->create_mesh_shape(access->data_view());
 
     auto static_body = physics_world->create_static_body(mesh_file, *shape, transform);
-    entities.collection.add_component<StaticBodyComponent>(entity, static_body);
-    entities.collection.add_component<TransformComponent>(entity, transform, transform);
+    entities.add_component<Mg::scene::StaticBodyComponent>(entity, static_body);
+    entities.add_component<Mg::scene::TransformComponent>(entity, transform, transform);
 
     return entity;
 }
@@ -362,11 +368,11 @@ Mg::ecs::Entity Scene::add_dynamic_object(
     glm::vec3 scale,
     bool enable_physics)
 {
-    const auto entity = entities.collection.create_entity();
+    const auto entity = entities.create_entity();
     load_model(mesh_file, material_bindings, entity);
 
-    auto& mesh = entities.collection.get_component<MeshComponent>(entity);
-    auto& transform = entities.collection.add_component<TransformComponent>(entity);
+    auto& mesh = entities.get_component<Mg::scene::MeshComponent>(entity);
+    auto& transform = entities.add_component<Mg::scene::TransformComponent>(entity);
 
     if (enable_physics) {
         const Mg::ResourceAccessGuard access =
@@ -387,7 +393,7 @@ Mg::ecs::Entity Scene::add_dynamic_object(
                                                *shape,
                                                body_params,
                                                glm::translate(position) * rotation.to_matrix());
-        entities.collection.add_component<DynamicBodyComponent>(entity, dynamic_body);
+        entities.add_component<Mg::scene::DynamicBodyComponent>(entity, dynamic_body);
 
         // Add visualization translation relative to centre of mass.
         // Note unusual order: for once we translate before the scale, since the translation is in
@@ -427,7 +433,9 @@ void Scene::render_skeleton_debug_geometry()
     MG_GFX_DEBUG_GROUP("Scene::render_skeleton_debug_geometry")
 
     for (auto [entity, transform, mesh, animation] :
-         entities.collection.get_with<TransformComponent, MeshComponent, AnimationComponent>()) {
+         entities.get_with<Mg::scene::TransformComponent,
+                           Mg::scene::MeshComponent,
+                           Mg::scene::AnimationComponent>()) {
         renderers.debug_renderer.draw_bones(app.window().render_target,
                                             camera.view_proj_matrix(),
                                             transform.transform * mesh.mesh_transform,
@@ -440,7 +448,7 @@ void Scene::create_entities()
 {
     using namespace Mg::literals;
 
-    entities.collection.reset();
+    entities.reset();
 
     add_static_object("meshes/misc/test_scene_2.mgm",
                       {
@@ -457,7 +465,7 @@ void Scene::create_entities()
                                          Mg::Rotation(),
                                          { 0.01f, 0.01f, 0.01f },
                                          false);
-    entities.collection.get_component<AnimationComponent>(fox_entity).current_clip = 2;
+    entities.get_component<Mg::scene::AnimationComponent>(fox_entity).current_clip = 2;
 
     add_dynamic_object("meshes/misc/hestdraugr.mgm"_id,
                        { { "hestdraugr_material", "materials/actors/HestDraugr.hjson" } },

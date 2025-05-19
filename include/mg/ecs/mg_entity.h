@@ -60,15 +60,6 @@ private:
     Slot_map_handle m_handle;
 };
 
-template<Component... Cs> static consteval bool has_duplicate_component_ids()
-{
-    std::vector<size_t> component_ids;
-    component_ids.reserve(sizeof...(Cs));
-    (component_ids.push_back(Cs::component_type_id), ...);
-    std::ranges::sort(component_ids);
-    return std::ranges::adjacent_find(component_ids) != component_ids.end();
-}
-
 /** EntityCollection owns entities and their components. */
 class EntityCollection {
 public:
@@ -87,11 +78,12 @@ public:
         : m_entity_data{ entity_capacity }, m_component_lists{ entity_capacity }
     {}
 
-    template<Component... Cs>
-    void init()
-        requires(!has_duplicate_component_ids<Cs...>())
+    template<Component... Cs> void init()
     {
+        MG_ASSERT(!m_initialized && "init() has already been called");
+        (Cs::init_component_type_id(), ...);
         (add_component_collection<Cs>(), ...);
+        m_initialized = true;
     }
 
     /** Resets EntityCollection, destroying all entities and components. */
@@ -112,14 +104,14 @@ public:
     /** Get whether the entity has a component of a given type. */
     template<Component C> bool has_component(Entity entity) const
     {
-        return has_component(entity, C::component_type_id);
+        return has_component(entity, C::component_type_id());
     }
 
     /** Get reference to component. Requires that the component exists. */
     template<Component C> C& get_component(Entity entity)
     {
         MG_ASSERT(has_component<C>(entity));
-        return get_component<C>(component_handle_ref(entity, C::component_type_id));
+        return get_component<C>(component_handle_ref(entity, C::component_type_id()));
     }
 
     /** Iterate over entities which have the requested set of components, e.g.:
@@ -212,6 +204,8 @@ private:
 
     // ComponentCollections owns the actual component data
     ComponentCollectionList m_component_collections;
+
+    bool m_initialized = false;
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -221,7 +215,10 @@ private:
 template<ComponentTypeDesignator... Cs> class EntityCollection::iterator {
 public:
     iterator(EntityCollection& collection, Slot_map<EntityData>::iterator it)
-        : m_collection{ collection }, m_it{ it }
+        : m_collection{ collection }
+        , m_it{ it }
+        , m_mask{ sizeof...(Cs) > 0 ? create_mask<Cs...>() : 0 }
+        , m_not_mask{ sizeof...(Cs) > 0 ? create_not_mask<Cs...>() : 0 }
     {
         find_match();
     }
@@ -257,7 +254,7 @@ private:
     std::tuple<typename C::component_type*>
     get_tuple_with_reference_to_component(ComponentList& component_list)
     {
-        constexpr auto id = C::component_type::component_type_id;
+        const auto id = C::component_type::component_type_id();
         return component_list[id]
                    ? &m_collection.get_component<typename C::component_type>(component_list[id])
                    : nullptr;
@@ -266,29 +263,14 @@ private:
     template<Component C>
     std::tuple<C&> get_tuple_with_reference_to_component(ComponentList& component_list)
     {
-        return m_collection.get_component<C>(component_list[C::component_type_id]);
-    }
-
-    // The byte mask indicating which components must be included.
-    static consteval ComponentMask mask()
-    {
-        if constexpr (sizeof...(Cs) > 0) {
-            return create_mask<Cs...>();
-        }
-        return 0;
-    }
-
-    // The byte mask indicating which components must be not included.
-    static consteval ComponentMask not_mask()
-    {
-        if constexpr (sizeof...(Cs) > 0) {
-            return create_not_mask<Cs...>();
-        }
-        return 0;
+        return m_collection.get_component<C>(component_list[C::component_type_id()]);
     }
 
     // Check if the iterator points to an entity which has the sought set of components.
-    bool match() { return (m_it->mask & mask()) == mask() && (m_it->mask & not_mask()) == 0u; }
+    bool match() const
+    {
+        return (m_it->mask & m_mask) == m_mask && (m_it->mask & m_not_mask) == 0u;
+    }
 
     void find_match()
     {
@@ -299,6 +281,12 @@ private:
 
     EntityCollection& m_collection;
     Slot_map<EntityData>::iterator m_it;
+
+    // The byte mask indicating which components must be included.
+    ComponentMask m_mask;
+
+    // The byte mask indicating which components must be not included.
+    ComponentMask m_not_mask;
 };
 
 
@@ -325,13 +313,13 @@ template<Component C, typename... Ts>
 C& EntityCollection::add_component(Entity entity, Ts&&... args)
 {
     // Make sure component does not already exist
-    MG_ASSERT(!has_component(entity, C::component_type_id));
+    MG_ASSERT(!has_component(entity, C::component_type_id()));
 
     auto& components = component_collection<C>();
     auto handle = components.emplace(std::forward<Ts>(args)...);
 
-    component_handle_ref(entity, C::component_type_id) = handle;
-    component_mask_ref(entity) |= (ComponentMask{ 1 } << C::component_type_id);
+    component_handle_ref(entity, C::component_type_id()) = handle;
+    component_mask_ref(entity) |= (ComponentMask{ 1 } << C::component_type_id());
 
     return components.get_component(handle);
 }
@@ -342,19 +330,19 @@ template<Component C> void EntityCollection::remove_component(Entity entity)
     MG_ASSERT(has_component<C>(entity) && "Removing non-existent component.");
 
     auto& collection = component_collection<C>();
-    auto& handle = component_handle_ref(entity, C::component_type_id);
+    auto& handle = component_handle_ref(entity, C::component_type_id());
     collection.erase(handle);
 
     // Reset component handle (not strictly necessary but safer)
     handle = {};
 
     // Clear component flag.
-    component_mask_ref(entity) &= ~(ComponentMask{ 1 } << C::component_type_id);
+    component_mask_ref(entity) &= ~(ComponentMask{ 1 } << C::component_type_id());
 }
 
 template<Component C> void EntityCollection::add_component_collection()
 {
-    auto& p_collection = m_component_collections[C::component_type_id];
+    auto& p_collection = m_component_collections[C::component_type_id()];
     MG_ASSERT(p_collection == nullptr);
     p_collection = std::make_unique<ComponentCollection<C>>(m_entity_data.capacity());
 }
@@ -362,7 +350,7 @@ template<Component C> void EntityCollection::add_component_collection()
 // Retrieve component collection for component type C
 template<Component C> ComponentCollection<C>& EntityCollection::component_collection()
 {
-    auto& p_collection = m_component_collections[C::component_type_id];
+    auto& p_collection = m_component_collections[C::component_type_id()];
     MG_ASSERT(p_collection != nullptr &&
               "EntityCollection does not contain a ComponentCollection for this component type.");
 

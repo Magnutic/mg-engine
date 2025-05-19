@@ -13,6 +13,7 @@
 
 #include <bitset>
 #include <concepts>
+#include <mutex>
 
 #include "mg/containers/mg_slot_map.h"
 #include "mg/utils/mg_gsl.h"
@@ -22,6 +23,7 @@ namespace Mg::ecs {
 
 /** Maximum number of component types that may be used in one EntityCollection. */
 constexpr size_t k_max_component_types = 64;
+constexpr size_t k_unset_component_tag = size_t(-1);
 
 /** ComponentMask is a bit mask representing the presence of a set of component types within an
  * Entity.
@@ -39,17 +41,38 @@ struct NotTag {};
 // Identifies types that are instantiations of Mg::ecs::Maybe<>.
 struct MaybeTag {};
 
+inline size_t g_next_component_type_id{ 0 };
+
+inline std::mutex g_component_type_id_init_mutex;
+
 } // namespace detail
 
 /** Component base class.
- * All component types must publicly derive from this class, and set the _component_type_id to
- * a value unique for this component type (among all the component types that will be used with the
- * same EntityCollection).
+ * All component types must publicly derive from this class.
  */
-template<size_t _component_type_id> struct BaseComponent : detail::ComponentTag {
-    static_assert(_component_type_id < k_max_component_types);
-    static constexpr size_t component_type_id = _component_type_id;
+template<typename Derived> class BaseComponent : public detail::ComponentTag {
+public:
+    static void init_component_type_id()
+    {
+        std::lock_guard g{ detail::g_component_type_id_init_mutex };
+        if (s_component_type_id == k_unset_component_tag) {
+            s_component_type_id = detail::g_next_component_type_id++;
+        }
+        MG_ASSERT(s_component_type_id < k_max_component_types);
+    }
+
+    static size_t component_type_id()
+    {
+        MG_ASSERT_DEBUG(s_component_type_id != k_unset_component_tag);
+        return s_component_type_id;
+    }
+
+private:
+    static size_t s_component_type_id;
 };
+
+template<typename Derived>
+inline size_t BaseComponent<Derived>::s_component_type_id = k_unset_component_tag;
 
 /** Mg Engine component concept. */
 template<typename T>
@@ -90,7 +113,7 @@ constexpr ComponentMask create_mask()
     }
 
     if constexpr (Component<C>) {
-        return (ComponentMask{ 1u } << C::component_type_id) | tail_mask;
+        return (ComponentMask{ 1u } << C::component_type_id()) | tail_mask;
     }
     else {
         return tail_mask;
@@ -109,7 +132,7 @@ constexpr ComponentMask create_not_mask()
     }
 
     if constexpr (std::derived_from<C, detail::NotTag>) {
-        return (ComponentMask{ 1u } << C::component_type::component_type_id) | tail_mask;
+        return (ComponentMask{ 1u } << C::component_type::component_type_id()) | tail_mask;
     }
     else {
         return tail_mask;
