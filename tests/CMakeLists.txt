@@ -1,6 +1,9 @@
 # Unit tests
 cmake_minimum_required(VERSION 3.8.2)
 
+include(ProcessorCount)
+ProcessorCount(NPROC)
+
 # Find / download Catch 2
 set(CATCH_HEADER "${CMAKE_CURRENT_LIST_DIR}/catch.hpp")
 
@@ -41,7 +44,6 @@ set(MG_TEST_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/test/")
 
 function(add_mg_test name)
     add_executable(${name} ${name}.cpp)
-    target_include_directories(${name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/unittest-cpp)
     target_link_libraries(${name} catch_main mg_engine)
 
     if (MSVC)
@@ -50,7 +52,7 @@ function(add_mg_test name)
     endif()
 
     # Hack to make ctest build the tests before running them
-    add_test(ctest_build_${name} "${CMAKE_COMMAND}" --build "${CMAKE_BINARY_DIR}" --target ${name} -j 8)
+    add_test(ctest_build_${name} "${CMAKE_COMMAND}" --build "${CMAKE_BINARY_DIR}" --target ${name} -j ${NPROC})
 
     add_test(NAME ${name}
         COMMAND "${MG_TEST_OUTPUT_DIR}${name}"
