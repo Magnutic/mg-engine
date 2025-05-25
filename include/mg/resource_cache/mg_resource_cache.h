@@ -19,14 +19,13 @@
 #include "mg/resources/mg_file_changed_event.h"
 #include "mg/utils/mg_macros.h"
 
+#include <algorithm>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <vector>
 
 namespace Mg {
-
-class ResourceCache;
 
 /** ResourceCache is an efficient and flexible way of loading and using resources.
  * It works with both file-system directories and zip archives via file loaders (see IFileLoader).
@@ -172,18 +171,14 @@ public:
         return m_file_loaders;
     }
 
-    using FileChangeCallbackT = void (*)(void* user_data, const FileChangedEvent&);
-
-    void set_resource_reload_callback(Identifier resource_type,
-                                      FileChangeCallbackT callback,
-                                      void* user_data) noexcept
+    [[nodiscard]] std::shared_ptr<FileChangedTracker>
+    make_file_change_tracker(Identifier resource_type,
+                             FileChangedTracker::CallbackT callback,
+                             void* user_data = nullptr)
     {
-        m_resource_reload_callbacks[resource_type] = { callback, user_data };
-    }
-
-    void remove_resource_reload_callback(Identifier resource_type)
-    {
-        m_resource_reload_callbacks.erase(resource_type);
+        auto result = std::make_shared<FileChangedTracker>(callback, user_data);
+        m_file_changed_trackers_by_resource_type[resource_type].push_back(result);
+        return result;
     }
 
 private:
@@ -239,13 +234,10 @@ private:
 
     // --------------------------------------- Data members ----------------------------------------
 
-    // Callbacks invoked when a resource has changed on the file system.
-    struct FileChangeCallbackRecord {
-        FileChangeCallbackT callback = {};
-        void* user_data = nullptr;
-    };
-    FlatMap<Identifier, FileChangeCallbackRecord, Identifier::HashCompare>
-        m_resource_reload_callbacks;
+    // Tracks when a resource has changed on the file system so other components can react.
+    // Key: resource type that the tracker is interested in.
+    FlatMap<Identifier, std::vector<std::weak_ptr<FileChangedTracker>>, Identifier::HashCompare>
+        m_file_changed_trackers_by_resource_type;
 
     // Loaders for loading resource file data into memory.
     std::vector<std::unique_ptr<IFileLoader>> m_file_loaders;

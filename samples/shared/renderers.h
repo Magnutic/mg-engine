@@ -27,7 +27,7 @@ public:
 
         // Drop shaders when shader resources have changed. This will force recompilation, so that
         // any changes will take immediate effect.
-        m_resource_cache->set_resource_reload_callback(
+        m_shader_file_changed_tracker = m_resource_cache->make_file_change_tracker(
             "ShaderResource",
             [](void* data, const Mg::FileChangedEvent&) {
                 auto& self = *static_cast<Renderers*>(data);
@@ -40,7 +40,7 @@ public:
             this);
     }
 
-    ~Renderers() override { m_resource_cache->remove_resource_reload_callback("ShaderResource"); }
+    ~Renderers() override = default;
 
     // Can not move or copy, since that would invalidate the resource-reload-callback user pointer.
     MG_MAKE_NON_MOVABLE(Renderers)
@@ -61,16 +61,26 @@ public:
 
 private:
     std::shared_ptr<Mg::ResourceCache> m_resource_cache;
+    std::shared_ptr<Mg::FileChangedTracker> m_shader_file_changed_tracker;
 };
 
 class RenderTargets : Mg::Observer<Mg::WindowSettings> {
 public:
+    MG_MAKE_NON_COPYABLE(RenderTargets);
+    MG_MAKE_DEFAULT_MOVABLE(RenderTargets);
+
     explicit RenderTargets(Mg::Window& window,
                            const std::shared_ptr<Mg::gfx::TexturePool>& texture_pool)
         : m_texture_pool(texture_pool)
     {
         window.observe_settings(*this);
         on_notify(window.settings());
+    }
+
+    ~RenderTargets() override
+    {
+        m_texture_pool->destroy(hdr_target->colour_target());
+        m_texture_pool->destroy(hdr_target->depth_target());
     }
 
     void on_notify(const Mg::WindowSettings& settings) override

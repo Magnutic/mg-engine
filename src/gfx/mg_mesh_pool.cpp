@@ -29,7 +29,8 @@ MeshPool::MeshPool(std::shared_ptr<ResourceCache> resource_cache)
         }
     };
 
-    m_impl->resource_cache->set_resource_reload_callback("MeshResource"_id, reload_callback, this);
+    m_impl->mesh_file_changed_tracker =
+        m_impl->resource_cache->make_file_change_tracker("MeshResource", reload_callback, this);
 }
 
 MeshPool::~MeshPool()
@@ -39,8 +40,6 @@ MeshPool::~MeshPool()
     for (auto& mesh : m_impl->mesh_data) {
         clear_mesh(*m_impl, mesh);
     }
-
-    m_impl->resource_cache->remove_resource_reload_callback("MeshResource"_id);
 }
 
 const Mesh* MeshPool::get_or_load(Identifier resource_id)

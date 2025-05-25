@@ -16,6 +16,7 @@
 #include "mg/gfx/mg_material_pool.h"
 #include "mg/gfx/mg_mesh.h"
 #include "mg/gfx/mg_mesh_data.h"
+#include "mg/resources/mg_file_changed_event.h"
 #include "mg/utils/mg_assert.h"
 
 #include "opengl/mg_glad.h"
@@ -34,6 +35,7 @@ namespace Mg::gfx {
 
 struct MeshPoolImpl {
     std::shared_ptr<ResourceCache> resource_cache;
+    std::shared_ptr<FileChangedTracker> mesh_file_changed_tracker;
     std::shared_ptr<MaterialPool> material_pool;
 
     plf::colony<SharedBuffer> vertex_buffers;

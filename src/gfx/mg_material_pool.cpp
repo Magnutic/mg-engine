@@ -26,6 +26,7 @@ namespace Mg::gfx {
 
 struct MaterialPool::Impl {
     std::shared_ptr<ResourceCache> resource_cache;
+    std::shared_ptr<FileChangedTracker> material_file_changed_tracker;
     std::shared_ptr<TexturePool> texture_pool;
     plf::colony<Material> materials;
 };
@@ -53,15 +54,13 @@ MaterialPool::MaterialPool(std::shared_ptr<ResourceCache> resource_cache,
         }
     };
 
-    m_impl->resource_cache->set_resource_reload_callback("MaterialResource"_id,
+    m_impl->material_file_changed_tracker =
+        m_impl->resource_cache->make_file_change_tracker("MaterialResource"_id,
                                                          reload_callback,
                                                          this);
 }
 
-MaterialPool::~MaterialPool()
-{
-    m_impl->resource_cache->remove_resource_reload_callback("MaterialResource"_id);
-}
+MaterialPool::~MaterialPool() = default;
 
 Material* MaterialPool::create(Identifier id, ResourceHandle<ShaderResource> shader_resource_handle)
 {

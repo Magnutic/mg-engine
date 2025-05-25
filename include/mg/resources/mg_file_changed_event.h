@@ -16,12 +16,26 @@
 
 namespace Mg {
 
-/** Event sent by ResourceCache to notify whether a resource file has changed.
- * @see ResourceCache::set_file_change_callback
- */
+/** Event sent by ResourceCache to notify whether a resource file has changed. */
 struct FileChangedEvent {
     BaseResourceHandle resource;
     Identifier resource_type;
     std::time_t time_stamp;
 };
+
+class FileChangedTracker {
+public:
+    using CallbackT = void (*)(void* user_data, const FileChangedEvent&);
+
+    explicit FileChangedTracker(CallbackT callback, void* user_data)
+        : m_callback{ callback }, m_user_data{ user_data }
+    {}
+
+    void notify_update(const FileChangedEvent& event) { m_callback(m_user_data, event); }
+
+private:
+    CallbackT m_callback;
+    void* m_user_data = nullptr;
+};
+
 } // namespace Mg

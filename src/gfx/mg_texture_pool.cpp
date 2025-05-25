@@ -44,6 +44,7 @@ using TexturesById = FlatMap<Identifier, TextureNode, Identifier::HashCompare>;
 struct TexturePool::Impl {
     // The resource cache from which we will load textures.
     std::shared_ptr<ResourceCache> resource_cache;
+    std::shared_ptr<FileChangedTracker> texture_file_changed_tracker;
 
     // Texture node storage -- stores elements largely contiguously, but does not invalidate
     // pointers.
@@ -275,15 +276,13 @@ TexturePool::TexturePool(std::shared_ptr<ResourceCache> resource_cache)
         }
     };
 
-    m_impl->resource_cache->set_resource_reload_callback("TextureResource"_id,
+    m_impl->texture_file_changed_tracker =
+        m_impl->resource_cache->make_file_change_tracker("TextureResource"_id,
                                                          reload_callback,
                                                          this);
 }
 
-TexturePool::~TexturePool()
-{
-    m_impl->resource_cache->remove_resource_reload_callback("TextureResource"_id);
-}
+TexturePool::~TexturePool() = default;
 
 Texture2D* TexturePool::get_texture2d(const Identifier& texture_id)
 {

@@ -112,15 +112,20 @@ void ResourceCache::refresh()
         }
     }
 
-    // Notify callbacks of file changes.
+    // Notify trackers of file changes.
     for (const auto& [entry, resource_type, new_time_stamp] : entries_to_reload) {
-        auto it = m_resource_reload_callbacks.find(resource_type);
-        if (it == m_resource_reload_callbacks.end()) {
-            continue;
+        const BaseResourceHandle handle{ entry.resource_id(), entry };
+        auto trackers = m_file_changed_trackers_by_resource_type[resource_type];
+        for (std::weak_ptr<FileChangedTracker>& tracker : trackers) {
+            if (auto strong = tracker.lock(); strong != nullptr) {
+                strong->notify_update({ handle, resource_type, new_time_stamp });
+            }
         }
+    }
 
-        const BaseResourceHandle handle(entry.resource_id(), entry);
-        it->second.callback(it->second.user_data, { handle, resource_type, new_time_stamp });
+    // Clear out unused file changed trackers
+    for (auto&& [resource_type, trackers] : m_file_changed_trackers_by_resource_type) {
+        std::erase_if(trackers, [](std::weak_ptr<FileChangedTracker>& p) { return p.expired(); });
     }
 }
 
