@@ -5,17 +5,17 @@
 #include <utility>
 #include <vector>
 
-struct TestComponent : Mg::ecs::BaseComponent<1> {
+struct TestComponent : Mg::ecs::BaseComponent<TestComponent> {
     uint32_t value = 0;
     std::string string = "init value";
 };
 
-struct Position : Mg::ecs::BaseComponent<2> {
+struct Position : Mg::ecs::BaseComponent<Position> {
     float x = 0.0f;
     float y = 0.0f;
 };
 
-struct IndexComponent : Mg::ecs::BaseComponent<3> {
+struct IndexComponent : Mg::ecs::BaseComponent<IndexComponent> {
     uint32_t index{ 0 };
 };
 
@@ -225,8 +225,8 @@ TEST_CASE("Entity")
         }
 
         // Check that all entities have the expected component mask.
-        constexpr auto expected_mask = Mg::ecs::ComponentMask{ 1 }
-                                       << IndexComponent::component_type_id;
+        const auto expected_mask = Mg::ecs::ComponentMask{ 1 }
+                                   << IndexComponent::component_type_id();
         for (auto cs : entity_collection.get_with()) {
             auto entity = std::get<Mg::ecs::Entity>(cs);
             auto mask = entity_collection.component_mask(entity);

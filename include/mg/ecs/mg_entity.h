@@ -215,11 +215,16 @@ private:
 template<ComponentTypeDesignator... Cs> class EntityCollection::iterator {
 public:
     iterator(EntityCollection& collection, Slot_map<EntityData>::iterator it)
-        : m_collection{ collection }
-        , m_it{ it }
-        , m_mask{ sizeof...(Cs) > 0 ? create_mask<Cs...>() : 0 }
-        , m_not_mask{ sizeof...(Cs) > 0 ? create_not_mask<Cs...>() : 0 }
+        : m_collection{ collection }, m_it{ it }
     {
+        if constexpr (sizeof...(Cs) > 0) {
+            m_mask = create_mask<Cs...>();
+            m_not_mask = create_not_mask<Cs...>();
+        }
+        else {
+            m_mask = 0;
+            m_not_mask = 0;
+        }
         find_match();
     }
 
