@@ -33,3 +33,10 @@ public:
 #else
 #    define MG_GFX_DEBUG_GROUP(message)
 #endif
+
+#ifdef _MSC_VER
+#    define MG_GFX_DEBUG_GROUP_BY_FUNCTION MG_GFX_DEBUG_GROUP(static_cast<const char*>(__FUNCSIG__))
+#else
+#    define MG_GFX_DEBUG_GROUP_BY_FUNCTION \
+        MG_GFX_DEBUG_GROUP(static_cast<const char*>(__PRETTY_FUNCTION__))
+#endif

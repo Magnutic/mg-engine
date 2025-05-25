@@ -40,7 +40,7 @@ namespace {
 // Create a depth/stencil renderbuffer appropriate for use with the given rendertarget settings
 uint32_t create_depth_stencil_buffer(ImageSize size) noexcept
 {
-    MG_GFX_DEBUG_GROUP("create_depth_stencil_buffer")
+    MG_GFX_DEBUG_GROUP_BY_FUNCTION
     uint32_t id = 0;
     glGenRenderbuffers(1, &id);
     glBindRenderbuffer(GL_RENDERBUFFER, id);
@@ -99,7 +99,7 @@ void TextureRenderTarget::blit(const TextureRenderTarget& from,
                                const TextureRenderTarget& to,
                                const BlitSettings& settings)
 {
-    MG_GFX_DEBUG_GROUP("TextureRenderTarget::with_colour_target")
+    MG_GFX_DEBUG_GROUP_BY_FUNCTION
     FramebufferBindGuard guard;
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, from.m_impl->fbo.handle.as_gl_id());
@@ -122,8 +122,7 @@ TextureRenderTarget::with_colour_target(Texture2D* colour_target,
                                         DepthType depth_type,
                                         int32_t mip_level)
 {
-    MG_GFX_DEBUG_GROUP("TextureRenderTarget::with_colour_target")
-
+    MG_GFX_DEBUG_GROUP_BY_FUNCTION
     auto trt = std::make_unique<TextureRenderTarget>(PrivateCtorKey{});
 
     trt->m_impl->colour_target = colour_target;
@@ -170,8 +169,7 @@ TextureRenderTarget::with_colour_and_depth_targets(Texture2D* colour_target,
                                                    Texture2D* depth_target,
                                                    int32_t mip_level)
 {
-    MG_GFX_DEBUG_GROUP("TextureRenderTarget::with_colour_and_depth_targets")
-
+    MG_GFX_DEBUG_GROUP_BY_FUNCTION
     MG_ASSERT(colour_target != depth_target);
 
     if (colour_target->image_size() != depth_target->image_size()) {
