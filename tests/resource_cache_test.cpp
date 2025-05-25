@@ -1,7 +1,18 @@
 #include "catch.hpp"
+#include "mg/core/mg_file_loader.h"
 
 #include <mg/resource_cache/mg_resource_cache.h>
 #include <mg/resources/mg_text_resource.h>
+
+static bool has_loader_with_name(const Mg::ResourceCache& cache, std::string_view name)
+{
+    for (auto&& p_loader : cache.file_loaders()) {
+        if (p_loader->name() == name) {
+            return true;
+        }
+    }
+    return false;
+}
 
 TEST_CASE("ResourceCache test")
 {
@@ -15,17 +26,8 @@ TEST_CASE("ResourceCache test")
 
     SECTION("get_name")
     {
-        auto has_loader_with_name = [&](std::string_view name) {
-            for (auto&& p_loader : cache.file_loaders()) {
-                if (p_loader->name() == name) {
-                    return true;
-                }
-            }
-            return false;
-        };
-
-        REQUIRE(has_loader_with_name(directory_name));
-        REQUIRE(has_loader_with_name(archive_name));
+        REQUIRE(has_loader_with_name(cache, directory_name));
+        REQUIRE(has_loader_with_name(cache, archive_name));
     }
 
     SECTION("finds_archive_content")
@@ -149,4 +151,18 @@ TEST_CASE("ResourceCache test")
         REQUIRE(cache.unload_unused());
         REQUIRE(!cache.is_cached("test-file-1.txt"));
     }
+}
+
+TEST_CASE("alternative constructor")
+{
+    constexpr auto directory_name = "data/test-archive";
+    constexpr auto archive_name = "data/test-archive.zip";
+
+    std::vector<std::unique_ptr<Mg::IFileLoader>> loaders;
+    loaders.push_back(std::make_unique<Mg::BasicFileLoader>(directory_name));
+    loaders.push_back(std::make_unique<Mg::ZipFileLoader>(archive_name));
+    Mg::ResourceCache cache(std::move(loaders));
+
+    REQUIRE(has_loader_with_name(cache, directory_name));
+    REQUIRE(has_loader_with_name(cache, archive_name));
 }

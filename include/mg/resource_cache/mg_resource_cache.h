@@ -76,6 +76,16 @@ public:
         refresh();
     }
 
+    explicit ResourceCache(std::vector<std::unique_ptr<IFileLoader>> file_loaders)
+        : m_file_loaders{ std::move(file_loaders) }
+    {
+        MG_ASSERT(std::ranges::none_of(m_file_loaders, [](auto&& l) { return l == nullptr; }) &&
+                  "File loaders may not be nullptr.");
+        MG_ASSERT(!m_file_loaders.empty() &&
+                  "ResourceCache constructor: there must be at least one file loader.");
+        refresh();
+    }
+
     ~ResourceCache() = default;
 
     MG_MAKE_NON_COPYABLE(ResourceCache);
