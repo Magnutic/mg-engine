@@ -1,4 +1,6 @@
 #include "test_scene.h"
+#include "mg/core/mg_application_context.h"
+#include "mg/gfx/mg_debug_renderer.h"
 #include "mg/scene/mg_common_scene_components.h"
 
 #include <mg/core/mg_config.h>
@@ -22,7 +24,6 @@
 #include <fmt/core.h>
 
 namespace {
-
 using namespace Mg::literals;
 
 constexpr auto config_file = "mg_engine.cfg";
@@ -34,18 +35,12 @@ constexpr float k_light_radius = 3.0f;
 
 } // namespace
 
-Scene::Scene() : app(config_file, window_title) {}
-
-Scene::~Scene()
+Scene::Scene(Mg::ApplicationContext& application_context)
+    : Mg::SceneResources{ std::make_shared<Mg::ResourceCache>(
+          std::make_unique<Mg::BasicFileLoader>("../samples/data")) }
+    , app{ application_context }
 {
-    Mg::write_display_settings(app.config(), app.window().settings());
-    app.config().write_to_file(config_file);
-}
-
-void Scene::init()
-{
-    MG_GFX_DEBUG_GROUP("Scene::init")
-
+    MG_GFX_DEBUG_GROUP_BY_FUNCTION
     using namespace Mg::literals;
 
     setup_config();
@@ -61,10 +56,11 @@ void Scene::init()
         app.window().set_cursor_lock_mode(Mg::CursorLockMode::LOCKED);
     }
 
-    app.gfx_device().set_clear_colour(0.0125f, 0.01275f, 0.025f, 1.0f);
-
     camera.set_aspect_ratio(app.window().aspect_ratio());
     camera.field_of_view = 80_degrees;
+
+    renderer_data = make_renderer_data();
+    renderer = Mg::gfx::setup_basic_scene_renderer(app.window(), *m_resource_cache, renderer_data);
 
     sample_control_button_tracker = std::make_shared<Mg::input::ButtonTracker>(app.window());
     sample_control_button_tracker->bind("swap_movement_mode", Mg::input::Key::E);
@@ -93,12 +89,12 @@ void Scene::init()
                   Mg::scene::AnimationComponent>();
     create_entities();
     generate_lights();
+}
 
-    const auto font_resource =
-        resource_cache->resource_handle<Mg::FontResource>("fonts/elstob/Elstob-Regular.ttf");
-    std::vector<Mg::UnicodeRange> unicode_ranges = { Mg::get_unicode_range(
-        Mg::UnicodeBlock::Basic_Latin) };
-    font = std::make_unique<Mg::gfx::BitmapFont>(font_resource, 24, unicode_ranges);
+Scene::~Scene()
+{
+    Mg::write_display_settings(app.config(), app.window().settings());
+    app.config().write_to_file(config_file);
 }
 
 void Scene::simulation_step()
@@ -116,18 +112,6 @@ void Scene::simulation_step()
     }
 
     Mg::scene::update_dynamic_body_transforms(entities);
-
-    // Particle system
-#if 0
-    particle_system.emit(10);
-    particle_system.position = dynamic_models["meshes/box.mgm"].physics_body->get_position();
-    glm::mat3 rotation = dynamic_models["meshes/box.mgm"].physics_body->get_transform();
-    particle_system.emission_direction =
-        rotation * Mg::Rotation()
-                       .pitch(-25_degrees)
-                       .yaw(Mg::Angle::from_radians(float(app.time_since_init())))
-                       .apply_to({ 0.0f, 0.0f, 1.0f });
-#endif
 
     // Fullscreen switching
     if (button_states["fullscreen"].was_pressed) {
@@ -168,7 +152,7 @@ void Scene::simulation_step()
 
 void Scene::render(const double lerp_factor)
 {
-    MG_GFX_DEBUG_GROUP("Scene::render_scene")
+    MG_GFX_DEBUG_GROUP_BY_FUNCTION
 
     // Mouselook. Doing this in render step instead of in simulation_step to minimize input lag.
     {
@@ -180,93 +164,35 @@ void Scene::render(const double lerp_factor)
 
     camera.position = character_controller->get_position(float(lerp_factor));
     camera.position.z += character_controller->current_height_smooth(float(lerp_factor)) * 0.95f;
-
-    scene_lights.back() =
-        Mg::gfx::make_point_light(camera.position, glm::vec3(25.0f), 2.0f * k_light_radius);
-
-    // Clear render target.
-    app.gfx_device().clear(*render_targets.hdr_target);
-
-    // Draw sky.
-    renderers.skybox_renderer.draw(*render_targets.hdr_target, camera, *sky_material);
+    camera.exposure = -5.0f;
 
     Mg::scene::advance_animations(entities, float(app.time_since_init()));
 
     // Draw meshes and billboards.
-    {
-        render_command_producer.clear();
-
-        Mg::scene::add_meshes_to_render_list(entities, render_command_producer, float(lerp_factor));
-
-        const auto& commands = render_command_producer.finalize(camera,
-                                                                Mg::gfx::SortingMode::near_to_far);
-
-        Mg::gfx::RenderParameters params = {};
-        params.current_time = Mg::narrow_cast<float>(app.time_since_init());
-        params.camera_exposure = -5.0;
-
-        renderers.mesh_renderer.render(camera,
-                                       commands,
-                                       scene_lights,
-                                       *render_targets.hdr_target,
-                                       params);
-
-        renderers.billboard_renderer.render(*render_targets.hdr_target,
-                                            camera,
-                                            billboard_render_list,
-                                            *billboard_material);
-
-        particle_system.update(static_cast<float>(app.performance_info().last_frame_time_seconds));
-        renderers.billboard_renderer.render(*render_targets.hdr_target,
-                                            camera,
-                                            particle_system.particles(),
-                                            *particle_material);
-    }
-
-    renderers.blur_renderer.render(renderers.post_renderer,
-                                   *render_targets.hdr_target,
-                                   *render_targets.blur_target);
-
-    // Apply tonemap and render to window render target.
-    {
-        app.gfx_device().clear(app.window().render_target);
-
-        bloom_material->set_sampler("sampler_bloom", render_targets.blur_target->target_texture());
-
-        renderers.post_renderer.post_process(renderers.post_renderer.make_context(),
-                                             *bloom_material,
-                                             app.window().render_target,
-                                             render_targets.hdr_target->colour_target()->handle());
-    }
+    renderer_data.mesh_render_command_producer->clear();
+    Mg::scene::add_meshes_to_render_list(entities,
+                                         *renderer_data.mesh_render_command_producer,
+                                         float(lerp_factor));
 
     // Draw UI
-    renderers.ui_renderer.resolution(app.window().frame_buffer_size());
-
     {
-        Mg::gfx::UIPlacement placement = {};
-        placement.position = Mg::gfx::UIPlacement::top_left + glm::vec2(0.01f, -0.01f);
-        placement.anchor = Mg::gfx::UIPlacement::top_left;
-
-        Mg::gfx::TypeSetting typesetting = {};
-        typesetting.line_spacing_factor = 1.25f;
-        typesetting.max_width_pixels = renderers.ui_renderer.resolution().width;
-
         const glm::vec3 v = character_controller->velocity();
         const glm::vec3 p = character_controller->get_position();
 
-        std::string text = fmt::format("FPS: {:.2f}", app.performance_info().frames_per_second);
+        auto text = fmt::format("FPS: {:.2f}", app.performance_info().frames_per_second);
         text += fmt::format("\nLast frame time: {:.2f} ms",
                             app.performance_info().last_frame_time_seconds * 1'000);
         text += fmt::format("\nVelocity: {{{:.2f}, {:.2f}, {:.2f}}}", v.x, v.y, v.z);
         text += fmt::format("\nPosition: {{{:.2f}, {:.2f}, {:.2f}}}", p.x, p.y, p.z);
         text += fmt::format("\nGrounded: {:b}", character_controller->is_on_ground());
-        text += fmt::format("\nNum particles: {}", particle_system.particles().size());
-
-        renderers.ui_renderer.draw_text(app.window().render_target,
-                                        placement,
-                                        font->prepare_text(text, typesetting));
+        renderer_data.ui_render_list->text_to_draw = std::move(text);
     }
 
+    app.gfx_device().clear(*renderer_data.render_targets->hdr_target);
+    app.gfx_device().clear(*app.window().render_target);
+    renderer->render({ .camera = camera, .time_since_init = float(app.time_since_init()) });
+
+#if 0
     // Debug geometry
     switch (debug_visualization % 4) {
     case 1:
@@ -287,6 +213,7 @@ void Scene::render(const double lerp_factor)
     Mg::gfx::get_debug_render_queue().dispatch(app.window().render_target,
                                                renderers.debug_renderer,
                                                camera.view_proj_matrix());
+#endif
 
     app.window().swap_buffers();
 }
@@ -308,13 +235,40 @@ void Scene::setup_config()
     cfg.set_default_value("mouse_sensitivity_y", 0.4f);
 }
 
+std::unique_ptr<Mg::gfx::BitmapFont> Scene::make_font() const
+{
+    const auto font_resource =
+        m_resource_cache->resource_handle<Mg::FontResource>("fonts/elstob/Elstob-Regular.ttf");
+    std::vector<Mg::UnicodeRange> unicode_ranges = { Mg::get_unicode_range(
+        Mg::UnicodeBlock::Basic_Latin) };
+    return std::make_unique<Mg::gfx::BitmapFont>(font_resource, 24, unicode_ranges);
+}
+
+Mg::gfx::BasicSceneRendererData Scene::make_renderer_data()
+{
+    Mg::gfx::BasicSceneRendererData data;
+    data.render_targets = std::make_shared<Mg::gfx::SceneRenderTargets>(app.window(),
+                                                                        m_texture_pool);
+    data.scene_lights = std::make_shared<Mg::gfx::SceneLights>();
+    data.mesh_render_command_producer = std::make_shared<Mg::gfx::RenderCommandProducer>();
+    data.billboard_render_list = std::make_shared<Mg::gfx::BillboardRenderList>();
+    data.ui_render_list = std::make_shared<Mg::gfx::UIRenderList>();
+    data.ui_render_list->font = make_font();
+    data.sky_material = m_material_pool->get_or_load("materials/skybox.hjson");
+    data.blur_material =
+        m_material_pool->copy("blur", m_material_pool->get_or_load("materials/blur.hjson"));
+    data.bloom_material =
+        m_material_pool->copy("bloom", m_material_pool->get_or_load("materials/bloom.hjson"));
+    return data;
+}
+
 void Scene::load_model(
     Mg::Identifier mesh_file,
     std::initializer_list<std::pair<Mg::Identifier, Mg::Identifier>> material_bindings,
     Mg::ecs::Entity entity)
 {
     auto& mesh = entities.add_component<Mg::scene::MeshComponent>(entity);
-    mesh.mesh = mesh_pool->get_or_load(mesh_file);
+    mesh.mesh = m_mesh_pool->get_or_load(mesh_file);
 
     if (mesh.mesh->animation_data) {
         auto& animation = entities.add_component<Mg::scene::AnimationComponent>(entity);
@@ -324,7 +278,7 @@ void Scene::load_model(
     mesh.material_bindings.resize(material_bindings.size());
     for (auto&& [binding_id, filename] : material_bindings) {
         mesh.material_bindings.push_back({ .material_binding_id = binding_id,
-                                           .material = material_pool->get_or_load(filename) });
+                                           .material = m_material_pool->get_or_load(filename) });
     }
 
     for (auto&& submesh : mesh.mesh->submeshes) {
@@ -349,7 +303,7 @@ Mg::ecs::Entity Scene::add_static_object(
     load_model(mesh_file, material_bindings, entity);
 
     const Mg::ResourceAccessGuard access =
-        resource_cache->access_resource<Mg::MeshResource>(mesh_file);
+        m_resource_cache->access_resource<Mg::MeshResource>(mesh_file);
 
     Mg::physics::Shape* shape = physics_world->create_mesh_shape(access->data_view());
 
@@ -376,7 +330,7 @@ Mg::ecs::Entity Scene::add_dynamic_object(
 
     if (enable_physics) {
         const Mg::ResourceAccessGuard access =
-            resource_cache->access_resource<Mg::MeshResource>(mesh_file);
+            m_resource_cache->access_resource<Mg::MeshResource>(mesh_file);
 
         const glm::vec3 centre = access->bounding_sphere().centre;
 
@@ -409,11 +363,12 @@ Mg::ecs::Entity Scene::add_dynamic_object(
     return entity;
 }
 
+#if 0
 void Scene::render_light_debug_geometry()
 {
     MG_GFX_DEBUG_GROUP("Scene::render_light_debug_geometry")
 
-    for (const Mg::gfx::Light& light : scene_lights) {
+    for (const Mg::gfx::Light& light : renderer_data.scene_lights->point_lights) {
         if (light.vector.w == 0.0) {
             continue;
         }
@@ -443,6 +398,7 @@ void Scene::render_skeleton_debug_geometry()
                                             animation.pose);
     }
 }
+#endif
 
 void Scene::create_entities()
 {
@@ -487,6 +443,9 @@ void Scene::generate_lights()
 {
     Mg::Random rand(0xdeadbeefbadc0fee);
 
+    auto& [material, billboards] = renderer_data.billboard_render_list->render_lists.emplace_back();
+    material = m_material_pool->get_or_load("materials/billboard.hjson");
+
     for (size_t i = 0; i < k_num_lights; ++i) {
         auto r1 = rand.range(-7.5f, 7.5f);
         auto r2 = rand.range(-7.5f, 7.5f);
@@ -502,33 +461,31 @@ void Scene::generate_lights()
 
         // Draw a billboard sprite for each light
         {
-            Mg::gfx::Billboard& billboard = billboard_render_list.emplace_back();
+            auto& billboard = billboards.emplace_back();
             billboard.pos = pos;
             billboard.colour = light_colour * 10.0f;
             billboard.colour.w = 1.0f;
             billboard.radius = 0.05f;
         }
 
-        scene_lights.push_back(
+        renderer_data.scene_lights->point_lights.push_back(
             Mg::gfx::make_point_light(pos, light_colour * 10.0f, k_light_radius));
     }
-
-    scene_lights.emplace_back(); // temp dummy
 }
 
 void Scene::on_window_focus_change(const bool is_focused)
 {
     if (is_focused) {
-        resource_cache->refresh();
+        m_resource_cache->refresh();
     }
 }
 
 int main(int /*argc*/, char* /*argv*/[])
 {
     try {
-        Scene scene;
-        scene.init();
-        scene.app.run_main_loop(scene);
+        Mg::ApplicationContext app{ config_file, window_title };
+        Scene scene{ app };
+        app.run_main_loop(scene);
     }
     catch (const std::exception& e) {
         Mg::log.error(e.what());

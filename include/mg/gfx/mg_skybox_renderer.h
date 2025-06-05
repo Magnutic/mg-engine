@@ -28,9 +28,8 @@ public:
     MG_MAKE_NON_MOVABLE(SkyboxRenderer);
     MG_MAKE_NON_COPYABLE(SkyboxRenderer);
 
-    void draw(const IRenderTarget& render_target,
-              const ICamera& camera,
-              const Material& material);
+    void
+    render(const IRenderTarget& render_target, const ICamera& camera, const Material& material);
 
     void drop_shaders();
 

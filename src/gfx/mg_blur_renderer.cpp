@@ -55,22 +55,13 @@ BlurRenderTarget::~BlurRenderTarget()
     m_texture_pool->destroy(m_vertical_pass_target_texture);
 }
 
-BlurRenderer::BlurRenderer(std::shared_ptr<MaterialPool> material_pool,
-                           const ResourceHandle<ShaderResource>& blur_shader)
-    : m_material_pool{ std::move(material_pool) }
-    , m_blur_material{ m_material_pool->create_anonymous(blur_shader) }
-{}
-
-BlurRenderer::~BlurRenderer()
-{
-    m_material_pool->destroy(m_blur_material);
-}
+BlurRenderer::BlurRenderer(Material* blur_material) : m_blur_material{ blur_material } {}
 
 void BlurRenderer::render(PostProcessRenderer& renderer,
                           const TextureRenderTarget& source,
                           BlurRenderTarget& destination)
 {
-    MG_GFX_DEBUG_GROUP("BlurRenderer::render")
+    MG_GFX_DEBUG_GROUP_BY_FUNCTION
 
     constexpr size_t k_num_blur_iterations = 2;
     const size_t num_blur_targets = destination.m_horizontal_pass_targets.size();

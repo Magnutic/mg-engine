@@ -181,7 +181,7 @@ TextureHandle generate_gl_texture_from(const TextureResource& resource,
         upload_function(mip_index, info, size, pixels);
     }
 
-    set_sampling_params(settings);
+    set_sampling_params(GL_TEXTURE_2D, settings);
     MG_CHECK_GL_ERROR();
 
     return TextureHandle{ texture_id };
@@ -213,7 +213,7 @@ TextureHandle generate_gl_texture_from(std::span<const uint8_t> rgba8_buffer,
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    set_sampling_params(settings);
+    set_sampling_params(GL_TEXTURE_2D, settings);
     MG_CHECK_GL_ERROR();
 
     return TextureHandle{ texture_id };

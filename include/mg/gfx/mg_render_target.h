@@ -39,9 +39,10 @@ public:
 
 /** The default render target is the final output to window. Mg::Window owns an instance of this. */
 class WindowRenderTarget : public IRenderTarget {
-    friend class ::Mg::Window;
-
+    friend Window;
 public:
+    WindowRenderTarget() = default;
+
     FrameBufferHandle handle() const override;
 
     bool is_window_render_target() const override { return true; }
@@ -49,8 +50,6 @@ public:
     ImageSize image_size() const noexcept final { return m_image_size; }
 
 private:
-    WindowRenderTarget() = default;
-
     void set_size(int32_t width, int32_t height) noexcept { m_image_size = { width, height }; }
 
     ImageSize m_image_size;

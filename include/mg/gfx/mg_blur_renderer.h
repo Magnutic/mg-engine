@@ -57,15 +57,12 @@ private:
     Texture2D* m_vertical_pass_target_texture;
 };
 
+// TODO consider moving all code into BlurPass
+
 /** Post-process renderer that applies a blur effect. */
 class BlurRenderer {
 public:
-    explicit BlurRenderer(std::shared_ptr<MaterialPool> material_pool,
-                          const ResourceHandle<ShaderResource>& blur_shader);
-    ~BlurRenderer();
-
-    MG_MAKE_NON_COPYABLE(BlurRenderer);
-    MG_MAKE_NON_MOVABLE(BlurRenderer);
+    explicit BlurRenderer(Material* blur_material);
 
     // Render blur using the render target as a source image.
     void render(PostProcessRenderer& renderer,
@@ -73,7 +70,6 @@ public:
                 BlurRenderTarget& destination);
 
 private:
-    std::shared_ptr<MaterialPool> m_material_pool;
     Material* m_blur_material;
 };
 

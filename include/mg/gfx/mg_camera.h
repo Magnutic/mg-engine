@@ -72,6 +72,9 @@ public:
     virtual DepthRange depth_range() const = 0;
 
     virtual float aspect_ratio() const = 0;
+
+    /** Get the camera exposure. This is relevant for HDR renderers. */
+    virtual float get_exposure() const = 0;
 };
 
 /** 3D projection camera. */
@@ -135,11 +138,16 @@ public:
         return signed_distance_to_plane(p, point);
     }
 
+    float get_exposure() const override { return exposure; }
+
     /** Camera's position. */
     glm::vec3 position{};
 
     /** Camera's orientation. */
     Rotation rotation{};
+
+    /** Camera exposure. Used by HDR renderers. */
+    float exposure = 0.0f;
 
 private:
     float m_aspect{};
@@ -182,6 +190,11 @@ public:
     {
         return glm::abs(point.z - min.z);
     }
+
+    float get_exposure() const override { return exposure; }
+
+    /** Camera exposure. Used by HDR renderers. */
+    float exposure = 0.0f;
 
     glm::vec3 min;
     glm::vec3 max;

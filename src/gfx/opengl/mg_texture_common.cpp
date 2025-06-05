@@ -4,24 +4,12 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
+#include "mg_texture_common.h"
+
 #include "mg/gfx/mg_texture_related_types.h"
 #include "mg/resources/mg_texture_resource.h"
 
-#include "mg_glad.h"
-
 namespace Mg::gfx {
-
-// Texture format info as required by OpenGL
-struct GlTextureInfo {
-    uint32_t internal_format;
-    uint32_t format;
-    uint32_t type;
-    int32_t mip_levels;
-    int32_t width;
-    int32_t height;
-    float aniso;
-    bool compressed;
-};
 
 // Get texture format info as required by OpenGL
 GlTextureInfo gl_texture_info(const TextureResource& resource,
@@ -114,7 +102,7 @@ GlTextureInfo gl_texture_info(const TextureResource& resource,
 }
 
 // Set up texture sampling parameters for currently bound texture
-void set_sampling_params(const TextureSettings& settings) noexcept
+void set_sampling_params(GLuint target, const TextureSettings& settings) noexcept
 {
     GLint edge_sampling = 0;
 
@@ -133,8 +121,8 @@ void set_sampling_params(const TextureSettings& settings) noexcept
         break;
     }
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, edge_sampling);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, edge_sampling);
+    glTexParameteri(target, GL_TEXTURE_WRAP_S, edge_sampling);
+    glTexParameteri(target, GL_TEXTURE_WRAP_T, edge_sampling);
 
     GLint min_filter = 0;
     GLint mag_filter = 0;
@@ -166,8 +154,8 @@ void set_sampling_params(const TextureSettings& settings) noexcept
         break;
     }
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
+    glTexParameteri(target, GL_TEXTURE_MIN_FILTER, min_filter);
+    glTexParameteri(target, GL_TEXTURE_MAG_FILTER, mag_filter);
 }
 
 } // namespace Mg::gfx

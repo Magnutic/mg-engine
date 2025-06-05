@@ -1,0 +1,11 @@
+shader: shaders/post_process_blur.hjson
+parameters: {
+  source_mip_level: {
+    type: int
+    value: 0
+  },
+  destination_mip_level: {
+    type: int
+    value: 0
+  }
+}

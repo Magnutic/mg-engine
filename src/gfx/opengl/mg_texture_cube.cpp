@@ -110,7 +110,7 @@ TextureHandle generate_gl_texture_from(const TextureResource& resource,
         }
     }
 
-    set_sampling_params(settings);
+    set_sampling_params(GL_TEXTURE_CUBE_MAP, settings);
     MG_CHECK_GL_ERROR();
 
     return TextureHandle{ texture_id };

@@ -258,6 +258,7 @@ private:
         glGenTextures(1, &gl_texture_id);
         glBindTexture(GL_TEXTURE_2D, gl_texture_id);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexImage2D(GL_TEXTURE_2D,
                      0,
                      GL_R8,
@@ -268,6 +269,7 @@ private:
                      GL_UNSIGNED_BYTE,
                      context.pixels);
         MG_CHECK_GL_ERROR();
+        glBindTexture(GL_TEXTURE_2D, 0);
         return TextureHandle::Owner{ gl_texture_id };
     }
 

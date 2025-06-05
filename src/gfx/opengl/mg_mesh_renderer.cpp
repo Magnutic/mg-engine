@@ -97,7 +97,6 @@ void surface(const SurfaceInput s_in, out SurfaceParams s_out) {
 
 FrameBlock make_frame_block(const ICamera& camera,
                             float current_time,
-                            float camera_exposure,
                             const LightGridConfig& light_grid_config)
 {
     std::array<int, 4> viewport_data{};
@@ -124,7 +123,7 @@ FrameBlock make_frame_block(const ICamera& camera,
     frame_block.cluster_grid_params.scale = -scale;
     frame_block.cluster_grid_params.bias = light_grid_config.depth_bias + c * scale;
 
-    frame_block.camera_exposure = camera_exposure;
+    frame_block.camera_exposure = camera.get_exposure();
 
     return frame_block;
 }
@@ -225,13 +224,11 @@ struct MeshRenderer::Impl {
 
 namespace {
 
-void bind_shared_inputs(MeshRenderer::Impl& data, const ICamera& cam, RenderParameters params)
+void bind_shared_inputs(MeshRenderer::Impl& data, const ICamera& cam, MeshRenderParameters params)
 {
     // Upload frame-global uniforms
-    const auto frame_block = make_frame_block(cam,
-                                              params.current_time,
-                                              params.camera_exposure,
-                                              data.light_buffers.config());
+    const auto frame_block =
+        make_frame_block(cam, params.current_time, data.light_buffers.config());
     data.frame_ubo.set_data(byte_representation(frame_block));
 
     const std::array shared_bindings = {
@@ -300,7 +297,7 @@ void MeshRenderer::render(const ICamera& cam,
                           const RenderCommandList& command_list,
                           std::span<const Light> lights,
                           const IRenderTarget& render_target,
-                          RenderParameters params)
+                          MeshRenderParameters params)
 {
     MG_GFX_DEBUG_GROUP("Mesh_renderer::renderer")
 

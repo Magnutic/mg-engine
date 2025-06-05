@@ -23,9 +23,8 @@ class IRenderTarget;
 class RenderCommandList;
 class Material;
 
-struct RenderParameters {
+struct MeshRenderParameters {
     float current_time;
-    float camera_exposure;
 };
 
 class MeshRenderer {
@@ -37,7 +36,7 @@ public:
                 const RenderCommandList& command_list,
                 std::span<const Light> lights,
                 const IRenderTarget& render_target,
-                RenderParameters params);
+                MeshRenderParameters params);
 
     /** Drop all shaders generated for this renderer. This means that each shader will be recompiled
      * from source on the next use. This is useful for hot-reloading of shader assets.

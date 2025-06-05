@@ -230,7 +230,7 @@ Window::Window(ConstructKey /*unused*/, GLFWwindow* handle, WindowSettings setti
 {
     MG_ASSERT(s_window == nullptr && "Only one Mg::Window may exist at a time.");
     s_window = this;
-    render_target.set_size(m_settings.video_mode.width, m_settings.video_mode.height);
+    render_target->set_size(m_settings.video_mode.width, m_settings.video_mode.height);
 }
 
 Window::~Window()
@@ -448,7 +448,7 @@ void Window::frame_buffer_size_callback(int width, int height)
 {
     log.verbose(
         fmt::format("Setting window render target framebuffer size to: {}x{}", width, height));
-    render_target.set_size(width, height);
+    render_target->set_size(width, height);
 }
 
 // Check whether we got the requested video mode.

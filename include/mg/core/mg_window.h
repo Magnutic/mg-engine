@@ -151,7 +151,8 @@ public:
     void deregister_scroll_event_handler(input::IScrollEventHandler& handler) override;
 
     /** Render target for this window. */
-    gfx::WindowRenderTarget render_target{};
+    std::shared_ptr<gfx::WindowRenderTarget> render_target =
+        std::make_shared<gfx::WindowRenderTarget>();
 
     /** Get underlying GLFW window handle. */
     GLFWwindow* glfw_window() const noexcept { return m_window; }

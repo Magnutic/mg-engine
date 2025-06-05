@@ -4,6 +4,8 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
+#include "mg_glad.h"
+
 #include <cstdint>
 
 namespace Mg {
@@ -30,7 +32,7 @@ GlTextureInfo gl_texture_info(const TextureResource& resource,
                               const TextureSettings& settings) noexcept;
 
 // Set up texture sampling parameters for currently bound texture
-void set_sampling_params(const TextureSettings& settings) noexcept;
+void set_sampling_params(GLuint target, const TextureSettings& settings) noexcept;
 
 
 } // namespace Mg::gfx

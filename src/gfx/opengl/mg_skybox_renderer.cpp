@@ -172,11 +172,11 @@ SkyboxRenderer::SkyboxRenderer() = default;
 
 SkyboxRenderer::~SkyboxRenderer() = default;
 
-void SkyboxRenderer::draw(const IRenderTarget& render_target,
-                          const ICamera& camera,
-                          const Material& material)
+void SkyboxRenderer::render(const IRenderTarget& render_target,
+                            const ICamera& camera,
+                            const Material& material)
 {
-    MG_GFX_DEBUG_GROUP("SkyboxRenderer::draw")
+    MG_GFX_DEBUG_GROUP_BY_FUNCTION
 
     {
         CameraBlock camera_block{};
