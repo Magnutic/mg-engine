@@ -58,159 +58,75 @@ class IRenderPass {
 public:
     MG_INTERFACE_BOILERPLATE(IRenderPass);
     virtual void render(const RenderParams&) = 0;
-    virtual void drop_shaders() = 0;
 };
 
-class SceneRenderer {
+class SceneRenderer : Observer<WindowSettings> {
 public:
-    explicit SceneRenderer(ResourceCache& resource_cache)
+    using RenderPasses = std::vector<std::unique_ptr<IRenderPass>>;
+
+    explicit SceneRenderer(ResourceCache& resource_cache, Window& window)
+        : m_window_settings{ window.settings() }
     {
-        // Drop shaders when shader resources have changed. This will force recompilation, so that
-        // any changes will take immediate effect.
+        // Drop render passes when shader resources have changed, so changes take immediate effect.
         m_shader_file_changed_tracker = resource_cache.make_file_change_tracker(
             "ShaderResource",
             [](void* data, const FileChangedEvent&) {
                 auto& self = *static_cast<SceneRenderer*>(data);
-                for (auto& pass : self.render_passes) {
-                    pass->drop_shaders();
-                }
+                self.m_render_passes.clear();
             },
             this);
+
+        // Also drop when window has changed, to make new settings take effect.
+        window.observe_settings(*this);
     }
 
     void render(const RenderParams& params)
     {
-        for (auto& pass : render_passes) {
+        if (m_render_passes.empty()) {
+            m_render_passes = create_passes(m_window_settings);
+        }
+
+        for (auto& pass : m_render_passes) {
             pass->render(params);
         }
     }
 
-    std::vector<std::unique_ptr<IRenderPass>> render_passes;
+protected:
+    virtual RenderPasses create_passes(const WindowSettings& settings) = 0;
+
+    void on_notify(const WindowSettings& settings) final
+    {
+        m_window_settings = settings;
+        m_render_passes.clear();
+    }
+
+    std::vector<std::unique_ptr<IRenderPass>> m_render_passes;
 
 private:
     std::shared_ptr<Mg::FileChangedTracker> m_shader_file_changed_tracker;
+    WindowSettings m_window_settings;
 };
 
-class SceneRenderTargets : Observer<WindowSettings> {
-public:
-    MG_MAKE_NON_COPYABLE(SceneRenderTargets);
-    MG_MAKE_DEFAULT_MOVABLE(SceneRenderTargets);
-
-    explicit SceneRenderTargets(Window& window, const std::shared_ptr<TexturePool>& texture_pool)
-        : m_texture_pool(texture_pool)
-    {
-        window.observe_settings(*this);
-        on_notify(window.settings());
-    }
-
-    ~SceneRenderTargets() override
-    {
-        m_texture_pool->destroy(hdr_target->colour_target());
-        m_texture_pool->destroy(hdr_target->depth_target());
-    }
-
-    void on_notify(const WindowSettings& settings) override
-    {
-        blur_target = std::make_unique<BlurRenderTarget>(m_texture_pool, settings.video_mode);
-        // Dispose of old render target textures.
-        if (hdr_target) {
-            m_texture_pool->destroy(hdr_target->colour_target());
-            m_texture_pool->destroy(hdr_target->depth_target());
-        }
-        hdr_target = make_hdr_target(settings.video_mode);
-    }
-
-    std::shared_ptr<BlurRenderTarget> blur_target;
-    std::shared_ptr<TextureRenderTarget> hdr_target;
-
-private:
-    std::shared_ptr<TexturePool> m_texture_pool;
-
-    std::unique_ptr<TextureRenderTarget> make_hdr_target(VideoMode mode) const
-    {
-        RenderTargetParams params{};
-        params.filter_mode = TextureFilterMode::Linear;
-        params.width = mode.width;
-        params.height = mode.height;
-
-        params.texture_format = RenderTargetParams::Format::RGBA16F;
-        Texture2D* colour_target = m_texture_pool->create_render_target(params);
-
-        params.texture_format = RenderTargetParams::Format::Depth24;
-        Texture2D* depth_target = m_texture_pool->create_render_target(params);
-
-        return TextureRenderTarget::with_colour_and_depth_targets(colour_target, depth_target);
-    }
-};
-
-#if 0
 class ClearPass : public IRenderPass {
 public:
     explicit ClearPass(std::shared_ptr<IRenderTarget> target,
-                       glm::vec4 colour,
-                       bool clear_colour,
-                       bool clear_depth)
+                       const glm::vec4 colour,
+                       const bool do_clear_colour,
+                       const bool do_clear_depth)
         : m_target{ std::move(target) }
         , m_colour{ colour }
-        , m_clear_colour{ clear_colour }
-        , m_clear_depth{ clear_depth }
+        , m_do_clear_colour{ do_clear_colour }
+        , m_do_clear_depth{ do_clear_depth }
     {}
 
-    void render(const RenderParams& /*unused*/) override
-    {
-        glClearColor(red, green, blue, alpha);
-        glBindFramebuffer(GL_FRAMEBUFFER, target.handle().as_gl_id());
-        glViewport(0, 0, target.image_size().width, target.image_size().height);
-
-        if (!m_target.is_window_render_target()) {
-            const GLuint buffer = GL_COLOR_ATTACHMENT0;
-            glDrawBuffers(1, &buffer);
-        }
-
-        // Change depth/colour write state if needed.
-        std::array<GLboolean, 4> prev_colour_write = {};
-        glGetBooleanv(GL_COLOR_WRITEMASK, prev_colour_write.data());
-        const bool should_set_colour_write =
-            m_clear_colour &&
-            std::ranges::any_of(prev_colour_write, [](GLboolean b) { return b == GL_FALSE; });
-
-        GLboolean prev_depth_write = GL_FALSE;
-        glGetBooleanv(GL_DEPTH_WRITEMASK, &prev_depth_write);
-        const bool should_set_depth_write = m_clear_depth && prev_depth_write == GL_FALSE;
-
-        if (should_set_colour_write) {
-            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        }
-        if (should_set_depth_write) {
-            glDepthMask(GL_TRUE);
-        }
-
-        glClear((m_clear_colour ? GL_COLOR_BUFFER_BIT : 0u) |
-                (m_clear_depth ? GL_DEPTH_BUFFER_BIT : 0u));
-
-        // Revert depth/colour write state if it was changed.
-        if (should_set_colour_write) {
-            glColorMask(prev_colour_write[0],
-                        prev_colour_write[1],
-                        prev_colour_write[2],
-                        prev_colour_write[3]);
-        }
-        if (should_set_depth_write) {
-            glDepthMask(prev_depth_write);
-        }
-    }
-
-    void drop_shaders() override
-    { /* no shaders */
-    }
+    void render(const RenderParams& /*unused*/) override;
 
 private:
     std::shared_ptr<IRenderTarget> m_target;
     glm::vec4 m_colour;
-    bool m_clear_colour;
-    bool m_clear_depth;
+    bool m_do_clear_colour;
+    bool m_do_clear_depth;
 };
-#endif
 
 class BlurPass : public IRenderPass {
 public:
@@ -227,8 +143,6 @@ public:
         m_blur_renderer.render(m_post_process_renderer, *m_source, *m_target);
     }
 
-    void drop_shaders() override { m_post_process_renderer.drop_shaders(); }
-
 private:
     PostProcessRenderer m_post_process_renderer;
     BlurRenderer m_blur_renderer;
@@ -237,15 +151,15 @@ private:
 };
 
 struct SceneLights {
-    std::vector<gfx::Light> point_lights;
+    std::vector<Light> point_lights;
 };
 
 class MeshPass : public IRenderPass {
 public:
     explicit MeshPass(std::shared_ptr<IRenderTarget> target,
                       std::shared_ptr<SceneLights> scene_lights,
-                      std::shared_ptr<gfx::RenderCommandProducer> render_command_producer,
-                      gfx::SortingMode sorting_mode = gfx::SortingMode::near_to_far)
+                      std::shared_ptr<RenderCommandProducer> render_command_producer,
+                      SortingMode sorting_mode = SortingMode::near_to_far)
         : m_renderer{ LightGridConfig{} }
         , m_target{ std::move(target) }
         , m_scene_lights{ std::move(scene_lights) }
@@ -263,14 +177,12 @@ public:
                           { params.time_since_init });
     }
 
-    void drop_shaders() override { m_renderer.drop_shaders(); }
-
 private:
     MeshRenderer m_renderer;
     std::shared_ptr<IRenderTarget> m_target;
     std::shared_ptr<SceneLights> m_scene_lights;
-    std::shared_ptr<gfx::RenderCommandProducer> m_render_command_producer;
-    gfx::SortingMode m_sorting_mode;
+    std::shared_ptr<RenderCommandProducer> m_render_command_producer;
+    SortingMode m_sorting_mode;
 };
 
 class SkyPass : public IRenderPass {
@@ -283,8 +195,6 @@ public:
     {
         m_renderer.render(*m_target, params.camera, *m_material);
     }
-
-    void drop_shaders() override { m_renderer.drop_shaders(); }
 
 private:
     std::shared_ptr<IRenderTarget> m_target;
@@ -310,8 +220,6 @@ public:
             m_renderer.render(*m_target, params.camera, billboards, *material);
         }
     }
-
-    void drop_shaders() override { m_renderer.drop_shaders(); }
 
 private:
     std::shared_ptr<IRenderTarget> m_target;
@@ -340,8 +248,6 @@ public:
                                              m_hdr_colour_source->colour_target()->handle());
     }
 
-    void drop_shaders() override { m_post_process_renderer.drop_shaders(); }
-
 private:
     std::shared_ptr<IRenderTarget> m_target;
     std::shared_ptr<const BlurRenderTarget> m_blur_source;
@@ -352,26 +258,21 @@ private:
 
 struct UIRenderList {
     // Temporary; should be a command list (of some type yet to be defined as of writing).
-    std::unique_ptr<Mg::gfx::BitmapFont> font;
+    std::unique_ptr<BitmapFont> font;
     std::string text_to_draw;
 };
 
-class UIPass : public IRenderPass, Observer<WindowSettings> {
+class UIPass : public IRenderPass {
 public:
     explicit UIPass(std::shared_ptr<IRenderTarget> target,
                     std::shared_ptr<UIRenderList> render_list,
-                    Window& window)
+                    VideoMode video_mode)
         : m_target{ std::move(target) }
         , m_render_list{ std::move(render_list) }
-        , m_renderer{ window.settings().video_mode }
-    {
-        window.observe_settings(*this);
-    }
-
-    void on_notify(const WindowSettings& settings) override
-    {
-        m_renderer.resolution(settings.video_mode);
-    }
+        , m_renderer{ video_mode } // Note: we cannot use m_target->image_size, because it may take
+                                   // a while for the render target to update after the window has
+                                   // been resized.
+    {}
 
     void render(const RenderParams& /*params*/) override
     {
@@ -388,58 +289,131 @@ public:
         m_renderer.draw_text(*m_target, placement, text);
     }
 
-    void drop_shaders() override { m_renderer.drop_shaders(); }
-
-
 private:
     std::shared_ptr<IRenderTarget> m_target;
     std::shared_ptr<UIRenderList> m_render_list;
     UIRenderer m_renderer;
 };
 
-struct BasicSceneRendererData {
-    std::shared_ptr<SceneRenderTargets> render_targets;
-    std::shared_ptr<SceneLights> scene_lights;
-    std::shared_ptr<RenderCommandProducer> mesh_render_command_producer;
-    std::shared_ptr<BillboardRenderList> billboard_render_list;
-    std::shared_ptr<UIRenderList> ui_render_list;
+class SceneRenderTargets {
+public:
+    MG_MAKE_NON_COPYABLE(SceneRenderTargets);
+    MG_MAKE_DEFAULT_MOVABLE(SceneRenderTargets);
 
+    explicit SceneRenderTargets(const WindowSettings& settings,
+                                const std::shared_ptr<TexturePool>& texture_pool)
+        : m_texture_pool{ texture_pool }
+        , m_blur_target{ std::make_unique<BlurRenderTarget>(m_texture_pool, settings.video_mode) }
+        , m_hdr_target{ make_hdr_target(settings.video_mode) }
+    {}
+
+    ~SceneRenderTargets()
+    {
+        m_texture_pool->destroy(m_hdr_target->colour_target());
+        m_texture_pool->destroy(m_hdr_target->depth_target());
+    }
+
+    const std::shared_ptr<BlurRenderTarget>& blur_target() const { return m_blur_target; }
+    const std::shared_ptr<TextureRenderTarget>& hdr_target() const { return m_hdr_target; }
+
+private:
+    std::shared_ptr<TexturePool> m_texture_pool;
+    std::shared_ptr<BlurRenderTarget> m_blur_target;
+    std::shared_ptr<TextureRenderTarget> m_hdr_target;
+
+    std::unique_ptr<TextureRenderTarget> make_hdr_target(VideoMode mode) const
+    {
+        RenderTargetParams params{};
+        params.filter_mode = TextureFilterMode::Linear;
+        params.width = mode.width;
+        params.height = mode.height;
+
+        params.texture_format = RenderTargetParams::Format::RGBA16F;
+        Texture2D* colour_target = m_texture_pool->create_render_target(params);
+
+        params.texture_format = RenderTargetParams::Format::Depth24;
+        Texture2D* depth_target = m_texture_pool->create_render_target(params);
+
+        return TextureRenderTarget::with_colour_and_depth_targets(colour_target, depth_target);
+    }
+};
+
+struct BasicSceneRendererConfig {
     const Material* sky_material;
     Material* blur_material;
     Material* bloom_material;
 };
 
-inline std::unique_ptr<SceneRenderer> setup_basic_scene_renderer(Window& window,
-                                                                 ResourceCache& resource_cache,
-                                                                 const BasicSceneRendererData& data)
-{
-    auto result = std::make_unique<SceneRenderer>(resource_cache);
+struct BasicSceneRendererData {
+    std::shared_ptr<SceneLights> scene_lights;
+    std::shared_ptr<RenderCommandProducer> mesh_render_command_producer;
+    std::shared_ptr<BillboardRenderList> billboard_render_list;
+    std::shared_ptr<UIRenderList> ui_render_list;
+};
 
-    result->render_passes.push_back(
-        std::make_unique<SkyPass>(data.render_targets->hdr_target, data.sky_material));
+class BasicSceneRenderer : public SceneRenderer {
+public:
+    BasicSceneRenderer(ResourceCache& resource_cache,
+                       const std::shared_ptr<TexturePool>& texture_pool,
+                       Window& window,
+                       BasicSceneRendererConfig config,
+                       std::shared_ptr<BasicSceneRendererData> data)
+        : SceneRenderer{ resource_cache, window }
+        , m_config{ config }
+        , m_data{ std::move(data) }
+        , m_window_render_target{ window.render_target }
+        , m_texture_pool{ texture_pool }
+    {}
 
-    result->render_passes.push_back(std::make_unique<MeshPass>(data.render_targets->hdr_target,
-                                                               data.scene_lights,
-                                                               data.mesh_render_command_producer));
+private:
+    RenderPasses create_passes(const WindowSettings& settings) override
+    {
+        m_render_targets = std::make_unique<SceneRenderTargets>(settings, m_texture_pool);
 
-    result->render_passes.push_back(std::make_unique<BillboardPass>(data.render_targets->hdr_target,
-                                                                    data.billboard_render_list));
+        RenderPasses passes;
 
-    result->render_passes.push_back(std::make_unique<BlurPass>(data.render_targets->blur_target,
-                                                               data.render_targets->hdr_target,
-                                                               data.blur_material));
+        passes.push_back(std::make_unique<ClearPass>(m_render_targets->hdr_target(),
+                                                     glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f },
+                                                     true,
+                                                     true));
 
-    result->render_passes.push_back(
-        std::make_unique<TonemapAndBloomPass>(window.render_target,
-                                              data.render_targets->blur_target,
-                                              data.render_targets->hdr_target,
-                                              data.bloom_material));
+        passes.push_back(std::make_unique<ClearPass>(m_window_render_target,
+                                                     glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f },
+                                                     true,
+                                                     true));
 
-    result->render_passes.push_back(
-        std::make_unique<UIPass>(window.render_target, data.ui_render_list, window));
+        passes.push_back(
+            std::make_unique<SkyPass>(m_render_targets->hdr_target(), m_config.sky_material));
 
-    return result;
-}
+        passes.push_back(std::make_unique<MeshPass>(m_render_targets->hdr_target(),
+                                                    m_data->scene_lights,
+                                                    m_data->mesh_render_command_producer));
+
+        passes.push_back(std::make_unique<BillboardPass>(m_render_targets->hdr_target(),
+                                                         m_data->billboard_render_list));
+
+        passes.push_back(std::make_unique<BlurPass>(m_render_targets->blur_target(),
+                                                    m_render_targets->hdr_target(),
+                                                    m_config.blur_material));
+
+        passes.push_back(std::make_unique<TonemapAndBloomPass>(m_window_render_target,
+                                                               m_render_targets->blur_target(),
+                                                               m_render_targets->hdr_target(),
+                                                               m_config.bloom_material));
+
+        passes.push_back(std::make_unique<UIPass>(m_window_render_target,
+                                                  m_data->ui_render_list,
+                                                  settings.video_mode));
+
+        return passes;
+    }
+
+    BasicSceneRendererConfig m_config;
+    std::shared_ptr<BasicSceneRendererData> m_data;
+    std::shared_ptr<WindowRenderTarget> m_window_render_target;
+    std::unique_ptr<SceneRenderTargets> m_render_targets;
+    std::shared_ptr<TexturePool> m_texture_pool;
+};
 
 } // namespace gfx
 

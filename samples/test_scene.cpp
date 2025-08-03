@@ -2,6 +2,7 @@
 #include "mg/core/mg_application_context.h"
 #include "mg/gfx/mg_debug_renderer.h"
 #include "mg/scene/mg_common_scene_components.h"
+#include "mg/scene/mg_scene.h"
 
 #include <mg/core/mg_config.h>
 #include <mg/core/mg_log.h>
@@ -60,7 +61,18 @@ Scene::Scene(Mg::ApplicationContext& application_context)
     camera.field_of_view = 80_degrees;
 
     renderer_data = make_renderer_data();
-    renderer = Mg::gfx::setup_basic_scene_renderer(app.window(), *m_resource_cache, renderer_data);
+    Mg::gfx::BasicSceneRendererConfig renderer_config = {
+        .sky_material = m_material_pool->get_or_load("materials/skybox.hjson"),
+        .blur_material =
+            m_material_pool->copy("blur", m_material_pool->get_or_load("materials/blur.hjson")),
+        .bloom_material =
+            m_material_pool->copy("bloom", m_material_pool->get_or_load("materials/bloom.hjson"))
+    };
+    renderer = std::make_unique<Mg::gfx::BasicSceneRenderer>(*m_resource_cache,
+                                                             m_texture_pool,
+                                                             app.window(),
+                                                             renderer_config,
+                                                             renderer_data);
 
     sample_control_button_tracker = std::make_shared<Mg::input::ButtonTracker>(app.window());
     sample_control_button_tracker->bind("swap_movement_mode", Mg::input::Key::E);
@@ -169,9 +181,9 @@ void Scene::render(const double lerp_factor)
     Mg::scene::advance_animations(entities, float(app.time_since_init()));
 
     // Draw meshes and billboards.
-    renderer_data.mesh_render_command_producer->clear();
+    renderer_data->mesh_render_command_producer->clear();
     Mg::scene::add_meshes_to_render_list(entities,
-                                         *renderer_data.mesh_render_command_producer,
+                                         *renderer_data->mesh_render_command_producer,
                                          float(lerp_factor));
 
     // Draw UI
@@ -185,11 +197,9 @@ void Scene::render(const double lerp_factor)
         text += fmt::format("\nVelocity: {{{:.2f}, {:.2f}, {:.2f}}}", v.x, v.y, v.z);
         text += fmt::format("\nPosition: {{{:.2f}, {:.2f}, {:.2f}}}", p.x, p.y, p.z);
         text += fmt::format("\nGrounded: {:b}", character_controller->is_on_ground());
-        renderer_data.ui_render_list->text_to_draw = std::move(text);
+        renderer_data->ui_render_list->text_to_draw = std::move(text);
     }
 
-    app.gfx_device().clear(*renderer_data.render_targets->hdr_target);
-    app.gfx_device().clear(*app.window().render_target);
     renderer->render({ .camera = camera, .time_since_init = float(app.time_since_init()) });
 
 #if 0
@@ -244,21 +254,14 @@ std::unique_ptr<Mg::gfx::BitmapFont> Scene::make_font() const
     return std::make_unique<Mg::gfx::BitmapFont>(font_resource, 24, unicode_ranges);
 }
 
-Mg::gfx::BasicSceneRendererData Scene::make_renderer_data()
+std::shared_ptr<Mg::gfx::BasicSceneRendererData> Scene::make_renderer_data()
 {
-    Mg::gfx::BasicSceneRendererData data;
-    data.render_targets = std::make_shared<Mg::gfx::SceneRenderTargets>(app.window(),
-                                                                        m_texture_pool);
-    data.scene_lights = std::make_shared<Mg::gfx::SceneLights>();
-    data.mesh_render_command_producer = std::make_shared<Mg::gfx::RenderCommandProducer>();
-    data.billboard_render_list = std::make_shared<Mg::gfx::BillboardRenderList>();
-    data.ui_render_list = std::make_shared<Mg::gfx::UIRenderList>();
-    data.ui_render_list->font = make_font();
-    data.sky_material = m_material_pool->get_or_load("materials/skybox.hjson");
-    data.blur_material =
-        m_material_pool->copy("blur", m_material_pool->get_or_load("materials/blur.hjson"));
-    data.bloom_material =
-        m_material_pool->copy("bloom", m_material_pool->get_or_load("materials/bloom.hjson"));
+    auto data = std::make_shared<Mg::gfx::BasicSceneRendererData>();
+    data->scene_lights = std::make_shared<Mg::gfx::SceneLights>();
+    data->mesh_render_command_producer = std::make_shared<Mg::gfx::RenderCommandProducer>();
+    data->billboard_render_list = std::make_shared<Mg::gfx::BillboardRenderList>();
+    data->ui_render_list = std::make_shared<Mg::gfx::UIRenderList>();
+    data->ui_render_list->font = make_font();
     return data;
 }
 
@@ -443,7 +446,8 @@ void Scene::generate_lights()
 {
     Mg::Random rand(0xdeadbeefbadc0fee);
 
-    auto& [material, billboards] = renderer_data.billboard_render_list->render_lists.emplace_back();
+    auto& [material,
+           billboards] = renderer_data->billboard_render_list->render_lists.emplace_back();
     material = m_material_pool->get_or_load("materials/billboard.hjson");
 
     for (size_t i = 0; i < k_num_lights; ++i) {
@@ -468,7 +472,7 @@ void Scene::generate_lights()
             billboard.radius = 0.05f;
         }
 
-        renderer_data.scene_lights->point_lights.push_back(
+        renderer_data->scene_lights->point_lights.push_back(
             Mg::gfx::make_point_light(pos, light_colour * 10.0f, k_light_radius));
     }
 }
