@@ -34,6 +34,7 @@ add_library(mg_engine
     gfx/mg_skeleton.cpp
     gfx/mg_texture_pool.cpp
     gfx/mg_texture_related_types.cpp
+    gfx/render_passes/mg_clear_pass.cpp
     gfx/opengl/mg_billboard_renderer.cpp
     gfx/opengl/mg_buffer_texture.cpp
     gfx/opengl/mg_debug_renderer.cpp
@@ -75,7 +76,6 @@ add_library(mg_engine
     resources/mg_shader_resource.cpp
     resources/mg_sound_resource.cpp
     resources/mg_texture_resource.cpp
-    scene/mg_scene.cpp
     utils/mg_file_io.cpp
     utils/mg_file_time_helper.cpp
     utils/mg_geometric_functions.cpp

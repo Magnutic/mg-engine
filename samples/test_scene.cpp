@@ -61,18 +61,18 @@ Scene::Scene(Mg::ApplicationContext& application_context)
     camera.field_of_view = 80_degrees;
 
     renderer_data = make_renderer_data();
-    Mg::gfx::BasicSceneRendererConfig renderer_config = {
+    Mg::gfx::SimpleSceneRendererConfig renderer_config = {
         .sky_material = m_material_pool->get_or_load("materials/skybox.hjson"),
         .blur_material =
             m_material_pool->copy("blur", m_material_pool->get_or_load("materials/blur.hjson")),
         .bloom_material =
             m_material_pool->copy("bloom", m_material_pool->get_or_load("materials/bloom.hjson"))
     };
-    renderer = std::make_unique<Mg::gfx::BasicSceneRenderer>(*m_resource_cache,
-                                                             m_texture_pool,
-                                                             app.window(),
-                                                             renderer_config,
-                                                             renderer_data);
+    renderer = std::make_unique<Mg::gfx::SimpleSceneRenderer>(*m_resource_cache,
+                                                              m_texture_pool,
+                                                              app.window(),
+                                                              renderer_config,
+                                                              renderer_data);
 
     sample_control_button_tracker = std::make_shared<Mg::input::ButtonTracker>(app.window());
     sample_control_button_tracker->bind("swap_movement_mode", Mg::input::Key::E);
@@ -254,9 +254,9 @@ std::unique_ptr<Mg::gfx::BitmapFont> Scene::make_font() const
     return std::make_unique<Mg::gfx::BitmapFont>(font_resource, 24, unicode_ranges);
 }
 
-std::shared_ptr<Mg::gfx::BasicSceneRendererData> Scene::make_renderer_data()
+std::shared_ptr<Mg::gfx::SimpleSceneRendererData> Scene::make_renderer_data()
 {
-    auto data = std::make_shared<Mg::gfx::BasicSceneRendererData>();
+    auto data = std::make_shared<Mg::gfx::SimpleSceneRendererData>();
     data->scene_lights = std::make_shared<Mg::gfx::SceneLights>();
     data->mesh_render_command_producer = std::make_shared<Mg::gfx::RenderCommandProducer>();
     data->billboard_render_list = std::make_shared<Mg::gfx::BillboardRenderList>();

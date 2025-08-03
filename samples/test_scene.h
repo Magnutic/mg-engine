@@ -10,6 +10,7 @@
 #include <mg/gfx/mg_mesh.h>
 #include <mg/gfx/mg_render_command_list.h>
 #include <mg/gfx/mg_render_target.h>
+#include <mg/gfx/mg_simple_scene_renderer.h>
 #include <mg/input/mg_input.h>
 #include <mg/mg_player_controller.h>
 #include <mg/physics/mg_physics.h>
@@ -38,7 +39,7 @@ public:
     Mg::IPlayerController* current_controller = nullptr;
     std::unique_ptr<Mg::physics::CharacterController> character_controller;
 
-    std::shared_ptr<Mg::gfx::BasicSceneRendererData> renderer_data;
+    std::shared_ptr<Mg::gfx::SimpleSceneRendererData> renderer_data;
     std::unique_ptr<Mg::gfx::SceneRenderer> renderer;
 
     int debug_visualization = 0;
@@ -58,7 +59,7 @@ private:
 
     std::unique_ptr<Mg::gfx::BitmapFont> make_font() const;
 
-    std::shared_ptr<Mg::gfx::BasicSceneRendererData> make_renderer_data();
+    std::shared_ptr<Mg::gfx::SimpleSceneRendererData> make_renderer_data();
 
     void
     load_model(Mg::Identifier mesh_file,

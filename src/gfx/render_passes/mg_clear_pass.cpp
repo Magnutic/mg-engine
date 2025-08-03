@@ -4,9 +4,11 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-#include "mg/scene/mg_scene.h"
+#include "mg/gfx/render_passes/mg_clear_pass.h"
 
-#include "../gfx/opengl/mg_glad.h"
+#include "../opengl/mg_glad.h"
+
+#include <algorithm>
 
 namespace Mg::gfx {
 
