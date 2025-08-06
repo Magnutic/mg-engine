@@ -10,8 +10,8 @@
 #pragma once
 
 #include "mg/core/mg_window.h"
-#include "mg/resource_cache/mg_resource_cache.h"
 #include "mg/gfx/render_passes/mg_irender_pass.h"
+#include "mg/resource_cache/mg_resource_cache.h"
 
 namespace Mg::gfx {
 
@@ -34,6 +34,11 @@ public:
         // Also drop when window has changed, to make new settings take effect.
         window.observe_settings(*this);
     }
+
+    ~SceneRenderer() override = default;
+
+    MG_MAKE_NON_COPYABLE(SceneRenderer);
+    MG_MAKE_NON_MOVABLE(SceneRenderer);
 
     void render(const RenderParams& params)
     {
