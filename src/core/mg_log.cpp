@@ -268,16 +268,18 @@ private:
 
         std::string formatted_message = format_message(item);
 
-        // Write to terminal.
-        std::cout << formatted_message << '\n';
-
         // Write to file.
         if (item.prio <= log_file_verbosity && m_writer) {
             m_writer << formatted_message << '\n';
         }
 
-        // Keep in history.
-        history.add(std::move(formatted_message));
+        // Write to terminal.
+        if (item.prio <= console_verbosity) {
+            std::cout << formatted_message << '\n';
+
+            // Keep in history.
+            history.add(std::move(formatted_message));
+        }
     }
 
     std::ofstream m_writer;

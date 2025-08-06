@@ -38,7 +38,7 @@ public:
     enum class Prio { Error, Warning, Message, Verbose, Debug };
 
     explicit Log(std::string_view file_path,
-                 Prio console_verbosity = Prio::Debug,
+                 Prio console_verbosity = Prio::Verbose,
                  Prio log_file_verbosity = Prio::Debug,
                  size_t num_history_lines = 1000);
     ~Log();
