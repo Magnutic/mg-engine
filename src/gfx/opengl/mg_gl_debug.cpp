@@ -145,7 +145,7 @@ void ogl_error_callback(uint32_t source,
         break;
     case GL_DEBUG_SEVERITY_LOW: // Fallthrough
     case GL_DEBUG_SEVERITY_NOTIFICATION:
-        prio = Log::Prio::Verbose;
+        prio = Log::Prio::Debug;
         break;
     default:
         prio = Log::Prio::Error;
