@@ -1337,12 +1337,10 @@ size_t World::convex_sweep(Shape& shape,
     return callback.num_hits();
 }
 
-void World::draw_debug(const gfx::IRenderTarget& render_target,
-                       gfx::DebugRenderer& debug_renderer,
-                       const glm::mat4& view_proj)
+void World::draw_debug(gfx::DebugRenderQueue& render_queue)
 {
     // Set up a debug drawer. It will redirect Bullet's debug-rendering calls to debug_renderer.
-    PhysicsDebugRenderer physics_debug_renderer{ render_target, debug_renderer, view_proj };
+    PhysicsDebugRenderer physics_debug_renderer{ render_queue };
 
     // Tell Bullet to use the debug drawer until the end of this function.
     auto reset_debug_drawer = finally([&] { m_impl->dynamics_world->setDebugDrawer(nullptr); });

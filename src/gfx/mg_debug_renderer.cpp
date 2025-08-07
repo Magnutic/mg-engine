@@ -17,7 +17,6 @@
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/utils/mg_assert.h"
 
-#include "mg_shader.h"
 #include "mg_gl_debug.h"
 #include "mg_shader.h"
 #include "mg_opengl_loader_glad.h"
@@ -590,25 +589,26 @@ struct DebugRenderQueue::Impl {
 
 DebugRenderQueue::DebugRenderQueue() = default;
 
-void DebugRenderQueue::draw_box(DebugRenderer::BoxDrawParams params)
+void DebugRenderQueue::draw_box(DebugRenderer::BoxDrawParams params, glm::mat4 transform)
 {
     std::lock_guard g{ m_impl->mutex };
 
-    m_impl->jobs.emplace_back([params](const IRenderTarget& render_target,
-                                       DebugRenderer& renderer,
-                                       const glm::mat4& view_proj) {
-        renderer.draw_box(render_target, view_proj, params);
+    m_impl->jobs.emplace_back([params, transform](const IRenderTarget& render_target,
+                                                  DebugRenderer& renderer,
+                                                  const glm::mat4& view_proj) {
+        renderer.draw_box(render_target, view_proj * transform, params);
     });
 }
 
-void DebugRenderQueue::draw_ellipsoid(DebugRenderer::EllipsoidDrawParams params)
+void DebugRenderQueue::draw_ellipsoid(DebugRenderer::EllipsoidDrawParams params,
+                                      glm::mat4 transform)
 {
     std::lock_guard g{ m_impl->mutex };
 
-    m_impl->jobs.emplace_back([params](const IRenderTarget& render_target,
-                                       DebugRenderer& renderer,
-                                       const glm::mat4& view_proj) {
-        renderer.draw_ellipsoid(render_target, view_proj, params);
+    m_impl->jobs.emplace_back([params, transform](const IRenderTarget& render_target,
+                                                  DebugRenderer& renderer,
+                                                  const glm::mat4& view_proj) {
+        renderer.draw_ellipsoid(render_target, view_proj * transform, params);
     });
 }
 
@@ -625,6 +625,32 @@ void DebugRenderQueue::draw_line(std::span<const glm::vec3> points,
         (const IRenderTarget& render_target, DebugRenderer& renderer, const glm::mat4& view_proj) {
             renderer.draw_line(render_target, view_proj, points, colour, width);
         });
+}
+
+void DebugRenderQueue::draw_bones(const glm::mat4& M,
+                                  const Skeleton& skeleton,
+                                  const SkeletonPose& pose)
+{
+    std::lock_guard g{ m_impl->mutex };
+
+    m_impl->jobs.emplace_back([M, skeleton, pose](const IRenderTarget& render_target,
+                                                  DebugRenderer& renderer,
+                                                  const glm::mat4& view_proj) {
+        renderer.draw_bones(render_target, view_proj, M, skeleton, pose);
+    });
+}
+
+void DebugRenderQueue::draw_view_frustum(const glm::mat4& view_projection_frustum,
+                                         float max_distance)
+{
+    std::lock_guard g{ m_impl->mutex };
+
+    m_impl->jobs.emplace_back([view_projection_frustum,
+                               max_distance](const IRenderTarget& render_target,
+                                             DebugRenderer& renderer,
+                                             const glm::mat4& view_proj) {
+        renderer.draw_view_frustum(render_target, view_proj, view_projection_frustum, max_distance);
+    });
 }
 
 void DebugRenderQueue::dispatch(const IRenderTarget& render_target,

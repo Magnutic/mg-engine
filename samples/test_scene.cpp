@@ -199,9 +199,6 @@ void Scene::render(const double lerp_factor)
         renderer_data->ui_render_list->text_to_draw = std::move(text);
     }
 
-    renderer->render({ .camera = camera, .time_since_init = float(app.time_since_init()) });
-
-#if 0
     // Debug geometry
     switch (debug_visualization % 4) {
     case 1:
@@ -211,19 +208,13 @@ void Scene::render(const double lerp_factor)
         render_skeleton_debug_geometry();
         break;
     case 3:
-        physics_world->draw_debug(app.window().render_target,
-                                  renderers.debug_renderer,
-                                  camera.view_proj_matrix());
+        physics_world->draw_debug(Mg::gfx::get_debug_render_queue());
         break;
     default:
         break;
     }
 
-    Mg::gfx::get_debug_render_queue().dispatch(app.window().render_target,
-                                               renderers.debug_renderer,
-                                               camera.view_proj_matrix());
-#endif
-
+    renderer->render({ .camera = camera, .time_since_init = float(app.time_since_init()) });
     app.window().swap_buffers();
 }
 
@@ -365,12 +356,11 @@ Mg::ecs::Entity Scene::add_dynamic_object(
     return entity;
 }
 
-#if 0
 void Scene::render_light_debug_geometry()
 {
     MG_GFX_DEBUG_GROUP("Scene::render_light_debug_geometry")
 
-    for (const Mg::gfx::Light& light : renderer_data.scene_lights->point_lights) {
+    for (const Mg::gfx::Light& light : renderer_data->scene_lights->point_lights) {
         if (light.vector.w == 0.0) {
             continue;
         }
@@ -379,9 +369,7 @@ void Scene::render_light_debug_geometry()
         params.colour = glm::vec4(normalize(light.colour), 0.05f);
         params.dimensions = glm::vec3(std::sqrt(light.range_sqr));
         params.wireframe = true;
-        renderers.debug_renderer.draw_ellipsoid(app.window().render_target,
-                                                camera.view_proj_matrix(),
-                                                params);
+        Mg::gfx::get_debug_render_queue().draw_ellipsoid(params);
     }
 }
 
@@ -393,14 +381,11 @@ void Scene::render_skeleton_debug_geometry()
          entities.get_with<Mg::scene::TransformComponent,
                            Mg::scene::MeshComponent,
                            Mg::scene::AnimationComponent>()) {
-        renderers.debug_renderer.draw_bones(app.window().render_target,
-                                            camera.view_proj_matrix(),
-                                            transform.transform * mesh.mesh_transform,
-                                            mesh.mesh->animation_data->skeleton,
-                                            animation.pose);
+        Mg::gfx::get_debug_render_queue().draw_bones(transform.transform * mesh.mesh_transform,
+                                                     mesh.mesh->animation_data->skeleton,
+                                                     animation.pose);
     }
 }
-#endif
 
 void Scene::create_entities()
 {

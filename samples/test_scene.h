@@ -84,10 +84,8 @@ private:
 
     void on_window_focus_change(bool is_focused);
 
-#if 0
     void render_light_debug_geometry();
     void render_skeleton_debug_geometry();
-#endif
 
     bool m_should_exit = false;
 };

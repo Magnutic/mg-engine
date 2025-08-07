@@ -24,9 +24,7 @@
 #include <vector>
 
 namespace Mg::gfx {
-class DebugRenderer;
-class ICamera;
-class IRenderTarget;
+class DebugRenderQueue;
 } // namespace Mg::gfx
 
 namespace Mg::gfx::mesh_data {
@@ -510,12 +508,10 @@ public:
     //----------------------------------------------------------------------------------------------
     // Miscellaneous
 
-    /** Use the provided debug renderer and camera to draw debug geometry, visualising the collision
-     * shapes as the physics simulation sees it.
+    /** Add debug visualizations to the debug render queue, visualising the collision shapes as
+     * the physics simulation sees it.
      */
-    void draw_debug(const gfx::IRenderTarget& render_target,
-                    gfx::DebugRenderer& debug_renderer,
-                    const glm::mat4& view_proj);
+    void draw_debug(gfx::DebugRenderQueue& render_queue);
 
     struct Impl;
 

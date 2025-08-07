@@ -14,6 +14,7 @@
 #include "mg/gfx/render_passes/mg_billboard_pass.h"
 #include "mg/gfx/render_passes/mg_blur_pass.h"
 #include "mg/gfx/render_passes/mg_clear_pass.h"
+#include "mg/gfx/render_passes/mg_debug_pass.h"
 #include "mg/gfx/render_passes/mg_mesh_pass.h"
 #include "mg/gfx/render_passes/mg_sky_pass.h"
 #include "mg/gfx/render_passes/mg_tonemap_and_bloom_pass.h"
@@ -126,6 +127,8 @@ private:
                                                                m_render_targets->blur_target(),
                                                                m_render_targets->hdr_target(),
                                                                m_config.bloom_material));
+
+        passes.push_back(std::make_unique<DebugPass>(m_window_render_target));
 
         passes.push_back(std::make_unique<UIPass>(m_window_render_target,
                                                   m_data->ui_render_list,

@@ -18,8 +18,7 @@
 #include <glm/mat4x4.hpp>
 
 namespace Mg::gfx {
-class DebugRenderer;
-class IRenderTarget;
+class DebugRenderQueue;
 } // namespace Mg::gfx
 
 namespace Mg::physics {
@@ -31,10 +30,8 @@ namespace Mg::physics {
  */
 class PhysicsDebugRenderer : public btIDebugDraw {
 public:
-    explicit PhysicsDebugRenderer(const gfx::IRenderTarget& render_target,
-                                  gfx::DebugRenderer& debug_renderer,
-                                  const glm::mat4& view_proj)
-        : m_render_target(&render_target), m_debug_renderer(&debug_renderer), m_view_proj(view_proj)
+    explicit PhysicsDebugRenderer(gfx::DebugRenderQueue& render_queue)
+        : m_render_queue(&render_queue)
     {}
 
     void drawLine(const btVector3& from, const btVector3& to, const btVector3& color) override;
@@ -75,9 +72,7 @@ public:
     int getDebugMode() const override { return m_debug_mode; }
 
 private:
-    const gfx::IRenderTarget* m_render_target;
-    gfx::DebugRenderer* m_debug_renderer;
-    glm::mat4 m_view_proj;
+    gfx::DebugRenderQueue* m_render_queue;
     int m_debug_mode = btIDebugDraw::DBG_DrawAabb | btIDebugDraw::DBG_DrawWireframe;
 };
 

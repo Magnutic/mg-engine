@@ -14,6 +14,7 @@
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
+#include "glm/ext/matrix_transform.hpp"
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
@@ -113,9 +114,11 @@ public:
     MG_MAKE_NON_COPYABLE(DebugRenderQueue);
     MG_MAKE_NON_MOVABLE(DebugRenderQueue);
 
-    void draw_box(DebugRenderer::BoxDrawParams params);
+    void draw_box(DebugRenderer::BoxDrawParams params,
+                  glm::mat4 transform = glm::identity<glm::mat4>());
 
-    void draw_ellipsoid(DebugRenderer::EllipsoidDrawParams params);
+    void draw_ellipsoid(DebugRenderer::EllipsoidDrawParams params,
+                        glm::mat4 transform = glm::identity<glm::mat4>());
 
     void draw_line(std::span<const glm::vec3> points, const glm::vec4& colour, float width = 1.0f);
 
@@ -126,6 +129,10 @@ public:
     {
         draw_line(std::array{ start, end }, colour, width);
     }
+
+    void draw_bones(const glm::mat4& M, const Skeleton& skeleton, const SkeletonPose& pose);
+
+    void draw_view_frustum(const glm::mat4& view_projection_frustum, float max_distance = 0.0f);
 
     void dispatch(const IRenderTarget& render_target,
                   DebugRenderer& renderer,
