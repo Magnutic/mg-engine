@@ -7,7 +7,7 @@
 #include "mg/gfx/mg_skybox_renderer.h"
 
 #include "mg_gl_debug.h"
-#include "mg_glad.h"
+#include "mg_opengl_loader_glad.h"
 
 #include "mg/gfx/mg_camera.h"
 #include "mg/gfx/mg_gfx_debug_group.h"

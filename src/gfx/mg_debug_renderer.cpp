@@ -17,10 +17,10 @@
 #include "mg/gfx/mg_uniform_buffer.h"
 #include "mg/utils/mg_assert.h"
 
-#include "../mg_shader.h"
+#include "mg_shader.h"
 #include "mg_gl_debug.h"
-#include "mg_opengl_shader.h"
-#include "mg_glad.h"
+#include "mg_shader.h"
+#include "mg_opengl_loader_glad.h"
 
 #include <glm/gtc/constants.hpp>
 #include <glm/mat4x4.hpp>

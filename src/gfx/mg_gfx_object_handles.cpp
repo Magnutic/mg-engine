@@ -6,7 +6,7 @@
 
 #include "mg/gfx/mg_gfx_object_handles.h"
 
-#include "opengl/mg_glad.h"
+#include "mg_opengl_loader_glad.h"
 
 namespace Mg::gfx {
 

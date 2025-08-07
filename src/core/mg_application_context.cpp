@@ -10,8 +10,8 @@
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/core/mg_window.h"
-#include "mg/gfx/mg_gfx_device.h"
 #include "mg/utils/mg_math_utils.h"
+#include "../gfx/mg_opengl_loader_glad.h"
 
 #include <atomic>
 #include <chrono>
@@ -38,13 +38,13 @@ struct ApplicationContext::Impl {
     Impl(std::string_view config_file_path, std::string_view initial_window_title)
         : config(config_file_path)
         , window(make_window(initial_window_title))
-        , gfx_device(*window)
         , start_time(Clock::now())
-    {}
+    {
+        gfx::init_opengl_context(*window);
+    }
 
     Config config;
     std::unique_ptr<Window> window;
-    gfx::GfxDevice gfx_device;
     time_point<Clock> start_time;
 
     std::thread::id starting_thread_id = std::this_thread::get_id();
@@ -77,15 +77,6 @@ Config& ApplicationContext::config()
 const Config& ApplicationContext::config() const
 {
     return m_impl->config;
-}
-
-gfx::GfxDevice& ApplicationContext::gfx_device()
-{
-    return m_impl->gfx_device;
-}
-const gfx::GfxDevice& ApplicationContext::gfx_device() const
-{
-    return m_impl->gfx_device;
 }
 
 double ApplicationContext::time_since_init() noexcept

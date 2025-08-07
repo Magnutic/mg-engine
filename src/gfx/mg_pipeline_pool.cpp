@@ -6,7 +6,7 @@
 
 #include "mg/gfx/mg_pipeline_pool.h"
 
-#include "../mg_shader.h"
+#include "mg_shader.h"
 
 #include "mg/containers/mg_flat_map.h"
 #include "mg/core/mg_log.h"

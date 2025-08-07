@@ -19,7 +19,7 @@
 #include "mg/resources/mg_file_changed_event.h"
 #include "mg/utils/mg_assert.h"
 
-#include "opengl/mg_glad.h"
+#include "mg_opengl_loader_glad.h"
 
 #include <plf_colony.h>
 

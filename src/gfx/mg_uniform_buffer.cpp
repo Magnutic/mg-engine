@@ -6,7 +6,7 @@
 
 #include "mg/gfx/mg_uniform_buffer.h"
 
-#include "mg_glad.h"
+#include "mg_opengl_loader_glad.h"
 
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"

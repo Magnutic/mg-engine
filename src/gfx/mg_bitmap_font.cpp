@@ -19,8 +19,8 @@
 #include "mg/utils/mg_stl_helpers.h"
 #include "mg/utils/mg_string_utils.h"
 
-#include "opengl/mg_gl_debug.h"
-#include "opengl/mg_glad.h" // TODO temp
+#include "mg_gl_debug.h"
+#include "mg_opengl_loader_glad.h"
 
 //--------------------------------------------------------------------------------------------------
 // Include stb_truetype.

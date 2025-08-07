@@ -22,10 +22,6 @@ class Config;
 class Window;
 } // namespace Mg
 
-namespace Mg::gfx {
-class GfxDevice;
-}
-
 namespace Mg {
 
 /** Settings controlling main loop updates. */
@@ -113,9 +109,6 @@ public:
 
     Config& config();
     const Config& config() const;
-
-    gfx::GfxDevice& gfx_device();
-    const gfx::GfxDevice& gfx_device() const;
 
     double time_since_init() noexcept;
 

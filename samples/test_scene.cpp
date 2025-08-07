@@ -8,7 +8,6 @@
 #include <mg/core/mg_log.h>
 #include <mg/core/mg_window.h>
 #include <mg/gfx/mg_gfx_debug_group.h>
-#include <mg/gfx/mg_gfx_device.h>
 #include <mg/gfx/mg_light.h>
 #include <mg/mg_unicode.h>
 #include <mg/physics/mg_character_controller.h>

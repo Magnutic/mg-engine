@@ -10,7 +10,7 @@
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
 
-#include "gfx/opengl/mg_glad.h" // TODO: temp
+#include "gfx/mg_opengl_loader_glad.h"
 
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>

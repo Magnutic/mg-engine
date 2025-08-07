@@ -4,14 +4,14 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-#include "mg_opengl_shader.h"
+#include "mg_shader.h"
 
-#include "../mg_shader.h"
-#include "mg_glad.h"
+#include "mg_opengl_loader_glad.h"
 
 #include "mg/core/mg_log.h"
 #include "mg/gfx/mg_gfx_debug_group.h"
 #include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_optional.h"
 
 #include <glm/mat2x2.hpp>
@@ -29,13 +29,44 @@
 
 #include <fmt/core.h>
 
-namespace Mg::gfx::opengl {
-
-//--------------------------------------------------------------------------------------------------
-// Helpers for ShaderProgram implementation
-//--------------------------------------------------------------------------------------------------
+namespace Mg::gfx {
 
 namespace {
+
+template<GLenum shader_stage> Opt<GLuint> compile_shader(const std::string& code)
+{
+    const auto code_c_str = code.c_str();
+
+    // Upload and compile shader.
+    const auto id = glCreateShader(shader_stage);
+    glShaderSource(id, 1, &code_c_str, nullptr);
+    glCompileShader(id);
+
+    // Check shader for compilation errors.
+    int32_t result = GL_FALSE;
+    int32_t log_length;
+    glGetShaderiv(id, GL_COMPILE_STATUS, &result);
+    glGetShaderiv(id, GL_INFO_LOG_LENGTH, &log_length);
+
+    std::string msg;
+
+    // If there was a message, write to log.
+    if (log_length > 1) {
+        msg.resize(as<size_t>(log_length));
+        glGetShaderInfoLog(id, log_length, nullptr, msg.data());
+
+        const auto msg_type = result != 0 ? Log::Prio::Message : Log::Prio::Error;
+        log.write(msg_type, fmt::format("Shader compilation message: {}", msg));
+    }
+
+    // Check whether shader compiled successfully.
+    if (result == GL_FALSE) {
+        glDeleteShader(id);
+        return nullopt;
+    }
+
+    return id;
+}
 
 // Links the given shader program, returning whether linking was successful.
 bool link_program(GLuint program_id)
@@ -101,6 +132,24 @@ Opt<GLuint> uniform_block_index(GLuint ubo_id, std::string_view block_name) noex
 }
 
 } // namespace
+
+Opt<VertexShaderHandle::Owner> compile_vertex_shader(const std::string& code)
+{
+    auto wrap_in_handle = [](GLuint shader_id) { return VertexShaderHandle::Owner{ shader_id }; };
+    return compile_shader<GL_VERTEX_SHADER>(code).map(wrap_in_handle);
+}
+
+Opt<GeometryShaderHandle::Owner> compile_geometry_shader(const std::string& code)
+{
+    auto wrap_in_handle = [](GLuint shader_id) { return GeometryShaderHandle::Owner{ shader_id }; };
+    return compile_shader<GL_GEOMETRY_SHADER>(code).map(wrap_in_handle);
+}
+
+Opt<FragmentShaderHandle::Owner> compile_fragment_shader(const std::string& code)
+{
+    auto wrap_in_handle = [](GLuint shader_id) { return FragmentShaderHandle::Owner{ shader_id }; };
+    return compile_shader<GL_FRAGMENT_SHADER>(code).map(wrap_in_handle);
+}
 
 //--------------------------------------------------------------------------------------------------
 // ShaderProgram implementation
@@ -277,4 +326,5 @@ void set_sampler_binding(UniformLocation location, TextureUnit unit) noexcept
     set_uniform(location, static_cast<int32_t>(unit.get()));
 }
 
-} // namespace Mg::gfx::opengl
+
+} // namespace Mg::gfx

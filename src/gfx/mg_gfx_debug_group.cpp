@@ -6,7 +6,7 @@
 
 #include "mg/gfx/mg_gfx_debug_group.h"
 
-#include "mg_glad.h"
+#include "mg_opengl_loader_glad.h"
 
 namespace Mg::gfx::detail {
 

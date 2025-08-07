@@ -35,26 +35,25 @@ add_library(mg_engine
     gfx/mg_texture_pool.cpp
     gfx/mg_texture_related_types.cpp
     gfx/render_passes/mg_clear_pass.cpp
-    gfx/opengl/mg_billboard_renderer.cpp
-    gfx/opengl/mg_buffer_texture.cpp
-    gfx/opengl/mg_debug_renderer.cpp
-    gfx/opengl/mg_gfx_debug_group.cpp
-    gfx/opengl/mg_gfx_device.cpp
-    gfx/opengl/mg_gl_debug.cpp
-    gfx/opengl/mg_mesh_renderer.cpp
-    gfx/opengl/mg_opengl_shader.cpp
-    gfx/opengl/mg_pipeline.cpp
-    gfx/opengl/mg_pipeline_pool.cpp
-    gfx/opengl/mg_post_process.cpp
-    gfx/opengl/mg_render_target.cpp
-    gfx/opengl/mg_shader.cpp
-    gfx/opengl/mg_skybox_renderer.cpp
-    gfx/opengl/mg_texture2d.cpp
-    gfx/opengl/mg_texture_common.cpp
-    gfx/opengl/mg_texture_cube.cpp
-    gfx/opengl/mg_ui_renderer.cpp
-    gfx/opengl/mg_uniform_buffer.cpp
-    gfx/opengl/shader_code/mg_mesh_renderer_shader_framework.cpp
+    gfx/mg_billboard_renderer.cpp
+    gfx/mg_buffer_texture.cpp
+    gfx/mg_debug_renderer.cpp
+    gfx/mg_gfx_debug_group.cpp
+    gfx/mg_gl_debug.cpp
+    gfx/mg_mesh_renderer.cpp
+    gfx/mg_opengl_loader_glad.cpp
+    gfx/mg_pipeline.cpp
+    gfx/mg_pipeline_pool.cpp
+    gfx/mg_post_process.cpp
+    gfx/mg_render_target.cpp
+    gfx/mg_shader.cpp
+    gfx/mg_skybox_renderer.cpp
+    gfx/mg_texture2d.cpp
+    gfx/mg_texture_common.cpp
+    gfx/mg_texture_cube.cpp
+    gfx/mg_ui_renderer.cpp
+    gfx/mg_uniform_buffer.cpp
+    gfx/shader_code/mg_mesh_renderer_shader_framework.cpp
     input/mg_input.cpp
     input/mg_keyboard.cpp
     input/mg_mouse.cpp

@@ -4,7 +4,7 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-#include "mg_glad.h"
+#include "mg_opengl_loader_glad.h"
 
 #include <cstdint>
 

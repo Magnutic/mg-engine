@@ -6,7 +6,7 @@
 
 #include "mg/gfx/render_passes/mg_clear_pass.h"
 
-#include "../opengl/mg_glad.h"
+#include "../mg_opengl_loader_glad.h"
 
 #include <algorithm>
 

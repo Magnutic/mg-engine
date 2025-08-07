@@ -10,11 +10,11 @@
 
 #pragma once
 
-#include "mg_glad.h"
-
-#include <mg/utils/mg_macros.h>
+#include "mg/utils/mg_macros.h"
+#include "mg_opengl_loader_glad.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <string_view>
 
 /** Check for and notify on OpenGL errors. */

@@ -6,12 +6,11 @@
 
 #include "mg/gfx/mg_pipeline.h"
 
-#include "../mg_shader.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/gfx/mg_shader_related_types.h"
 #include "mg_gl_debug.h"
-#include "mg_opengl_shader.h"
-#include "mg_glad.h"
+#include "mg_shader.h"
+#include "mg_opengl_loader_glad.h"
 
 #include "mg/core/mg_log.h"
 #include "mg/gfx/mg_buffer_texture.h"
@@ -66,9 +65,7 @@ Opt<Pipeline> Pipeline::make(const Params& params)
 {
     // Note: in OpenGL, PipelineHandle refers to shader programs.
     Opt<PipelineHandle::Owner> opt_program_handle =
-        opengl::link_shader_program(params.vertex_shader,
-                                    params.geometry_shader,
-                                    params.fragment_shader);
+        link_shader_program(params.vertex_shader, params.geometry_shader, params.fragment_shader);
     if (opt_program_handle) {
         return Pipeline(opt_program_handle.value().release(),
                         params.shared_input_layout,
@@ -114,11 +111,9 @@ void bind_pipeline_input_set(std::span<const PipelineInputBinding> bindings)
 }
 
 // Configure the given shader using the input descriptors.
-void apply_input_descriptor(const opengl::ShaderProgramHandle& shader_handle,
+void apply_input_descriptor(const ShaderProgramHandle& shader_handle,
                             const PipelineInputDescriptor& input_descriptor)
 {
-    using namespace opengl;
-
     const auto& [input_name, type, location, mandatory] = input_descriptor;
     const auto name = input_name.str_view();
 
@@ -132,7 +127,7 @@ void apply_input_descriptor(const opengl::ShaderProgramHandle& shader_handle,
         [[fallthrough]];
 
     case PipelineInputType::Sampler2D: {
-        const Opt<UniformLocation> uniform_index = opengl::uniform_location(shader_handle, name);
+        const Opt<UniformLocation> uniform_index = uniform_location(shader_handle, name);
         if (uniform_index) {
             set_sampler_binding(*uniform_index, TextureUnit{ location });
         }
@@ -177,7 +172,7 @@ Pipeline::Pipeline(PipelineHandle internal_handle,
 {
     MG_GFX_DEBUG_GROUP("Create Pipeline")
 
-    opengl::use_program(internal_handle);
+    use_program(internal_handle);
 
     for (auto&& location : shared_input_layout) {
         apply_input_descriptor(internal_handle, location);
@@ -190,7 +185,7 @@ Pipeline::Pipeline(PipelineHandle internal_handle,
 Pipeline::~Pipeline()
 {
     MG_GFX_DEBUG_GROUP("Pipeline::~Pipeline")
-    opengl::destroy_shader_program(m_handle);
+    destroy_shader_program(m_handle);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -393,7 +388,7 @@ void PipelineBindingContext::bind_pipeline(const Pipeline& pipeline,
     MG_GFX_DEBUG_GROUP("PipelineBindingContext::bind_pipeline")
 
     if (pipeline.handle() != m_bound_handle) {
-        opengl::use_program(pipeline.handle());
+        use_program(pipeline.handle());
         m_bound_handle = pipeline.handle();
     }
 

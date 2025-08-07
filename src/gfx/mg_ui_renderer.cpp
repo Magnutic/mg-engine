@@ -6,7 +6,7 @@
 
 #include "mg/gfx/mg_ui_renderer.h"
 
-#include "../mg_shader.h"
+#include "mg_shader.h"
 
 #include "mg/containers/mg_array.h"
 #include "mg/gfx/mg_bitmap_font.h"

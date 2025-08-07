@@ -12,7 +12,6 @@
 #include "mg/gfx/mg_camera.h"
 #include "mg/gfx/mg_debug_renderer.h"
 #include "mg/gfx/mg_gfx_debug_group.h"
-#include "mg/gfx/mg_gfx_device.h"
 #include "mg/gfx/mg_material.h"
 #include "mg/gfx/mg_pipeline_pool.h"
 #include "mg/gfx/mg_render_target.h"
@@ -22,8 +21,8 @@
 #include "mg/utils/mg_stl_helpers.h"
 
 #include "mg_gl_debug.h"
-#include "mg_opengl_shader.h"
-#include "mg_glad.h"
+#include "mg_shader.h"
+#include "mg_opengl_loader_glad.h"
 
 #ifndef GLM_ENABLE_EXPERIMENTAL
 #    define GLM_ENABLE_EXPERIMENTAL
