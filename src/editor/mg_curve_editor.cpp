@@ -4,11 +4,11 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-#include <mg/core/mg_window.h>
-#include <mg/editor/mg_curve_editor.h>
-#include <mg/mg_imgui_overlay.h>
-#include <mg/utils/mg_gsl.h>
-#include <mg/utils/mg_math_utils.h>
+#include "mg/core/mg_window.h"
+#include "mg/editor/mg_curve_editor.h"
+#include "mg/mg_imgui_overlay.h"
+#include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_math_utils.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS 1
 #include "imgui.h"

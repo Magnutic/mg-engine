@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include <mg/utils/mg_enum.h>
+#include "mg/utils/mg_enum.h"
 
 #include <compare>
 

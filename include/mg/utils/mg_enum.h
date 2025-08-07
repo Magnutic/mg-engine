@@ -10,9 +10,9 @@
 
 #pragma once
 
-#include <mg/utils/mg_gsl.h>
-#include <mg/utils/mg_optional.h>
-#include <mg/utils/mg_string_utils.h>
+#include "mg/utils/mg_gsl.h"
+#include "mg/utils/mg_optional.h"
+#include "mg/utils/mg_string_utils.h"
 
 #include <array>
 #include <cstdint>

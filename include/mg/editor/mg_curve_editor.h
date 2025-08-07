@@ -10,10 +10,10 @@
 
 #pragma once
 
-#include <mg/core/mg_curve.h>
-#include <mg/utils/mg_impl_ptr.h>
-#include <mg/utils/mg_macros.h>
-#include <mg/utils/mg_optional.h>
+#include "mg/core/mg_curve.h"
+#include "mg/utils/mg_impl_ptr.h"
+#include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_optional.h"
 
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
