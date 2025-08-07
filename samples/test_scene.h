@@ -2,6 +2,7 @@
 
 #include <mg/containers/mg_small_vector.h>
 #include <mg/core/mg_application_context.h>
+#include <mg/core/mg_config.h>
 #include <mg/core/mg_identifier.h>
 #include <mg/core/mg_window_settings.h>
 #include <mg/ecs/mg_entity.h>
@@ -22,13 +23,14 @@
 
 class Scene : public Mg::IApplication, Mg::SceneResources {
 public:
-    Scene(Mg::ApplicationContext& app);
+    Scene(Mg::Config& config, Mg::Window& window);
     ~Scene() override;
 
     MG_MAKE_NON_MOVABLE(Scene);
     MG_MAKE_NON_COPYABLE(Scene);
 
-    Mg::ApplicationContext& app;
+    Mg::Config& config;
+    Mg::Window& window;
     Mg::gfx::Camera camera;
 
     std::shared_ptr<Mg::input::ButtonTracker> sample_control_button_tracker;
@@ -44,10 +46,10 @@ public:
 
     int debug_visualization = 0;
 
-    void simulation_step() override;
-    void render(double lerp_factor) override;
+    void simulation_step(Mg::ApplicationTimeInfo time_info) override;
+    void render(double lerp_factor, Mg::ApplicationTimeInfo time_info) override;
     bool should_exit() const override { return m_should_exit; }
-    Mg::UpdateTimerSettings update_timer_settings() const override;
+    Mg::UpdateTimerConfig update_timer_config() const override;
 
 private:
     void setup_config();

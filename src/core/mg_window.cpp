@@ -15,6 +15,7 @@
 #include "mg/input/mg_mouse.h"
 #include "mg/mg_defs.h"
 #include "mg/utils/mg_gsl.h"
+#include "../gfx/mg_opengl_loader_glad.h"
 
 #include <fmt/core.h>
 
@@ -160,82 +161,74 @@ Array<VideoMode> find_available_video_modes()
 
 //--------------------------------------------------------------------------------------------------
 
-std::unique_ptr<Window> Window::make(WindowSettings settings, std::string title)
+Window::Window(WindowSettings settings, std::string title)
 {
     glfwSetErrorCallback(glfw_error_callback);
 
     // glfwInit() may be called multiple times
     if (glfwInit() == GLFW_FALSE) {
-        log.error("Window::make(): failed to initialize GLFW.");
-        return {};
+        throw RuntimeError{ "Window::make(): failed to initialize GLFW." };
     }
 
     settings = sanitize_settings(settings);
 
-    GLFWwindow* window = create_window();
-
-    if (window == nullptr) {
-        return {};
+    m_window = create_window();
+    if (m_window == nullptr) {
+        throw RuntimeError{ "Failed to create GLFW window." };
     }
-
-    set_vsync(window, settings.vsync);
 
     // Set up callbacks
 
-    glfwSetCursorPosCallback(window, [](GLFWwindow* w, double x, double y) {
+    glfwSetCursorPosCallback(m_window, [](GLFWwindow* w, double x, double y) {
         window_from_glfw_handle(w).cursor_position_callback(float(x), float(y));
     });
 
-    glfwSetMouseButtonCallback(window, [](GLFWwindow* w, int button, int action, int mods) {
+    glfwSetMouseButtonCallback(m_window, [](GLFWwindow* w, int button, int action, int mods) {
         window_from_glfw_handle(w).mouse_button_callback(button, action, mods);
     });
 
-    glfwSetScrollCallback(window, [](GLFWwindow* w, double xoffset, double yoffset) {
+    glfwSetScrollCallback(m_window, [](GLFWwindow* w, double xoffset, double yoffset) {
         window_from_glfw_handle(w).scroll_callback(float(xoffset), float(yoffset));
     });
 
-    glfwSetKeyCallback(window, [](GLFWwindow* w, int key, int scancode, int action, int mods) {
+    glfwSetKeyCallback(m_window, [](GLFWwindow* w, int key, int scancode, int action, int mods) {
         window_from_glfw_handle(w).key_callback(key, scancode, action, mods);
     });
 
-    glfwSetWindowFocusCallback(window, [](GLFWwindow* w, int focused) {
+    glfwSetWindowFocusCallback(m_window, [](GLFWwindow* w, int focused) {
         window_from_glfw_handle(w).focus_callback(focused != 0);
     });
 
-    glfwSetFramebufferSizeCallback(window, [](GLFWwindow* w, int width, int height) {
+    glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* w, int width, int height) {
         window_from_glfw_handle(w).frame_buffer_size_callback(width, height);
     });
 
-    glfwSetWindowSizeCallback(window, [](GLFWwindow* w, int width, int height) {
+    glfwSetWindowSizeCallback(m_window, [](GLFWwindow* w, int width, int height) {
         window_from_glfw_handle(w).window_size_callback(width, height);
     });
 
     if (glfwRawMouseMotionSupported() == GLFW_TRUE) {
         log.message("Raw mouse-motion input enabled.");
-        glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        glfwSetInputMode(m_window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     }
     else {
         log.message("Raw mouse-motion input unavailable.");
     }
 
-    auto window_handle = std::make_unique<Window>(ConstructKey{}, window, settings);
-    window_handle->apply_settings(settings);
-    window_handle->set_title(std::move(title));
+    apply_settings(settings);
+    set_title(std::move(title));
+    render_target->set_size(m_settings.video_mode.width, m_settings.video_mode.height);
 
-    return window_handle;
-}
+    gfx::init_opengl_context(*this);
 
-Window::Window(ConstructKey /*unused*/, GLFWwindow* handle, WindowSettings settings)
-    : m_settings{ settings }, m_window{ handle }
-{
     MG_ASSERT(s_window == nullptr && "Only one Mg::Window may exist at a time.");
     s_window = this;
-    render_target->set_size(m_settings.video_mode.width, m_settings.video_mode.height);
 }
 
 Window::~Window()
 {
     log.message("Closing window '{}'.", m_title);
+    s_window = nullptr;
 
     glfwDestroyWindow(m_window);
     glfwTerminate();

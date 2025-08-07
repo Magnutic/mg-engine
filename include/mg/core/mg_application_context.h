@@ -25,7 +25,7 @@ class Window;
 namespace Mg {
 
 /** Settings controlling main loop updates. */
-struct UpdateTimerSettings {
+struct UpdateTimerConfig {
     /** Number of invocations to `IApplication::simulation_step` per second. */
     int simulation_steps_per_second = 60;
 
@@ -57,9 +57,15 @@ struct UpdateTimerSettings {
     int max_time_steps_at_once = 10;
 };
 
+struct ApplicationTimeInfo {
+    double time_since_init = 0.0;
+    double frames_per_second = 0.0;
+    double last_frame_time_seconds = 0.0;
+};
+
 /** Interface for Mg Engine applications. Implementing this interface allows the use of
  * `ApplicationContext` to run the application, invoking the `simulation_step` and `render` member
- * functions according to the `update_timer_settings`.
+ * functions according to the `update_timer_config`.
  * @seealso ApplicationContext
  */
 class IApplication {
@@ -67,13 +73,13 @@ public:
     MG_INTERFACE_BOILERPLATE(IApplication);
 
     /** Simulation step function. Advances the simulation by one time-step. */
-    virtual void simulation_step() = 0;
+    virtual void simulation_step(ApplicationTimeInfo time_info) = 0;
 
     /** Rendering update function. The interpolation_factor is the proportion of a time-step
      * duration that has passed since the last invocation to simulation_step, which is useful for
      * interpolating the world state to create a smooth visualization.
      */
-    virtual void render(double interpolation_factor) = 0;
+    virtual void render(double interpolation_factor, ApplicationTimeInfo time_info) = 0;
 
     /** If this returns true, the simulation loop ends. */
     virtual bool should_exit() const = 0;
@@ -81,12 +87,7 @@ public:
     /** Settings controlling update timing settings. Changes to this value will take effect
      * immediately.
      */
-    virtual UpdateTimerSettings update_timer_settings() const = 0;
-};
-
-struct PerformanceInfo {
-    double frames_per_second = 0.0;
-    double last_frame_time_seconds = 0.0;
+    virtual UpdateTimerConfig update_timer_config() const = 0;
 };
 
 /* The `ApplicationContext` is a framework for running an Mg Engine application, holding a window,
@@ -96,23 +97,10 @@ struct PerformanceInfo {
  */
 class ApplicationContext {
 public:
-    explicit ApplicationContext(std::string_view config_file_path,
-                                std::string_view initial_window_title);
+    ApplicationContext();
+    ~ApplicationContext();
 
-    ~ApplicationContext() = default;
-
-    MG_MAKE_NON_COPYABLE(ApplicationContext);
-    MG_MAKE_NON_MOVABLE(ApplicationContext);
-
-    Window& window();
-    const Window& window() const;
-
-    Config& config();
-    const Config& config() const;
-
-    double time_since_init() noexcept;
-
-    PerformanceInfo performance_info() const;
+    ApplicationTimeInfo time_info() const;
 
     /** Run main loop. Must be called from main thread. */
     void run_main_loop(IApplication& application);

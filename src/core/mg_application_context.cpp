@@ -6,10 +6,8 @@
 
 #include "mg/core/mg_application_context.h"
 
-#include "mg/core/mg_config.h"
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
-#include "mg/core/mg_window.h"
 #include "mg/utils/mg_math_utils.h"
 #include "../gfx/mg_opengl_loader_glad.h"
 
@@ -22,73 +20,29 @@
 namespace Mg {
 
 using namespace std::chrono;
-using Clock = std::chrono::high_resolution_clock;
 using namespace std::literals;
-
-inline std::unique_ptr<Window> make_window(std::string_view initial_window_title)
-{
-    auto window = Window::make(Mg::WindowSettings{}, "Mg Engine Test Scene");
-    if (!window) {
-        throw RuntimeError("Failed to create window '{}'.", initial_window_title);
-    }
-    return window;
-}
+using Clock = std::chrono::high_resolution_clock;
+using SecondsDouble = duration<double, seconds::period>;
 
 struct ApplicationContext::Impl {
-    Impl(std::string_view config_file_path, std::string_view initial_window_title)
-        : config(config_file_path)
-        , window(make_window(initial_window_title))
-        , start_time(Clock::now())
-    {
-        gfx::init_opengl_context(*window);
-    }
-
-    Config config;
-    std::unique_ptr<Window> window;
-    time_point<Clock> start_time;
+    time_point<Clock> start_time{};
 
     std::thread::id starting_thread_id = std::this_thread::get_id();
 
     std::atomic_bool main_loop_is_running = false;
     std::atomic_bool main_loop_should_stop = false;
 
-    mutable std::mutex performance_info_mutex;
-    PerformanceInfo performance_info = {};
+    mutable std::mutex time_info_mutex;
+    ApplicationTimeInfo time_info = {};
 };
 
-ApplicationContext::ApplicationContext(std::string_view config_file_path,
-                                       std::string_view initial_window_title)
-    : m_impl(config_file_path, initial_window_title)
-{}
+ApplicationContext::ApplicationContext() = default;
+ApplicationContext::~ApplicationContext() = default;
 
-Window& ApplicationContext::window()
+ApplicationTimeInfo ApplicationContext::time_info() const
 {
-    return *m_impl->window;
-}
-const Window& ApplicationContext::window() const
-{
-    return *m_impl->window;
-}
-
-Config& ApplicationContext::config()
-{
-    return m_impl->config;
-}
-const Config& ApplicationContext::config() const
-{
-    return m_impl->config;
-}
-
-double ApplicationContext::time_since_init() noexcept
-{
-    using seconds_double = duration<double, seconds::period>;
-    return seconds_double(Clock::now() - m_impl->start_time).count();
-}
-
-PerformanceInfo ApplicationContext::performance_info() const
-{
-    std::lock_guard g{ m_impl->performance_info_mutex };
-    return m_impl->performance_info;
+    std::lock_guard g{ m_impl->time_info_mutex };
+    return m_impl->time_info;
 };
 
 void ApplicationContext::run_main_loop(IApplication& application)
@@ -96,6 +50,8 @@ void ApplicationContext::run_main_loop(IApplication& application)
     if (m_impl->main_loop_is_running.exchange(true)) {
         throw RuntimeError{ "ApplicationContext::run_main_loop: main loop already running." };
     }
+
+    m_impl->start_time = Clock::now();
 
     log.message("Starting main loop.");
 
@@ -108,13 +64,13 @@ void ApplicationContext::run_main_loop(IApplication& application)
     frame_time_samples.fill(0.0);
     size_t frame_time_sample_index = 0;
 
-    double last_loop_time = time_since_init();
-    double last_render_time = last_loop_time;
+    double last_loop_time = 0.0f;
+    double last_render_time = 0.0f;
 
     // Run two simulation steps before rendering. One for initializing before starting to render,
     // and a second to have two valid results to interpolate between.
-    application.simulation_step();
-    application.simulation_step();
+    application.simulation_step(m_impl->time_info);
+    application.simulation_step(m_impl->time_info);
 
     for (;;) {
         // Check if it is time to stop.
@@ -129,13 +85,19 @@ void ApplicationContext::run_main_loop(IApplication& application)
             }
         }
 
-        const double time = time_since_init();
+        {
+            std::lock_guard g{ m_impl->time_info_mutex };
+            m_impl->time_info.time_since_init =
+                SecondsDouble(Clock::now() - m_impl->start_time).count();
+        }
+
+        const double time = m_impl->time_info.time_since_init;
         const double loop_time_delta = time - last_loop_time;
         last_loop_time = time;
 
         // Get update settings. Note that we do this every iteration, in case the application
         // changes its settings.
-        UpdateTimerSettings settings = application.update_timer_settings();
+        const auto settings = application.update_timer_config();
 
         // Minimum time between rendering updates.
         const double min_frame_time = settings.max_frames_per_second > 0
@@ -154,7 +116,7 @@ void ApplicationContext::run_main_loop(IApplication& application)
         const bool should_run_simulation_step = step_accumulator >= simulation_time_step;
         if (should_run_simulation_step) {
             while (step_accumulator >= simulation_time_step) {
-                application.simulation_step();
+                application.simulation_step(m_impl->time_info);
                 step_accumulator -= simulation_time_step;
             }
         }
@@ -167,7 +129,7 @@ void ApplicationContext::run_main_loop(IApplication& application)
             const auto interpolation_factor = settings.decouple_rendering_from_time_step
                                                   ? step_accumulator / simulation_time_step
                                                   : 0.0;
-            application.render(interpolation_factor);
+            application.render(interpolation_factor, m_impl->time_info);
             render_accumulator = 0.0;
 
             ++frame_time_sample_index;
@@ -179,9 +141,9 @@ void ApplicationContext::run_main_loop(IApplication& application)
 
             // Update performance info.
             {
-                std::lock_guard g{ m_impl->performance_info_mutex };
-                m_impl->performance_info.last_frame_time_seconds = frame_time_delta;
-                m_impl->performance_info.frames_per_second =
+                std::lock_guard g{ m_impl->time_info_mutex };
+                m_impl->time_info.last_frame_time_seconds = frame_time_delta;
+                m_impl->time_info.frames_per_second =
                     1.0 /
                     (std::accumulate(frame_time_samples.begin(), frame_time_samples.end(), 0.0) /
                      frame_time_samples.size());

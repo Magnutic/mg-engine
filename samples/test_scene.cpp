@@ -1,12 +1,9 @@
 #include "test_scene.h"
-#include "mg/core/mg_application_context.h"
-#include "mg/gfx/mg_debug_renderer.h"
-#include "mg/scene/mg_common_scene_components.h"
-#include "mg/scene/mg_scene.h"
 
-#include <mg/core/mg_config.h>
+#include <mg/core/mg_application_context.h>
 #include <mg/core/mg_log.h>
 #include <mg/core/mg_window.h>
+#include <mg/gfx/mg_debug_renderer.h>
 #include <mg/gfx/mg_gfx_debug_group.h>
 #include <mg/gfx/mg_light.h>
 #include <mg/mg_unicode.h>
@@ -17,6 +14,8 @@
 #include <mg/resources/mg_shader_resource.h>
 #include <mg/resources/mg_sound_resource.h>
 #include <mg/resources/mg_texture_resource.h>
+#include <mg/scene/mg_common_scene_components.h>
+#include <mg/scene/mg_scene.h>
 #include <mg/utils/mg_angle.h>
 #include <mg/utils/mg_file_io.h>
 #include <mg/utils/mg_rand.h>
@@ -35,28 +34,20 @@ constexpr float k_light_radius = 3.0f;
 
 } // namespace
 
-Scene::Scene(Mg::ApplicationContext& application_context)
+Scene::Scene(Mg::Config& config, Mg::Window& window)
     : Mg::SceneResources{ std::make_shared<Mg::ResourceCache>(
           std::make_unique<Mg::BasicFileLoader>("../samples/data")) }
-    , app{ application_context }
+    , config{ config }
+    , window{ window }
 {
     MG_GFX_DEBUG_GROUP_BY_FUNCTION
     using namespace Mg::literals;
 
     setup_config();
+    window.set_cursor_lock_mode(Mg::CursorLockMode::LOCKED);
+    window.set_focus_callback([this](bool is_focused) { on_window_focus_change(is_focused); });
 
-    // Configure window
-    {
-        app.window().set_focus_callback(
-            [this](bool is_focused) { on_window_focus_change(is_focused); });
-
-        Mg::WindowSettings window_settings = read_display_settings(app.config());
-        app.window().set_title("Mg Engine Example Application");
-        app.window().apply_settings(window_settings);
-        app.window().set_cursor_lock_mode(Mg::CursorLockMode::LOCKED);
-    }
-
-    camera.set_aspect_ratio(app.window().aspect_ratio());
+    camera.set_aspect_ratio(window.aspect_ratio());
     camera.field_of_view = 80_degrees;
 
     renderer_data = make_renderer_data();
@@ -69,19 +60,19 @@ Scene::Scene(Mg::ApplicationContext& application_context)
     };
     renderer = std::make_unique<Mg::gfx::SimpleSceneRenderer>(*m_resource_cache,
                                                               m_texture_pool,
-                                                              app.window(),
+                                                              window,
                                                               renderer_config,
                                                               renderer_data);
 
-    sample_control_button_tracker = std::make_shared<Mg::input::ButtonTracker>(app.window());
+    sample_control_button_tracker = std::make_shared<Mg::input::ButtonTracker>(window);
     sample_control_button_tracker->bind("swap_movement_mode", Mg::input::Key::E);
     sample_control_button_tracker->bind("fullscreen", Mg::input::Key::F4);
     sample_control_button_tracker->bind("exit", Mg::input::Key::Esc);
     sample_control_button_tracker->bind("next_debug_visualization", Mg::input::Key::F);
     sample_control_button_tracker->bind("reset", Mg::input::Key::R);
 
-    auto button_tracker = std::make_shared<Mg::input::ButtonTracker>(app.window());
-    auto mouse_movement_tracker = std::make_shared<Mg::input::MouseMovementTracker>(app.window());
+    auto button_tracker = std::make_shared<Mg::input::ButtonTracker>(window);
+    auto mouse_movement_tracker = std::make_shared<Mg::input::MouseMovementTracker>(window);
     player_controller = std::make_unique<Mg::PlayerController>(button_tracker,
                                                                mouse_movement_tracker);
     editor_controller = std::make_unique<Mg::EditorController>(button_tracker,
@@ -104,21 +95,21 @@ Scene::Scene(Mg::ApplicationContext& application_context)
 
 Scene::~Scene()
 {
-    Mg::write_display_settings(app.config(), app.window().settings());
-    app.config().write_to_file(config_file);
+    Mg::write_display_settings(config, window.settings());
+    config.write_to_file(config_file);
 }
 
-void Scene::simulation_step()
+void Scene::simulation_step(const Mg::ApplicationTimeInfo /*time_info*/)
 {
     using namespace Mg::literals;
 
     Mg::gfx::get_debug_render_queue().clear();
 
-    app.window().poll_input_events();
+    window.poll_input_events();
 
     auto button_states = sample_control_button_tracker->get_button_events();
 
-    if (button_states["exit"].was_pressed || app.window().should_close_flag()) {
+    if (button_states["exit"].was_pressed || window.should_close_flag()) {
         m_should_exit = true;
     }
 
@@ -126,14 +117,14 @@ void Scene::simulation_step()
 
     // Fullscreen switching
     if (button_states["fullscreen"].was_pressed) {
-        Mg::WindowSettings s = app.window().settings();
+        Mg::WindowSettings s = window.settings();
         s.fullscreen = !s.fullscreen;
         s.video_mode = {}; // reset resolution etc. to defaults
-        app.window().apply_settings(s);
-        camera.set_aspect_ratio(app.window().aspect_ratio());
+        window.apply_settings(s);
+        camera.set_aspect_ratio(window.aspect_ratio());
 
-        if (app.window().is_cursor_locked_to_window() && !s.fullscreen) {
-            app.window().release_cursor();
+        if (window.is_cursor_locked_to_window() && !s.fullscreen) {
+            window.release_cursor();
         }
     }
 
@@ -161,15 +152,15 @@ void Scene::simulation_step()
     character_controller->update(1.0f / k_steps_per_second);
 }
 
-void Scene::render(const double lerp_factor)
+void Scene::render(const double lerp_factor, const Mg::ApplicationTimeInfo time_info)
 {
     MG_GFX_DEBUG_GROUP_BY_FUNCTION
 
     // Mouselook. Doing this in render step instead of in simulation_step to minimize input lag.
     {
-        app.window().poll_input_events();
-        current_controller->handle_rotation_inputs(app.config().as<float>("mouse_sensitivity_x"),
-                                                   app.config().as<float>("mouse_sensitivity_y"));
+        window.poll_input_events();
+        current_controller->handle_rotation_inputs(config.as<float>("mouse_sensitivity_x"),
+                                                   config.as<float>("mouse_sensitivity_y"));
         camera.rotation = current_controller->get_rotation();
     }
 
@@ -177,7 +168,7 @@ void Scene::render(const double lerp_factor)
     camera.position.z += character_controller->current_height_smooth(float(lerp_factor)) * 0.95f;
     camera.exposure = -5.0f;
 
-    Mg::scene::advance_animations(entities, float(app.time_since_init()));
+    Mg::scene::advance_animations(entities, float(time_info.time_since_init));
 
     // Draw meshes and billboards.
     renderer_data->mesh_render_command_producer->clear();
@@ -190,9 +181,9 @@ void Scene::render(const double lerp_factor)
         const glm::vec3 v = character_controller->velocity();
         const glm::vec3 p = character_controller->get_position();
 
-        auto text = fmt::format("FPS: {:.2f}", app.performance_info().frames_per_second);
+        auto text = fmt::format("FPS: {:.2f}", time_info.frames_per_second);
         text += fmt::format("\nLast frame time: {:.2f} ms",
-                            app.performance_info().last_frame_time_seconds * 1'000);
+                            time_info.last_frame_time_seconds * 1'000);
         text += fmt::format("\nVelocity: {{{:.2f}, {:.2f}, {:.2f}}}", v.x, v.y, v.z);
         text += fmt::format("\nPosition: {{{:.2f}, {:.2f}, {:.2f}}}", p.x, p.y, p.z);
         text += fmt::format("\nGrounded: {:b}", character_controller->is_on_ground());
@@ -214,25 +205,24 @@ void Scene::render(const double lerp_factor)
         break;
     }
 
-    renderer->render({ .camera = camera, .time_since_init = float(app.time_since_init()) });
-    app.window().swap_buffers();
+    renderer->render({ .camera = camera, .time_since_init = float(time_info.time_since_init) });
+    window.swap_buffers();
 }
 
-Mg::UpdateTimerSettings Scene::update_timer_settings() const
+Mg::UpdateTimerConfig Scene::update_timer_config() const
 {
-    Mg::UpdateTimerSettings settings;
-    settings.max_frames_per_second = 120;
-    settings.max_time_steps_at_once = 10;
-    settings.decouple_rendering_from_time_step = true;
-    settings.simulation_steps_per_second = k_steps_per_second;
-    return settings;
+    return {
+        .simulation_steps_per_second = k_steps_per_second,
+        .max_frames_per_second = 120,
+        .decouple_rendering_from_time_step = true,
+        .max_time_steps_at_once = 10,
+    };
 }
 
 void Scene::setup_config()
 {
-    auto& cfg = app.config();
-    cfg.set_default_value("mouse_sensitivity_x", 0.4f);
-    cfg.set_default_value("mouse_sensitivity_y", 0.4f);
+    config.set_default_value("mouse_sensitivity_x", 0.4f);
+    config.set_default_value("mouse_sensitivity_y", 0.4f);
 }
 
 std::unique_ptr<Mg::gfx::BitmapFont> Scene::make_font() const
@@ -471,9 +461,11 @@ void Scene::on_window_focus_change(const bool is_focused)
 int main(int /*argc*/, char* /*argv*/[])
 {
     try {
-        Mg::ApplicationContext app{ config_file, window_title };
-        Scene scene{ app };
-        app.run_main_loop(scene);
+        Mg::Config config{ config_file };
+        Mg::Window window{ read_display_settings(config), window_title };
+
+        Scene scene{ config, window };
+        Mg::ApplicationContext{}.run_main_loop(scene);
     }
     catch (const std::exception& e) {
         Mg::log.error(e.what());

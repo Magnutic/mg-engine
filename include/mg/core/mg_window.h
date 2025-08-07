@@ -46,8 +46,6 @@ enum class CursorLockMode { UNLOCKED, LOCKED };
 
 /** Window handling class. Presently, there is no support for multiple windows. */
 class Window : public input::IInputSource {
-    struct ConstructKey {}; // Limits access to Window constructor
-
 public:
     /** Callback to invoke when window gains or loses focus.
      * Parameters: bool is_focused, whether the window is focused.
@@ -55,10 +53,7 @@ public:
     using FocusCallbackT = std::function<void(bool)>;
 
     /** Create new window. */
-    static std::unique_ptr<Window> make(WindowSettings settings, std::string title);
-
-    /** Restricted constructor (see Window::make()). */
-    explicit Window(ConstructKey, GLFWwindow* handle, WindowSettings settings);
+    explicit Window(WindowSettings settings, std::string title);
 
     ~Window() override;
 
