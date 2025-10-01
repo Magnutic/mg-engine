@@ -70,11 +70,6 @@ enum class ColourFormat {
 class TextureRenderTarget : public IRenderTarget {
     struct PrivateCtorKey {};
 
-    // TODO: support multisampling, see
-    // https://www.opengl.org/wiki/Framebuffer#Multisampling_Considerations
-
-    // TODO: support multiple render targets, i.e. more than one colour_target.
-    // (probably small_vector<TextureHandle, 3>)
 public:
     /** Type of depth buffer to use when a depth target texture has not been provided. */
     enum class DepthType {
