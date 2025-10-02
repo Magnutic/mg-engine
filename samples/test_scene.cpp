@@ -53,10 +53,8 @@ Scene::Scene(Mg::Config& config, Mg::Window& window)
     renderer_data = make_renderer_data();
     Mg::gfx::SimpleSceneRendererConfig renderer_config = {
         .sky_material = m_material_pool->get_or_load("materials/skybox.hjson"),
-        .blur_material =
-            m_material_pool->copy("blur", m_material_pool->get_or_load("materials/blur.hjson")),
-        .bloom_material =
-            m_material_pool->copy("bloom", m_material_pool->get_or_load("materials/bloom.hjson"))
+        .blur_material = m_material_pool->load_as_mutable("blur", "materials/blur.hjson"),
+        .bloom_material = m_material_pool->load_as_mutable("bloom", "materials/bloom.hjson"),
     };
     renderer = std::make_unique<Mg::gfx::SimpleSceneRenderer>(*m_resource_cache,
                                                               m_texture_pool,

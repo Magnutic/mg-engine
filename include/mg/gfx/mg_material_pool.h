@@ -46,10 +46,16 @@ public:
     /** Get (if already loaded) or else load a Material from the ResourceCache.
      * Note that this returns an immutable const Material*. The reason for this is so that future
      * calls to this function do not return a mutated version of the Material. If you need to edit
-     * a Material that was loaded from a MaterialResource, first copy the Material using
-     * MaterialPool::copy() and edit the copy instead.
+     * a Material that was loaded from a MaterialResource, instead use MaterialPool::load_as_mutable
+     * to get a copy to edit.
      */
     const Material* get_or_load(Identifier id);
+
+    /** Load a material from file and return a mutable copy of the Material. */
+    Material* load_as_mutable(Identifier new_id, Identifier resource_id)
+    {
+        return copy(new_id, get_or_load(resource_id));
+    }
 
     Material* copy(Identifier id, const Material* source);
 
