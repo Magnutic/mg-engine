@@ -10,8 +10,6 @@
 #pragma once
 
 #include "mg/gfx/mg_bitmap_font.h"
-#include "mg/gfx/mg_blur_renderer.h"
-#include "mg/gfx/mg_post_process.h"
 #include "mg/gfx/mg_ui_renderer.h"
 #include "mg/gfx/render_passes/mg_irender_pass.h"
 

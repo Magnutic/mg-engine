@@ -9,11 +9,11 @@
 
 #pragma once
 
-#include "mg/gfx/mg_blur_renderer.h"
 #include "mg/gfx/mg_material.h"
 #include "mg/gfx/mg_post_process.h"
 #include "mg/gfx/mg_render_target.h"
 #include "mg/gfx/mg_texture2d.h"
+#include "mg/gfx/render_passes/mg_blur_pass.h"
 #include "mg/gfx/render_passes/mg_irender_pass.h"
 
 #include <memory>

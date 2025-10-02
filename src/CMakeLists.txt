@@ -21,7 +21,6 @@ add_library(mg_engine
     editor/mg_curve_editor.cpp
     gfx/mg_bitmap_font.cpp
     gfx/mg_blend_modes.cpp
-    gfx/mg_blur_renderer.cpp
     gfx/mg_gfx_object_handles.cpp
     gfx/mg_light_buffers.cpp
     gfx/mg_light_grid.cpp
@@ -34,6 +33,7 @@ add_library(mg_engine
     gfx/mg_skeleton.cpp
     gfx/mg_texture_pool.cpp
     gfx/mg_texture_related_types.cpp
+    gfx/render_passes/mg_blur_pass.cpp
     gfx/render_passes/mg_clear_pass.cpp
     gfx/mg_billboard_renderer.cpp
     gfx/mg_buffer_texture.cpp
