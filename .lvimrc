@@ -1,0 +1,1 @@
+let g:create_file_command=expand('<sfile>:p:h') . '/devutils/create-file.py'

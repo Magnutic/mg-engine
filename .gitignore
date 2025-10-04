@@ -7,7 +7,6 @@
 /external/build/*
 /external/mg_dependencies.zip
 /external/submodules/*/*
-/devutils
 
 *.pl
 *.dot
@@ -17,7 +16,6 @@
 *.swn
 *.session
 *.vim
-.lvimrc*
 
 mg_log.txt
 mg_engine.cfg
