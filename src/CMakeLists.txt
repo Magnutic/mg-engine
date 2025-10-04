@@ -3,85 +3,8 @@ cmake_minimum_required(VERSION 3.11)
 set(MG_HEADER_DIR "${MG_SOURCE_DIR}/include/")
 
 # Create mg_engine library
-add_library(mg_engine
-    audio/mg_audio_context.cpp
-    audio/mg_sound_buffer_handle.cpp
-    audio/mg_sound_source.cpp
-    core/mg_application_context.cpp
-    core/mg_config.cpp
-    core/mg_curve.cpp
-    core/mg_file_loader.cpp
-    core/mg_identifier.cpp
-    core/mg_log.cpp
-    core/mg_rotation.cpp
-    core/mg_value.cpp
-    core/mg_window.cpp
-    core/mg_window_settings.cpp
-    ecs/mg_entity.cpp
-    editor/mg_curve_editor.cpp
-    gfx/mg_billboard_renderer.cpp
-    gfx/mg_bitmap_font.cpp
-    gfx/mg_blend_modes.cpp
-    gfx/mg_blur_render_target.cpp
-    gfx/mg_buffer_texture.cpp
-    gfx/mg_debug_renderer.cpp
-    gfx/mg_gfx_debug_group.cpp
-    gfx/mg_gfx_object_handles.cpp
-    gfx/mg_gl_debug.cpp
-    gfx/mg_light_buffers.cpp
-    gfx/mg_light_grid.cpp
-    gfx/mg_material.cpp
-    gfx/mg_material_pool.cpp
-    gfx/mg_matrix_uniform_handler.cpp
-    gfx/mg_mesh_buffer.cpp
-    gfx/mg_mesh_pool.cpp
-    gfx/mg_mesh_renderer.cpp
-    gfx/mg_opengl_loader_glad.cpp
-    gfx/mg_pipeline.cpp
-    gfx/mg_pipeline_pool.cpp
-    gfx/mg_post_process.cpp
-    gfx/mg_render_command_list.cpp
-    gfx/mg_render_target.cpp
-    gfx/mg_shader.cpp
-    gfx/mg_skeleton.cpp
-    gfx/mg_skybox_renderer.cpp
-    gfx/mg_texture2d.cpp
-    gfx/mg_texture_common.cpp
-    gfx/mg_texture_cube.cpp
-    gfx/mg_texture_pool.cpp
-    gfx/mg_texture_related_types.cpp
-    gfx/mg_ui_renderer.cpp
-    gfx/mg_uniform_buffer.cpp
-    gfx/render_passes/mg_blur_pass.cpp
-    gfx/render_passes/mg_clear_pass.cpp
-    gfx/shader_code/mg_mesh_renderer_shader_framework.cpp
-    input/mg_input.cpp
-    input/mg_keyboard.cpp
-    input/mg_mouse.cpp
-    mg_bounding_volumes.cpp
-    mg_imgui_overlay.cpp
-    mg_player_controller.cpp
-    mg_unicode.cpp
-    parser/mg_parser.cpp
-    physics/mg_character_controller.cpp
-    physics/mg_physics.cpp
-    physics/mg_physics_debug_renderer.cpp
-    resource_cache/internal/mg_resource_entry_base.cpp
-    resource_cache/mg_base_resource.cpp
-    resource_cache/mg_resource_cache.cpp
-    resources/mg_font_resource.cpp
-    resources/mg_material_resource.cpp
-    resources/mg_mesh_resource.cpp
-    resources/mg_raw_resource.cpp
-    resources/mg_shader_resource.cpp
-    resources/mg_sound_resource.cpp
-    resources/mg_texture_resource.cpp
-    utils/mg_file_io.cpp
-    utils/mg_file_time_helper.cpp
-    utils/mg_geometric_functions.cpp
-    utils/mg_rand.cpp
-    utils/mg_string_utils.cpp
-)
+file(GLOB_RECURSE MG_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+add_library(mg_engine ${MG_SOURCES})
 
 # Compile using standard C++20
 target_compile_features(mg_engine PUBLIC cxx_std_20)
