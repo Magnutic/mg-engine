@@ -10,47 +10,9 @@
 #include "mg/gfx/mg_material.h"
 #include "mg/gfx/mg_render_target.h"
 #include "mg/gfx/mg_texture2d.h"
-#include "mg/gfx/mg_texture_pool.h"
 #include "mg/utils/mg_math_utils.h"
 
 namespace Mg::gfx {
-
-BlurRenderTarget::BlurRenderTarget(std::shared_ptr<TexturePool> texture_pool,
-                                   const VideoMode& video_mode)
-    : m_texture_pool{ std::move(texture_pool) }
-{
-    MG_GFX_DEBUG_GROUP("BlurRenderTarget::BlurRenderTarget")
-
-    static constexpr int32_t k_num_mip_levels = 4;
-
-    RenderTargetParams params{};
-    params.filter_mode = TextureFilterMode::Linear;
-    params.width = video_mode.width >> 2;
-    params.height = video_mode.height >> 2;
-    params.num_mip_levels = k_num_mip_levels;
-    params.texture_format = RenderTargetParams::Format::RGBA16F;
-
-    m_horizontal_pass_target_texture = m_texture_pool->create_render_target(params);
-    m_vertical_pass_target_texture = m_texture_pool->create_render_target(params);
-
-    for (int32_t mip_level = 0; mip_level < k_num_mip_levels; ++mip_level) {
-        m_horizontal_pass_targets.emplace_back(
-            TextureRenderTarget::with_colour_target(m_horizontal_pass_target_texture,
-                                                    TextureRenderTarget::DepthType::None,
-                                                    mip_level));
-
-        m_vertical_pass_targets.emplace_back(
-            TextureRenderTarget::with_colour_target(m_vertical_pass_target_texture,
-                                                    TextureRenderTarget::DepthType::None,
-                                                    mip_level));
-    }
-}
-
-BlurRenderTarget::~BlurRenderTarget()
-{
-    m_texture_pool->destroy(m_horizontal_pass_target_texture);
-    m_texture_pool->destroy(m_vertical_pass_target_texture);
-}
 
 void BlurPass::render(const RenderParams& /*unused*/)
 {

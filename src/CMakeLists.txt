@@ -19,9 +19,15 @@ add_library(mg_engine
     core/mg_window_settings.cpp
     ecs/mg_entity.cpp
     editor/mg_curve_editor.cpp
+    gfx/mg_billboard_renderer.cpp
     gfx/mg_bitmap_font.cpp
     gfx/mg_blend_modes.cpp
+    gfx/mg_blur_render_target.cpp
+    gfx/mg_buffer_texture.cpp
+    gfx/mg_debug_renderer.cpp
+    gfx/mg_gfx_debug_group.cpp
     gfx/mg_gfx_object_handles.cpp
+    gfx/mg_gl_debug.cpp
     gfx/mg_light_buffers.cpp
     gfx/mg_light_grid.cpp
     gfx/mg_material.cpp
@@ -29,30 +35,25 @@ add_library(mg_engine
     gfx/mg_matrix_uniform_handler.cpp
     gfx/mg_mesh_buffer.cpp
     gfx/mg_mesh_pool.cpp
-    gfx/mg_render_command_list.cpp
-    gfx/mg_skeleton.cpp
-    gfx/mg_texture_pool.cpp
-    gfx/mg_texture_related_types.cpp
-    gfx/render_passes/mg_blur_pass.cpp
-    gfx/render_passes/mg_clear_pass.cpp
-    gfx/mg_billboard_renderer.cpp
-    gfx/mg_buffer_texture.cpp
-    gfx/mg_debug_renderer.cpp
-    gfx/mg_gfx_debug_group.cpp
-    gfx/mg_gl_debug.cpp
     gfx/mg_mesh_renderer.cpp
     gfx/mg_opengl_loader_glad.cpp
     gfx/mg_pipeline.cpp
     gfx/mg_pipeline_pool.cpp
     gfx/mg_post_process.cpp
+    gfx/mg_render_command_list.cpp
     gfx/mg_render_target.cpp
     gfx/mg_shader.cpp
+    gfx/mg_skeleton.cpp
     gfx/mg_skybox_renderer.cpp
     gfx/mg_texture2d.cpp
     gfx/mg_texture_common.cpp
     gfx/mg_texture_cube.cpp
+    gfx/mg_texture_pool.cpp
+    gfx/mg_texture_related_types.cpp
     gfx/mg_ui_renderer.cpp
     gfx/mg_uniform_buffer.cpp
+    gfx/render_passes/mg_blur_pass.cpp
+    gfx/render_passes/mg_clear_pass.cpp
     gfx/shader_code/mg_mesh_renderer_shader_framework.cpp
     input/mg_input.cpp
     input/mg_keyboard.cpp
