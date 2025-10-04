@@ -63,7 +63,8 @@ public:
 
     static size_t component_type_id()
     {
-        MG_ASSERT_DEBUG(s_component_type_id != k_unset_component_tag);
+        MG_ASSERT_DEBUG(s_component_type_id != k_unset_component_tag &&
+                        "Component type id has not been initialized.");
         return s_component_type_id;
     }
 
