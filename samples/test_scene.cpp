@@ -77,7 +77,7 @@ Scene::Scene(Mg::Config& config, Mg::Window& window)
                                                                mouse_movement_tracker);
     current_controller = player_controller.get();
 
-    physics_world = std::make_unique<Mg::physics::World>();
+    physics_world = std::make_unique<Mg::physics::PhysicsWorld>();
 
     character_controller = std::make_unique<Mg::physics::CharacterController>(
         "Actor"_id, *physics_world, Mg::physics::CharacterControllerSettings{});

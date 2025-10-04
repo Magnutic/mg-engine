@@ -27,8 +27,13 @@
 #include "mg/physics/mg_character_controller.h"
 
 #include "mg/core/mg_runtime_error.h"
+#include "mg/physics/mg_physics_world.h"
 #include "mg/utils/mg_math_utils.h"
 #include "mg/utils/mg_stl_helpers.h"
+
+#include <glm/gtx/norm.hpp>
+
+#include <cfloat>
 
 // Debug visualization bit flags.
 #define MG_DEBUG_VIS_SWEEP_FLAG 1
@@ -216,7 +221,7 @@ Opt<RayHit> CharacterController::character_sweep_test(const vec3& start,
 }
 
 CharacterController::CharacterController(Identifier id,
-                                         World& world,
+                                         PhysicsWorld& world,
                                          const CharacterControllerSettings& settings,
                                          const glm::vec3& initial_position)
     : m_settings(settings), m_id(id), m_world(&world)
@@ -355,7 +360,7 @@ void CharacterController::horizontal_step(const vec3& step)
 {
     auto target_position = m_current_position + step;
 
-    if (!collision_enabled || length2(step) <= FLT_EPSILON) {
+    if (!collision_enabled || glm::length2(step) <= FLT_EPSILON) {
         m_current_position = target_position;
         return;
     }
@@ -407,7 +412,7 @@ void CharacterController::horizontal_step(const vec3& step)
         target_position = new_position_based_on_collision(m_current_position,
                                                           target_position,
                                                           sweep_result->hit_normal_worldspace);
-        const float step_length_sqr = length2(target_position - m_current_position);
+        const float step_length_sqr = glm::length2(target_position - m_current_position);
         const vec3 step_direction = normalize(target_position - m_current_position);
 
         // See Quake 2: "If velocity is against original velocity, stop ead to avoid tiny

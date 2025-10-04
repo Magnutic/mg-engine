@@ -31,9 +31,18 @@
 #pragma once
 
 #include "mg/core/mg_identifier.h"
-#include "mg/physics/mg_physics.h"
+#include "mg/physics/mg_ghost_object_handle.h"
+#include "mg/physics/mg_ray_hit.h"
+#include "mg/physics/mg_shape.h"
+#include "mg/utils/mg_angle.h"
+
+#include <glm/vec3.hpp>
+
+#include <vector>
 
 namespace Mg::physics {
+
+class PhysicsWorld;
 
 struct ImmutableCharacterControllerSettings {
     /** Radius of the character's collision body. */
@@ -87,7 +96,7 @@ struct CharacterControllerSettings : ImmutableCharacterControllerSettings,
 class CharacterController {
 public:
     explicit CharacterController(Identifier id,
-                                 World& world,
+                                 PhysicsWorld& world,
                                  const CharacterControllerSettings& settings,
                                  const glm::vec3& initial_position = glm::vec3(0.0f));
 
@@ -225,7 +234,7 @@ private:
 
     Identifier m_id;
 
-    World* m_world = nullptr;
+    PhysicsWorld* m_world = nullptr;
 
     GhostObjectHandle m_standing_collision_body;
     GhostObjectHandle m_crouching_collision_body;

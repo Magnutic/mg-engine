@@ -14,7 +14,7 @@
 #include <mg/gfx/mg_simple_scene_renderer.h>
 #include <mg/input/mg_input.h>
 #include <mg/mg_player_controller.h>
-#include <mg/physics/mg_physics.h>
+#include <mg/physics/mg_physics_world.h>
 #include <mg/resource_cache/mg_resource_cache.h>
 #include <mg/scene/mg_common_scene_components.h>
 #include <mg/scene/mg_scene.h>
@@ -35,7 +35,7 @@ public:
 
     std::shared_ptr<Mg::input::ButtonTracker> sample_control_button_tracker;
 
-    std::unique_ptr<Mg::physics::World> physics_world;
+    std::unique_ptr<Mg::physics::PhysicsWorld> physics_world;
     std::unique_ptr<Mg::PlayerController> player_controller;
     std::unique_ptr<Mg::EditorController> editor_controller;
     Mg::IPlayerController* current_controller = nullptr;

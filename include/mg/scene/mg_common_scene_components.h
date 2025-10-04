@@ -16,7 +16,8 @@
 #include "mg/gfx/mg_mesh.h"
 #include "mg/gfx/mg_render_command_list.h"
 #include "mg/gfx/mg_skeleton.h"
-#include "mg/physics/mg_physics.h"
+#include "mg/physics/mg_dynamic_body_handle.h"
+#include "mg/physics/mg_static_body_handle.h"
 #include "mg/utils/mg_interpolate_transform.h"
 
 #include <glm/mat4x4.hpp>
