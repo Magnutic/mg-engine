@@ -20,8 +20,13 @@
 /** MG_ASSERT will check even in release builds -- use when checking for errors is critical, more
  * important than performance.
  */
-#define MG_ASSERT(expr) \
-    static_cast<void>((expr) || (::Mg::contract_violation(#expr, __FILE__, __LINE__), 0))
+#define MG_ASSERT(expr)                                      \
+    if (expr) {                                              \
+        [[likely]];                                          \
+    }                                                        \
+    else {                                                   \
+        ::Mg::contract_violation(#expr, __FILE__, __LINE__); \
+    }
 
 /** MG_ASSERT_DEBUG: debug-build assertion. */
 #ifndef NDEBUG
