@@ -34,9 +34,10 @@ struct MeshDataView;
 struct Vertex;
 } // namespace Mg::gfx::mesh_data
 
-/** Collision detection and rigid-body physics world. */
+/** Collision detection and rigid-body physics. */
 namespace Mg::physics {
 
+/** World containing physics bodies for collision detection and rigid-body physics. */
 class PhysicsWorld {
 public:
     PhysicsWorld();
@@ -61,12 +62,8 @@ public:
 
     Shape* create_cone_shape(float radius, float height);
 
-    // TODO: scaled instanced mesh shapes
-    // IDEA: merge all world meshes into a big mesh, possibly split into tiles, and use it for
-    // physics.
     Shape* create_mesh_shape(const gfx::mesh_data::MeshDataView& mesh_data);
 
-    // TODO: generate convex hull in mesh converter.
     Shape* create_convex_hull(std::span<const gfx::mesh_data::Vertex> vertices,
                               const glm::vec3& centre_of_mass,
                               const glm::vec3& scale);

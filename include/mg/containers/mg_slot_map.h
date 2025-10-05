@@ -8,9 +8,6 @@
  * Slot map, array-like data structure with O(1) insertion and deletion.
  */
 
-// TODO: split into storage (no handles) and Slot_map using the storage type? I.e. storage type
-// (name pending) acts as Slot_map without handles (the -map part of Slot_map), hence no Key.
-
 #pragma once
 
 #include "mg/containers/mg_array.h"
