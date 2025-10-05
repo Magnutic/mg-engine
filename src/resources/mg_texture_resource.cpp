@@ -251,10 +251,9 @@ constexpr uint32_t make_fourcc(const std::span<const char> four_chars)
     return out;
 }
 
-std::string decompose_fourcc(const uint32_t fourcc)
+constexpr std::array<char, 4> decompose_fourcc(const uint32_t fourcc)
 {
-    std::string out;
-    out.resize(4);
+    std::array<char, 4> out{};
     out[0] = static_cast<char>(fourcc & 0xff);
     out[1] = static_cast<char>((fourcc >> 8u) & 0xff);
     out[2] = static_cast<char>((fourcc >> 16u) & 0xff);
@@ -263,7 +262,7 @@ std::string decompose_fourcc(const uint32_t fourcc)
 }
 
 static_assert(make_fourcc("DDS ") == 0x20534444);
-const int test_dummy = (MG_ASSERT(decompose_fourcc(0x20534444) == "DDS "), 0);
+static_assert(decompose_fourcc(0x20534444) == std::array<char, 4>{ 'D', 'D', 'S', ' ' });
 
 /** Determine pixel format of DDS file. Nullopt if format is unsupported. */
 PixelFormatResult dds_pf_to_pixel_format(const DDS_PIXELFORMAT& pf)
@@ -444,8 +443,9 @@ LoadResourceResult TextureResource::load_resource_impl(ResourceLoadingInput& inp
         // The traditional way.
         auto result = dds_pf_to_pixel_format(header.ddspf);
         if (!result.valid) {
-            return LoadResourceResult::data_error(
-                fmt::format("Unsupported DDS format: {}", decompose_fourcc(header.ddspf.dwFourCC)));
+            auto format = decompose_fourcc(header.ddspf.dwFourCC);
+            return LoadResourceResult::data_error(fmt::format(
+                "Unsupported DDS format: {}{}{}{}", format[0], format[1], format[2], format[3]));
         }
         pixel_format = result.format;
     }
