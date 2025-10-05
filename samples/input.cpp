@@ -1,6 +1,5 @@
 #include <mg/core/mg_log.h>
 #include <mg/core/mg_window.h>
-#include <mg/gfx/mg_gfx_device.h>
 #include <mg/input/mg_input.h>
 
 #include <mg/input/mg_keyboard.h>
@@ -12,11 +11,10 @@ void input_sample()
 {
     using namespace Mg;
 
-    auto window = Window::make({}, "Input");
-    Mg::gfx::GfxDevice gfx_device{ *window };
+    Window window{ {}, "Input" };
 
-    input::ButtonTracker button_tracker{ *window };
-    input::MouseMovementTracker mouse_movement_tracker{ *window };
+    input::ButtonTracker button_tracker{ window };
+    input::MouseMovementTracker mouse_movement_tracker{ window };
 
     auto bind_key = [&](const input::Key key) {
         auto command = Identifier::from_runtime_string(input::localized_key_name(key));
@@ -141,7 +139,7 @@ void input_sample()
     button_tracker.bind("mouse7", input::MouseButton::button7);
 
     while (true) {
-        window->poll_input_events();
+        window.poll_input_events();
         const auto events = button_tracker.get_button_events();
         const auto cursor_position = mouse_movement_tracker.mouse_cursor_position();
         const auto mouse_delta = mouse_movement_tracker.mouse_delta();
@@ -164,8 +162,7 @@ void input_sample()
             break;
         }
 
-        gfx_device.clear(window->render_target);
-        window->swap_buffers();
+        window.swap_buffers();
     }
 }
 
