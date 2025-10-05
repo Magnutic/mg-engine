@@ -29,15 +29,12 @@
 // Also, I should probably use plf::colony instead of Mg::Slot_map for this. Might even remove the
 // latter as I cannot think of any situation where it is better than colony.
 
-#include "mg/core/mg_runtime_error.h"
 #include "mg/ecs/mg_base_component.h"
 #include "mg/ecs/mg_component_mask.h"
-#include "mg/utils/mg_gsl.h"
 
 #include "mg/containers/mg_slot_map.h"
 #include "mg/ecs/mg_component_collection.h"
 
-#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <memory>
