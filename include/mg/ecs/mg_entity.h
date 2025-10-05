@@ -30,17 +30,17 @@
 // latter as I cannot think of any situation where it is better than colony.
 
 #include "mg/core/mg_runtime_error.h"
+#include "mg/ecs/mg_base_component.h"
+#include "mg/ecs/mg_component_mask.h"
 #include "mg/utils/mg_gsl.h"
 
 #include "mg/containers/mg_slot_map.h"
-#include "mg/ecs/mg_component.h"
+#include "mg/ecs/mg_component_collection.h"
 
 #include <algorithm>
 #include <array>
 #include <cstdint>
-#include <functional>
 #include <memory>
-#include <type_traits>
 
 /** Entity-Component-System. */
 namespace Mg::ecs {
@@ -249,13 +249,13 @@ public:
     friend bool operator!=(iterator l, iterator r) { return l.m_it != r.m_it; }
 
 private:
-    template<std::derived_from<detail::NotTag> C>
+    template<InstantiationOf<Not> C>
     std::tuple<> get_tuple_with_reference_to_component(ComponentList&)
     {
         return {};
     }
 
-    template<std::derived_from<detail::MaybeTag> C>
+    template<InstantiationOf<Maybe> C>
     std::tuple<typename C::component_type*>
     get_tuple_with_reference_to_component(ComponentList& component_list)
     {

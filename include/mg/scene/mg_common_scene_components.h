@@ -11,7 +11,7 @@
 #pragma once
 
 #include "mg/containers/mg_small_vector.h"
-#include "mg/ecs/mg_component.h"
+#include "mg/ecs/mg_base_component.h"
 #include "mg/ecs/mg_entity.h"
 #include "mg/gfx/mg_mesh.h"
 #include "mg/gfx/mg_render_command_list.h"
