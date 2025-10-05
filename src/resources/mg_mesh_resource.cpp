@@ -87,7 +87,7 @@ template<typename T> Array<T> read_range(std::span<const std::byte> bytestream, 
         read_offset += load_to_struct(bytestream.subspan(read_offset), elem);
     }
 
-    MG_ASSERT(read_offset = num_elems * elem_size);
+    MG_ASSERT(read_offset == range.begin + num_elems * elem_size);
 
     return result;
 }
