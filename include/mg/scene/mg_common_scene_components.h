@@ -10,14 +10,14 @@
 
 #pragma once
 
-#include "mg/containers/mg_small_vector.h"
-#include "mg/ecs/mg_base_component.h"
-#include "mg/ecs/mg_entity.h"
-#include "mg/gfx/mg_mesh.h"
-#include "mg/gfx/mg_render_command_list.h"
-#include "mg/gfx/mg_skeleton.h"
-#include "mg/physics/mg_dynamic_body_handle.h"
-#include "mg/physics/mg_static_body_handle.h"
+#include "mg/core/containers/mg_small_vector.h"
+#include "mg/core/ecs/mg_base_component.h"
+#include "mg/core/ecs/mg_entity.h"
+#include "mg/core/gfx/mg_mesh.h"
+#include "mg/core/gfx/mg_render_command_list.h"
+#include "mg/core/gfx/mg_skeleton.h"
+#include "mg/core/physics/mg_dynamic_body_handle.h"
+#include "mg/core/physics/mg_static_body_handle.h"
 #include "mg/utils/mg_interpolate_transform.h"
 
 #include <glm/mat4x4.hpp>

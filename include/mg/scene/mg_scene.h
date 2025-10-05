@@ -9,10 +9,10 @@
 
 #pragma once
 
-#include "mg/gfx/mg_material_pool.h"
-#include "mg/gfx/mg_mesh_pool.h"
-#include "mg/gfx/mg_texture_pool.h"
-#include "mg/resource_cache/mg_resource_cache.h"
+#include "mg/core/gfx/mg_material_pool.h"
+#include "mg/core/gfx/mg_mesh_pool.h"
+#include "mg/core/gfx/mg_texture_pool.h"
+#include "mg/core/resource_cache/mg_resource_cache.h"
 
 namespace Mg {
 

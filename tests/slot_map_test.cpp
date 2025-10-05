@@ -8,7 +8,7 @@
 
 #include <fmt/core.h>
 
-#include <mg/containers/mg_slot_map.h>
+#include <mg/core/containers/mg_slot_map.h>
 #include <mg/utils/mg_instance_counter.h>
 
 using namespace Mg;

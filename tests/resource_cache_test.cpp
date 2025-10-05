@@ -1,8 +1,8 @@
 #include "catch.hpp"
 #include "mg/core/mg_file_loader.h"
 
-#include <mg/resource_cache/mg_resource_cache.h>
-#include <mg/resources/mg_text_resource.h>
+#include <mg/core/resource_cache/mg_resource_cache.h>
+#include <mg/core/resources/mg_text_resource.h>
 
 static bool has_loader_with_name(const Mg::ResourceCache& cache, std::string_view name)
 {

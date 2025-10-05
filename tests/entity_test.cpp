@@ -1,6 +1,6 @@
 #include "catch.hpp"
 
-#include <mg/ecs/mg_entity.h>
+#include <mg/core/ecs/mg_entity.h>
 
 #include <utility>
 #include <vector>

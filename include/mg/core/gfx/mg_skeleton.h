@@ -1,0 +1,128 @@
+//**************************************************************************************************
+// This file is part of Mg Engine. Copyright (c) 2021, Magnus Bergsten.
+// Mg Engine is made available under the terms of the 3-Clause BSD License.
+// See LICENSE.txt in the project's root directory.
+//**************************************************************************************************
+
+/** @file mg_skeleton.h
+ * Skeleton for animated meshes.
+ */
+
+#pragma once
+
+#include "mg/core/containers/mg_array.h"
+#include "mg/core/mg_identifier.h"
+#include "mg/core/mg_rotation.h"
+#include "mg/core/gfx/mg_joint.h"
+#include "mg/utils/mg_optional.h"
+
+#include <glm/mat4x4.hpp>
+#include <glm/vec3.hpp>
+
+namespace Mg::gfx::mesh_data {
+struct AnimationChannel;
+struct AnimationClip;
+} // namespace Mg::gfx::mesh_data
+
+namespace Mg::gfx {
+
+struct SkeletonPose;
+
+/** A skeleton is a posable structure that is used to animate a mesh. It is defined as a tree of
+ * Mg::gfx::mesh_data::Joint instances.
+ */
+class Skeleton {
+public:
+    Skeleton() = default;
+
+    explicit Skeleton(const Identifier id, const glm::mat4& root_transform, const size_t num_joints)
+        : m_id(id)
+        , m_joints(Array<mesh_data::Joint>::make(num_joints))
+        , m_root_transform(root_transform)
+    {}
+
+    Identifier id() const { return m_id; }
+
+    std::span<mesh_data::Joint> joints() { return m_joints; }
+    std::span<const mesh_data::Joint> joints() const { return m_joints; }
+
+    Opt<mesh_data::JointId> find_joint(Identifier joint_name) const;
+
+    const glm::mat4& root_transform() const { return m_root_transform; }
+
+    SkeletonPose make_new_pose() const;
+
+    SkeletonPose get_bind_pose() const;
+
+private:
+    Identifier m_id;
+    Array<mesh_data::Joint> m_joints;
+    glm::mat4 m_root_transform = glm::mat4(1.0f);
+};
+
+/** A pose for a given joint, relative to its bind pose. */
+struct JointPose {
+    Rotation rotation;
+    glm::vec3 translation = { 0.0f, 0.0f, 0.0f };
+    float scale = 1.0f;
+};
+
+/** A pose for all joints in a skeleton. */
+struct SkeletonPose {
+    Identifier skeleton_id{ "" };
+    Array<JointPose> joint_poses;
+};
+
+/** Evaluate pose for a given skeleton and write the resulting skinning transformation matrices
+ * (model space to world space) to skinning_matrices_out. This can fail if pose is impossible to
+ * apply to the given skeleton, and if skinning_matrices_out is too small to fit matrices for all
+ * joints.
+ *
+ * @param transform Model-space-to-world-space transformation. This will be baked into the resulting
+ * skinning matrices.
+ * @param skeleton The skeleton onto which to apply the pose.
+ * @param pose The pose to evaluate.
+ * @param skinning_matrices_out The output matrices will be written to this buffer, if evaluation is
+ * successful.
+ *
+ * @return Whether the evaluation was successful.
+ */
+bool calculate_skinning_matrices(const glm::mat4& transform,
+                                 const Skeleton& skeleton,
+                                 const SkeletonPose& pose,
+                                 std::span<glm::mat4> skinning_matrices_out);
+
+/** Evaluate pose for a given skeleton and write the resulting joint transformation matrices
+ * (joint space to parent-joint space) to matrices_out. This can fail if pose is impossible to apply
+ * to the given skeleton, and if matrices_out is too small to fit matrices for all joints.
+ *
+ * @param skeleton The skeleton onto which to apply the pose.
+ * @param pose The pose to evaluate.
+ * @param matrices_out The output matrices will be written to this buffer, if evaluation is
+ * successful.
+ *
+ * @return Whether the evaluation was successful.
+ */
+bool calculate_pose_transformations(const Skeleton& skeleton,
+                                    const SkeletonPose& pose,
+                                    std::span<glm::mat4> matrices_out);
+
+void animate_joint(const mesh_data::AnimationChannel& animation_channel,
+                   double time_seconds,
+                   JointPose& joint_pose_out);
+
+void animate_skeleton(const mesh_data::AnimationClip& clip,
+                      SkeletonPose& pose,
+                      double time_seconds);
+
+void blend_joint_poses(const JointPose& first,
+                       const JointPose& second,
+                       JointPose& result,
+                       double blend_factor);
+
+void blend_skeleton_poses(const SkeletonPose& first,
+                          const SkeletonPose& second,
+                          SkeletonPose& result,
+                          double blend_factor);
+
+} // namespace Mg::gfx

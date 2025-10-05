@@ -1,6 +1,6 @@
 #include "catch.hpp"
 
-#include <mg/mg_unicode.h>
+#include <mg/core/mg_unicode.h>
 #include <mg/utils/mg_stl_helpers.h>
 
 #include <string>

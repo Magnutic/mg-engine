@@ -10,10 +10,10 @@
 
 #pragma once
 
-#include "mg/containers/mg_array.h"
+#include "mg/core/containers/mg_array.h"
 #include "mg/core/mg_window_settings.h"
-#include "mg/gfx/mg_render_target.h"
-#include "mg/input/mg_input_source.h"
+#include "mg/core/gfx/mg_render_target.h"
+#include "mg/core/input/mg_input_source.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_observer.h"
 

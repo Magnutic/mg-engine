@@ -6,7 +6,7 @@
 
 #include "mg/core/mg_config.h"
 
-#include "mg/containers/mg_flat_map.h"
+#include "mg/core/containers/mg_flat_map.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/core/mg_log.h"
 #include "mg/utils/mg_assert.h"

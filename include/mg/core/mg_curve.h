@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "mg/containers/mg_small_vector.h"
+#include "mg/core/containers/mg_small_vector.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_optional.h"
 

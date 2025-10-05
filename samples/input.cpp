@@ -1,9 +1,9 @@
 #include <mg/core/mg_log.h>
 #include <mg/core/mg_window.h>
-#include <mg/input/mg_input.h>
+#include <mg/core/input/mg_input.h>
 
-#include <mg/input/mg_keyboard.h>
-#include <mg/input/mg_mouse.h>
+#include <mg/core/input/mg_keyboard.h>
+#include <mg/core/input/mg_mouse.h>
 
 #include <fmt/core.h>
 

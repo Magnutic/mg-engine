@@ -5,7 +5,7 @@
 #include "glm/gtc/constants.hpp"
 #include "glm/gtx/quaternion.hpp"
 
-#include <mg/resources/mg_mesh_resource_data.h>
+#include <mg/core/resources/mg_mesh_resource_data.h>
 #include <mg/utils/mg_assert.h>
 #include <mg/utils/mg_optional.h>
 #include <mg/utils/mg_u8string_casts.h>

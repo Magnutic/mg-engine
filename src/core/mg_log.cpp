@@ -6,8 +6,8 @@
 
 #include "mg/core/mg_log.h"
 
-#include "mg/containers/mg_flat_map.h"
-#include "mg/mg_defs.h"
+#include "mg/core/containers/mg_flat_map.h"
+#include "mg/core/mg_defs.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_hash_fnv1a.h"

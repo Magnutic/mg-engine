@@ -1,9 +1,9 @@
 #include "catch.hpp"
 
 #include "mg/core/mg_identifier.h"
-#include "mg/gfx/mg_pipeline.h"
+#include "mg/core/gfx/mg_pipeline.h"
 
-#include <mg/gfx/mg_pipeline_pool.h>
+#include <mg/core/gfx/mg_pipeline_pool.h>
 
 TEST_CASE("PipelinePoolFromGoodConfig")
 {

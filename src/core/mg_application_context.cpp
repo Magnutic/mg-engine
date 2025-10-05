@@ -9,7 +9,7 @@
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/utils/mg_math_utils.h"
-#include "../gfx/mg_opengl_loader_glad.h"
+#include "../core/gfx/mg_opengl_loader_glad.h"
 
 #include <atomic>
 #include <chrono>

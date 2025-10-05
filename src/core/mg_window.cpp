@@ -6,16 +6,16 @@
 
 #include "mg/core/mg_window.h"
 
-#include "mg/containers/mg_small_vector.h"
+#include "mg/core/containers/mg_small_vector.h"
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
-#include "mg/gfx/mg_render_target.h"
-#include "mg/input/mg_input.h"
-#include "mg/input/mg_input_source.h"
-#include "mg/input/mg_mouse.h"
-#include "mg/mg_defs.h"
+#include "mg/core/gfx/mg_render_target.h"
+#include "mg/core/input/mg_input.h"
+#include "mg/core/input/mg_input_source.h"
+#include "mg/core/input/mg_mouse.h"
+#include "mg/core/mg_defs.h"
 #include "mg/utils/mg_gsl.h"
-#include "../gfx/mg_opengl_loader_glad.h"
+#include "../core/gfx/mg_opengl_loader_glad.h"
 
 #include <fmt/core.h>
 

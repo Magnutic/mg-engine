@@ -29,7 +29,7 @@
 
 #include "mg/core/mg_file_loader.h"
 
-#include "mg/containers/mg_small_vector.h"
+#include "mg/core/containers/mg_small_vector.h"
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/utils/mg_file_io.h"

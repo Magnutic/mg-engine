@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "mg/gfx/mg_mesh_data.h"
+#include "mg/core/gfx/mg_mesh_data.h"
 #include "mg/utils/mg_angle.h"
 #include "mg/utils/mg_gsl.h"
 

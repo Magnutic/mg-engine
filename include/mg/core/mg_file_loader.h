@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "mg/containers/mg_array.h"
+#include "mg/core/containers/mg_array.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"

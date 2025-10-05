@@ -7,7 +7,7 @@
 #include "mg/core/mg_value.h"
 
 #include "mg/core/mg_log.h"
-#include "mg/parser/mg_parser.h"
+#include "mg/core/parser/mg_parser.h"
 #include "mg/utils/mg_string_utils.h"
 #include "mg/utils/mg_to_hjson.h"
 

@@ -6,7 +6,7 @@
 
 #include "mg/core/mg_window.h"
 #include "mg/editor/mg_curve_editor.h"
-#include "mg/mg_imgui_overlay.h"
+#include "mg/core/mg_imgui_overlay.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_math_utils.h"
 
