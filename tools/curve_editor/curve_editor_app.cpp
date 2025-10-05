@@ -10,55 +10,47 @@ Mg::editor::CurveEditorSettings get_settings()
 
 class CurveEditorApp : public Mg::IApplication {
 public:
-    explicit CurveEditorApp()
-        : m_app("curve_editor.cfg", "Mg Engine Curve Editor")
-        , m_editor(m_app.window(), get_settings())
-    {
-        Mg::WindowSettings settings = {};
-        settings.fullscreen = false;
-        settings.video_mode = Mg::VideoMode{ 1280, 768 };
-        settings.vsync = true;
-        m_app.window().set_title("Curve Editor");
-        m_app.window().apply_settings(settings);
-    }
-
-    void run() { m_app.run_main_loop(*this); }
+    explicit CurveEditorApp(Mg::Window& window)
+        : m_window{ window }, m_editor{ window, get_settings() }
+    {}
 
     Mg::Curve curve;
 
 protected:
-    void simulation_step() override
+    void simulation_step(Mg::ApplicationTimeInfo /*time_info*/) override
     {
         // Do nothing, all work is done in render.
     }
 
-    void render(double /*unused*/) override
+    void render(double /*lerp_factor*/, Mg::ApplicationTimeInfo /*time_info*/) override
     {
-        m_app.window().poll_input_events();
+        m_window.poll_input_events();
         m_editor.update(curve);
-        m_app.window().swap_buffers();
+        m_window.swap_buffers();
     }
 
-    bool should_exit() const override { return m_app.window().should_close_flag(); }
+    bool should_exit() const override { return m_window.should_close_flag(); }
 
-    Mg::UpdateTimerSettings update_timer_settings() const override
+    Mg::UpdateTimerConfig update_timer_config() const override
     {
-        Mg::UpdateTimerSettings settings;
-        settings.max_frames_per_second = 60;
-        settings.simulation_steps_per_second = 60;
-        settings.decouple_rendering_from_time_step = false;
-        settings.max_time_steps_at_once = 10;
-        return settings;
+        Mg::UpdateTimerConfig config;
+        config.max_frames_per_second = 60;
+        config.simulation_steps_per_second = 60;
+        config.decouple_rendering_from_time_step = false;
+        config.max_time_steps_at_once = 10;
+        return config;
     }
 
 private:
-    Mg::ApplicationContext m_app;
+    Mg::Window& m_window;
     Mg::editor::CurveEditor m_editor;
 };
 
 int main()
 {
-    CurveEditorApp app;
+    Mg::Window window{ { .video_mode = { 1280, 768 }, .fullscreen = false, .vsync = true },
+                       "Curve Editor" };
+    CurveEditorApp app{ window };
 
     // TODO TEMP test some curve points
     app.curve.insert({ 0.0f, 0.0f });
@@ -75,5 +67,5 @@ int main()
     app.curve.set_right_tangent(0, 1.0);
     app.curve.set_left_tangent(1, 1.0);
 
-    app.run();
+    Mg::ApplicationContext{}.run_main_loop(app);
 }
