@@ -4,7 +4,7 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-/** @file mg_scene.h
+/** @file mg_scene_resources.h
  */
 
 #pragma once

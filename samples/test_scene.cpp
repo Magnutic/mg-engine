@@ -1,12 +1,19 @@
 #include "test_scene.h"
 
-#include <mg/core/mg_application_context.h>
-#include <mg/core/mg_log.h>
-#include <mg/core/mg_window.h>
+#include <mg/components/mg_advance_animations.h>
+#include <mg/components/mg_animation_component.h>
+#include <mg/components/mg_dynamic_body_component.h>
+#include <mg/components/mg_enqueue_meshes_for_rendering.h>
+#include <mg/components/mg_mesh_component.h>
+#include <mg/components/mg_static_body_component.h>
+#include <mg/components/mg_update_dynamic_body_transforms.h>
 #include <mg/core/gfx/mg_debug_renderer.h>
 #include <mg/core/gfx/mg_gfx_debug_group.h>
 #include <mg/core/gfx/mg_light.h>
+#include <mg/core/mg_application_context.h>
+#include <mg/core/mg_log.h>
 #include <mg/core/mg_unicode.h>
+#include <mg/core/mg_window.h>
 #include <mg/core/physics/mg_character_controller.h>
 #include <mg/core/resources/mg_font_resource.h>
 #include <mg/core/resources/mg_material_resource.h>
@@ -14,8 +21,6 @@
 #include <mg/core/resources/mg_shader_resource.h>
 #include <mg/core/resources/mg_sound_resource.h>
 #include <mg/core/resources/mg_texture_resource.h>
-#include <mg/scene/mg_common_scene_components.h>
-#include <mg/scene/mg_scene.h>
 #include <mg/utils/mg_angle.h>
 #include <mg/utils/mg_file_io.h>
 #include <mg/utils/mg_rand.h>
@@ -35,10 +40,13 @@ constexpr float k_light_radius = 3.0f;
 } // namespace
 
 Scene::Scene(Mg::Config& config, Mg::Window& window)
-    : Mg::SceneResources{ std::make_shared<Mg::ResourceCache>(
-          std::make_unique<Mg::BasicFileLoader>("../samples/data")) }
-    , config{ config }
+    : config{ config }
     , window{ window }
+    , resource_cache{ std::make_shared<Mg::ResourceCache>(
+          std::make_unique<Mg::BasicFileLoader>("../samples/data")) }
+    , mesh_pool{ std::make_shared<Mg::gfx::MeshPool>(resource_cache) }
+    , texture_pool{ std::make_shared<Mg::gfx::TexturePool>(resource_cache) }
+    , material_pool{ std::make_shared<Mg::gfx::MaterialPool>(resource_cache, texture_pool) }
 {
     MG_GFX_DEBUG_GROUP_BY_FUNCTION
     using namespace Mg::literals;
@@ -52,12 +60,12 @@ Scene::Scene(Mg::Config& config, Mg::Window& window)
 
     renderer_data = make_renderer_data();
     Mg::gfx::SimpleSceneRendererConfig renderer_config = {
-        .sky_material = m_material_pool->get_or_load("materials/skybox.hjson"),
-        .blur_material = m_material_pool->load_as_mutable("blur", "materials/blur.hjson"),
-        .bloom_material = m_material_pool->load_as_mutable("bloom", "materials/bloom.hjson"),
+        .sky_material = material_pool->get_or_load("materials/skybox.hjson"),
+        .blur_material = material_pool->load_as_mutable("blur", "materials/blur.hjson"),
+        .bloom_material = material_pool->load_as_mutable("bloom", "materials/bloom.hjson"),
     };
-    renderer = std::make_unique<Mg::gfx::SimpleSceneRenderer>(*m_resource_cache,
-                                                              m_texture_pool,
+    renderer = std::make_unique<Mg::gfx::SimpleSceneRenderer>(*resource_cache,
+                                                              texture_pool,
                                                               window,
                                                               renderer_config,
                                                               renderer_data);
@@ -82,11 +90,11 @@ Scene::Scene(Mg::Config& config, Mg::Window& window)
     character_controller = std::make_unique<Mg::physics::CharacterController>(
         "Actor"_id, *physics_world, Mg::physics::CharacterControllerSettings{});
 
-    entities.init<Mg::scene::TransformComponent,
-                  Mg::scene::StaticBodyComponent,
-                  Mg::scene::DynamicBodyComponent,
-                  Mg::scene::MeshComponent,
-                  Mg::scene::AnimationComponent>();
+    entities.init<Mg::TransformComponent,
+                  Mg::StaticBodyComponent,
+                  Mg::DynamicBodyComponent,
+                  Mg::MeshComponent,
+                  Mg::AnimationComponent>();
     create_entities();
     generate_lights();
 }
@@ -111,7 +119,7 @@ void Scene::simulation_step(const Mg::ApplicationTimeInfo /*time_info*/)
         m_should_exit = true;
     }
 
-    Mg::scene::update_dynamic_body_transforms(entities);
+    Mg::update_dynamic_body_transforms(entities);
 
     // Fullscreen switching
     if (button_states["fullscreen"].was_pressed) {
@@ -166,13 +174,13 @@ void Scene::render(const double lerp_factor, const Mg::ApplicationTimeInfo time_
     camera.position.z += character_controller->current_height_smooth(float(lerp_factor)) * 0.95f;
     camera.exposure = -5.0f;
 
-    Mg::scene::advance_animations(entities, float(time_info.time_since_init));
+    Mg::advance_animations(entities, float(time_info.time_since_init));
 
     // Draw meshes and billboards.
     renderer_data->mesh_render_command_producer->clear();
-    Mg::scene::add_meshes_to_render_list(entities,
-                                         *renderer_data->mesh_render_command_producer,
-                                         float(lerp_factor));
+    Mg::enqueue_meshes_for_rendering(entities,
+                                     *renderer_data->mesh_render_command_producer,
+                                     float(lerp_factor));
 
     // Draw UI
     {
@@ -226,7 +234,7 @@ void Scene::setup_config()
 std::unique_ptr<Mg::gfx::BitmapFont> Scene::make_font() const
 {
     const auto font_resource =
-        m_resource_cache->resource_handle<Mg::FontResource>("fonts/elstob/Elstob-Regular.ttf");
+        resource_cache->resource_handle<Mg::FontResource>("fonts/elstob/Elstob-Regular.ttf");
     std::vector<Mg::UnicodeRange> unicode_ranges = { Mg::get_unicode_range(
         Mg::UnicodeBlock::Basic_Latin) };
     return std::make_unique<Mg::gfx::BitmapFont>(font_resource, 24, unicode_ranges);
@@ -248,18 +256,18 @@ void Scene::load_model(
     std::initializer_list<std::pair<Mg::Identifier, Mg::Identifier>> material_bindings,
     Mg::ecs::Entity entity)
 {
-    auto& mesh = entities.add_component<Mg::scene::MeshComponent>(entity);
-    mesh.mesh = m_mesh_pool->get_or_load(mesh_file);
+    auto& mesh = entities.add_component<Mg::MeshComponent>(entity);
+    mesh.mesh = mesh_pool->get_or_load(mesh_file);
 
     if (mesh.mesh->animation_data) {
-        auto& animation = entities.add_component<Mg::scene::AnimationComponent>(entity);
+        auto& animation = entities.add_component<Mg::AnimationComponent>(entity);
         animation.pose = mesh.mesh->animation_data->skeleton.get_bind_pose();
     }
 
     mesh.material_bindings.resize(material_bindings.size());
     for (auto&& [binding_id, filename] : material_bindings) {
         mesh.material_bindings.push_back({ .material_binding_id = binding_id,
-                                           .material = m_material_pool->get_or_load(filename) });
+                                           .material = material_pool->get_or_load(filename) });
     }
 
     for (auto&& submesh : mesh.mesh->submeshes) {
@@ -284,13 +292,13 @@ Mg::ecs::Entity Scene::add_static_object(
     load_model(mesh_file, material_bindings, entity);
 
     const Mg::ResourceAccessGuard access =
-        m_resource_cache->access_resource<Mg::MeshResource>(mesh_file);
+        resource_cache->access_resource<Mg::MeshResource>(mesh_file);
 
     Mg::physics::Shape* shape = physics_world->create_mesh_shape(access->data_view());
 
     auto static_body = physics_world->create_static_body(mesh_file, *shape, transform);
-    entities.add_component<Mg::scene::StaticBodyComponent>(entity, static_body);
-    entities.add_component<Mg::scene::TransformComponent>(entity, transform, transform);
+    entities.add_component<Mg::StaticBodyComponent>(entity, static_body);
+    entities.add_component<Mg::TransformComponent>(entity, transform, transform);
 
     return entity;
 }
@@ -306,12 +314,12 @@ Mg::ecs::Entity Scene::add_dynamic_object(
     const auto entity = entities.create_entity();
     load_model(mesh_file, material_bindings, entity);
 
-    auto& mesh = entities.get_component<Mg::scene::MeshComponent>(entity);
-    auto& transform = entities.add_component<Mg::scene::TransformComponent>(entity);
+    auto& mesh = entities.get_component<Mg::MeshComponent>(entity);
+    auto& transform = entities.add_component<Mg::TransformComponent>(entity);
 
     if (enable_physics) {
         const Mg::ResourceAccessGuard access =
-            m_resource_cache->access_resource<Mg::MeshResource>(mesh_file);
+            resource_cache->access_resource<Mg::MeshResource>(mesh_file);
 
         const glm::vec3 centre = access->bounding_sphere().centre;
 
@@ -328,7 +336,7 @@ Mg::ecs::Entity Scene::add_dynamic_object(
                                                *shape,
                                                body_params,
                                                glm::translate(position) * rotation.to_matrix());
-        entities.add_component<Mg::scene::DynamicBodyComponent>(entity, dynamic_body);
+        entities.add_component<Mg::DynamicBodyComponent>(entity, dynamic_body);
 
         // Add visualization translation relative to centre of mass.
         // Note unusual order: for once we translate before the scale, since the translation is in
@@ -366,9 +374,7 @@ void Scene::render_skeleton_debug_geometry()
     MG_GFX_DEBUG_GROUP("Scene::render_skeleton_debug_geometry")
 
     for (auto [entity, transform, mesh, animation] :
-         entities.get_with<Mg::scene::TransformComponent,
-                           Mg::scene::MeshComponent,
-                           Mg::scene::AnimationComponent>()) {
+         entities.get_with<Mg::TransformComponent, Mg::MeshComponent, Mg::AnimationComponent>()) {
         Mg::gfx::get_debug_render_queue().draw_bones(transform.transform * mesh.mesh_transform,
                                                      mesh.mesh->animation_data->skeleton,
                                                      animation.pose);
@@ -396,7 +402,7 @@ void Scene::create_entities()
                                          Mg::Rotation(),
                                          { 0.01f, 0.01f, 0.01f },
                                          false);
-    entities.get_component<Mg::scene::AnimationComponent>(fox_entity).current_clip = 2;
+    entities.get_component<Mg::AnimationComponent>(fox_entity).current_clip = 2;
 
     add_dynamic_object("meshes/misc/hestdraugr.mgm"_id,
                        { { "hestdraugr_material", "materials/actors/HestDraugr.hjson" } },
@@ -420,7 +426,7 @@ void Scene::generate_lights()
 
     auto& [material,
            billboards] = renderer_data->billboard_render_list->render_lists.emplace_back();
-    material = m_material_pool->get_or_load("materials/billboard.hjson");
+    material = material_pool->get_or_load("materials/billboard.hjson");
 
     for (size_t i = 0; i < k_num_lights; ++i) {
         auto r1 = rand.range(-7.5f, 7.5f);
@@ -452,7 +458,7 @@ void Scene::generate_lights()
 void Scene::on_window_focus_change(const bool is_focused)
 {
     if (is_focused) {
-        m_resource_cache->refresh();
+        resource_cache->refresh();
     }
 }
 

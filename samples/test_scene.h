@@ -1,10 +1,8 @@
 #pragma once
 
+#include "mg/core/gfx/mg_material_pool.h"
+#include "mg/core/gfx/mg_mesh_pool.h"
 #include <mg/core/containers/mg_small_vector.h>
-#include <mg/core/mg_application_context.h>
-#include <mg/core/mg_config.h>
-#include <mg/core/mg_identifier.h>
-#include <mg/core/mg_window_settings.h>
 #include <mg/core/ecs/mg_entity.h>
 #include <mg/core/gfx/mg_bitmap_font.h>
 #include <mg/core/gfx/mg_material.h>
@@ -13,15 +11,17 @@
 #include <mg/core/gfx/mg_render_target.h>
 #include <mg/core/gfx/mg_simple_scene_renderer.h>
 #include <mg/core/input/mg_input.h>
+#include <mg/core/mg_application_context.h>
+#include <mg/core/mg_config.h>
+#include <mg/core/mg_identifier.h>
 #include <mg/core/mg_player_controller.h>
+#include <mg/core/mg_window_settings.h>
 #include <mg/core/physics/mg_physics_world.h>
 #include <mg/core/resource_cache/mg_resource_cache.h>
-#include <mg/scene/mg_common_scene_components.h>
-#include <mg/scene/mg_scene.h>
 #include <mg/utils/mg_interpolate_transform.h>
 #include <mg/utils/mg_optional.h>
 
-class Scene : public Mg::IApplication, Mg::SceneResources {
+class Scene : public Mg::IApplication {
 public:
     Scene(Mg::Config& config, Mg::Window& window);
     ~Scene() override;
@@ -32,6 +32,11 @@ public:
     Mg::Config& config;
     Mg::Window& window;
     Mg::gfx::Camera camera;
+
+    std::shared_ptr<Mg::ResourceCache> resource_cache;
+    std::shared_ptr<Mg::gfx::MeshPool> mesh_pool;
+    std::shared_ptr<Mg::gfx::TexturePool> texture_pool;
+    std::shared_ptr<Mg::gfx::MaterialPool> material_pool;
 
     std::shared_ptr<Mg::input::ButtonTracker> sample_control_button_tracker;
 
@@ -57,7 +62,7 @@ private:
     Mg::ecs::EntityCollection entities{ 1024 };
 
     const Mg::gfx::Material* default_material =
-        m_material_pool->get_or_load("materials/default.hjson");
+        material_pool->get_or_load("materials/default.hjson");
 
     std::unique_ptr<Mg::gfx::BitmapFont> make_font() const;
 
