@@ -64,8 +64,8 @@ void PlayerController::handle_movement_inputs(physics::CharacterController& char
     const auto jump_impulse = (is_jumping ? 5.0f : 0.0f) *
                               (character_controller.get_is_standing() ? 1.0f : 0.5f);
 
-    auto forward_acc = acceleration * (get_is_held("forward") - get_is_held("backward"));
-    auto right_acc = acceleration * (get_is_held("right") - get_is_held("left"));
+    const auto forward_acc = acceleration * (get_is_held("forward") - get_is_held("backward"));
+    const auto right_acc = acceleration * (get_is_held("right") - get_is_held("left"));
 
     const Rotation rotation_horizontal(glm::vec3(0.0f, 0.0f, rotation.euler_angles().z));
     const glm::vec3 vec_forward = rotation_horizontal.forward();

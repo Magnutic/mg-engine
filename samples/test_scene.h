@@ -1,98 +1,51 @@
 #pragma once
 
-#include "mg/core/gfx/mg_material_pool.h"
-#include "mg/core/gfx/mg_mesh_pool.h"
-#include <mg/core/containers/mg_small_vector.h>
-#include <mg/core/ecs/mg_entity.h>
+#include "mg/core/gfx/mg_camera.h"
 #include <mg/core/gfx/mg_bitmap_font.h>
 #include <mg/core/gfx/mg_material.h>
-#include <mg/core/gfx/mg_mesh.h>
-#include <mg/core/gfx/mg_render_command_list.h>
-#include <mg/core/gfx/mg_render_target.h>
 #include <mg/core/gfx/mg_simple_scene_renderer.h>
 #include <mg/core/input/mg_input.h>
-#include <mg/core/mg_application_context.h>
-#include <mg/core/mg_config.h>
-#include <mg/core/mg_identifier.h>
 #include <mg/core/mg_player_controller.h>
-#include <mg/core/mg_window_settings.h>
-#include <mg/core/physics/mg_physics_world.h>
-#include <mg/core/resource_cache/mg_resource_cache.h>
-#include <mg/utils/mg_interpolate_transform.h>
-#include <mg/utils/mg_optional.h>
+#include <mg/mg_game.h>
 
-class Scene : public Mg::IApplication {
+class TestScene : public Mg::Game {
 public:
-    Scene(Mg::Config& config, Mg::Window& window);
-    ~Scene() override;
+    TestScene();
+    ~TestScene() override;
 
-    MG_MAKE_NON_MOVABLE(Scene);
-    MG_MAKE_NON_COPYABLE(Scene);
+    MG_MAKE_NON_COPYABLE(TestScene);
+    MG_MAKE_NON_MOVABLE(TestScene);
 
-    Mg::Config& config;
-    Mg::Window& window;
     Mg::gfx::Camera camera;
-
-    std::shared_ptr<Mg::ResourceCache> resource_cache;
-    std::shared_ptr<Mg::gfx::MeshPool> mesh_pool;
-    std::shared_ptr<Mg::gfx::TexturePool> texture_pool;
-    std::shared_ptr<Mg::gfx::MaterialPool> material_pool;
 
     std::shared_ptr<Mg::input::ButtonTracker> sample_control_button_tracker;
 
-    std::unique_ptr<Mg::physics::PhysicsWorld> physics_world;
     std::unique_ptr<Mg::PlayerController> player_controller;
     std::unique_ptr<Mg::EditorController> editor_controller;
     Mg::IPlayerController* current_controller = nullptr;
-    std::unique_ptr<Mg::physics::CharacterController> character_controller;
 
-    std::shared_ptr<Mg::gfx::SimpleSceneRendererData> renderer_data;
-    std::unique_ptr<Mg::gfx::SceneRenderer> renderer;
+    std::unique_ptr<Mg::physics::CharacterController> character_controller;
 
     int debug_visualization = 0;
 
-    void simulation_step(Mg::ApplicationTimeInfo time_info) override;
-    void render(double lerp_factor, Mg::ApplicationTimeInfo time_info) override;
+    void on_simulation_step(const Mg::ApplicationTimeInfo& time_info) override;
+    void on_render(double lerp_factor, const Mg::ApplicationTimeInfo& time_info) override;
     bool should_exit() const override { return m_should_exit; }
     Mg::UpdateTimerConfig update_timer_config() const override;
+    Mg::gfx::SceneRenderer& renderer() override { return *m_renderer; }
+    const Mg::gfx::ICamera& active_camera() const override { return camera; }
 
 private:
-    void setup_config();
-
-    Mg::ecs::EntityCollection entities{ 1024 };
-
-    const Mg::gfx::Material* default_material =
-        material_pool->get_or_load("materials/default.hjson");
-
     std::unique_ptr<Mg::gfx::BitmapFont> make_font() const;
-
     std::shared_ptr<Mg::gfx::SimpleSceneRendererData> make_renderer_data();
-
-    void
-    load_model(Mg::Identifier mesh_file,
-               std::initializer_list<std::pair<Mg::Identifier, Mg::Identifier>> material_bindings,
-               Mg::ecs::Entity entity);
-
-    Mg::ecs::Entity add_static_object(
-        Mg::Identifier mesh_file,
-        std::initializer_list<std::pair<Mg::Identifier, Mg::Identifier>> material_bindings,
-        const glm::mat4& transform);
-
-    Mg::ecs::Entity add_dynamic_object(
-        Mg::Identifier mesh_file,
-        std::initializer_list<std::pair<Mg::Identifier, Mg::Identifier>> material_bindings,
-        glm::vec3 position,
-        Mg::Rotation rotation,
-        glm::vec3 scale,
-        bool enable_physics);
-
     void create_entities();
     void generate_lights();
 
-    void on_window_focus_change(bool is_focused);
-
     void render_light_debug_geometry();
     void render_skeleton_debug_geometry();
+
+    std::shared_ptr<Mg::gfx::SimpleSceneRendererData> m_renderer_data;
+    std::unique_ptr<Mg::gfx::SceneRenderer> m_renderer;
 
     bool m_should_exit = false;
 };
