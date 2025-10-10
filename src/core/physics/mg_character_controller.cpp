@@ -365,7 +365,6 @@ void CharacterController::horizontal_step(const vec3& step)
         return;
     }
 
-
     // Apply a force to hit objects.
     {
         const auto sweep_target = m_current_position + m_desired_direction * 0.2f;
@@ -500,8 +499,7 @@ void CharacterController::step_down()
 
     // If we are not moving upwards, and the floor is close beneath us, clamp down to the floor, so
     // that we follow stairs and ledges down.
-    const bool is_moving_upward = m_vertical_velocity + m_desired_velocity.z > 0.0f &&
-                                  m_jump_velocity <= 0.0f;
+    const bool is_moving_upward = m_vertical_velocity + m_desired_velocity.z > 0.0f;
     const bool try_clamping_to_floor = !drop_sweep_result && !is_moving_upward && m_is_on_ground;
     if (try_clamping_to_floor) {
         // Double step_height: once to compensate for the character controller floating step_height
@@ -517,7 +515,6 @@ void CharacterController::step_down()
         }
     }
 
-
     if (drop_sweep_result) {
         // There is a floor to stand on. Adjust vertical position accordingly.
         const float mix_factor = drop_sweep_result ? drop_sweep_result->hit_fraction : 1.0f;
@@ -530,7 +527,7 @@ void CharacterController::step_down()
         m_current_position = glm::mix(m_current_position, target_position, factor);
 
         auto dynamic_body = drop_sweep_result ? drop_sweep_result->body.as_dynamic_body() : nullopt;
-        if (dynamic_body) {
+        if (dynamic_body && m_is_on_ground) {
             const vec3 relative_position = drop_sweep_result->hit_point_worldspace -
                                            dynamic_body->get_position();
 
@@ -560,10 +557,7 @@ void CharacterController::step_down()
     }
 
     // Determine whether we are standing on solid ground.
-    // A bit of a hack, but also check if we are about to jump. Jumps are deferred one step, to let
-    // jump impulses affect dynamic bodies first. Therefore we must consider the jump that is about
-    // to happen here, or else it would be possible to jump twice.
-    m_is_on_ground = drop_sweep_result.has_value() && m_jump_velocity <= 0.0f;
+    m_is_on_ground = drop_sweep_result.has_value();
 
     // Slide down slopes
     if (!drop_sweep_result.has_value()) {
@@ -658,23 +652,6 @@ void CharacterController::jump(const float velocity)
     }
 
     m_jump_velocity += velocity;
-
-    // Check if we are standing on a dynamic object, and if so apply a downward impulse.
-    const auto sweep_target = m_current_position - vec3(0.0f, 0.0f, 2.0f * step_height());
-    auto sweep_result = character_sweep_test(m_current_position, sweep_target, world_up, -1.0f);
-    if (!sweep_result) {
-        return;
-    }
-
-    if (auto dynamic_body = sweep_result->body.as_dynamic_body(); dynamic_body) {
-        const vec3 relative_position = sweep_result->hit_point_worldspace -
-                                       dynamic_body->get_position();
-        apply_impulse_to_object_below(dynamic_body.value(),
-                                      relative_position,
-                                      sweep_result->hit_normal_worldspace,
-                                      -m_jump_velocity,
-                                      m_settings.mass);
-    }
 }
 
 void CharacterController::set_position(const vec3& position)
@@ -706,6 +683,30 @@ void CharacterController::update(const float time_step)
         }
     }
 
+    // If we are starting a jump, and are standing on a dynamic object, apply a downward impulse.
+    if (m_jump_velocity > 0.0f) {
+        const auto sweep_target = m_current_position - vec3(0.0f, 0.0f, 2.0f * step_height());
+        auto sweep_result = character_sweep_test(m_current_position, sweep_target, world_up, -1.0f);
+        if (sweep_result) {
+            if (auto dynamic_body = sweep_result->body.as_dynamic_body(); dynamic_body) {
+                // Can't jump off falling objects. Not exactly newtonian, this, but it suffices.
+                m_jump_velocity = max(m_jump_velocity + min(dynamic_body->velocity().z, 0.0f),
+                                      0.0f);
+
+                const vec3 relative_position = sweep_result->hit_point_worldspace -
+                                               dynamic_body->get_position();
+                apply_impulse_to_object_below(dynamic_body.value(),
+                                              relative_position,
+                                              sweep_result->hit_normal_worldspace,
+                                              -m_jump_velocity,
+                                              m_settings.mass);
+            }
+        }
+
+        m_vertical_velocity += std::exchange(m_jump_velocity, 0.0f);
+        m_is_on_ground = false;
+    }
+
     step_up();
     horizontal_step((m_desired_velocity + m_velocity_added_by_moving_surface) * m_time_step);
     step_down();
@@ -716,14 +717,6 @@ void CharacterController::update(const float time_step)
     // This can otherwise happen when sliding down into a pit.
     if (m_vertical_velocity < 0.0f) {
         m_vertical_velocity = min(0.0f, (m_current_position.z - m_last_position.z) / time_step);
-    }
-
-    // Apply jump. We do this after one completed step to let the impulse applied to the stood-upon
-    // object affect the character before we add the vertical velocity, so that we jump less high if
-    // the object we stood upon gets pushed down by the impulse (otherwise, we would not be
-    // conserving energy).
-    if (m_jump_velocity > 0.0f) {
-        m_vertical_velocity += std::exchange(m_jump_velocity, 0.0f);
     }
 
     m_desired_velocity = vec3(0.0f);

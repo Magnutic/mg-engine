@@ -162,7 +162,6 @@ public:
         return glm::mix(m_last_height_interpolated, m_current_height_interpolated, interpolate);
     }
 
-
     /** Get the character's velocity (in m/s) from the most recent update. */
     glm::vec3 velocity() const;
 
