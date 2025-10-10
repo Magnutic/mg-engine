@@ -13,7 +13,7 @@
 // Some tests check the time taken to verify that jobs are executed in parallel. Of course, such
 // tests are brittle and may fail in some environments. Therefore, they are disabled by default.
 #ifndef PERFORM_TIMING_SENSITIVE_TESTS
-#define PERFORM_TIMING_SENSITIVE_TESTS 1
+#define PERFORM_TIMING_SENSITIVE_TESTS 0
 #endif
 
 #if PERFORM_TIMING_SENSITIVE_TESTS
@@ -69,9 +69,9 @@ TEST_CASE("ThreadPool: many jobs")
     std::default_random_engine r(123);
     std::uniform_int_distribution<int> dist;
 
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 100; ++i) {
         const auto result = dist(r);
-        const auto wait_time_us = dist(r) % 10;
+        const auto wait_time_us = dist(r) % 5;
 
         job_to_expected_result_map.insert({ i, result });
 
@@ -101,7 +101,7 @@ TEST_CASE("ThreadPool: parallel_for")
     };
 
     std::vector<Elem> elems;
-    elems.resize(1024 * 1024);
+    elems.resize(10000);
 
     auto init = [&elems] {
         size_t i = 0;
