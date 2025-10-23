@@ -667,6 +667,11 @@ void CharacterController::set_position(const vec3& position)
 
 void CharacterController::update(const float time_step)
 {
+    auto clear_buffers = Mg::finally([&] {
+        m_ray_hits.clear();
+        m_collisions.clear();
+    });
+
     MG_ASSERT(time_step > 0.0f);
     m_time_step = time_step;
     m_current_position = collision_body().get_position();
