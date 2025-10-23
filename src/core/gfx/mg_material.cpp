@@ -7,14 +7,14 @@
 #include "mg/core/gfx/mg_material.h"
 
 #include "hjson/hjson.h"
-#include "mg/core/mg_log.h"
-#include "mg/core/mg_runtime_error.h"
-#include "mg/core/mg_value.h"
 #include "mg/core/gfx/mg_shader_related_types.h"
 #include "mg/core/gfx/mg_texture2d.h"
 #include "mg/core/gfx/mg_texture_cube.h"
 #include "mg/core/gfx/mg_texture_pool.h"
 #include "mg/core/mg_defs.h"
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_runtime_error.h"
+#include "mg/core/mg_value.h"
 #include "mg/core/resource_cache/mg_resource_access_guard.h"
 #include "mg/core/resources/mg_shader_resource.h"
 #include "mg/utils/mg_stl_helpers.h"
@@ -66,6 +66,21 @@ Opt<size_t> sampler_index(Material::Samplers& samplers, Identifier name)
     return nullopt;
 }
 
+namespace {
+shader::SamplerType sampler_type_for_texture(const Texture2D*)
+{
+    return shader::SamplerType::Sampler2D;
+}
+shader::SamplerType sampler_type_for_texture(const Texture2DArray*)
+{
+    return shader::SamplerType::Sampler2DArray;
+}
+shader::SamplerType sampler_type_for_texture(const TextureCube*)
+{
+    return shader::SamplerType::SamplerCube;
+}
+} // namespace
+
 template<typename TextureT>
 void set_sampler_impl(Identifier material_id,
                       Material::Samplers& samplers,
@@ -78,6 +93,16 @@ void set_sampler_impl(Identifier material_id,
         throw RuntimeError{ "Material '{}': set_sampler(\"{}\", ...): shader has no such sampler.",
                             material_id.str_view(),
                             sampler_name.str_view() };
+    }
+
+    if (it->type != sampler_type_for_texture(texture)) {
+        throw RuntimeError{
+            "Material '{}': set_sampler(\"{}\", ...) [with texture '{}']: Texture type does not "
+            "match sampler type.",
+            material_id.str_view(),
+            sampler_name.str_view(),
+            texture->id().str_view()
+        };
     }
 
     if (texture) {
