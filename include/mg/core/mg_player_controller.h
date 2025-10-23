@@ -68,6 +68,8 @@ public:
     float acceleration = 0.6f;
     float max_horizontal_speed = 10.0f;
     float friction = 0.6f;
+    float jump_speed = 6.5f;
+    float crouch_jump_multiplier = 0.5f;
 
 private:
     std::shared_ptr<input::ButtonTracker> m_button_tracker;

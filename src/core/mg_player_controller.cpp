@@ -61,8 +61,9 @@ void PlayerController::handle_movement_inputs(physics::CharacterController& char
     };
 
     const bool is_jumping = button_states["jump"].is_held && character_controller.is_on_ground();
-    const auto jump_impulse = (is_jumping ? 5.0f : 0.0f) *
-                              (character_controller.get_is_standing() ? 1.0f : 0.5f);
+    const auto jump_impulse = (is_jumping ? jump_speed : 0.0f) *
+                              (character_controller.get_is_standing() ? 1.0f
+                                                                      : crouch_jump_multiplier);
 
     const auto forward_acc = acceleration * (get_is_held("forward") - get_is_held("backward"));
     const auto right_acc = acceleration * (get_is_held("right") - get_is_held("left"));
