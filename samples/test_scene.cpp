@@ -165,7 +165,7 @@ void TestScene::on_render(const double lerp_factor, const Mg::ApplicationTimeInf
     }
 
     camera.position = character_controller->get_position(float(lerp_factor));
-    camera.position.z += character_controller->current_height_smooth(float(lerp_factor)) * 0.95f;
+    camera.position.z += character_controller->current_height_smooth(float(lerp_factor)) * 0.90f;
     camera.exposure = -5.0f;
 
     // Draw meshes and billboards.

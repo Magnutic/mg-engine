@@ -80,10 +80,10 @@ struct MutableCharacterControllerSettings {
     /** Mass of the character. Used for forces when colliding with dynamic objects. */
     float mass = 70.0f;
 
-    /** When moving up and down stairs, smooth the vertical movement by applying the motion by this
+    /** When moving up and down stairs, smooth the vertical movement by applying the motion
      * multiplied by this factor each step.
      */
-    float vertical_interpolation_factor = 0.35f;
+    float vertical_interpolation_factor = 0.3f;
 };
 
 /** Settings for `CharacterController`. */
@@ -192,11 +192,16 @@ public:
 private:
     void init(const glm::vec3& initial_position);
 
-    Opt<RayHit> character_sweep_test(const glm::vec3& start,
-                                     const glm::vec3& end,
-                                     const glm::vec3& up,
-                                     float min_normal_angle_cosine = -1.0f,
-                                     float max_normal_angle_cosine = 1.0f) const;
+    struct SweepTestParams {
+        glm::vec3 start;
+        glm::vec3 end;
+        glm::vec3 up;
+        float min_normal_angle_cosine = -1.0f;
+        float max_normal_angle_cosine = 1.0f;
+        float min_hit_fraction = 0.0f; // Minimum distance along the path from start to end
+    };
+
+    Opt<RayHit> character_sweep_test(const SweepTestParams& p) const;
     void recover_from_penetration();
     void step_up();
     void horizontal_step(const glm::vec3& step);
