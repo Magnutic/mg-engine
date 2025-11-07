@@ -29,7 +29,7 @@ struct MeshRenderParameters {
 
 class MeshRenderer {
 public:
-    MeshRenderer(const LightGridConfig& light_grid_config);
+    explicit MeshRenderer(const LightGridConfig& light_grid_config);
 
     /** Render the supplied list of meshes. */
     void render(const ICamera& cam,

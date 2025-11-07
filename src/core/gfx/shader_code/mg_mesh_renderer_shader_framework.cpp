@@ -125,49 +125,51 @@ void main()
 #if SKELETAL_ANIMATION_ENABLED
 
     vec3 position = vec3(0.0);
+    vec3 normal = vec3(0.0);
     vec3 tangent = vec3(0.0);
     vec3 bitangent = vec3(0.0);
 
     // Loop manually unrolled as work around for glitches appearing on Intel HD Graphics 530 on Linux.
 
     // Note: MATRIX_M is already multiplied into the skinning matrices.
-    position        += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_joint_influences[0])) * vec4(POSITION,  1.0)).xyz;
-    tangent         += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_joint_influences[0])) * vec4(TANGENT,   0.0)).xyz;
-    bitangent       += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_joint_influences[0])) * vec4(BITANGENT, 0.0)).xyz;
-    vert_out.normal += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_joint_influences[0])) * vec4(NORMAL,    0.0)).xyz;
+    position  += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_joint_influences[0])) * vec4(POSITION,  1.0)).xyz;
+    tangent   += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_joint_influences[0])) * vec4(TANGENT,   0.0)).xyz;
+    bitangent += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_joint_influences[0])) * vec4(BITANGENT, 0.0)).xyz;
+    normal    += (vert_joint_weights[0] * SKINNING_MATRIX(uint(vert_joint_influences[0])) * vec4(NORMAL,    0.0)).xyz;
 
-    position        += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_joint_influences[1])) * vec4(POSITION,  1.0)).xyz;
-    tangent         += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_joint_influences[1])) * vec4(TANGENT,   0.0)).xyz;
-    bitangent       += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_joint_influences[1])) * vec4(BITANGENT, 0.0)).xyz;
-    vert_out.normal += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_joint_influences[1])) * vec4(NORMAL,    0.0)).xyz;
+    position  += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_joint_influences[1])) * vec4(POSITION,  1.0)).xyz;
+    tangent   += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_joint_influences[1])) * vec4(TANGENT,   0.0)).xyz;
+    bitangent += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_joint_influences[1])) * vec4(BITANGENT, 0.0)).xyz;
+    normal    += (vert_joint_weights[1] * SKINNING_MATRIX(uint(vert_joint_influences[1])) * vec4(NORMAL,    0.0)).xyz;
 
-    position        += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_joint_influences[2])) * vec4(POSITION,  1.0)).xyz;
-    tangent         += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_joint_influences[2])) * vec4(TANGENT,   0.0)).xyz;
-    bitangent       += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_joint_influences[2])) * vec4(BITANGENT, 0.0)).xyz;
-    vert_out.normal += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_joint_influences[2])) * vec4(NORMAL,    0.0)).xyz;
+    position  += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_joint_influences[2])) * vec4(POSITION,  1.0)).xyz;
+    tangent   += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_joint_influences[2])) * vec4(TANGENT,   0.0)).xyz;
+    bitangent += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_joint_influences[2])) * vec4(BITANGENT, 0.0)).xyz;
+    normal    += (vert_joint_weights[2] * SKINNING_MATRIX(uint(vert_joint_influences[2])) * vec4(NORMAL,    0.0)).xyz;
 
-    position        += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_joint_influences[3])) * vec4(POSITION,  1.0)).xyz;
-    tangent         += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_joint_influences[3])) * vec4(TANGENT,   0.0)).xyz;
-    bitangent       += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_joint_influences[3])) * vec4(BITANGENT, 0.0)).xyz;
-    vert_out.normal += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_joint_influences[3])) * vec4(NORMAL,    0.0)).xyz;
+    position  += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_joint_influences[3])) * vec4(POSITION,  1.0)).xyz;
+    tangent   += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_joint_influences[3])) * vec4(TANGENT,   0.0)).xyz;
+    bitangent += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_joint_influences[3])) * vec4(BITANGENT, 0.0)).xyz;
+    normal    += (vert_joint_weights[3] * SKINNING_MATRIX(uint(vert_joint_influences[3])) * vec4(NORMAL,    0.0)).xyz;
 
 #else
 
-    vec3 position   = (MATRIX_M * vec4(POSITION,  1.0)).xyz;
-    vec3 tangent    = (MATRIX_M * vec4(TANGENT,   0.0)).xyz;
-    vec3 bitangent  = (MATRIX_M * vec4(BITANGENT, 0.0)).xyz;
-    vert_out.normal = (MATRIX_M * vec4(NORMAL,    0.0)).xyz;
+    vec3 position  = (MATRIX_M * vec4(POSITION,  1.0)).xyz;
+    vec3 tangent   = (MATRIX_M * vec4(TANGENT,   0.0)).xyz;
+    vec3 bitangent = (MATRIX_M * vec4(BITANGENT, 0.0)).xyz;
+    vec3 normal    = (MATRIX_M * vec4(NORMAL,    0.0)).xyz;
 
 #endif // SKELETAL_ANIMATION_ENABLED
 
     // Transform vertex location to projection space
     gl_Position = MATRIX_VP * vec4(position, 1.0);
 
-    // Pass through world-space position
-    vert_out.position = position.xyz;
+    // Pass through world-space position and normal
+    vert_out.position = position;
+    vert_out.normal= position;
 
     // Create tangent space basis matrix
-    vert_out.TBN = mat3(normalize(tangent), normalize(bitangent), normalize(vert_out.normal));
+    vert_out.TBN = mat3(normalize(tangent), normalize(bitangent), normalize(normal));
 }
 )"sv;
 

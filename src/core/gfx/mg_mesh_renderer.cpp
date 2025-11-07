@@ -353,7 +353,7 @@ void MeshRenderer::render(const ICamera& cam,
         set_matrix_index(i % k_matrix_ubo_array_size);
 
         // If render command is a skinned mesh, also upload skinning matrices.
-        if (command.num_skinning_matrices > 0) {
+        if (is_skinned_mesh) {
             m_impl->skinning_matrix_uniform_handler.set_matrix_array(
                 command_list.skinning_matrices().subspan(command.skinning_matrices_begin,
                                                          command.num_skinning_matrices));
