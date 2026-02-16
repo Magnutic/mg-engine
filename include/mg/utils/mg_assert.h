@@ -12,6 +12,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <source_location>
 
 #ifndef MG_CONTRACT_VIOLATION_THROWS
 #    define MG_CONTRACT_VIOLATION_THROWS 0
@@ -20,12 +21,15 @@
 /** MG_ASSERT will check even in release builds -- use when checking for errors is critical, more
  * important than performance.
  */
-#define MG_ASSERT(expr)                                      \
-    if (expr) {                                              \
-        [[likely]];                                          \
-    }                                                        \
-    else {                                                   \
-        ::Mg::contract_violation(#expr, __FILE__, __LINE__); \
+#define MG_ASSERT(expr)                                                           \
+    if (expr) {                                                                   \
+        [[likely]];                                                               \
+    }                                                                             \
+    else {                                                                        \
+        ::Mg::contract_violation(#expr,                                           \
+                                 std::source_location::current().function_name(), \
+                                 std::source_location::current().file_name(),     \
+                                 std::source_location::current().line());         \
     }
 
 /** MG_ASSERT_DEBUG: debug-build assertion. */
@@ -45,10 +49,11 @@ class ContractViolation {};
 #endif
 
 /** Function invoked on contract violation in e.g. MG_ASSERT */
-[[noreturn]] inline void contract_violation(const char* expr, const char* file, int line)
+[[noreturn]] inline void
+contract_violation(const char* expr, const char* function, const char* file, int line)
 {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg)
-    fprintf(stderr, "Assertion failed: %s at %s:%d\n", expr, file, line);
+    fprintf(stderr, "Assertion failed: '%s' in function '%s' at %s:%d\n", expr, function, file, line);
 
 #if MG_CONTRACT_VIOLATION_THROWS
     throw ContractViolation{};
