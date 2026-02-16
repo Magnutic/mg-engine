@@ -297,6 +297,10 @@ void push_back_against_penetrating_object(const Collision& collision,
 
 void CharacterController::recover_from_penetration()
 {
+    if (!m_settings.collision_enabled) {
+        return;
+    }
+
     for (int i = 0; i < num_penetration_recovery_iterations; ++i) {
         m_current_position = collision_body().get_position();
 
@@ -333,16 +337,17 @@ void CharacterController::recover_from_penetration()
     }
 }
 
-static constexpr bool collision_enabled = true; // TODO: noclip
-
 void CharacterController::step_up()
 {
     auto target_position = m_current_position +
                            world_up * max(m_vertical_velocity * m_time_step, 0.0f);
 
-    auto update_position = finally([&] { m_current_position = target_position; });
+    auto update_position = finally([&] {
+        m_current_position = target_position;
+        collision_body().set_position(target_position);
+    });
 
-    if (collision_enabled) {
+    if (m_settings.collision_enabled) {
         Opt<RayHit> sweep_result = character_sweep_test({ .start = m_current_position,
                                                           .end = target_position,
                                                           .up = -world_up,
@@ -364,9 +369,13 @@ void CharacterController::step_up()
 void CharacterController::horizontal_step(const vec3& step)
 {
     auto target_position = m_current_position + step;
-    auto update_position = finally([&] { m_current_position = target_position; });
 
-    if (!collision_enabled || glm::length2(step) <= FLT_EPSILON) {
+    auto update_position = finally([&] {
+        m_current_position = target_position;
+        collision_body().set_position(target_position);
+    });
+
+    if (!m_settings.collision_enabled || glm::length2(step) <= FLT_EPSILON) {
         return;
     }
 
@@ -486,11 +495,15 @@ void apply_force_to_object_below(DynamicBodyHandle& dynamic_body,
 void CharacterController::step_down()
 {
     auto target_position = m_current_position;
-    auto update_position = finally([&] { m_current_position = target_position; });
+
+    auto update_position = finally([&] {
+        m_current_position = target_position;
+        collision_body().set_position(target_position);
+    });
 
     m_velocity_added_by_moving_surface = vec3(0.0f);
 
-    if (!collision_enabled) {
+    if (!m_settings.collision_enabled) {
         return;
     }
 
@@ -587,8 +600,6 @@ void CharacterController::step_down()
             target_position += slide_direction * m_settings.slide_down_acceleration * m_time_step;
         }
     }
-
-    collision_body().set_position(target_position);
 }
 
 void CharacterController::move(const vec3& velocity)

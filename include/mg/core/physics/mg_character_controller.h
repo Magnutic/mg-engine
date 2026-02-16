@@ -84,6 +84,9 @@ struct MutableCharacterControllerSettings {
      * multiplied by this factor each step.
      */
     float vertical_interpolation_factor = 0.3f;
+
+    /** Whether collision detection is enabled for this character. */
+    bool collision_enabled = true;
 };
 
 /** Settings for `CharacterController`. */

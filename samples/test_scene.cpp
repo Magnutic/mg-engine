@@ -136,9 +136,11 @@ void TestScene::on_simulation_step(const Mg::ApplicationTimeInfo& /*time_info*/)
     if (button_states["swap_movement_mode"].was_pressed) {
         if (current_controller == player_controller.get()) {
             current_controller = editor_controller.get();
+            character_controller->mutable_settings().collision_enabled = false;
         }
         else {
             current_controller = player_controller.get();
+            character_controller->mutable_settings().collision_enabled = true;
         }
     }
 
