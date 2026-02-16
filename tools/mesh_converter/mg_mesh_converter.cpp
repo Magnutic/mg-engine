@@ -2,15 +2,15 @@
 
 #include "../shared/mg_file_writer.h"
 #include "mg_assimp_utils.h"
-#include "glm/gtc/constants.hpp"
-#include "glm/gtx/quaternion.hpp"
 
 #include <mg/core/resources/mg_mesh_resource_data.h>
 #include <mg/utils/mg_assert.h>
 #include <mg/utils/mg_optional.h>
 #include <mg/utils/mg_u8string_casts.h>
 
+#include <glm/gtc/constants.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
@@ -768,14 +768,16 @@ const aiScene* load_file(Assimp::Importer& importer, const std::filesystem::path
     static const unsigned int common_flags =
         aiProcess_ValidateDataStructure | aiProcess_CalcTangentSpace | aiProcess_FindDegenerates |
         aiProcess_FindInvalidData | aiProcess_FindInstances | aiProcess_ImproveCacheLocality |
-        aiProcess_JoinIdenticalVertices | aiProcess_OptimizeMeshes | aiProcess_RemoveComponent |
-        aiProcess_SortByPType | aiProcess_SplitLargeMeshes | aiProcess_GenUVCoords |
-        aiProcess_GenSmoothNormals | aiProcess_Triangulate;
+        aiProcess_OptimizeMeshes | aiProcess_RemoveComponent | aiProcess_SortByPType |
+        aiProcess_SplitLargeMeshes | aiProcess_GenUVCoords | aiProcess_GenSmoothNormals |
+        aiProcess_Triangulate;
 
     static const unsigned int skinned_model_flags = common_flags | aiProcess_LimitBoneWeights |
                                                     aiProcess_OptimizeGraph;
 
-    static const unsigned int static_model_flags = common_flags | aiProcess_PreTransformVertices;
+    // JoinIdenticalVertices can cause gaps in animated models.
+    static const unsigned int static_model_flags = common_flags | aiProcess_PreTransformVertices |
+                                                   aiProcess_JoinIdenticalVertices;
 
     // Use AssImp to load a scene from file.
     const aiScene* scene = nullptr;
