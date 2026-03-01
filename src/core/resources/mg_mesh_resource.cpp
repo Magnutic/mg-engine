@@ -382,12 +382,6 @@ bool MeshResource::validate() const
 
     // Check joint influences
     {
-        if (n_influences > 0 && n_influences != n_vertices) {
-            mesh_error("Number of joint influences ({}) does not match number of vertices ({}).",
-                       n_influences,
-                       n_vertices);
-        }
-
         for (size_t ii = 0; ii < n_influences; ++ii) {
             const Influences& vertex_influences = influences()[ii];
             for (const JointId id : vertex_influences.ids) {
