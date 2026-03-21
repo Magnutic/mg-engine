@@ -2,6 +2,7 @@
 
 #include "../shared/mg_file_writer.h"
 #include "mg_assimp_utils.h"
+#include "glm/ext/matrix_transform.hpp"
 
 #include <mg/core/resources/mg_mesh_resource_data.h>
 #include <mg/utils/mg_assert.h>
@@ -41,13 +42,10 @@ namespace {
 
 constexpr float k_scaling_factor = 1.00f; // TODO configurable or deduced somehow?
 
-// AssImp always imports as Y-up, so we have to rotate to compensate.
-const mat4 to_z_up = glm::toMat4(glm::quat(vec3{ -glm::half_pi<float>(), 0.0f, 0.0f }));
-
-const mat4 to_mg_space = to_z_up * mat4({ k_scaling_factor, 0, 0, 0 },
-                                        { 0, k_scaling_factor, 0, 0 },
-                                        { 0, 0, k_scaling_factor, 0 },
-                                        { 0, 0, 0, 1 });
+const mat4 to_mg_space = mat4({ k_scaling_factor, 0, 0, 0 },
+                              { 0, k_scaling_factor, 0, 0 },
+                              { 0, 0, k_scaling_factor, 0 },
+                              { 0, 0, 0, 1 });
 
 const mat4 from_mg_space = glm::inverse(to_mg_space);
 
@@ -64,21 +62,17 @@ inline mat4 convert_matrix(const aiMatrix4x4& aiMat)
 
 inline vec3 convert_position(const aiVector3D& ai_vector)
 {
-    return vec4{ ai_vector.x * k_scaling_factor,
-                 ai_vector.y * k_scaling_factor,
-                 ai_vector.z * k_scaling_factor,
-                 1.0f } *
-           to_mg_space;
+    return vec4{ ai_vector.x, ai_vector.y, ai_vector.z, 1.0f } * k_scaling_factor;
 }
 
 inline vec3 convert_direction(const aiVector3D& ai_vector)
 {
-    return vec4{ ai_vector.x, ai_vector.y, ai_vector.z, 0.0f } * to_mg_space;
+    return vec4{ ai_vector.x, ai_vector.y, ai_vector.z, 0.0f } * k_scaling_factor;
 }
 
 inline quat convert_quaternion(const aiQuaternion& quaternion)
 {
-    return { quaternion.w, quaternion.x, quaternion.y, quaternion.z };
+    return quat{ quaternion.w, quaternion.x, quaternion.y, quaternion.z };
 }
 
 template<typename... Ts> void notify(const Ts&... what)
@@ -187,7 +181,7 @@ public:
     std::span<const Joint> joints() const { return m_joints; }
 
     // Transformation of the root node of the skeleton. This contains the accumulated
-    // transformations of the scene nodes that are parent to the skeleton, but are not include as
+    // transformations of the scene nodes that are parent to the skeleton, but are not included as
     // joints in the skeleton.
     const mat4& skeleton_root_transform() const { return m_skeleton_root_transform; }
 
@@ -199,10 +193,9 @@ private:
     // children.
     JointId add_dummy_joint(std::string_view name);
 
-    mat4 m_skeleton_root_transform = mat4(1.0f);
+    mat4 m_skeleton_root_transform = glm::mat4(1.0f);
 
     std::vector<Joint> m_joints;
-    std::map<const aiBone*, JointId> m_joint_id_for_bone;
     StringData* m_string_data = nullptr;
 };
 
@@ -214,7 +207,6 @@ JointId JointData::add_joint(const aiBone& bone)
 
     // Get id (index) for joint and add it to map, so we can look up.
     const auto joint_id = JointId(m_joints.size());
-    m_joint_id_for_bone[&bone] = joint_id;
 
     // Create the joint, using bone data if available.
     Joint& joint = m_joints.emplace_back();
@@ -244,11 +236,7 @@ JointId JointData::add_dummy_joint(std::string_view name)
 
 JointId JointData::get_joint_id(const aiBone& bone) const
 {
-    const auto jointIndexIt = m_joint_id_for_bone.find(&bone);
-    if (jointIndexIt == m_joint_id_for_bone.end()) {
-        throw std::logic_error("No joint found for bone "s + to_string(bone.mName));
-    }
-    return jointIndexIt->second;
+    return find_joint(bone.mName.C_Str());
 }
 
 // A map from AssImp nodes to their corresponding bones (nullptr if the node does not correspond to
@@ -705,7 +693,7 @@ void dump_scene(const aiScene& scene)
     dump_node_tree(scene, *scene.mRootNode);
     print_heading("Input materials");
     for (size_t i = 0; i < scene.mNumMaterials; ++i) {
-        notify(scene.mMaterials[i]->GetName().C_Str());
+        notify(scene.mMaterials[i]->GetName().C_Str()); // NOLINT
     }
 }
 
