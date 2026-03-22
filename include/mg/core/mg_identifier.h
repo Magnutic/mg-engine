@@ -11,8 +11,8 @@
 
 #pragma once
 
-#include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_hash_fnv1a.h"
+#include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_u8string_casts.h"
 
 #include <cstdint>

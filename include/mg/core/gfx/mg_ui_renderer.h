@@ -12,15 +12,11 @@
 
 #include "mg/core/mg_window_settings.h"
 #include "mg/core/gfx/mg_blend_modes.h"
-#include "mg/core/gfx/mg_gfx_object_handles.h"
 #include "mg/utils/mg_angle.h"
 #include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_optional.h"
 
 #include <glm/vec2.hpp>
-
-#include <string_view>
 
 namespace Mg::gfx {
 

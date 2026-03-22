@@ -9,17 +9,16 @@
  */
 
 #pragma once
+#include "mg/core/mg_rotation.h"
+#include "mg/utils/mg_angle.h"
+#include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_macros.h"
+#include "mg/utils/mg_point_normal_plane.h"
 
 #include <glm/common.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
-
-#include "mg/core/mg_transform.h"
-#include "mg/utils/mg_angle.h"
-#include "mg/utils/mg_gsl.h"
-#include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_point_normal_plane.h"
 
 namespace Mg::gfx {
 

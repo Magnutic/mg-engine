@@ -14,9 +14,7 @@
 #include "mg/core/gfx/mg_mesh_data.h"
 #include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_optional.h"
 
-#include <cstddef>
 #include <memory>
 
 namespace Mg {

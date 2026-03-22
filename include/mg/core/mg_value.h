@@ -10,7 +10,6 @@
 
 #pragma once
 
-#include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_optional.h"
@@ -20,7 +19,6 @@
 #include <glm/vec4.hpp>
 
 #include <cstdint>
-#include <memory>
 #include <string>
 #include <string_view>
 #include <variant>

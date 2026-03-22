@@ -234,13 +234,12 @@ TextureHandle generate_gl_texture_array_from(std::span<const TextureResource*> r
                t->format().pixel_format != resources.front()->format().pixel_format;
     };
     if (auto it = std::ranges::find_if(resources, has_wrong_size); it != resources.end()) {
-        auto msg = format(
+        throw RuntimeError{
             "Cannot construct texture array: Texture '{}' does not match Texture '{}' in width, "
             "height, number of mip levels, or pixel format.",
             resources.front()->resource_id().str_view(),
-            (*it)->resource_id().str_view());
-        log.error(msg);
-        throw RuntimeError{ msg };
+            (*it)->resource_id().str_view()
+        };
     }
 
     const auto layer_count = narrow<GLsizei>(resources.size());

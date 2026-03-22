@@ -10,8 +10,8 @@
 
 #pragma once
 
-#include "mg/core/mg_identifier.h"
 #include "mg/core/gfx/mg_vertex_attribute.h"
+#include "mg/core/mg_identifier.h"
 
 #include <glm/mat4x4.hpp>
 

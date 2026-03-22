@@ -11,7 +11,6 @@
 
 #include "mg/core/gfx/mg_camera.h"
 #include "mg/core/gfx/mg_gfx_debug_group.h"
-#include "mg/core/gfx/mg_mesh_data.h"
 #include "mg/core/gfx/mg_pipeline_pool.h"
 #include "mg/core/gfx/mg_render_target.h"
 #include "mg/core/gfx/mg_uniform_buffer.h"

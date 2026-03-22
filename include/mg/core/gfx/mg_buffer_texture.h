@@ -11,8 +11,9 @@
 #pragma once
 
 #include "mg/core/gfx/mg_gfx_object_handles.h"
-#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_macros.h"
+
+#include <span>
 
 // TODO: automagic double-buffering?
 

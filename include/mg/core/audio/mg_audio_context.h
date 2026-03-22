@@ -11,13 +11,13 @@
 #pragma once
 
 #include "mg/core/audio/mg_sound_buffer_handle.h"
-#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
 
 #include <glm/vec3.hpp>
 
 #include <cstdint>
+#include <span>
 #include <string>
 
 namespace Mg {

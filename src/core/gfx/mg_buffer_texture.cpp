@@ -6,7 +6,6 @@
 
 #include "mg/core/gfx/mg_buffer_texture.h"
 
-#include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/core/gfx/mg_gfx_debug_group.h"
 

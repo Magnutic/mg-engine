@@ -10,17 +10,15 @@
 
 #pragma once
 
-#include "mg/core/containers/mg_array.h"
 #include "mg/core/gfx/mg_gfx_object_handles.h"
 #include "mg/core/gfx/mg_material_binding.h"
 #include "mg/core/mg_bounding_volumes.h"
-#include "mg/core/mg_identifier.h"
-#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_impl_ptr.h"
 
 #include <glm/mat4x4.hpp>
 
 #include <cstdint>
+#include <span>
 #include <vector>
 
 namespace Mg {

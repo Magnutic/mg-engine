@@ -7,7 +7,6 @@
 #include "mg/core/mg_identifier.h"
 
 #include "mg/core/mg_log.h"
-#include "mg/utils/mg_assert.h"
 
 #include <fmt/core.h>
 

@@ -10,10 +10,11 @@
 
 #pragma once
 
-#include "mg/core/mg_value.h"
 #include "mg/core/gfx/mg_blend_modes.h"
 #include "mg/core/gfx/mg_shader_related_types.h"
-#include "mg/utils/mg_gsl.h"
+#include "mg/core/mg_identifier.h"
+#include "mg/core/mg_value.h"
+#include "mg/utils/mg_optional.h"
 
 #include <glm/fwd.hpp>
 

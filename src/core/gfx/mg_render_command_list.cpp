@@ -7,7 +7,6 @@
 #include "mg/core/gfx/mg_render_command_list.h"
 
 #include "mg/core/mg_log.h"
-#include "mg/core/mg_transform.h"
 #include "mg/core/gfx/mg_camera.h"
 #include "mg/core/gfx/mg_frustum.h"
 #include "mg/core/gfx/mg_mesh.h"

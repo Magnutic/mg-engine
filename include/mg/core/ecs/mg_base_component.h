@@ -14,7 +14,6 @@
 #include "mg/utils/mg_is_instantiation_of.h"
 
 #include <concepts>
-#include <cstdint>
 #include <cstdlib>
 
 namespace Mg::ecs {

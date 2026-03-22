@@ -11,9 +11,10 @@
 #pragma once
 
 #include "mg/core/gfx/mg_uniform_buffer.h"
-#include "mg/utils/mg_gsl.h"
 
 #include <glm/fwd.hpp>
+
+#include <span>
 
 namespace Mg::gfx {
 

@@ -10,11 +10,9 @@
 
 #pragma once
 
-#include "mg/core/containers/mg_array.h"
 #include "mg/core/gfx/mg_animation.h"
 #include "mg/core/mg_bounding_volumes.h"
 #include "mg/core/resource_cache/mg_base_resource.h"
-#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_optional.h"
 
 #include <memory>

@@ -21,7 +21,6 @@
 #include "mg/core/resources/mg_shader_resource.h"
 #include "mg/utils/mg_iteration_utils.h"
 #include "mg/utils/mg_optional.h"
-#include "mg/utils/mg_stl_helpers.h"
 
 #include <algorithm>
 #include <fmt/core.h>

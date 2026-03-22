@@ -15,7 +15,6 @@
 #include "mg/core/gfx/mg_vertex_attribute.h"
 #include "mg/core/mg_bounding_volumes.h"
 #include "mg/core/mg_identifier.h"
-#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_vector_normalized.h"
 

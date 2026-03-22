@@ -17,7 +17,6 @@
 #include "mg/core/gfx/mg_mesh_data.h"
 #include "mg/core/gfx/mg_skeleton.h"
 
-#include <bit>
 #include <glm/vec3.hpp>
 
 #include <cstdint>

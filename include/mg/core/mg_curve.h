@@ -12,9 +12,9 @@
 #pragma once
 
 #include "mg/core/containers/mg_small_vector.h"
-#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_optional.h"
 
+#include <span>
 #include <string>
 #include <string_view>
 

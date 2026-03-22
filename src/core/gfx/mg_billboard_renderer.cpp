@@ -6,8 +6,6 @@
 
 #include "mg/core/gfx/mg_billboard_renderer.h"
 
-#include "mg/core/mg_log.h"
-#include "mg/core/mg_rotation.h"
 #include "mg/core/gfx/mg_blend_modes.h"
 #include "mg/core/gfx/mg_camera.h"
 #include "mg/core/gfx/mg_debug_renderer.h"
@@ -16,12 +14,12 @@
 #include "mg/core/gfx/mg_pipeline_pool.h"
 #include "mg/core/gfx/mg_render_target.h"
 #include "mg/core/gfx/mg_uniform_buffer.h"
+#include "mg/core/mg_rotation.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_math_utils.h"
 #include "mg/utils/mg_stl_helpers.h"
 
 #include "mg_gl_debug.h"
-#include "mg_shader.h"
 #include "mg_opengl_loader_glad.h"
 
 #ifndef GLM_ENABLE_EXPERIMENTAL

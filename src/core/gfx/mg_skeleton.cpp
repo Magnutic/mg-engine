@@ -7,9 +7,7 @@
 #include "mg/core/gfx/mg_skeleton.h"
 
 #include "mg/core/mg_log.h"
-#include "mg/core/mg_transform.h"
 #include "mg/core/gfx/mg_animation.h"
-#include "mg/utils/mg_iteration_utils.h"
 
 #include <glm/mat3x3.hpp>
 #include <glm/mat4x4.hpp>

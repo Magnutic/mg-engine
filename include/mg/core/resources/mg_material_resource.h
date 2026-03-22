@@ -10,18 +10,14 @@
 
 #pragma once
 
-#include "mg/core/mg_value.h"
 #include "mg/core/gfx/mg_blend_modes.h"
-#include "mg/core/gfx/mg_shader_related_types.h"
 #include "mg/core/resource_cache/mg_base_resource.h"
 #include "mg/core/resource_cache/mg_resource_handle.h"
-#include "mg/utils/mg_gsl.h"
 
 #include "mg/core/parser/mg_parser.h"
 
-#include <memory>
-#include <string>
 #include <vector>
+#include <span>
 
 namespace Mg {
 

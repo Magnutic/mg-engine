@@ -6,9 +6,10 @@
 
 #include "mg/core/gfx/mg_matrix_uniform_handler.h"
 
-#include "mg/core/gfx/mg_camera.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_math_utils.h"
+
+#include <glm/mat4x4.hpp>
 
 namespace Mg::gfx {
 

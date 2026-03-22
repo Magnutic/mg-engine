@@ -15,7 +15,6 @@
 #include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
 
-#include <cstdint>
 #include <string_view>
 #include <type_traits>
 

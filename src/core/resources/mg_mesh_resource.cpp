@@ -6,8 +6,9 @@
 
 #include "mg/core/resources/mg_mesh_resource.h"
 
-#include "mg/core/mg_log.h"
+#include "mg/core/containers/mg_array.h"
 #include "mg/core/gfx/mg_mesh_data.h"
+#include "mg/core/mg_log.h"
 #include "mg/core/resource_cache/mg_resource_loading_input.h"
 #include "mg/core/resources/mg_mesh_resource_data.h"
 #include "mg/utils/mg_stl_helpers.h"

@@ -17,7 +17,6 @@
 #include "mg/utils/mg_macros.h"
 
 #include <string>
-#include <vector>
 
 namespace Mg::gfx {
 class Material;

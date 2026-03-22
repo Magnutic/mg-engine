@@ -10,11 +10,10 @@
 
 #pragma once
 
-#include "mg/core/containers/mg_array.h"
 #include "mg/core/gfx/mg_shader_related_types.h"
 #include "mg/core/resource_cache/mg_base_resource.h"
-#include "mg/utils/mg_gsl.h"
 
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>

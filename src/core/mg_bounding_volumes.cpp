@@ -7,8 +7,6 @@
 #include <glm/gtx/norm.hpp>
 #include <glm/vec3.hpp>
 
-#include <numeric>
-
 namespace Mg {
 
 using namespace Mg::gfx::mesh_data;

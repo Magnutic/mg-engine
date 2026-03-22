@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include "mg/core/physics/mg_static_body_handle.h"
-
 #include "mg_bullet_utils.h"
 #include "mg_physics_body.h"
 #include "mg_shape_base.h"

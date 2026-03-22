@@ -7,14 +7,12 @@
 #include "mg/core/gfx/mg_bitmap_font.h"
 
 #include "mg/core/containers/mg_array.h"
-#include "mg/core/containers/mg_flat_map.h"
 #include "mg/core/containers/mg_small_vector.h"
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/core/mg_unicode.h"
 #include "mg/core/resource_cache/mg_resource_access_guard.h"
 #include "mg/core/resources/mg_font_resource.h"
-#include "mg/utils/mg_file_io.h"
 #include "mg/utils/mg_math_utils.h"
 #include "mg/utils/mg_stl_helpers.h"
 #include "mg/utils/mg_string_utils.h"
@@ -84,7 +82,6 @@ using namespace Mg::stb;
 
 #include <glm/vec2.hpp>
 
-#include <atomic>
 #include <numeric>
 #include <string>
 #include <vector>

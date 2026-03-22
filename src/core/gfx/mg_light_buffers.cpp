@@ -11,7 +11,6 @@
 #include "mg/core/gfx/mg_gfx_debug_group.h"
 #include "mg/core/gfx/mg_light.h"
 #include "mg/core/gfx/mg_light_grid_config.h"
-#include "mg/core/mg_defs.h"
 #include "mg/core/mg_log.h"
 #include "mg_light_grid.h"
 
@@ -26,7 +25,6 @@
 
 #include <cstdint>
 #include <cstring> // memset, memcpy
-#include <memory>
 #include <type_traits>
 #include <vector>
 

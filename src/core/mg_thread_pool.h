@@ -12,14 +12,12 @@
 
 #pragma once
 
-#include "mg/core/containers/mg_small_vector.h"
 #include "mg/utils/mg_assert.h"
 
 #include <function2/function2.hpp>
 
 #include <condition_variable>
 #include <future>
-#include <memory>
 #include <mutex>
 #include <queue>
 #include <ranges>

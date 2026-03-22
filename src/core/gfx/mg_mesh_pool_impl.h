@@ -9,7 +9,6 @@
 #include "mg/core/containers/mg_flat_map.h"
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
-#include "mg/core/gfx/mg_animation.h"
 #include "mg/core/gfx/mg_gfx_debug_group.h"
 #include "mg/core/gfx/mg_gfx_object_handles.h"
 #include "mg/core/gfx/mg_joint.h"

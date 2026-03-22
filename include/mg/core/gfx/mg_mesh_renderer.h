@@ -11,9 +11,9 @@
 #pragma once
 
 #include "mg/core/gfx/mg_light_grid_config.h"
-#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_impl_ptr.h"
-#include "mg/utils/mg_macros.h"
+
+#include <span>
 
 namespace Mg::gfx {
 

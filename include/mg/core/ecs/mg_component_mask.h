@@ -13,6 +13,8 @@
 
 #include "mg/core/ecs/mg_base_component.h"
 
+#include <cstdint>
+
 namespace Mg::ecs {
 
 /** ComponentMask is a bit mask representing the presence of a set of component types within an

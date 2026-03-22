@@ -16,7 +16,6 @@
 
 #include "mg/core/resource_cache/internal/mg_resource_entry_base.h"
 #include "mg/utils/mg_assert.h"
-#include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_optional.h"
 
 namespace Mg {

@@ -10,7 +10,6 @@
 
 #pragma once
 
-#include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 
 #include <sstream>

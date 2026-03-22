@@ -8,15 +8,14 @@
 
 #include "mg_opengl_loader_glad.h"
 
+#include "mg/core/gfx/mg_gfx_debug_group.h"
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
-#include "mg/core/gfx/mg_gfx_debug_group.h"
 #include "mg/utils/mg_assert.h"
 
 #include <fmt/core.h>
 
-#include <algorithm> // std::min
-#include <cstring>   // memcpy
+#include <cstring> // memcpy
 
 namespace Mg::gfx {
 

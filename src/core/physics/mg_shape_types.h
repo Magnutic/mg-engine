@@ -30,8 +30,6 @@
 #include <BulletCollision/CollisionShapes/btSphereShape.h>
 #include <BulletCollision/CollisionShapes/btTriangleMesh.h>
 
-#include <atomic>
-
 namespace Mg::physics {
 
 class BoxShape : public ShapeBase {

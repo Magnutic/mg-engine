@@ -11,7 +11,6 @@
 #pragma once
 
 #include "mg/core/mg_rotation.h"
-#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
 #include "glm/ext/matrix_transform.hpp"
@@ -19,6 +18,8 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+
+#include <span>
 
 namespace Mg::gfx::mesh_data {
 struct MeshDataView;

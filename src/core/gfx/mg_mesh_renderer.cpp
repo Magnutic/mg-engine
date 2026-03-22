@@ -6,13 +6,10 @@
 
 #include "mg/core/gfx/mg_mesh_renderer.h"
 
-#include "mg/core/mg_log.h"
-#include "mg/core/mg_defs.h"
 #include "mg_gl_debug.h"
 #include "mg_opengl_loader_glad.h"
 
 #include "mg_light_buffers.h"
-#include "mg_light_grid.h"
 
 #include "mg/core/gfx/mg_camera.h"
 #include "mg/core/gfx/mg_gfx_debug_group.h"

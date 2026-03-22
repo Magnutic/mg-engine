@@ -10,7 +10,6 @@
 
 #include "mg/utils/mg_file_time_helper.h"
 
-#include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/utils/mg_u8string_casts.h"
 

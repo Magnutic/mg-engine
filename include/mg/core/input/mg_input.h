@@ -16,7 +16,6 @@
 #include "mg/core/input/mg_keyboard.h"
 #include "mg/core/input/mg_mouse.h"
 #include "mg/utils/mg_macros.h"
-#include "mg/utils/mg_optional.h"
 
 #include <glm/vec2.hpp>
 

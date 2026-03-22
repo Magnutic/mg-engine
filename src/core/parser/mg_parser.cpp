@@ -9,10 +9,7 @@
 #include "mg/core/gfx/mg_blend_modes.h"
 #include "mg/core/gfx/mg_shader_related_types.h"
 
-#include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
-#include "mg/utils/mg_math_utils.h"
-#include "mg/utils/mg_string_utils.h"
 
 #include <fmt/core.h>
 #include <glm/vec2.hpp>
@@ -20,8 +17,6 @@
 #include <glm/vec4.hpp>
 
 #include <hjson/hjson.h>
-
-#include <algorithm>
 
 namespace Mg::parser {
 

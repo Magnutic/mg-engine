@@ -8,7 +8,6 @@
 
 #include "mg/core/mg_window.h"
 #include "mg/utils/mg_gsl.h"
-#include "mg/utils/mg_macros.h"
 
 #include "gfx/mg_opengl_loader_glad.h"
 

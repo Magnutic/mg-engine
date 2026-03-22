@@ -15,8 +15,6 @@
 #include "mg/core/gfx/mg_texture_related_types.h"
 #include "mg/utils/mg_macros.h"
 
-#include <cstdint>
-
 namespace Mg {
 class TextureResource;
 }

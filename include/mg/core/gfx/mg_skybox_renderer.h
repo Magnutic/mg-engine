@@ -10,8 +10,7 @@
 
 #pragma once
 
-#include "mg/core/gfx/mg_texture2d.h"
-#include "mg/utils/mg_assert.h"
+#include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_impl_ptr.h"
 
 namespace Mg::gfx {

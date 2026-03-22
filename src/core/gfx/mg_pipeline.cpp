@@ -14,9 +14,7 @@
 
 #include "mg/core/gfx/mg_buffer_texture.h"
 #include "mg/core/gfx/mg_gfx_debug_group.h"
-#include "mg/core/gfx/mg_texture2d.h"
 #include "mg/core/gfx/mg_uniform_buffer.h"
-#include "mg/core/mg_log.h"
 
 #include "fmt/core.h"
 

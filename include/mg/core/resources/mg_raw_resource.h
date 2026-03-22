@@ -12,7 +12,8 @@
 
 #include "mg/core/containers/mg_array.h"
 #include "mg/core/resource_cache/mg_base_resource.h"
-#include "mg/utils/mg_gsl.h"
+
+#include <span>
 
 namespace Mg {
 

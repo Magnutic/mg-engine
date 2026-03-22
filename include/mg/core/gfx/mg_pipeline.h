@@ -16,11 +16,10 @@
 #include "mg/core/gfx/mg_texture_related_types.h"
 #include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_enum.h"
-#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_optional.h"
 
 #include <cstdint>
-#include <utility>
+#include <span>
 
 namespace Mg::gfx {
 

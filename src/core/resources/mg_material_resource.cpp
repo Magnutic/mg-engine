@@ -6,22 +6,11 @@
 
 #include "mg/core/resources/mg_material_resource.h"
 
-#include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/core/parser/mg_parser.h"
-#include "mg/core/resource_cache/mg_resource_exceptions.h"
 #include "mg/core/resource_cache/mg_resource_loading_input.h"
 #include "mg/core/resources/mg_shader_resource.h"
-#include "mg/core/resources/mg_text_resource.h"
-#include "mg/core/resources/mg_texture_resource.h"
-#include "mg/utils/mg_stl_helpers.h"
-#include "mg/utils/mg_string_utils.h"
 
-#include <fmt/core.h>
-
-#include <glm/vec4.hpp>
-
-#include <string>
 #include <vector>
 
 namespace Mg {

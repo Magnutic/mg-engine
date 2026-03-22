@@ -5,8 +5,6 @@
 //**************************************************************************************************
 
 #include "mg/core/input/mg_input.h"
-#include "mg/core/mg_runtime_error.h"
-#include "mg/core/mg_window.h"
 
 namespace Mg::input {
 

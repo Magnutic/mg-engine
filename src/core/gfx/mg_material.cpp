@@ -18,8 +18,6 @@
 #include "mg/core/resource_cache/mg_resource_access_guard.h"
 #include "mg/core/resources/mg_shader_resource.h"
 #include "mg/utils/mg_stl_helpers.h"
-#include "mg/utils/mg_string_utils.h"
-#include "mg/utils/mg_to_hjson.h"
 
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>

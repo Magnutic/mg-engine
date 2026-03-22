@@ -10,9 +10,9 @@
 
 #pragma once
 
-#include "mg/utils/mg_gsl.h"
-
 #include <glm/vec3.hpp>
+
+#include <span>
 
 namespace Mg::gfx::mesh_data {
 struct Vertex;

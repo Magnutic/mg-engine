@@ -10,10 +10,10 @@
 
 #pragma once
 
-#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_optional.h"
 
 #include <cstdint>
+#include <span>
 #include <string_view>
 #include <vector>
 

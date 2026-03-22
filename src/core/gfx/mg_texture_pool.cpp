@@ -15,11 +15,9 @@
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/core/resource_cache/mg_resource_cache.h"
-#include "mg/core/resource_cache/mg_resource_exceptions.h"
 #include "mg/core/resources/mg_texture_array_resource.h"
 #include "mg/core/resources/mg_texture_resource.h"
 #include "mg/utils/mg_enum.h"
-#include "mg/utils/mg_string_utils.h"
 
 #include <plf_colony.h>
 

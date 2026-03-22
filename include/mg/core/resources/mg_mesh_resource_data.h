@@ -19,7 +19,6 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
 
-#include <array>
 #include <cstdint>
 
 /** Data structure definitions and constants for the Mg mesh file format. */

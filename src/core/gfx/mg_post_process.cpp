@@ -6,14 +6,12 @@
 
 #include "mg/core/gfx/mg_post_process.h"
 
-#include "mg/core/containers/mg_small_vector.h"
 #include "mg/core/gfx/mg_gfx_debug_group.h"
 #include "mg/core/gfx/mg_material.h"
 #include "mg/core/gfx/mg_pipeline_pool.h"
 #include "mg/core/gfx/mg_render_target.h"
 #include "mg/core/gfx/mg_shader_related_types.h"
 #include "mg/core/gfx/mg_uniform_buffer.h"
-#include "mg/core/mg_defs.h"
 
 #include "mg_gl_debug.h"
 #include "mg_opengl_loader_glad.h"
