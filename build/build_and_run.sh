@@ -15,4 +15,4 @@ BUILD_TARGET="test_scene"
 ./build.sh $BUILD_CONFIG $BUILD_TARGET
 [[ $? -eq 0 ]] || exit 1
 
-./out/$1/bin/${BUILD_TARGET}
+LSAN_OPTIONS=suppressions=.leaksanitizer-suppressions ./out/$1/bin/${BUILD_TARGET}
