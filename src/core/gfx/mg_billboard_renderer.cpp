@@ -336,7 +336,7 @@ static std::pair<vec2, float> uniform_random_disc(Random& rand)
     return { result, length_square };
 }
 
-static vec3 uniform_random_unit_sphere(Random& rand)
+[[maybe_unused]] static vec3 uniform_random_unit_sphere(Random& rand)
 {
     const auto& [vec, length_square] = uniform_random_disc(rand);
     const float scale = std::sqrt(1.0f - length_square);
