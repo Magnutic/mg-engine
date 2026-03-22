@@ -34,7 +34,7 @@ namespace Mg::gfx::mesh_data {
 using Index = uint32_t;
 
 /** Limitation: meshes cannot have more vertices than is representable by Index. */
-constexpr auto max_vertices_per_mesh = std::numeric_limits<Index>::max();
+inline constexpr auto max_vertices_per_mesh = std::numeric_limits<Index>::max();
 
 struct Vertex {
     glm::vec3 position = glm::vec3(0.0f);
@@ -46,7 +46,7 @@ struct Vertex {
 };
 
 /** Attribute array corresponding to Vertex. Describes the data layout of a vertex. */
-constexpr std::array<VertexAttribute, 5> vertex_attributes = {
+inline constexpr std::array<VertexAttribute, 5> vertex_attributes = {
     VertexAttribute{ .identifier = "position",
                      .binding_location = 0,
                      .num_elements = 3,

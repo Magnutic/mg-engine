@@ -20,7 +20,7 @@
 namespace Mg::gfx {
 
 /** TextureUnit values may be at most this large. */
-static constexpr size_t k_max_texture_unit = 15;
+inline constexpr size_t k_max_texture_unit = 15;
 
 /** TextureUnit -- target to which a sampler may be bound. */
 class TextureUnit {

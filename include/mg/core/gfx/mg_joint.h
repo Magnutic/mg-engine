@@ -24,15 +24,15 @@ namespace Mg::gfx::mesh_data {
 using JointId = uint8_t;
 
 /** Sentinel value reserved to mean no joint. */
-constexpr JointId joint_id_none = JointId(-1);
+inline constexpr JointId joint_id_none = JointId(-1);
 
 /** Joints are a tree hierarchy. Each joint has a maximum number of children, defined here. */
-constexpr size_t max_num_children_per_joint = 8;
+inline constexpr size_t max_num_children_per_joint = 8;
 
 /** Identifiers for each of a joint's children (or joint_id_none). */
 using JointChildren = std::array<JointId, max_num_children_per_joint>;
 
-constexpr size_t num_influences_per_vertex = 4;
+inline constexpr size_t num_influences_per_vertex = 4;
 using JointIds = std::array<JointId, num_influences_per_vertex>;
 using JointWeights = std::array<uint16_t, num_influences_per_vertex>;
 
@@ -46,7 +46,7 @@ struct Influences {
 /** Attribute array corresponding to Influences. Describes the data layout of a vertex' joint
  * influences.
  */
-constexpr std::array<VertexAttribute, 2> influences_attributes = {
+inline constexpr std::array<VertexAttribute, 2> influences_attributes = {
     VertexAttribute{ .identifier = "joint_influences",
                      .binding_location = 5,
                      .num_elements = 4,

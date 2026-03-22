@@ -24,8 +24,8 @@
 /** Data structure definitions and constants for the Mg mesh file format. */
 namespace Mg::MeshResourceData {
 
-constexpr uint32_t fourcc = 0x444D474Du; // MGMD
-constexpr uint32_t version = 2;          // Current version of the file format.
+inline constexpr uint32_t fourcc = 0x444D474Du; // MGMD
+inline constexpr uint32_t version = 2;          // Current version of the file format.
 
 using gfx::mesh_data::joint_id_none;
 using gfx::mesh_data::max_num_children_per_joint;
