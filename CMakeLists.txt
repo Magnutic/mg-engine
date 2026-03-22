@@ -21,18 +21,12 @@ option(MG_ENABLE_GFX_DEBUG_GROUPS "Enable the use of OpenGL debug groups to ease
 
 # Dependency-handling options.
 option(MG_USE_VENDORED_DEPENDENCIES "Use dependencies vendored with Mg Engine" ON)
-option(MG_USE_VENDORED_HEADER_ONLY_DEPENDENCIES "Use header-only dependencies vendored with Mg Engine" ON)
-option(MG_USE_VENDORED_DEPENDENCIES_ARCHIVE "Use a packaged archive containing Mg Engine's dependencies (requires archive to present at ${MG_SOURCE_DIR}/external/mg_dependencies_src.zip)" OFF)
 set(MG_DEPENDENCIES_DIR "${MG_SOURCE_DIR}/external/mg_dependencies" CACHE PATH "Where Mg Engine should search for its dependencies.")
 set(MG_HEADER_ONLY_DEPENDENCIES_DIR "${MG_DEPENDENCIES_DIR}" CACHE PATH "Where to find header-only dependencies needed by Mg Engine")
 
 #---------------------------------------------------------------------------------------------------
 # Misc. definitions
 #---------------------------------------------------------------------------------------------------
-
-# The mg_dependencies_src.zip archive holds zipped source code of all dependencies. The idea is that one
-# can bundle the archive to avoid relying on git submodules.
-set(MG_DEPENDENCIES_ARCHIVE "${MG_SOURCE_DIR}/external/mg_dependencies_src.zip")
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -48,8 +42,8 @@ set(MG_CONFIG_INSTALL_PATH "${CMAKE_INSTALL_LIBDIR}/cmake/mg_engine-${mg_engine_
 # Dependency management
 #---------------------------------------------------------------------------------------------------
 
-if(MG_USE_VENDORED_DEPENDENCIES OR MG_USE_VENDORED_HEADER_ONLY_DEPENDENCIES)
-    include(cmake/get_dependencies.cmake)
+if(MG_USE_VENDORED_DEPENDENCIES)
+    include(cmake/build_dependencies.cmake)
 
     # Add to prefix path, so that find_package() calls will find the dependencies.
     list(APPEND CMAKE_PREFIX_PATH ${MG_DEPENDENCIES_DIR})
