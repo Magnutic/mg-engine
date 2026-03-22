@@ -17,7 +17,6 @@
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_observer.h"
 
-#include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>

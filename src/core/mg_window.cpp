@@ -10,7 +10,6 @@
 #include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/core/gfx/mg_render_target.h"
-#include "mg/core/input/mg_input.h"
 #include "mg/core/input/mg_input_source.h"
 #include "mg/core/input/mg_mouse.h"
 #include "mg/core/mg_defs.h"
@@ -22,8 +21,6 @@
 #define GLFW_INCLUDE_NONE // Do not let GLFW include OpenGL headers.
 #include <GLFW/glfw3.h>
 #undef GLFW_INCLUDE_NONE
-
-#include <mutex>
 
 namespace Mg {
 
