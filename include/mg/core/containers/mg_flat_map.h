@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "mg/core/mg_runtime_error.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_optional.h"
 
@@ -77,6 +78,24 @@ public:
         auto it = lower_bound(key);
         if (it == end() || it->first != key) {
             it = m_data.insert(it, { std::move(key), mapped_type{} });
+        }
+        return it->second;
+    }
+
+    mapped_type& get(const key_type& key)
+    {
+        auto it = find(key);
+        if (it == end()) {
+            throw RuntimeError{ "No such item in map" };
+        }
+        return it->second;
+    }
+
+    const mapped_type& get(const key_type& key) const
+    {
+        auto it = find(key);
+        if (it == end()) {
+            throw RuntimeError{ "No such item in map" };
         }
         return it->second;
     }
