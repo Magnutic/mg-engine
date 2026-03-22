@@ -1,7 +1,6 @@
 #include "test_scene.h"
 #include "mg/core/gfx/mg_texture2d.h"
 
-#include <mg/components/mg_advance_animations.h>
 #include <mg/components/mg_animation_component.h>
 #include <mg/components/mg_dynamic_body_component.h>
 #include <mg/components/mg_enqueue_meshes_for_rendering.h>
@@ -86,6 +85,7 @@ TestScene::TestScene()
     sample_control_button_tracker->bind("exit", Mg::input::Key::Esc);
     sample_control_button_tracker->bind("next_debug_visualization", Mg::input::Key::F);
     sample_control_button_tracker->bind("reset", Mg::input::Key::R);
+    sample_control_button_tracker->bind("toggle_animation", Mg::input::Key::T);
 
     auto mouse_tracker = std::make_shared<Mg::input::MouseMovementTracker>(window());
 
@@ -163,6 +163,17 @@ void TestScene::on_simulation_step(const Mg::ApplicationTimeInfo& /*time_info*/)
             character_controller->mutable_settings().collision_enabled = true;
         }
         current_controller->set_rotation(camera.rotation);
+    }
+
+    if (button_states["toggle_animation"].was_pressed) {
+        for (auto [entity, animation_component] : entities().get_with<Mg::AnimationComponent>()) {
+            if (animation_component.current_clip) {
+                animation_component.current_clip = Mg::nullopt;
+            }
+            else {
+                animation_component.current_clip = 1;
+            }
+        }
     }
 
     if (button_states["reset"].was_pressed) {
@@ -320,6 +331,40 @@ void TestScene::create_entities()
     block_scene_entity.reset();
 
     make_block_scene_entity();
+    auto fox_entity =
+        add_dynamic_object("fox",
+                           {
+                               .mesh_file = "meshes/Fox.mgm",
+                               .material_bindings = { { "fox_material",
+                                                        "materials/actors/fox.hjson" } },
+                           },
+                           {
+                               .position = { 1.0f, 1.0f, 0.0f },
+                               .rotation = {},
+                               .scale = { 0.01f, 0.01f, 0.01f },
+                           },
+                           Mg::nullopt);
+
+    auto man_entity = add_dynamic_object("man",
+                                         {
+                                             .mesh_file = "meshes/sky_merged_mesh.mgm",
+                                             .material_bindings = { {
+                                                 "Orange.dark",
+                                                 "materials/actors/fox.hjson",
+                                             }, {
+                                                 "Orange.light",
+                                                 "materials/actors/fox.hjson",
+                                             },
+
+                                             },
+                                         },
+                                         {
+                                             .position = { 0.0f, 0.0f, 0.0f },
+                                             .rotation = {},
+                                             .scale = { 1.0f, 1.0f, 1.0f },
+                                         },
+                                         Mg::nullopt);
+
 }
 
 // Create a lot of random lights
