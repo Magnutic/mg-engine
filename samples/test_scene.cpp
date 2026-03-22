@@ -349,10 +349,10 @@ void TestScene::create_entities()
                                              .mesh_file = "meshes/sky_merged_mesh.mgm",
                                              .material_bindings = { {
                                                  "Orange.dark",
-                                                 "materials/actors/fox.hjson",
+                                                 "materials/actors/guy.hjson",
                                              }, {
                                                  "Orange.light",
-                                                 "materials/actors/fox.hjson",
+                                                 "materials/actors/guy.hjson",
                                              },
 
                                              },
