@@ -11,21 +11,17 @@
 #pragma once
 
 #include "mg/core/gfx/mg_mesh_data.h"
-#include "mg/utils/mg_impl_ptr.h"
-#include "mg/utils/mg_math_utils.h"
-#include "mg/utils/mg_stl_helpers.h"
 
 #include <cfloat>
 #include <map>
-#include <memory>
 #include <type_traits>
 #include <vector>
 
 namespace Mg {
 
 enum class BlockFace { west, north, east, south, bottom, top };
-static constexpr size_t k_block_scene_cluster_size = 32;
-static constexpr size_t k_block_scene_max_num_textures = UINT8_MAX;
+inline constexpr size_t k_block_scene_cluster_size = 32;
+inline constexpr size_t k_block_scene_max_num_textures = UINT8_MAX;
 
 struct BlockTextures {
     uint8_t& operator[](BlockFace face) { return textures[static_cast<size_t>(face)]; }
@@ -40,7 +36,7 @@ struct BlockTextures {
 struct Block {
     float z_min;
     float z_max;
-    BlockTextures textures;
+    BlockTextures textures{};
 
     friend bool operator==(const Block&, const Block&) = default;
     friend bool operator!=(const Block&, const Block&) = default;

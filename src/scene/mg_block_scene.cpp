@@ -7,14 +7,9 @@
 #include "mg/scene/mg_block_scene.h"
 
 #include <cmath>
-#include <map>
-#include <numeric>
-#include <type_traits>
 
-#include "mg/core/gfx/mg_bitmap_font.h"
-#include "mg/core/gfx/render_passes/mg_ui_pass.h"
-#include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_math_utils.h"
+#include "mg/utils/mg_stl_helpers.h"
 
 namespace Mg {
 

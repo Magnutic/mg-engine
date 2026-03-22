@@ -1,5 +1,4 @@
 #include "test_scene.h"
-#include "mg/core/gfx/mg_texture2d.h"
 
 #include <mg/components/mg_animation_component.h>
 #include <mg/components/mg_dynamic_body_component.h>
@@ -331,7 +330,7 @@ void TestScene::create_entities()
     block_scene_entity.reset();
 
     make_block_scene_entity();
-    auto fox_entity =
+    [[maybe_unused]] auto fox_entity =
         add_dynamic_object("fox",
                            {
                                .mesh_file = "meshes/Fox.mgm",
@@ -345,7 +344,7 @@ void TestScene::create_entities()
                            },
                            Mg::nullopt);
 
-    auto man_entity = add_dynamic_object("man",
+    [[maybe_unused]] auto man_entity = add_dynamic_object("man",
                                          {
                                              .mesh_file = "meshes/sky_merged_mesh.mgm",
                                              .material_bindings = { {
@@ -364,7 +363,6 @@ void TestScene::create_entities()
                                              .scale = { 1.0f, 1.0f, 1.0f },
                                          },
                                          Mg::nullopt);
-
 }
 
 // Create a lot of random lights

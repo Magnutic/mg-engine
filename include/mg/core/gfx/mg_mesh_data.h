@@ -118,22 +118,22 @@ struct AnimationDataView {
 /** Non-owning view over the data required to define a mesh. */
 struct MeshDataView {
     /** The vertices making up the mesh. */
-    std::span<const Vertex> vertices;
+    std::span<const Vertex> vertices{};
 
     /** Indices into `vertices` buffer, defining triangle list. */
-    std::span<const Index> indices;
+    std::span<const Index> indices{};
 
     /** Submeshes as defined by a range of `indices`. */
-    std::span<const Submesh> submeshes;
+    std::span<const Submesh> submeshes{};
 
     /** Optionally store animation date here; if not present, the mesh has no animations. */
-    Opt<AnimationDataView> animation_data;
+    Opt<AnimationDataView> animation_data = nullopt;
 
     /** Optionally store bounding sphere here; otherwise, it will be calculated when needed. */
-    Opt<BoundingSphere> bounding_sphere;
+    Opt<BoundingSphere> bounding_sphere = nullopt;
 
     /** Optionally store bounding box; otherwise, it will be calculated when needed. */
-    Opt<AxisAlignedBoundingBox> aabb;
+    Opt<AxisAlignedBoundingBox> aabb = nullopt;
 };
 
 /** Strongly typed size type for vertex buffers, specified in number of bytes.

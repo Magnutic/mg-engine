@@ -13,6 +13,7 @@
 #include "mg/core/gfx/mg_uniform_buffer.h"
 #include "mg/core/gfx/render_passes/mg_ui_pass.h"
 #include "mg/core/input/mg_input.h"
+#include "mg/utils/mg_math_utils.h"
 
 #include "../core/gfx/mg_gl_debug.h"
 #include "../core/gfx/mg_shader.h"

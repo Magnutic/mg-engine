@@ -20,7 +20,7 @@ namespace Mg {
 
 struct MeshComponent : ecs::BaseComponent<MeshComponent> {
     const gfx::Mesh* mesh = nullptr;
-    small_vector<gfx::MaterialBinding, 4> material_bindings;
+    small_vector<gfx::MaterialBinding, 4> material_bindings{};
     glm::mat4 mesh_transform = glm::mat4(1.0f);
 };
 
