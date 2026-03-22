@@ -18,7 +18,7 @@ foreach(SUBMODULES_GLOB_RESULT ${SUBMODULES_GLOB_RESULTS})
     if(IS_DIRECTORY "${SUBMODULES_GLOB_RESULT}")
         execute_process(
             COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
-            WORKING_DIRECTORY "${SUBMODULES_DIR}"
+            WORKING_DIRECTORY "${SUBMODULES_GLOB_RESULT}"
             OUTPUT_FILE "${SUBMODULES_DIR}/${SUBMODULE_NAME}_revision"
         )
     endif()
