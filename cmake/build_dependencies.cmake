@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.19)
 
+find_package(Git REQUIRED)
 include(ProcessorCount)
 ProcessorCount(NPROC)
 
@@ -55,7 +56,10 @@ endif()
 
 # Get dependencies from submodules.
 message(STATUS "Using git submodules to get dependencies for Mg Engine...")
-include("${MG_SOURCE_DIR}/cmake/init_submodules.cmake")
+execute_process(
+    COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+    WORKING_DIRECTORY "${MG_SOURCE_DIR}"
+)
 set(MG_DEPENDENCIES_SOURCE_DIR "${MG_SOURCE_DIR}/external/submodules")
 
 message(STATUS "Building dependencies and installing to ${MG_DEPENDENCIES_INSTALL_DIR}")
@@ -63,22 +67,25 @@ message(STATUS "Building dependencies and installing to ${MG_DEPENDENCIES_INSTAL
 function(build_dependency DEPENDENCY BUILD_CONFIG IS_HEADER_ONLY EXTRA_BUILD_PARAMS)
     set(DEPENDENCY_SOURCE_DIR "${MG_DEPENDENCIES_SOURCE_DIR}/${DEPENDENCY}")
     set(DEPENDENCY_BUILD_DIR "${MG_DEPENDENCIES_BUILD_DIR}/${BUILD_CONFIG}/${DEPENDENCY}")
-    set(DEPENDENCY_SOURCE_REVISION_FILE "${MG_DEPENDENCIES_SOURCE_DIR}/${DEPENDENCY}_revision")
     set(DEPENDENCY_INSTALL_REVISION_FILE "${MG_DEPENDENCIES_INSTALL_DIR}/${DEPENDENCY}_revision_${BUILD_CONFIG}")
 
     # Check if we already have the dependency installed at the same revision.
-    if (EXISTS "${DEPENDENCY_SOURCE_REVISION_FILE}" AND EXISTS "${DEPENDENCY_INSTALL_REVISION_FILE}")
-        execute_process(
-            COMMAND ${CMAKE_COMMAND} -E compare_files
-            "${DEPENDENCY_INSTALL_REVISION_FILE}" "${DEPENDENCY_SOURCE_REVISION_FILE}"
-            RESULT_VARIABLE COMPARE_RESULT
-        )
-        if(COMPARE_RESULT EQUAL 0)
-            message(STATUS "Found dependency ${DEPENDENCY} already up-to-date for configuration ${BUILD_CONFIG} at ${DEPENDENCY_BUILD_DIR}")
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
+        WORKING_DIRECTORY ${DEPENDENCY_SOURCE_DIR}
+        OUTPUT_VARIABLE SOURCE_REVISION
+    )
+
+    if (EXISTS "${DEPENDENCY_INSTALL_REVISION_FILE}")
+        file(READ "${DEPENDENCY_INSTALL_REVISION_FILE}" INSTALLED_REVISION)
+        if(SOURCE_REVISION STREQUAL INSTALLED_REVISION)
+            message(STATUS "Found dependency ${DEPENDENCY}:${BUILD_CONFIG} already up to date at ${DEPENDENCY_BUILD_DIR}")
             return()
+        else()
+            message(STATUS "Dependency ${DEPENDENCY}:${BUILD_CONFIG} installed, but revision has changed. Rebuilding.")
         endif()
     else()
-        message(VERBOSE "Did not find a dependency revision files for ${DEPENDENCY}")
+        message(STATUS "Dependency ${DEPENDENCY}:${BUILD_CONFIG} is not yet built (no install-revision file found).")
     endif()
 
     if (IS_HEADER_ONLY)
@@ -124,10 +131,8 @@ function(build_dependency DEPENDENCY BUILD_CONFIG IS_HEADER_ONLY EXTRA_BUILD_PAR
         )
     endif()
 
-    # Copy revision file to build directory, so as to not build unnecessarily next time.
-    if (EXISTS "${DEPENDENCY_SOURCE_REVISION_FILE}")
-        execute_process(COMMAND "${CMAKE_COMMAND}" -E copy "${DEPENDENCY_SOURCE_REVISION_FILE}" "${DEPENDENCY_INSTALL_REVISION_FILE}")
-    endif()
+    # Write revision file to build directory, so as to not build unnecessarily next time.
+    file(WRITE "${DEPENDENCY_INSTALL_REVISION_FILE}" "${SOURCE_REVISION}")
 endfunction()
 
 # Build each dependency.
@@ -138,7 +143,7 @@ endforeach()
 
 # Prepare header-only dependencies
 foreach(DEPENDENCY ${MG_HEADER_ONLY_DEPENDENCIES})
-    build_dependency(${DEPENDENCY} "" TRUE "")
+    build_dependency(${DEPENDENCY} "All" TRUE "")
 endforeach()
 
 message(STATUS "Finished building dependencies.")
