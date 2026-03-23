@@ -12,8 +12,6 @@
 
 #include "mg/utils/mg_macros.h"
 
-#include <imgui.h>
-
 #include <functional>
 
 namespace Mg {
