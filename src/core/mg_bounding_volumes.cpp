@@ -3,6 +3,8 @@
 #include "mg/core/gfx/mg_mesh_data.h"
 #include "mg/utils/mg_math_utils.h"
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <glm/geometric.hpp>
 #include <glm/gtx/norm.hpp>
 #include <glm/vec3.hpp>

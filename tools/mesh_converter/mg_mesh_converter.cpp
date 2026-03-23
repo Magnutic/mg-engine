@@ -1,8 +1,9 @@
 #include "mg_mesh_converter.h"
 
+#define GLM_ENABLE_EXPERIMENTAL 1
+
 #include "../shared/mg_file_writer.h"
 #include "mg_assimp_utils.h"
-#include "glm/ext/matrix_transform.hpp"
 
 #include <mg/core/resources/mg_mesh_resource_data.h>
 #include <mg/utils/mg_assert.h>
@@ -27,9 +28,6 @@
 #include <iostream>
 #include <iterator>
 #include <map>
-#include <numeric>
-#include <sstream>
-#include <type_traits>
 
 namespace Mg {
 

@@ -14,6 +14,8 @@
 #include "mg/utils/mg_angle.h"
 #include "mg/utils/mg_gsl.h"
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <glm/gtc/constants.hpp>
 #include <glm/gtx/vector_angle.hpp>
 #include <glm/vec3.hpp>

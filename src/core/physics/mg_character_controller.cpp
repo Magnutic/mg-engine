@@ -31,6 +31,8 @@
 #include "mg/utils/mg_math_utils.h"
 #include "mg/utils/mg_stl_helpers.h"
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <glm/gtx/norm.hpp>
 
 #include <cfloat>
