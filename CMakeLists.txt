@@ -20,7 +20,7 @@ option(MG_STDLIB_ASSERTIONS "Enable C++ standard library assertions (e.g. out of
 option(MG_ENABLE_GFX_DEBUG_GROUPS "Enable the use of OpenGL debug groups to ease understanding of API traces" OFF)
 
 # Dependency-handling options.
-option(MG_USE_VENDORED_DEPENDENCIES "Use dependencies vendored with Mg Engine" ON)
+option(MG_BUILD_DEPENDENCIES "Build dependencies for Mg Engine" ON)
 set(MG_DEPENDENCIES_DIR "${MG_SOURCE_DIR}/external/mg_dependencies" CACHE PATH "Where Mg Engine should search for its dependencies.")
 set(MG_HEADER_ONLY_DEPENDENCIES_DIR "${MG_DEPENDENCIES_DIR}" CACHE PATH "Where to find header-only dependencies needed by Mg Engine")
 
@@ -42,7 +42,7 @@ set(MG_CONFIG_INSTALL_PATH "${CMAKE_INSTALL_LIBDIR}/cmake/mg_engine-${mg_engine_
 # Dependency management
 #---------------------------------------------------------------------------------------------------
 
-if(MG_USE_VENDORED_DEPENDENCIES)
+if(MG_BUILD_DEPENDENCIES)
     include(cmake/build_dependencies.cmake)
 
     # Add to prefix path, so that find_package() calls will find the dependencies.
