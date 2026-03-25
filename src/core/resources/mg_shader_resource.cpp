@@ -6,7 +6,6 @@
 
 #include "mg/core/resources/mg_shader_resource.h"
 
-#include "mg/core/mg_log.h"
 #include "mg/core/mg_runtime_error.h"
 #include "mg/core/parser/mg_parser.h"
 #include "mg/core/resource_cache/mg_resource_exceptions.h"
@@ -15,12 +14,10 @@
 #include "mg/utils/mg_stl_helpers.h"
 #include "mg/utils/mg_string_utils.h"
 
-#include <fmt/core.h>
-
 #include <glm/vec4.hpp>
 
 #include <filesystem>
-#include <functional>
+#include <format>
 #include <string>
 #include <vector>
 
@@ -135,7 +132,7 @@ std::pair<bool, std::string> get_include(const ResourceLoadingInput& input,
         }
 
         // Add origin-tracking comment (helps debugging shader)
-        result += fmt::format(k_delimiter_comment, cast_u8_to_char(file_path.generic_u8string()));
+        result += std::format(k_delimiter_comment, cast_u8_to_char(file_path.generic_u8string()));
 
         // Recursively assemble loaded code.
         result += assemble_shader_code(include_dirs_for_file(include_directories, file_path),

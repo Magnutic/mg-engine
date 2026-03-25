@@ -11,7 +11,7 @@
 #include "mg/core/resource_cache/mg_resource_exceptions.h"
 #include "mg/utils/mg_stl_helpers.h"
 
-#include <fmt/core.h>
+#include <format>
 
 namespace Mg {
 
@@ -196,7 +196,7 @@ void ResourceCache::rebuild_file_list()
 {
     std::string msg = "No such file. [ searched in ";
     for (auto&& p_loader : file_loaders()) {
-        msg += fmt::format("'{}' ", p_loader->name());
+        msg += std::format("'{}' ", p_loader->name());
     }
     msg += ']';
 
@@ -211,7 +211,7 @@ void log_resource_cache_message(Log::Prio prio,
                                 Identifier resource,
                                 std::string_view message)
 {
-    std::string msg = fmt::format("ResourceCache[{}]: {} [resource: {}]",
+    std::string msg = std::format("ResourceCache[{}]: {} [resource: {}]",
                                   static_cast<const void*>(origin),
                                   message,
                                   resource.c_str());

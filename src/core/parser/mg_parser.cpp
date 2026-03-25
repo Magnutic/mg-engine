@@ -11,12 +11,13 @@
 
 #include "mg/core/mg_runtime_error.h"
 
-#include <fmt/core.h>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
 #include <hjson/hjson.h>
+
+#include <format>
 
 namespace Mg::parser {
 
@@ -80,13 +81,13 @@ auto get_property(const Hjson::Value& value,
     const Hjson::Value& property = value[key];
     if (property.defined() && property.type() != expected_type) {
         parse_error(key,
-                    fmt::format("Unexpected type. Expected: {}. Was: {}.",
+                    std::format("Unexpected type. Expected: {}. Was: {}.",
                                 hjson_type_to_string(expected_type),
                                 hjson_type_to_string(property.type())));
     }
     if (mandatory && !property.defined()) {
         parse_error(key,
-                    fmt::format("Missing value of (expected type {}).",
+                    std::format("Missing value of (expected type {}).",
                                 hjson_type_to_string(expected_type)));
     }
     return property;

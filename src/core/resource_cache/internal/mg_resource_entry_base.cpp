@@ -12,7 +12,7 @@
 #include "mg/core/resource_cache/mg_resource_exceptions.h"
 #include "mg/core/resource_cache/mg_resource_loading_input.h"
 
-#include <fmt/core.h>
+#include <format>
 
 namespace Mg {
 

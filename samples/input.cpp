@@ -1,11 +1,9 @@
+#include <mg/core/input/mg_input.h>
 #include <mg/core/mg_log.h>
 #include <mg/core/mg_window.h>
-#include <mg/core/input/mg_input.h>
 
 #include <mg/core/input/mg_keyboard.h>
 #include <mg/core/input/mg_mouse.h>
-
-#include <fmt/core.h>
 
 void input_sample()
 {
@@ -145,16 +143,16 @@ void input_sample()
         const auto mouse_delta = mouse_movement_tracker.mouse_delta();
 
         if (mouse_delta != glm::vec2{ 0.0f, 0.0f }) {
-            log.message(
-                fmt::format("Cursor position: ({}, {})", cursor_position.x, cursor_position.y));
+            Mg::log.message(
+                std::format("Cursor position: ({}, {})", cursor_position.x, cursor_position.y));
         }
 
         for (const auto& [id, state] : events) {
             if (state.was_pressed) {
-                log.message(fmt::format("Pressed: {}", id.str_view()));
+                Mg::log.message(std::format("Pressed: {}", id.str_view()));
             }
             else if (state.was_released) {
-                log.message(fmt::format("Released: {}", id.str_view()));
+                Mg::log.message(std::format("Released: {}", id.str_view()));
             }
         }
 

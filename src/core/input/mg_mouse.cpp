@@ -6,13 +6,13 @@
 
 #include "mg/core/input/mg_mouse.h"
 
-#include <fmt/core.h>
+#include <format>
 
 namespace Mg::input {
 
 std::string mouse_button_name(MouseButton button)
 {
-    return fmt::format("Mouse button {}", int(button) + 1);
+    return std::format("Mouse button {}", int(button) + 1);
 }
 
 } // namespace Mg::input

@@ -13,9 +13,8 @@
 #include "mg/core/mg_runtime_error.h"
 #include "mg/utils/mg_assert.h"
 
-#include <fmt/core.h>
-
 #include <cstring> // memcpy
+#include <format>
 
 namespace Mg::gfx {
 

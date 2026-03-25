@@ -18,11 +18,11 @@
 
 #include <sndfile.h>
 
-#include <fmt/core.h>
 
 #include <plf_colony.h>
 
 #include <atomic>
+#include <format>
 #include <memory>
 #include <mutex>
 
@@ -166,7 +166,7 @@ public:
         sndfile.reset(sf_open_virtual(&sf_io, SFM_READ, &sf_info, &state));
 
         if (!sndfile) {
-            error_reason = fmt::format("Failed to read sound file data: '{}'",
+            error_reason = std::format("Failed to read sound file data: '{}'",
                                        sf_strerror(sndfile.get()));
         }
     }
@@ -191,7 +191,7 @@ GenerateOpenALBufferResult generate_OpenAL_buffer(SNDFILE* sndfile, SF_INFO& sf_
                                       (as<int>(sizeof(short)) * sf_info.channels);
 
     if (sf_info.frames < 1 || sf_info.frames > max_num_frames) {
-        return { nullopt, fmt::format("Bad sample count (was {})", sf_info.frames) };
+        return { nullopt, std::format("Bad sample count (was {})", sf_info.frames) };
     }
 
     ALenum format = {};
@@ -202,7 +202,7 @@ GenerateOpenALBufferResult generate_OpenAL_buffer(SNDFILE* sndfile, SF_INFO& sf_
         format = AL_FORMAT_STEREO16;
     }
     else {
-        return { nullopt, fmt::format("Unsupported channel count (was {})", sf_info.channels) };
+        return { nullopt, std::format("Unsupported channel count (was {})", sf_info.channels) };
     }
 
     ALuint al_buffer_id = 0;
@@ -228,7 +228,7 @@ GenerateOpenALBufferResult generate_OpenAL_buffer(SNDFILE* sndfile, SF_INFO& sf_
         if (alIsBuffer(al_buffer_id) != 0) {
             alDeleteBuffers(1, &al_buffer_id);
         }
-        return { nullopt, fmt::format("OpenAL Error: {}", alGetString(al_error)) };
+        return { nullopt, std::format("OpenAL Error: {}", alGetString(al_error)) };
     }
 
     return { al_buffer_id, {} };

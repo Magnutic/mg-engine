@@ -11,6 +11,8 @@
 
 #include <hjson/hjson.h>
 
+#include <cstring>
+
 namespace Mg {
 
 Value::FromHjsonResult Value::from_hjson(const Hjson::Value& value)

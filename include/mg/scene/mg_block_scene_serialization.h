@@ -42,7 +42,7 @@ write_block_scene(const BlockScene& scene, std::string_view file_path, bool over
     auto [writer, error] = io::make_output_filestream(file_path, overwrite, io::Mode::binary);
 
     if (!writer.has_value()) {
-        auto msg = fmt::format("Failed to open file '{}' for writing: {}", file_path, error);
+        auto msg = std::format("Failed to open file '{}' for writing: {}", file_path, error);
         log.error(msg);
         return { false, std::move(msg) };
     }

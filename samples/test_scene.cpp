@@ -29,7 +29,7 @@
 #include <mg/utils/mg_file_io.h>
 #include <mg/utils/mg_rand.h>
 
-#include <fmt/core.h>
+#include <format>
 
 namespace {
 constexpr auto config_file = "mg_engine.cfg";
@@ -224,12 +224,12 @@ void TestScene::on_render(const double lerp_factor, const Mg::ApplicationTimeInf
 
         auto& info_cmd = m_renderer_data->ui_render_list->text_render_commands.emplace_back();
         info_cmd.font = font;
-        info_cmd.text = fmt::format("FPS: {:.2f}", time_info.frames_per_second);
-        info_cmd.text += fmt::format("\nLast frame time: {:.2f} ms",
+        info_cmd.text = std::format("FPS: {:.2f}", time_info.frames_per_second);
+        info_cmd.text += std::format("\nLast frame time: {:.2f} ms",
                                      time_info.last_frame_time_seconds * 1'000);
-        info_cmd.text += fmt::format("\nVelocity: {{{:.2f}, {:.2f}, {:.2f}}}", v.x, v.y, v.z);
-        info_cmd.text += fmt::format("\nPosition: {{{:.2f}, {:.2f}, {:.2f}}}", p.x, p.y, p.z);
-        info_cmd.text += fmt::format("\nGrounded: {:b}", character_controller->is_on_ground());
+        info_cmd.text += std::format("\nVelocity: {{{:.2f}, {:.2f}, {:.2f}}}", v.x, v.y, v.z);
+        info_cmd.text += std::format("\nPosition: {{{:.2f}, {:.2f}, {:.2f}}}", p.x, p.y, p.z);
+        info_cmd.text += std::format("\nGrounded: {:b}", character_controller->is_on_ground());
         info_cmd.placement.anchor = Mg::gfx::UIPlacement::top_left;
         info_cmd.placement.position = Mg::gfx::UIPlacement::top_left;
         info_cmd.placement.position_pixel_offset = { 10.0f, -10.0f };

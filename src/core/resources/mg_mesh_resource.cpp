@@ -13,10 +13,9 @@
 #include "mg/core/resources/mg_mesh_resource_data.h"
 #include "mg/utils/mg_stl_helpers.h"
 
-#include <fmt/core.h>
-
 #include <cstdlib>
 #include <cstring>
+#include <format>
 #include <type_traits>
 
 namespace Mg {
@@ -293,7 +292,7 @@ LoadResourceResult MeshResource::load_resource_impl(ResourceLoadingInput& input)
         break;
     default:
         return LoadResourceResult::data_error(
-            fmt::format("Unsupported mesh version: {:d}.", header_common.version));
+            std::format("Unsupported mesh version: {:d}.", header_common.version));
     }
 
     if (load_result.data == nullptr) {
@@ -315,10 +314,10 @@ LoadResourceResult MeshResource::load_resource_impl(ResourceLoadingInput& input)
 bool MeshResource::validate() const
 {
     bool status = true;
-    const auto mesh_error = [&]<typename... Ts>(fmt::format_string<Ts...> msg, Ts&&... args) {
+    const auto mesh_error = [&]<typename... Ts>(std::format_string<Ts...> msg, Ts&&... args) {
         log.warning("MeshResource::validate() for {}: {}",
                     resource_id().str_view(),
-                    fmt::format(msg, std::forward<decltype(args)>(args)...));
+                    std::format(msg, std::forward<decltype(args)>(args)...));
         status = false;
     };
 

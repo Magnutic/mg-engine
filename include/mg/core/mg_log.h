@@ -14,8 +14,7 @@
 #include "mg/utils/mg_impl_ptr.h"
 #include "mg/utils/mg_macros.h"
 
-#include <fmt/core.h>
-
+#include <format>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -67,20 +66,20 @@ public:
     }
 
     template<typename T, typename... Ts>
-    void write(Prio prio, fmt::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
+    void write(Prio prio, std::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
     {
-        write_impl(prio, fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
+        write_impl(prio, std::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
     }
 
     template<typename T, typename... Ts>
     void write_once(Prio prio,
-                    fmt::format_string<T, Ts...> msg,
+                    std::format_string<T, Ts...> msg,
                     T&& arg,
                     Ts&&... args,
                     float duplicate_message_timeout_seconds)
     {
         write_impl(prio,
-                   fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
+                   std::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
                    duplicate_message_timeout_seconds);
     }
 
@@ -134,9 +133,9 @@ public:
 
     /** Formats and writes a message with priority Error */
     template<typename T, typename... Ts>
-    void error(fmt::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
+    void error(std::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
     {
-        write_impl(Prio::Error, fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
+        write_impl(Prio::Error, std::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
     }
 
     /** Formats and writes a message with priority Error, but at most once within the timeout.
@@ -145,21 +144,21 @@ public:
      */
     template<typename T, typename... Ts>
     void error_once(float duplicate_message_timeout_seconds,
-                    fmt::format_string<T, Ts...> msg,
+                    std::format_string<T, Ts...> msg,
                     T&& arg,
                     Ts&&... args)
     {
         write_impl(Prio::Error,
-                   fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
+                   std::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
                    duplicate_message_timeout_seconds);
     }
 
     /** Formats and writes a message with priority Warning */
     template<typename T, typename... Ts>
-    void warning(fmt::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
+    void warning(std::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
     {
         write_impl(Prio::Warning,
-                   fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
+                   std::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
     }
 
     /** Formats and writes a message with priority Warning, but at most once within the timeout.
@@ -168,21 +167,21 @@ public:
      */
     template<typename T, typename... Ts>
     void warning_once(float duplicate_message_timeout_seconds,
-                      fmt::format_string<T, Ts...> msg,
+                      std::format_string<T, Ts...> msg,
                       T&& arg,
                       Ts&&... args)
     {
         write_impl(Prio::Warning,
-                   fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
+                   std::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
                    duplicate_message_timeout_seconds);
     }
 
     /** Formats and writes a message with priority Message */
     template<typename T, typename... Ts>
-    void message(fmt::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
+    void message(std::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
     {
         write_impl(Prio::Message,
-                   fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
+                   std::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
     }
 
     /** Formats and writes a message with priority Message, but at most once within the timeout.
@@ -191,21 +190,21 @@ public:
      */
     template<typename T, typename... Ts>
     void message_once(float duplicate_message_timeout_seconds,
-                      fmt::format_string<T, Ts...> msg,
+                      std::format_string<T, Ts...> msg,
                       T&& arg,
                       Ts&&... args)
     {
         write_impl(Prio::Message,
-                   fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
+                   std::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
                    duplicate_message_timeout_seconds);
     }
 
     /** Formats and writes a message with priority Verbose */
     template<typename T, typename... Ts>
-    void verbose(fmt::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
+    void verbose(std::format_string<T, Ts...> msg, T&& arg, Ts&&... args)
     {
         write_impl(Prio::Verbose,
-                   fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
+                   std::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...));
     }
 
     /** Formats and writes a message with priority Verbose, but at most once within the timeout.
@@ -214,12 +213,12 @@ public:
      */
     template<typename T, typename... Ts>
     void verbose_once(float duplicate_message_timeout_seconds,
-                      fmt::format_string<T, Ts...> msg,
+                      std::format_string<T, Ts...> msg,
                       T&& arg,
                       Ts&&... args)
     {
         write_impl(Prio::Verbose,
-                   fmt::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
+                   std::format(msg, std::forward<T>(arg), std::forward<Ts>(args)...),
                    duplicate_message_timeout_seconds);
     }
 

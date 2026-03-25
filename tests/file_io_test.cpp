@@ -2,8 +2,7 @@
 
 #include <mg/utils/mg_file_io.h>
 
-#include <fmt/core.h>
-
+#include <format>
 #include <cstdio>
 #include <filesystem>
 

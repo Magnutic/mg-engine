@@ -8,8 +8,8 @@
 
 #include "mg_opengl_loader_glad.h"
 
-#include "mg/core/mg_log.h"
 #include "mg/core/gfx/mg_gfx_debug_group.h"
+#include "mg/core/mg_log.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_optional.h"
@@ -27,7 +27,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
-#include <fmt/core.h>
+#include <format>
 
 namespace Mg::gfx {
 
@@ -56,7 +56,7 @@ template<GLenum shader_stage> Opt<GLuint> compile_shader(const std::string& code
         glGetShaderInfoLog(id, log_length, nullptr, msg.data());
 
         const auto msg_type = result != 0 ? Log::Prio::Message : Log::Prio::Error;
-        log.write(msg_type, fmt::format("Shader compilation message: {}", msg));
+        log.write(msg_type, std::format("Shader compilation message: {}", msg));
     }
 
     // Check whether shader compiled successfully.
@@ -87,7 +87,7 @@ bool link_program(GLuint program_id)
         glGetProgramInfoLog(program_id, log_length, nullptr, msg.data());
 
         const auto msg_type = result != 0 ? Log::Prio::Message : Log::Prio::Error;
-        log.write(msg_type, fmt::format("Shader linking message: {}", msg));
+        log.write(msg_type, std::format("Shader linking message: {}", msg));
     }
 
     // Check whether shaders linked successfully.

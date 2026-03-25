@@ -8,8 +8,7 @@
 
 #include "mg/core/mg_log.h"
 
-#include <fmt/core.h>
-
+#include <format>
 #include <forward_list>
 #include <mutex>
 #include <string>
@@ -84,7 +83,7 @@ detail::StrMapInitializer::~StrMapInitializer()
 
 void detail::report_hash_collision(std::string_view first, std::string_view second)
 {
-    auto details = fmt::format("'{}' and '{}' have the same hash.", first, second);
+    auto details = std::format("'{}' and '{}' have the same hash.", first, second);
     log.warning("Detected Identifier hash collision: " + details);
 }
 

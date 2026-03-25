@@ -13,11 +13,9 @@ list(APPEND MG_HEADER_ONLY_DEPENDENCIES function2 plf_colony optional stb imgui 
 
 # List of dependencies to build. These names corresponds to submodules in external/submodules.
 # They have to be explicitly listed since order matters due to dependencies between them.
-list(APPEND MG_DEPENDENCIES_TO_BUILD zlib libzip fmt glfw glm openal-soft assimp bullet3 hjson-cpp)
+list(APPEND MG_DEPENDENCIES_TO_BUILD zlib libzip glfw glm openal-soft assimp bullet3 hjson-cpp)
 
 # Some extra params passed into each build-configuration.
-set(fmt_EXTRA_BUILD_PARAMS "-DFMT_TEST=0")
-
 set(glfw_EXTRA_BUILD_PARAMS "-DGLFW_BUILD_EXAMPLES=0" "-DGLFW_BUILD_TESTS=0")
 
 set(glm_EXTRA_BUILD_PARAMS "-DGLM_TEST_ENABLE=0")

@@ -16,7 +16,7 @@
 #include "mg/core/gfx/mg_gfx_debug_group.h"
 #include "mg/core/gfx/mg_uniform_buffer.h"
 
-#include "fmt/core.h"
+#include <format>
 
 namespace Mg::gfx {
 

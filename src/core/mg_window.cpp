@@ -7,20 +7,20 @@
 #include "mg/core/mg_window.h"
 
 #include "mg/core/containers/mg_small_vector.h"
-#include "mg/core/mg_log.h"
-#include "mg/core/mg_runtime_error.h"
 #include "mg/core/gfx/mg_render_target.h"
 #include "mg/core/input/mg_input_source.h"
 #include "mg/core/input/mg_mouse.h"
 #include "mg/core/mg_defs.h"
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg/utils/mg_gsl.h"
 #include "../core/gfx/mg_opengl_loader_glad.h"
-
-#include <fmt/core.h>
 
 #define GLFW_INCLUDE_NONE // Do not let GLFW include OpenGL headers.
 #include <GLFW/glfw3.h>
 #undef GLFW_INCLUDE_NONE
+
+#include <format>
 
 namespace Mg {
 
@@ -437,7 +437,7 @@ void Window::focus_callback(bool focused)
 void Window::frame_buffer_size_callback(int width, int height)
 {
     log.verbose(
-        fmt::format("Setting window render target framebuffer size to: {}x{}", width, height));
+        std::format("Setting window render target framebuffer size to: {}x{}", width, height));
     render_target->set_size(width, height);
 }
 
@@ -448,7 +448,7 @@ void Window::window_size_callback(int width, int height)
 
     if (width != conf.width || height != conf.height) {
         log.warning(
-            fmt::format("Failed to set requested video mode: {}x{}. Actual video mode: {}x{}.",
+            std::format("Failed to set requested video mode: {}x{}. Actual video mode: {}x{}.",
                         conf.width,
                         conf.height,
                         width,
