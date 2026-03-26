@@ -412,7 +412,7 @@ LoadResourceResult TextureResource::load_resource_impl(ResourceLoadingInput& inp
             break;
         default:
             return LoadResourceResult::data_error(
-                fmt::format("Unsupported DXGI_FORMAT: 0x{:x}",
+                std::format("Unsupported DXGI_FORMAT: 0x{:x}",
                             as<uint32_t>(dx10_header->dxgiFormat)));
         }
     }
@@ -421,7 +421,7 @@ LoadResourceResult TextureResource::load_resource_impl(ResourceLoadingInput& inp
         auto result = dds_pf_to_pixel_format(header.ddspf);
         if (!result.valid) {
             auto format = decompose_fourcc(header.ddspf.dwFourCC);
-            return LoadResourceResult::data_error(fmt::format(
+            return LoadResourceResult::data_error(std::format(
                 "Unsupported DDS format: {}{}{}{}", format[0], format[1], format[2], format[3]));
         }
         pixel_format = result.format;

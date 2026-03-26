@@ -6,13 +6,13 @@
 
 #include "mg/core/gfx/mg_render_command_list.h"
 
-#include "mg/core/mg_log.h"
 #include "mg/core/gfx/mg_camera.h"
 #include "mg/core/gfx/mg_frustum.h"
 #include "mg/core/gfx/mg_mesh.h"
+#include "mg/core/mg_log.h"
 #include "mg/utils/mg_stl_helpers.h"
 
-#include <fmt/core.h>
+#include <format>
 
 #include <cstring>
 

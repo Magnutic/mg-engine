@@ -72,10 +72,6 @@ find_package(Threads REQUIRED)
 # Zip-file handling library.
 find_package(libzip 1.7.3 REQUIRED)
 
-# fmt
-# Text formatting
-find_package(fmt 7.1 REQUIRED)
-
 # GLFW
 # Window and input library.
 find_package(glfw3 3.3.8 REQUIRED)

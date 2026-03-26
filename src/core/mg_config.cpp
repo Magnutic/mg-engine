@@ -13,12 +13,10 @@
 #include "mg/utils/mg_file_io.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_math_utils.h"
-#include "mg/utils/mg_optional.h"
 #include "mg/utils/mg_stl_helpers.h"
 #include "mg/utils/mg_string_utils.h"
 
-#include <fmt/core.h>
-
+#include <format>
 #include <string>
 #include <vector>
 
@@ -55,7 +53,7 @@ public:
 
     void set(double value)
     {
-        m_value.string = fmt::format("{}", value);
+        m_value.string = std::format("{}", value);
         m_value.numeric = value;
     }
 
@@ -183,7 +181,7 @@ std::string Config::format_assignment_line(Identifier key) const
     }
 
     // Format output line
-    return fmt::format("{} = {}", key.str_view(), value);
+    return std::format("{} = {}", key.str_view(), value);
 }
 
 bool Config::evaluate_line(std::string_view input)

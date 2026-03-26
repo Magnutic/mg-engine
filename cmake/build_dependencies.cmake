@@ -13,18 +13,16 @@ list(APPEND MG_HEADER_ONLY_DEPENDENCIES function2 plf_colony optional stb imgui 
 
 # List of dependencies to build. These names corresponds to submodules in external/submodules.
 # They have to be explicitly listed since order matters due to dependencies between them.
-list(APPEND MG_DEPENDENCIES_TO_BUILD zlib libzip fmt glfw glm openal-soft assimp bullet3 hjson-cpp)
+list(APPEND MG_DEPENDENCIES_TO_BUILD zlib libzip glfw glm openal-soft assimp bullet3 hjson-cpp)
 
 # Some extra params passed into each build-configuration.
-set(fmt_EXTRA_BUILD_PARAMS "-DFMT_TEST=0")
-
 set(glfw_EXTRA_BUILD_PARAMS "-DGLFW_BUILD_EXAMPLES=0" "-DGLFW_BUILD_TESTS=0")
 
 set(glm_EXTRA_BUILD_PARAMS "-DGLM_TEST_ENABLE=0")
 
 set(libzip_EXTRA_BUILD_PARAMS "-DBUILD_TOOLS=0" "-DBUILD_REGRESS=0" "-DBUILD_EXAMPLES=0")
 
-set(libsndfile_EXTRA_BUILD_PARAMS "-DCMAKE_FIND_PACKAGE_PREFER_CONFIG=1" "-DBUILD_SHARED_LIBS=1"
+set(libsndfile_EXTRA_BUILD_PARAMS "-DCMAKE_FIND_PACKAGE_PREFER_CONFIG=1" "-DBUILD_SHARED_LIBS=0"
     "-DBUILD_PROGRAMS=0" "-DBUILD_EXAMPLES=0" "-DBUILD_TESTING=0")
 
 set(assimp_EXTRA_BUILD_PARAMS
@@ -74,12 +72,13 @@ function(build_dependency DEPENDENCY BUILD_CONFIG IS_HEADER_ONLY EXTRA_BUILD_PAR
         COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
         WORKING_DIRECTORY ${DEPENDENCY_SOURCE_DIR}
         OUTPUT_VARIABLE SOURCE_REVISION
+        COMMAND_ERROR_IS_FATAL ANY
     )
 
     if (EXISTS "${DEPENDENCY_INSTALL_REVISION_FILE}")
         file(READ "${DEPENDENCY_INSTALL_REVISION_FILE}" INSTALLED_REVISION)
         if(SOURCE_REVISION STREQUAL INSTALLED_REVISION)
-            message(STATUS "Found dependency ${DEPENDENCY}:${BUILD_CONFIG} already up to date at ${DEPENDENCY_BUILD_DIR}")
+            message(STATUS "Found dependency ${DEPENDENCY}:${BUILD_CONFIG} already up to date at ${MG_DEPENDENCIES_INSTALL_DIR}")
             return()
         else()
             message(STATUS "Dependency ${DEPENDENCY}:${BUILD_CONFIG} installed, but revision has changed. Rebuilding.")
@@ -92,14 +91,16 @@ function(build_dependency DEPENDENCY BUILD_CONFIG IS_HEADER_ONLY EXTRA_BUILD_PAR
         message(STATUS "Copying header-only dependency ${DEPENDENCY} from ${MG_DEPENDENCIES_SOURCE_DIR}/${DEPENDENCY} to ${MG_DEPENDENCIES_INSTALL_DIR}")
         file(COPY "${MG_DEPENDENCIES_SOURCE_DIR}/${DEPENDENCY}" DESTINATION "${MG_DEPENDENCIES_INSTALL_DIR}")
     else()
+        file(MAKE_DIRECTORY "${DEPENDENCY_BUILD_DIR}")
+
         set(CONFIGURE_LOG_FILE "${DEPENDENCY_BUILD_DIR}/configure.log")
         set(BUILD_LOG_FILE "${DEPENDENCY_BUILD_DIR}/build.log")
         set(INSTALL_LOG_FILE "${DEPENDENCY_BUILD_DIR}/install.log")
+
         message(STATUS "Building ${DEPENDENCY} in configuration ${BUILD_CONFIG} with CMake parameters [${EXTRA_BUILD_PARAMS}]")
         message(STATUS "Build logs will be written to: ${CONFIGURE_LOG_FILE}, ${BUILD_LOG_FILE}, ${INSTALL_LOG_FILE}")
 
         # Configure
-        execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${DEPENDENCY_BUILD_DIR}")
         execute_process(
             COMMAND "${CMAKE_COMMAND}" -S "${DEPENDENCY_SOURCE_DIR}" -B "${DEPENDENCY_BUILD_DIR}"
                 "-DCMAKE_BUILD_TYPE=${BUILD_CONFIG}"
@@ -108,8 +109,12 @@ function(build_dependency DEPENDENCY BUILD_CONFIG IS_HEADER_ONLY EXTRA_BUILD_PAR
                 ${EXTRA_BUILD_PARAMS}
             OUTPUT_FILE "${CONFIGURE_LOG_FILE}"
             ERROR_FILE "${CONFIGURE_LOG_FILE}"
-            COMMAND_ERROR_IS_FATAL ANY
+            RESULT_VARIABLE BUILD_STATUS
         )
+        if (NOT BUILD_STATUS EQUAL 0)
+            file(READ ${CONFIGURE_LOG_FILE} CONFIGURE_LOG)
+            message(FATAL_ERROR ${CONFIGURE_LOG})
+        endif()
 
         # Build
         execute_process(
@@ -117,8 +122,12 @@ function(build_dependency DEPENDENCY BUILD_CONFIG IS_HEADER_ONLY EXTRA_BUILD_PAR
             WORKING_DIRECTORY ${DEPENDENCY_BUILD_DIR}
             OUTPUT_FILE "${BUILD_LOG_FILE}"
             ERROR_FILE "${BUILD_LOG_FILE}"
-            COMMAND_ERROR_IS_FATAL ANY
+            RESULT_VARIABLE BUILD_STATUS
         )
+        if (NOT BUILD_STATUS EQUAL 0)
+            file(READ ${BUILD_LOG_FILE} BUILD_LOG)
+            message(FATAL_ERROR ${BUILD_LOG})
+        endif()
 
         # Install
         message(STATUS "Installing ${DEPENDENCY} in configuration ${BUILD_CONFIG} from ${DEPENDENCY_BUILD_DIR} to ${MG_DEPENDENCIES_INSTALL_DIR}")
@@ -127,8 +136,12 @@ function(build_dependency DEPENDENCY BUILD_CONFIG IS_HEADER_ONLY EXTRA_BUILD_PAR
             WORKING_DIRECTORY ${DEPENDENCY_BUILD_DIR}
             OUTPUT_FILE "${INSTALL_LOG_FILE}"
             ERROR_FILE "${INSTALL_LOG_FILE}"
-            COMMAND_ERROR_IS_FATAL ANY
+            RESULT_VARIABLE BUILD_STATUS
         )
+        if (NOT BUILD_STATUS EQUAL 0)
+            file(READ ${INSTALL_LOG_FILE} INSTALL_LOG)
+            message(FATAL_ERROR ${INSTALL_LOG})
+        endif()
     endif()
 
     # Write revision file to build directory, so as to not build unnecessarily next time.
@@ -145,5 +158,8 @@ endforeach()
 foreach(DEPENDENCY ${MG_HEADER_ONLY_DEPENDENCIES})
     build_dependency(${DEPENDENCY} "All" TRUE "")
 endforeach()
+
+# Remove build directory to avoid risk of "contaminating" future builds.
+file(REMOVE_RECURSE "${MG_DEPENDENCIES_BUILD_DIR}")
 
 message(STATUS "Finished building dependencies.")

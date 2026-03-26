@@ -12,8 +12,7 @@
 
 #include "mg/core/mg_log.h"
 
-#include <fmt/core.h>
-
+#include <format>
 #include <string>
 
 namespace Mg {
@@ -26,8 +25,8 @@ public:
     }
 
     template<typename... Ts>
-    explicit RuntimeError(fmt::format_string<Ts...> message, Ts&&... format_args)
-        : m_message(fmt::format(message, std::forward<Ts>(format_args)...))
+    explicit RuntimeError(std::format_string<Ts...> message, Ts&&... format_args)
+        : m_message(std::format(message, std::forward<Ts>(format_args)...))
     {
         log.error(m_message);
     }

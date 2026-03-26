@@ -13,14 +13,13 @@
 #include "mg/utils/mg_hash_fnv1a.h"
 #include "mg/utils/mg_u8string_casts.h"
 
-#include <chrono>
-#include <fmt/chrono.h>
-
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <ctime>
 #include <deque>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <iostream>
 #include <mutex>
@@ -63,12 +62,12 @@ constexpr const char* get_prefix(Log::Prio prio)
 
 auto now_localtime()
 {
-    return fmt::localtime(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+    return std::chrono::current_zone()->to_local(std::chrono::system_clock::now());
 }
 
 std::string format_message(const LogItem& item)
 {
-    return fmt::format("{:%T}: {} {}", now_localtime(), get_prefix(item.prio), item.message);
+    return std::format("{:%T}: {} {}", now_localtime(), get_prefix(item.prio), item.message);
 }
 
 } // namespace
@@ -170,7 +169,7 @@ public:
             return;
         }
 
-        m_writer << fmt::format("Log started at {}\n", now_localtime());
+        m_writer << std::format("Log started at {}\n", now_localtime());
 
         m_log_thread = std::thread([this] { run_loop(); });
     }
@@ -386,7 +385,7 @@ detail::LogInitializer::~LogInitializer()
 void write_crash_log()
 {
     auto out_directory_name =
-        cast_as_u8_unchecked(fmt::format("crashlog_{0:%F}_{0:%T}", now_localtime()));
+        cast_as_u8_unchecked(std::format("crashlog_{0:%F}_{0:%T}", now_localtime()));
 
     const auto fp = cast_as_u8_unchecked(log.file_path());
     const auto log_path = fs::path(fp);

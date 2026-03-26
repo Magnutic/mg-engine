@@ -6,11 +6,11 @@
 
 #include "mg_gl_debug.h"
 
-#include <fmt/core.h>
-
 #include "mg/core/mg_log.h"
 
 #include "mg_opengl_loader_glad.h"
+
+#include <format>
 
 namespace Mg::gfx {
 
@@ -155,7 +155,7 @@ void ogl_error_callback(uint32_t source,
     constexpr auto msg_str =
         "OpenGL debug message: [source: {:s}] [type: {:s}] [severity: {:s}] [id: {:d}] {:s}";
 
-    log.write(prio, fmt::format(msg_str, src_str, type_str, severity_str, id, msg));
+    log.write(prio, std::format(msg_str, src_str, type_str, severity_str, id, msg));
 }
 
 } // namespace Mg::gfx

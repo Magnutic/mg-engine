@@ -13,7 +13,7 @@
 #include "mg/core/mg_runtime_error.h"
 #include "mg/utils/mg_u8string_casts.h"
 
-#include <fmt/core.h>
+#include <format>
 
 #ifdef _WIN32
 #    define WIN32_LEAN_AND_MEAN

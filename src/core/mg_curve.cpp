@@ -161,15 +161,15 @@ DeserializeCurveResult deserialize_curve(const std::string_view serialized_curve
 
     auto error = [&](const std::string& reason) {
         return DeserializeCurveResult{
-            nullopt, fmt::format("Error deserialising curve '{}': {}", serialized_curve, reason)
+            nullopt, std::format("Error deserialising curve '{}': {}", serialized_curve, reason)
         };
     };
 
     if (!is_prefix_of(expected_prefix, serialized_curve)) {
-        return error(fmt::format("expected prefix '{}'", expected_prefix));
+        return error(std::format("expected prefix '{}'", expected_prefix));
     }
     if (!is_suffix_of(expected_suffix, serialized_curve)) {
-        return error(fmt::format("expected suffix '{}'", expected_suffix));
+        return error(std::format("expected suffix '{}'", expected_suffix));
     }
 
     std::string_view input = split_string_on_char(serialized_curve, '{').second;

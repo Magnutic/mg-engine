@@ -23,7 +23,7 @@
 #include "mg/utils/mg_optional.h"
 
 #include <algorithm>
-#include <fmt/core.h>
+#include <format>
 
 namespace rng = std::ranges;
 
@@ -147,7 +147,7 @@ std::string shader_input_layout_code(const Material& material)
 
     // Include pre-processor #defines for each option.
     for (const Material::Option& o : material.options()) {
-        snippet += fmt::format("#define {} {:d}\n", o.c_str(), material.get_option(o));
+        snippet += std::format("#define {} {:d}\n", o.c_str(), material.get_option(o));
     }
 
     snippet += '\n';

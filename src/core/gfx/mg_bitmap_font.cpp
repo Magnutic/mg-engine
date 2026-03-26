@@ -78,10 +78,9 @@ using namespace Mg::stb;
 
 //--------------------------------------------------------------------------------------------------
 
-#include <fmt/core.h>
-
 #include <glm/vec2.hpp>
 
+#include <format>
 #include <numeric>
 #include <string>
 #include <vector>
@@ -416,7 +415,7 @@ std::u32string convert_and_filter(std::string_view text)
     bool utf8_error = false;
     std::u32string codepoints = utf8_to_utf32(text, &utf8_error);
     if (utf8_error) {
-        auto msg = fmt::format("FontHandler::prepare_text: invalid UTF-8 in string '{}'.", text);
+        auto msg = std::format("FontHandler::prepare_text: invalid UTF-8 in string '{}'.", text);
         log.warning(msg);
     }
 

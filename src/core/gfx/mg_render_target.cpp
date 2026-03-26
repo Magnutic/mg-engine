@@ -6,17 +6,17 @@
 
 #include "mg/core/gfx/mg_render_target.h"
 
-#include "mg/core/mg_log.h"
-#include "mg/core/mg_runtime_error.h"
 #include "mg/core/gfx/mg_gfx_debug_group.h"
 #include "mg/core/gfx/mg_texture2d.h"
+#include "mg/core/mg_log.h"
+#include "mg/core/mg_runtime_error.h"
 #include "mg/utils/mg_assert.h"
 #include "mg/utils/mg_gsl.h"
 
 #include "mg_gl_debug.h"
 #include "mg_opengl_loader_glad.h"
 
-#include <fmt/core.h>
+#include <format>
 
 namespace Mg::gfx {
 
@@ -175,7 +175,7 @@ TextureRenderTarget::with_colour_and_depth_targets(Texture2D* colour_target,
         log.warning(
             "TextureRenderTarget::with_colour_and_depth_targets(): colour_target and depth_target "
             "have different image sizes.");
-        log.verbose(fmt::format("\n\tColour target '{}': {}x{}\n\tDepth target '{}': {}x{}.",
+        log.verbose(std::format("\n\tColour target '{}': {}x{}\n\tDepth target '{}': {}x{}.",
                                 colour_target->id().c_str(),
                                 colour_target->image_size().width,
                                 colour_target->image_size().height,

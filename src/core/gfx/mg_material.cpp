@@ -347,7 +347,7 @@ Material::PipelineId Material::pipeline_identifier() const noexcept
 std::string Material::serialize() const
 {
     Hjson::Value root;
-    root.set_comment_before(fmt::format("// Material id: '{}'\n", id().str_view()));
+    root.set_comment_before(std::format("// Material id: '{}'\n", id().str_view()));
 
     root["shader"] = m_shader_resource.resource_id().c_str();
 

@@ -21,8 +21,7 @@
 
 #include <plf_colony.h>
 
-#include <fmt/core.h>
-
+#include <format>
 #include <type_traits>
 #include <variant>
 

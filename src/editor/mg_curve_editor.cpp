@@ -4,9 +4,9 @@
 // See LICENSE.txt in the project's root directory.
 //**************************************************************************************************
 
-#include "mg/core/mg_window.h"
 #include "mg/editor/mg_curve_editor.h"
 #include "mg/core/mg_imgui_overlay.h"
+#include "mg/core/mg_window.h"
 #include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_math_utils.h"
 
@@ -14,7 +14,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-#include <fmt/core.h>
+#include <format>
 
 namespace Mg::editor {
 
@@ -225,10 +225,10 @@ bool curve_editor_widget(const CurveEditorSettings& settings,
             const auto point = control_points[i];
             const auto screen_positions = control_point_screen_positions(bbox, point);
 
-            handle_button(screen_positions.point, fmt::format("{}##handle_{}", settings.label, i));
+            handle_button(screen_positions.point, std::format("{}##handle_{}", settings.label, i));
 
             if (ImGui::IsItemActive() || ImGui::IsItemHovered()) {
-                const auto s = fmt::format("CP {}: X: {:.2f}, Y: {:.2f}", i, point.x, point.y);
+                const auto s = std::format("CP {}: X: {:.2f}, Y: {:.2f}", i, point.x, point.y);
                 ImGui::SetTooltip("%s", s.c_str());
             }
 
@@ -242,7 +242,7 @@ bool curve_editor_widget(const CurveEditorSettings& settings,
 
             if (active_control_point_inout == i) {
                 const auto left_handle_button_id =
-                    fmt::format("{}##left_handle_{}", settings.label, i);
+                    std::format("{}##left_handle_{}", settings.label, i);
                 handle_button(screen_positions.left_tangent_point, left_handle_button_id);
 
                 if (ImGui::IsItemActive()) {
@@ -256,12 +256,12 @@ bool curve_editor_widget(const CurveEditorSettings& settings,
                 }
 
                 if (ImGui::IsItemActive() || ImGui::IsItemHovered()) {
-                    const auto s = fmt::format("Left tangent: {:.2f}", point.left_tangent);
+                    const auto s = std::format("Left tangent: {:.2f}", point.left_tangent);
                     ImGui::SetTooltip("%s", s.c_str());
                 }
 
                 const auto right_handle_button_id =
-                    fmt::format("{}##right_handle_{}", settings.label, i);
+                    std::format("{}##right_handle_{}", settings.label, i);
                 handle_button(screen_positions.right_tangent_point, right_handle_button_id);
 
                 if (ImGui::IsItemActive()) {
@@ -275,7 +275,7 @@ bool curve_editor_widget(const CurveEditorSettings& settings,
                 }
 
                 if (ImGui::IsItemActive() || ImGui::IsItemHovered()) {
-                    const auto s = fmt::format("Right tangent: {:.2f}", point.right_tangent);
+                    const auto s = std::format("Right tangent: {:.2f}", point.right_tangent);
                     ImGui::SetTooltip("%s", s.c_str());
                 }
             }

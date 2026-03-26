@@ -89,7 +89,6 @@ target_link_libraries(mg_engine
         Threads::Threads
         glm::glm
         tl::optional
-        fmt::fmt
         imgui
     PRIVATE
         bullet::bullet
