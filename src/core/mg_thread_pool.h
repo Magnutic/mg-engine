@@ -64,12 +64,12 @@ public:
      */
     void add_job_fire_and_forget(std::invocable auto job) { enqueue_job(std::move(job)); }
 
-    /** Invoke func on all elements in range, distributing the invocations into multiple parallel
-     * jobs.
+    /** Invoke function on all elements in range, distributing the invocations into multiple
+     * parallel jobs.
      */
     auto parallel_for(std::ranges::contiguous_range auto& range,
                       size_t num_elems_per_job,
-                      const std::invocable<decltype(*std::ranges::data(range))> auto& func);
+                      const auto& function);
 
     /** Wait for all jobs in the pool to finish, locking the thread. */
     void await_all_jobs();
@@ -161,8 +161,8 @@ auto ThreadPool::add_job(std::invocable auto job)
 }
 
 auto ThreadPool::parallel_for(std::ranges::contiguous_range auto& range,
-                              const size_t num_elems_per_job,
-                              const std::invocable<decltype(*std::ranges::data(range))> auto& func)
+                              size_t num_elems_per_job,
+                              const auto& function)
 {
     const auto span = std::span(range);
     const size_t num_elems = span.size();
@@ -176,9 +176,9 @@ auto ThreadPool::parallel_for(std::ranges::contiguous_range auto& range,
     for (size_t i = 1; i < num_jobs_to_spawn; ++i) {
         const auto start = i * num_elems_per_job;
         const auto num = std::min(start + num_elems_per_job, num_elems) - start;
-        add_job_fire_and_forget([&num_done, subrange = span.subspan(start, num), func] {
+        add_job_fire_and_forget([&num_done, subrange = span.subspan(start, num), function] {
             for (auto& v : subrange) {
-                func(v);
+                function(v);
             }
             ++num_done;
         });
@@ -187,7 +187,7 @@ auto ThreadPool::parallel_for(std::ranges::contiguous_range auto& range,
     // Do some work on this thread, too.
     const auto num = std::min(num_elems_per_job, num_elems);
     for (auto&& v : span.subspan(0, num)) {
-        func(v);
+        function(v);
     }
     ++num_done;
 
