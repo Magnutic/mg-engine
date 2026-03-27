@@ -4,9 +4,12 @@ find_package(Git REQUIRED)
 include(ProcessorCount)
 ProcessorCount(NPROC)
 
-get_filename_component(MG_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" ABSOLUTE)
+get_filename_component(MG_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 set(MG_DEPENDENCIES_BUILD_DIR "${MG_SOURCE_DIR}/external/build")
-set(MG_DEPENDENCIES_INSTALL_DIR "${MG_SOURCE_DIR}/external/mg_dependencies")
+
+if (NOT MG_DEPENDENCIES_INSTALL_DIR)
+    set(MG_DEPENDENCIES_INSTALL_DIR "${MG_SOURCE_DIR}/external/mg_dependencies")
+endif()
 
 # The header-only dependencies. These names correspond to submodules in external/submodules.
 list(APPEND MG_HEADER_ONLY_DEPENDENCIES function2 plf_colony optional stb imgui utf8.h)
@@ -55,7 +58,7 @@ endif()
 # Get dependencies from submodules.
 message(STATUS "Using git submodules to get dependencies for Mg Engine...")
 execute_process(
-    COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+    COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive --depth=1
     WORKING_DIRECTORY "${MG_SOURCE_DIR}"
 )
 set(MG_DEPENDENCIES_SOURCE_DIR "${MG_SOURCE_DIR}/external/submodules")
