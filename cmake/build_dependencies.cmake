@@ -1,14 +1,19 @@
 cmake_minimum_required(VERSION 3.19)
 
-find_package(Git REQUIRED)
 include(ProcessorCount)
 ProcessorCount(NPROC)
 
 get_filename_component(MG_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+set(MG_DEPENDENCIES_SOURCE_DIR "${MG_SOURCE_DIR}/external/submodules")
 set(MG_DEPENDENCIES_BUILD_DIR "${MG_SOURCE_DIR}/external/build")
 
 if (NOT MG_DEPENDENCIES_INSTALL_DIR)
     set(MG_DEPENDENCIES_INSTALL_DIR "${MG_SOURCE_DIR}/external/mg_dependencies")
+endif()
+
+if (NOT DEFINED MG_DEPENDENCIES_FETCH_SUBMODULES)
+    set(MG_DEPENDENCIES_FETCH_SUBMODULES TRUE)
+    find_package(Git REQUIRED)
 endif()
 
 # The header-only dependencies. These names correspond to submodules in external/submodules.
@@ -55,13 +60,14 @@ if(NOT SndFile_FOUND)
     list(APPEND MG_DEPENDENCIES_TO_BUILD ogg vorbis libsndfile)
 endif()
 
-# Get dependencies from submodules.
-message(STATUS "Using git submodules to get dependencies for Mg Engine...")
-execute_process(
-    COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive --depth=1
-    WORKING_DIRECTORY "${MG_SOURCE_DIR}"
-)
-set(MG_DEPENDENCIES_SOURCE_DIR "${MG_SOURCE_DIR}/external/submodules")
+if(MG_DEPENDENCIES_FETCH_SUBMODULES)
+    # Get dependencies from submodules.
+    message(STATUS "Using git submodules to get dependencies for Mg Engine...")
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive --depth=1
+        WORKING_DIRECTORY "${MG_SOURCE_DIR}"
+    )
+endif()
 
 message(STATUS "Building dependencies and installing to ${MG_DEPENDENCIES_INSTALL_DIR}")
 
@@ -70,14 +76,16 @@ function(build_dependency DEPENDENCY BUILD_CONFIG IS_HEADER_ONLY EXTRA_BUILD_PAR
     set(DEPENDENCY_BUILD_DIR "${MG_DEPENDENCIES_BUILD_DIR}/${BUILD_CONFIG}/${DEPENDENCY}")
     set(DEPENDENCY_INSTALL_REVISION_FILE "${MG_DEPENDENCIES_INSTALL_DIR}/${DEPENDENCY}_revision_${BUILD_CONFIG}")
 
-    # Check if we already have the dependency installed at the same revision.
-    execute_process(
-        COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
-        WORKING_DIRECTORY ${DEPENDENCY_SOURCE_DIR}
-        OUTPUT_VARIABLE SOURCE_REVISION
-        COMMAND_ERROR_IS_FATAL ANY
-    )
+    if(MG_DEPENDENCIES_FETCH_SUBMODULES)
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
+            WORKING_DIRECTORY ${DEPENDENCY_SOURCE_DIR}
+            OUTPUT_VARIABLE SOURCE_REVISION
+            COMMAND_ERROR_IS_FATAL ANY
+        )
+    endif()
 
+    # Check if we already have the dependency installed at the same revision.
     if (EXISTS "${DEPENDENCY_INSTALL_REVISION_FILE}")
         file(READ "${DEPENDENCY_INSTALL_REVISION_FILE}" INSTALLED_REVISION)
         if(SOURCE_REVISION STREQUAL INSTALLED_REVISION)
