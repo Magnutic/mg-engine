@@ -1,13 +1,43 @@
 # Mg Engine
-_Hobby project game engine / rendering library. Very much a work-in-progress._
+Hobby project game engine in C++20
 
-## Current state
-It is currently more of a library of rendering and game engine utilities than a self-contained
-framework. Most interesting, perhaps, is the implementation of cluster forward rendering for point
-lights (see src/gfx/mg\_mesh\_renderer.cpp).
+## Building
+Builds with CMake.
 
-There are a lot of experimental features and systems are being continuously re-designed.
-Since this is a hobby project, there is no clear roadmap -- I just work on what I find interesting.
+First, make sure the dependencies are available: see subsection _Dependencies_ below.
+Then, build using CMake:
+
+```cpp
+cmake -S . -B build-directory <options...>
+cmake --build build-directory -j $(nproc)
+```
+
+## Dependencies
+
+Dependencies are bundled as submodules (`external/submodules/`).
+
+> On Debian-based systems, building the dependencies requires the following packages to be installed:
+>
+> `apt install -y libwayland-dev libxkbcommon-dev xorg-dev`
+
+They can be built as follows:
+
+```sh
+cmake -P ./cmake/build_dependencies.cmake
+```
+
+Optionally, you can specify compiler to use for building dependencies:
+
+```sh
+CC=clang-20 CXX=clang++-20 cmake -P ./cmake/build_dependencies.cmake
+```
+
+For convenience, you can also let the build system build the  dependencies automatically, when
+configuring the project:
+
+```sh
+cmake -S . -B build-directory -DMG_ENGINE_BUILD_DEPENDENCIES=1
+```
 
 ## License
 Mg Engine is licensed under the BSD 3-clause license, see LICENSE.txt.
