@@ -34,8 +34,8 @@ struct BlockTextures {
 };
 
 struct Block {
-    float z_min;
-    float z_max;
+    float z_min{};
+    float z_max{};
     BlockTextures textures{};
 
     friend bool operator==(const Block&, const Block&) = default;

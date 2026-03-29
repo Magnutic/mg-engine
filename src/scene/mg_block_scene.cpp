@@ -386,14 +386,8 @@ const Cluster* BlockScene::cluster_covering(int x, int y) const
 
 bool BlockScene::try_insert_impl(Cluster& cluster, const size_t block_index, const Block to_insert)
 {
-    auto add_block_level = [&cluster]() -> BlockLevel& {
-        auto& level = cluster.block_levels.emplace_back();
-        std::memset(level.data(), 0, level.size() * sizeof(level[0]));
-        return level;
-    };
-
     if (cluster.block_levels.empty()) {
-        auto& level = add_block_level();
+        auto& level = cluster.block_levels.emplace_back();
         level[block_index] = to_insert;
         return true;
     }
@@ -421,7 +415,7 @@ bool BlockScene::try_insert_impl(Cluster& cluster, const size_t block_index, con
     }
 
     // If we got here, we need to add a new level.
-    add_block_level()[block_index] = to_insert;
+    cluster.block_levels.emplace_back()[block_index] = to_insert;
     return true;
 }
 

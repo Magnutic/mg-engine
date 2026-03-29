@@ -193,7 +193,7 @@ shader::Tag parse_tags(const Hjson::Value& tags)
 {
     MG_ASSERT(tags.type() == Hjson::Type::Vector);
 
-    shader::Tag result;
+    shader::Tag result{};
 
     const auto len = tags.size();
     for (int i = 0; i < as<int>(len); ++i) {

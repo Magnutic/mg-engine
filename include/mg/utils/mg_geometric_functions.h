@@ -64,7 +64,7 @@ template<typename T, typename U> T previous_index(const T index, const U num_ind
 /** Next index, with wrap around. */
 template<typename T, typename U> T next_index(const T index, const U num_indices)
 {
-    MG_ASSERT_DEBUG(index >= T(0));
+    MG_ASSERT_DEBUG(index >= T(0) && num_indices > U(0));
     return (index + 1) % as<T>(num_indices);
 }
 

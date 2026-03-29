@@ -90,7 +90,7 @@ constexpr std::string_view enum_values_specification_string(EnumT /*dummy*/)
 }
 
 template<typename EnumT>
-constexpr bool is_mg_enum = enum_values_specification_string(EnumT{}) != "";
+constexpr bool is_mg_enum = !enum_values_specification_string(EnumT{}).empty();
 
 template<typename EnumT> constexpr void assert_is_mg_enum()
 {
