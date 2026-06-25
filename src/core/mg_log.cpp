@@ -77,19 +77,15 @@ class LogHistory {
 public:
     explicit LogHistory(const size_t num_history_lines) : m_num_history_lines{ num_history_lines }
     {
-        m_history.reserve(num_history_lines);
+        MG_ASSERT(m_num_history_lines > 0);
+        m_history.resize(num_history_lines);
+        m_last_history_index = num_history_lines; // First add wraps around to 0
     }
 
     void add(std::string&& message)
     {
-        const auto history_index = m_history.empty()
-                                       ? 0
-                                       : (m_last_history_index + 1) % m_num_history_lines;
-        if (history_index == m_history.size()) {
-            m_history.emplace_back();
-        }
-
-        m_history[history_index] = message;
+        const auto history_index = wrap(m_last_history_index + 1);
+        m_history.at(history_index) = std::move(message);
         m_last_history_index = history_index;
     }
 
@@ -99,16 +95,21 @@ public:
         result.resize(m_history.size());
 
         for (size_t i = 0; i < m_history.size(); ++i) {
-            const size_t source_index = (m_last_history_index + i) % m_history.size();
-            result[i] = m_history[source_index];
+            const size_t source_index = wrap(m_last_history_index + i);
+            result.at(i) = m_history.at(source_index);
         }
 
         return result;
     }
 
 private:
+    size_t wrap(const size_t unwrapped_index) const
+    {
+        return unwrapped_index % (m_history.size() - 1);
+    }
+
     size_t m_num_history_lines;
-    size_t m_last_history_index = 0u;
+    size_t m_last_history_index;
     std::vector<std::string> m_history;
 };
 
