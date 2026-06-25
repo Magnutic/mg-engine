@@ -17,10 +17,10 @@
 namespace Mg {
 
 struct AnimationComponent : ecs::BaseComponent<AnimationComponent> {
-    Opt<uint32_t> current_clip;
+    Opt<uint32_t> current_clip{};
     float time_in_clip = 0.0f;
     float animation_speed = 1.0f;
-    gfx::SkeletonPose pose;
+    gfx::SkeletonPose pose{};
 };
 
 
