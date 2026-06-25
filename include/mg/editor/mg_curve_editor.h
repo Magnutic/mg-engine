@@ -19,10 +19,6 @@
 
 #include <string_view>
 
-namespace Mg {
-class Window;
-}
-
 /** Resource-editor widgets. */
 namespace Mg::editor {
 
@@ -86,7 +82,7 @@ bool curve_editor_widget(const CurveEditorSettings& settings,
  */
 class CurveEditor {
 public:
-    explicit CurveEditor(const Window& window, const CurveEditorSettings& settings);
+    explicit CurveEditor(const CurveEditorSettings& settings);
 
     void update(Curve& curve);
 

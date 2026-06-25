@@ -5,8 +5,10 @@
 #include <mg/core/gfx/mg_material.h>
 #include <mg/core/gfx/mg_simple_scene_renderer.h>
 #include <mg/core/input/mg_input.h>
+#include <mg/core/mg_curve.h>
 #include <mg/core/mg_player_controller.h>
 #include <mg/editor/mg_block_scene_editor.h>
+#include <mg/editor/mg_curve_editor.h>
 #include <mg/mg_game.h>
 #include <mg/scene/mg_block_scene.h>
 
@@ -29,6 +31,7 @@ public:
     std::unique_ptr<Mg::physics::CharacterController> character_controller;
 
     int debug_visualization = 0;
+    bool show_imgui_overlay = false;
 
     void on_simulation_step(const Mg::ApplicationTimeInfo& time_info) override;
     void on_render(double lerp_factor, const Mg::ApplicationTimeInfo& time_info) override;
@@ -46,6 +49,9 @@ public:
     Mg::UpdateTimerConfig update_timer_config() const override;
     Mg::gfx::SceneRenderer& renderer() override { return *m_renderer; }
     const Mg::gfx::ICamera& active_camera() const override { return camera; }
+
+    Mg::Curve curve;
+    Mg::editor::CurveEditor m_editor;
 
 private:
     std::shared_ptr<Mg::gfx::BitmapFont> make_font() const;

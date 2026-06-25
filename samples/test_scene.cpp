@@ -55,9 +55,13 @@ TestScene::TestScene()
           .file_loaders = make_file_loaders(),
           .max_num_entities = 1024,
       } }
+    , m_editor{ {} }
+
 {
     MG_GFX_DEBUG_GROUP_BY_FUNCTION
     using namespace Mg::literals;
+
+    window().set_cursor_lock_mode(Mg::CursorLockMode::LOCKED);
 
     config().set_default_value("mouse_sensitivity_x", 0.4f);
     config().set_default_value("mouse_sensitivity_y", 0.4f);
@@ -85,6 +89,7 @@ TestScene::TestScene()
     sample_control_button_tracker->bind("next_debug_visualization", Mg::input::Key::F);
     sample_control_button_tracker->bind("reset", Mg::input::Key::R);
     sample_control_button_tracker->bind("toggle_animation", Mg::input::Key::T);
+    sample_control_button_tracker->bind("toggle_imgui_overlay", Mg::input::Key::Tab);
 
     auto mouse_tracker = std::make_shared<Mg::input::MouseMovementTracker>(window());
 
@@ -116,6 +121,18 @@ TestScene::TestScene()
 
     create_entities();
     generate_lights();
+
+    // TODO TEMP test some curve points
+    curve.insert({ 0.0f, 0.0f });
+    curve.insert({ 0.1f, 1.0f });
+    curve.insert({ 0.2f, 0.0f });
+    curve.insert({ 0.3f, 1.0f });
+    curve.insert({ 0.4f, 0.0f });
+    curve.insert({ 0.5f, 1.0f });
+    curve.insert({ 0.6f, 0.0f });
+    curve.insert({ 0.7f, 1.0f });
+    curve.insert({ 0.8f, 0.0f });
+    curve.insert({ 0.9f, 1.0f });
 }
 
 TestScene::~TestScene()
@@ -188,6 +205,22 @@ void TestScene::on_simulation_step(const Mg::ApplicationTimeInfo& /*time_info*/)
         block_scene_mesh_data = block_scene.make_mesh(3);
         mesh_pool()->update(block_scene_mesh_data.view(), "BlockScene");
         make_block_scene_entity();
+    }
+
+    if (button_states["toggle_imgui_overlay"].was_pressed) {
+        show_imgui_overlay = !show_imgui_overlay;
+        if (show_imgui_overlay) {
+            window().set_cursor_lock_mode(Mg::CursorLockMode::UNLOCKED);
+            window().release_cursor();
+        }
+        else {
+            window().set_cursor_lock_mode(Mg::CursorLockMode::LOCKED);
+            window().grab_cursor();
+        }
+    }
+
+    if (show_imgui_overlay) {
+        m_editor.update(curve);
     }
 }
 

@@ -33,7 +33,7 @@ class IMouseMovementEventHandler {
 public:
     MG_INTERFACE_BOILERPLATE(IMouseMovementEventHandler);
 
-    virtual void handle_mouse_move_event(float x, float y, bool is_cursor_locked_to_window) = 0;
+    virtual void handle_mouse_move_event(float x, float y, bool ignore_deltas) = 0;
 };
 
 class IScrollEventHandler {

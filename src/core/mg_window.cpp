@@ -259,6 +259,7 @@ void Window::swap_buffers() noexcept
 
 void Window::poll_input_events()
 {
+    // Poll input events from platform library.
     glfwPollEvents();
 }
 
@@ -372,8 +373,13 @@ void Window::set_cursor_lock_mode(CursorLockMode mode) noexcept
 
 void Window::cursor_position_callback(const float x, const float y)
 {
+    // Pass event to mouse-movement-event handlers even if m_ignore_mouse_events is true, but make
+    // it ignore deltas. This way, the handlers will have an up-to-date cursor position when
+    // mouse-event handling is reactivated, but will not have seen any deltas (so no mouselook).
+    const bool ignore_deltas = !m_is_cursor_locked || m_ignore_mouse_events;
+
     for (auto* handler : m_mouse_movement_event_handlers) {
-        handler->handle_mouse_move_event(x, y, m_is_cursor_locked);
+        handler->handle_mouse_move_event(x, y, ignore_deltas);
     }
 }
 
@@ -382,6 +388,10 @@ void Window::mouse_button_callback(const int button, const int action, const int
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         // Mark window as focused when user clicks within window
         grab_cursor();
+    }
+
+    if (m_ignore_mouse_events) {
+        return;
     }
 
     if (action != GLFW_PRESS && action != GLFW_RELEASE) {
@@ -396,6 +406,10 @@ void Window::mouse_button_callback(const int button, const int action, const int
 
 void Window::scroll_callback(const float xoffset, const float yoffset)
 {
+    if (m_ignore_mouse_events) {
+        return;
+    }
+
     for (auto* handler : m_scroll_event_handlers) {
         handler->handle_scroll_event(xoffset, yoffset);
     }
@@ -406,6 +420,10 @@ void Window::key_callback(const int key,
                           const int action,
                           const int /*mods*/)
 {
+    if (m_ignore_keyboard_events) {
+        return;
+    }
+
     if (action != GLFW_PRESS && action != GLFW_RELEASE) {
         return;
     }

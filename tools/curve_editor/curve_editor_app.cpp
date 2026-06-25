@@ -1,3 +1,4 @@
+#include "mg/core/mg_imgui_overlay.h"
 #include <mg/core/mg_application_context.h>
 #include <mg/core/mg_window.h>
 #include <mg/editor/mg_curve_editor.h>
@@ -11,7 +12,7 @@ Mg::editor::CurveEditorSettings get_settings()
 class CurveEditorApp : public Mg::IApplication {
 public:
     explicit CurveEditorApp(Mg::Window& window)
-        : m_window{ window }, m_editor{ window, get_settings() }
+        : m_window{ window }, m_imgui_overlay{ window }, m_editor{ get_settings() }
     {}
 
     Mg::Curve curve;
@@ -19,13 +20,15 @@ public:
 protected:
     void simulation_step(Mg::ApplicationTimeInfo /*time_info*/) override
     {
-        // Do nothing, all work is done in render.
+        m_window.poll_input_events();
+        (void)m_imgui_overlay.start_frame();
+        m_editor.update(curve);
+        m_imgui_overlay.finish_frame();
     }
 
     void render(double /*lerp_factor*/, Mg::ApplicationTimeInfo /*time_info*/) override
     {
-        m_window.poll_input_events();
-        m_editor.update(curve);
+        m_imgui_overlay.render();
         m_window.swap_buffers();
     }
 
@@ -43,6 +46,7 @@ protected:
 
 private:
     Mg::Window& m_window;
+    Mg::ImguiOverlay m_imgui_overlay;
     Mg::editor::CurveEditor m_editor;
 };
 

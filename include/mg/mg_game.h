@@ -27,6 +27,7 @@
 #include "mg/core/mg_application_context.h"
 #include "mg/core/mg_config.h"
 #include "mg/core/mg_file_loader.h"
+#include "mg/core/mg_imgui_overlay.h"
 #include "mg/core/mg_window.h"
 #include "mg/core/physics/mg_dynamic_body_handle.h"
 #include "mg/core/physics/mg_physics_world.h"
@@ -58,6 +59,7 @@ public:
     explicit Game(GameParams params)
         : m_config{ params.config_file_path }
         , m_window{ read_display_settings(m_config), std::move(params.window_title) }
+        , m_imgui_overlay{ std::make_unique<ImguiOverlay>(m_window) }
         , m_resource_cache{ std::make_shared<ResourceCache>(std::move(params.file_loaders)) }
         , m_mesh_pool{ std::make_shared<gfx::MeshPool>(m_resource_cache) }
         , m_texture_pool{ std::make_shared<gfx::TexturePool>(m_resource_cache) }
@@ -71,7 +73,6 @@ public:
                         AnimationComponent,
                         AdditionalComponentTs...>();
 
-        m_window.set_cursor_lock_mode(CursorLockMode::LOCKED);
         m_window.set_focus_callback(
             [this](bool is_focused) { on_window_focus_change(is_focused); });
     }
@@ -84,11 +85,22 @@ public:
 
         gfx::get_debug_render_queue().clear();
 
-        m_window.poll_input_events();
-
         update_dynamic_body_transforms(m_entities);
 
+        // Ignore input events if ImguiOverlay wants to capture input.
+        {
+            const auto imgui_input_capture = m_imgui_overlay->input_capture();
+            m_window.set_ignore_mouse_events(imgui_input_capture.mouse);
+            m_window.set_ignore_keyboard_events(imgui_input_capture.keyboard);
+        }
+
+        m_window.poll_input_events();
+
+        m_imgui_overlay->start_frame();
+
         on_simulation_step(time_info);
+
+        m_imgui_overlay->finish_frame();
 
         m_physics_world->update(time_step);
     }
@@ -103,6 +115,9 @@ public:
             .camera = active_camera(),
             .time_since_init = float(time_info.time_since_init),
         });
+
+        m_imgui_overlay->render();
+
         window().swap_buffers();
     }
 
@@ -234,6 +249,8 @@ private:
 
     Config m_config;
     Window m_window;
+
+    std::unique_ptr<ImguiOverlay> m_imgui_overlay;
 
     std::shared_ptr<ResourceCache> m_resource_cache;
     std::shared_ptr<gfx::MeshPool> m_mesh_pool;

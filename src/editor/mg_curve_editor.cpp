@@ -5,9 +5,6 @@
 //**************************************************************************************************
 
 #include "mg/editor/mg_curve_editor.h"
-#include "mg/core/mg_imgui_overlay.h"
-#include "mg/core/mg_window.h"
-#include "mg/utils/mg_gsl.h"
 #include "mg/utils/mg_math_utils.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS 1
@@ -207,12 +204,7 @@ bool curve_editor_widget(const CurveEditorSettings& settings,
 
     // Handle interaction
     {
-        auto handle_button = [&](ImVec2 button_centre, const std::string& button_label) {
-            auto restore_cursor_pos =
-                finally([original_cursor_screen_pos = ImGui::GetCursorScreenPos()] {
-                    ImGui::SetCursorScreenPos(original_cursor_screen_pos);
-                });
-
+        auto handle_button = [&](const ImVec2 button_centre, const std::string& button_label) {
             ImVec2 handle_half_size = { settings.handle_radius, settings.handle_radius };
             const auto button_position = button_centre - handle_half_size;
             ImGui::SetCursorScreenPos(button_position);
@@ -359,38 +351,29 @@ bool curve_editor_widget(const CurveEditorSettings& settings,
 
 class CurveEditor::Impl {
 public:
-    explicit Impl(const Window& window, const CurveEditorSettings& settings)
-        : m_gui(window), m_settings(settings)
-    {}
+    explicit Impl(const CurveEditorSettings& settings) : m_settings(settings) {}
 
     void update(Curve& curve)
     {
-        auto update_impl = [&] {
-            constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration;
+        constexpr ImGuiWindowFlags window_flags = 0;//ImGuiWindowFlags_NoDecoration;
 
-            const auto* viewport = ImGui::GetMainViewport();
-            ImGui::SetNextWindowPos(viewport->Pos);
-            ImGui::SetNextWindowSize({ viewport->Size.x, viewport->Size.y });
+        const auto* viewport = ImGui::GetMainViewport();
+        //ImGui::SetNextWindowPos(viewport->Pos);
+        ImGui::SetNextWindowSize({ viewport->Size.x / 4, viewport->Size.y / 4 });
 
-            if (ImGui::Begin("Curve Editor", nullptr, window_flags)) {
-                curve_editor_widget(m_settings, curve, m_active_control_point);
-            }
+        if (ImGui::Begin("Curve Editor", nullptr, window_flags)) {
+            curve_editor_widget(m_settings, curve, m_active_control_point);
+        }
 
-            ImGui::End();
-        };
-
-        m_gui.render(update_impl);
+        ImGui::End();
     }
 
 private:
-    ImguiOverlay m_gui;
     Opt<Curve::Index> m_active_control_point = nullopt;
     CurveEditorSettings m_settings;
 };
 
-CurveEditor::CurveEditor(const Window& window, const CurveEditorSettings& settings)
-    : m_impl(window, settings)
-{}
+CurveEditor::CurveEditor(const CurveEditorSettings& settings) : m_impl(settings) {}
 
 void CurveEditor::update(Curve& curve)
 {

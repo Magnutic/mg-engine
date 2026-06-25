@@ -78,13 +78,13 @@ MouseMovementTracker::~MouseMovementTracker()
 
 void MouseMovementTracker::handle_mouse_move_event(const float x,
                                                    const float y,
-                                                   const bool is_cursor_locked_to_window)
+                                                   const bool ignore_deltas)
 {
     m_cursor_delta = { m_cursor_delta.x + x - m_cursor_position.x,
                        m_cursor_delta.y + y - m_cursor_position.y };
     m_cursor_position = { x, y };
 
-    if (!is_cursor_locked_to_window) {
+    if (ignore_deltas) {
         m_cursor_delta = { 0.0f, 0.0f };
     }
 }

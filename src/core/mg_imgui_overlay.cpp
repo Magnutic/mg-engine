@@ -48,32 +48,28 @@ ImguiOverlay::~ImguiOverlay()
     ImGui::DestroyContext();
 }
 
-void ImguiOverlay::render(const std::function<void()>& imgui_function)
+void ImguiOverlay::start_frame()
 {
-    // TODO: deal with the information in the following comment, copied from example code:
-    //
-    // Poll and handle events (inputs, window resize, etc.)
-    // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui
-    // wants to use your inputs.
-    // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main
-    // application.
-    // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main
-    // application. Generally you may always pass all inputs to dear imgui, and hide them from
-    // your application based on those two flags.
-
-    // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    imgui_function();
+    const auto& io = ImGui::GetIO();
+    m_input_capture = { .keyboard = io.WantCaptureKeyboard, .mouse = io.WantCaptureMouse };
+}
 
+void ImguiOverlay::render()
+{
     // Adjust framebuffer SRGB setting according to Dear Imgui's expectations.
     glDisable(GL_FRAMEBUFFER_SRGB);
     auto restore_srgb = finally([] { glEnable(GL_FRAMEBUFFER_SRGB); });
 
-    // Rendering
-    ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
+
+void ImguiOverlay::finish_frame()
+{
+    ImGui::Render();
+}
+
 } // namespace Mg

@@ -11,10 +11,10 @@
 #pragma once
 
 #include "mg/core/containers/mg_flat_map.h"
-#include "mg/core/mg_identifier.h"
 #include "mg/core/input/mg_input_source.h"
 #include "mg/core/input/mg_keyboard.h"
 #include "mg/core/input/mg_mouse.h"
+#include "mg/core/mg_identifier.h"
 #include "mg/utils/mg_macros.h"
 
 #include <glm/vec2.hpp>
@@ -73,9 +73,10 @@ public:
     MG_MAKE_NON_MOVABLE(MouseMovementTracker);
     MG_MAKE_NON_COPYABLE(MouseMovementTracker);
 
-    // Implementation of IMouseMovementEventHandler.
-    // The input source calls this function to notify MouseMovementTracker of input events.
-    void handle_mouse_move_event(float x, float y, bool is_cursor_locked_to_window) override;
+    /** Implementation of IMouseMovementEventHandler.
+     * The input source calls this function to notify MouseMovementTracker of input events.
+     */
+    void handle_mouse_move_event(float x, float y, bool ignore_deltas) override;
 
     /** Get mouse cursor position in screen coordinates, relative to upper left corner of the
      * window.

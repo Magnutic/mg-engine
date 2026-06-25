@@ -11,9 +11,9 @@
 #pragma once
 
 #include "mg/core/containers/mg_array.h"
-#include "mg/core/mg_window_settings.h"
 #include "mg/core/gfx/mg_render_target.h"
 #include "mg/core/input/mg_input_source.h"
+#include "mg/core/mg_window_settings.h"
 #include "mg/utils/mg_macros.h"
 #include "mg/utils/mg_observer.h"
 
@@ -134,6 +134,12 @@ public:
     /** Polls input events for this window. Should be done every frame. */
     void poll_input_events();
 
+    /** Set whether to ignore mouse events. */
+    void set_ignore_mouse_events(const bool ignore) { m_ignore_mouse_events = ignore; }
+
+    /** Set whether to ignore keyboard events. */
+    void set_ignore_keyboard_events(const bool ignore) { m_ignore_keyboard_events = ignore; }
+
     void register_button_event_handler(input::IButtonEventHandler& handler) override;
     void deregister_button_event_handler(input::IButtonEventHandler& handler) override;
 
@@ -178,6 +184,9 @@ private:
 
     CursorLockMode m_cursor_lock_mode = CursorLockMode::UNLOCKED;
     bool m_is_cursor_locked = false;
+
+    bool m_ignore_mouse_events = false;
+    bool m_ignore_keyboard_events = false;
 };
 
 } // namespace Mg
