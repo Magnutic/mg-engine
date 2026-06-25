@@ -55,8 +55,6 @@ TestScene::TestScene()
           .file_loaders = make_file_loaders(),
           .max_num_entities = 1024,
       } }
-    , m_editor{ {} }
-
 {
     MG_GFX_DEBUG_GROUP_BY_FUNCTION
     using namespace Mg::literals;
@@ -121,18 +119,6 @@ TestScene::TestScene()
 
     create_entities();
     generate_lights();
-
-    // TODO TEMP test some curve points
-    curve.insert({ 0.0f, 0.0f });
-    curve.insert({ 0.1f, 1.0f });
-    curve.insert({ 0.2f, 0.0f });
-    curve.insert({ 0.3f, 1.0f });
-    curve.insert({ 0.4f, 0.0f });
-    curve.insert({ 0.5f, 1.0f });
-    curve.insert({ 0.6f, 0.0f });
-    curve.insert({ 0.7f, 1.0f });
-    curve.insert({ 0.8f, 0.0f });
-    curve.insert({ 0.9f, 1.0f });
 }
 
 TestScene::~TestScene()

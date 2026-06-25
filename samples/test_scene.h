@@ -50,9 +50,6 @@ public:
     Mg::gfx::SceneRenderer& renderer() override { return *m_renderer; }
     const Mg::gfx::ICamera& active_camera() const override { return camera; }
 
-    Mg::Curve curve;
-    Mg::editor::CurveEditor m_editor;
-
 private:
     std::shared_ptr<Mg::gfx::BitmapFont> make_font() const;
     void make_block_scene_entity();
