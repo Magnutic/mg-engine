@@ -25,7 +25,8 @@ void update_button_state(ButtonState& state, const InputEvent event)
 } // namespace
 
 
-ButtonTracker::ButtonTracker(IInputSource& input_source) : m_input_source{ input_source }
+ButtonTracker::ButtonTracker(IInputSource& input_source, const InputTargetId target)
+    : m_input_source{ input_source }, m_target{ target }
 {
     m_input_source.register_button_event_handler(*this);
 }
@@ -35,8 +36,14 @@ ButtonTracker::~ButtonTracker()
     m_input_source.deregister_button_event_handler(*this);
 }
 
-void ButtonTracker::handle_key_event(const Key key, const InputEvent event)
+void ButtonTracker::handle_key_event(const InputTargetId target,
+                                     const Key key,
+                                     const InputEvent event)
 {
+    if (m_target != target && m_target != InputTargetId_receive_all) {
+        return;
+    }
+
     if (auto it = m_key_bindings.find(key); it != m_key_bindings.end()) {
         for (const auto& action_id : it->second) {
             update_button_state(m_states[action_id], event);
@@ -44,8 +51,14 @@ void ButtonTracker::handle_key_event(const Key key, const InputEvent event)
     }
 }
 
-void ButtonTracker::handle_mouse_button_event(const MouseButton button, const InputEvent event)
+void ButtonTracker::handle_mouse_button_event(const InputTargetId target,
+                                              const MouseButton button,
+                                              const InputEvent event)
 {
+    if (m_target != target && m_target != InputTargetId_receive_all) {
+        return;
+    }
+
     if (auto it = m_mouse_button_bindings.find(button); it != m_mouse_button_bindings.end()) {
         for (const auto& action_id : it->second) {
             update_button_state(m_states[action_id], event);
@@ -65,8 +78,8 @@ void ButtonTracker::bind(Identifier button_action_id, MouseButton button)
     m_states[button_action_id] = {};
 }
 
-MouseMovementTracker::MouseMovementTracker(IInputSource& input_source)
-    : m_input_source{ input_source }
+MouseMovementTracker::MouseMovementTracker(IInputSource& input_source, const InputTargetId target)
+    : m_input_source{ input_source }, m_target{ target }
 {
     m_input_source.register_mouse_movement_event_handler(*this);
 }
@@ -76,20 +89,24 @@ MouseMovementTracker::~MouseMovementTracker()
     m_input_source.deregister_mouse_movement_event_handler(*this);
 }
 
-void MouseMovementTracker::handle_mouse_move_event(const float x,
-                                                   const float y,
-                                                   const bool ignore_deltas)
+void MouseMovementTracker::handle_mouse_move_event(const InputTargetId target,
+                                                   const bool is_cursor_locked_to_window,
+                                                   const float x,
+                                                   const float y)
 {
-    m_cursor_delta = { m_cursor_delta.x + x - m_cursor_position.x,
-                       m_cursor_delta.y + y - m_cursor_position.y };
-    m_cursor_position = { x, y };
-
-    if (ignore_deltas) {
+    if ((m_target != target && m_target != InputTargetId_receive_all) ||
+        !is_cursor_locked_to_window) {
         m_cursor_delta = { 0.0f, 0.0f };
     }
+    else {
+        m_cursor_delta = { m_cursor_delta.x + x - m_cursor_position.x,
+                           m_cursor_delta.y + y - m_cursor_position.y };
+    }
+    m_cursor_position = { x, y };
 }
 
-ScrollTracker::ScrollTracker(IInputSource& input_source) : m_input_source{ input_source }
+ScrollTracker::ScrollTracker(IInputSource& input_source, const InputTargetId target)
+    : m_input_source{ input_source }, m_target{ target }
 {
     m_input_source.register_scroll_event_handler(*this);
 }
@@ -99,8 +116,14 @@ ScrollTracker::~ScrollTracker()
     m_input_source.deregister_scroll_event_handler(*this);
 }
 
-void ScrollTracker::handle_scroll_event(const float xoffset, const float yoffset)
+void ScrollTracker::handle_scroll_event(const InputTargetId target,
+                                        const float xoffset,
+                                        const float yoffset)
 {
+    if (m_target != target && m_target != InputTargetId_receive_all) {
+        return;
+    }
+
     m_scroll_delta = { xoffset, yoffset };
 }
 

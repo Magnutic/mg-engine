@@ -23,6 +23,7 @@ public:
     Mg::gfx::Camera camera;
 
     std::shared_ptr<Mg::input::ButtonTracker> sample_control_button_tracker;
+    std::shared_ptr<Mg::input::ButtonTracker> gui_overlay_control_button_tracker;
 
     std::unique_ptr<Mg::PlayerController> player_controller;
     std::unique_ptr<Mg::EditorController> editor_controller;
@@ -31,7 +32,7 @@ public:
     std::unique_ptr<Mg::physics::CharacterController> character_controller;
 
     int debug_visualization = 0;
-    bool show_imgui_overlay = false;
+    bool show_gui_overlay = false;
 
     void on_simulation_step(const Mg::ApplicationTimeInfo& time_info) override;
     void on_render(double lerp_factor, const Mg::ApplicationTimeInfo& time_info) override;

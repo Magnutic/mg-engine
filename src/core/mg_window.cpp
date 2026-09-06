@@ -257,6 +257,13 @@ void Window::swap_buffers() noexcept
     glfwSwapBuffers(m_window);
 }
 
+void Window::set_input_event_target(const input::InputTargetId mouse_input_target,
+                                      const input::InputTargetId keyboard_input_target)
+{
+    m_current_mouse_input_target = mouse_input_target;
+    m_current_keyboard_input_target = keyboard_input_target;
+}
+
 void Window::poll_input_events()
 {
     // Poll input events from platform library.
@@ -373,13 +380,8 @@ void Window::set_cursor_lock_mode(CursorLockMode mode) noexcept
 
 void Window::cursor_position_callback(const float x, const float y)
 {
-    // Pass event to mouse-movement-event handlers even if m_ignore_mouse_events is true, but make
-    // it ignore deltas. This way, the handlers will have an up-to-date cursor position when
-    // mouse-event handling is reactivated, but will not have seen any deltas (so no mouselook).
-    const bool ignore_deltas = !m_is_cursor_locked || m_ignore_mouse_events;
-
     for (auto* handler : m_mouse_movement_event_handlers) {
-        handler->handle_mouse_move_event(x, y, ignore_deltas);
+        handler->handle_mouse_move_event(m_current_mouse_input_target, m_is_cursor_locked, x, y);
     }
 }
 
@@ -390,28 +392,22 @@ void Window::mouse_button_callback(const int button, const int action, const int
         grab_cursor();
     }
 
-    if (m_ignore_mouse_events) {
-        return;
-    }
-
     if (action != GLFW_PRESS && action != GLFW_RELEASE) {
         return;
     }
 
     const auto event = action == GLFW_PRESS ? input::InputEvent::Press : input::InputEvent::Release;
     for (auto* handler : m_button_event_handlers) {
-        handler->handle_mouse_button_event(input::MouseButton{ button }, event);
+        handler->handle_mouse_button_event(m_current_mouse_input_target,
+                                           input::MouseButton{ button },
+                                           event);
     }
 }
 
 void Window::scroll_callback(const float xoffset, const float yoffset)
 {
-    if (m_ignore_mouse_events) {
-        return;
-    }
-
     for (auto* handler : m_scroll_event_handlers) {
-        handler->handle_scroll_event(xoffset, yoffset);
+        handler->handle_scroll_event(m_current_mouse_input_target, xoffset, yoffset);
     }
 }
 
@@ -420,17 +416,13 @@ void Window::key_callback(const int key,
                           const int action,
                           const int /*mods*/)
 {
-    if (m_ignore_keyboard_events) {
-        return;
-    }
-
     if (action != GLFW_PRESS && action != GLFW_RELEASE) {
         return;
     }
 
     const auto event = action == GLFW_PRESS ? input::InputEvent::Press : input::InputEvent::Release;
     for (auto* handler : m_button_event_handlers) {
-        handler->handle_key_event(input::Key{ key }, event);
+        handler->handle_key_event(m_current_keyboard_input_target, input::Key{ key }, event);
     }
 }
 

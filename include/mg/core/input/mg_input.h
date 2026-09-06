@@ -31,7 +31,7 @@ class ButtonTracker : public IButtonEventHandler {
 public:
     using ButtonStates = FlatMap<Identifier, ButtonState, Identifier::HashCompare>;
 
-    explicit ButtonTracker(IInputSource& input_source);
+    explicit ButtonTracker(IInputSource& input_source, InputTargetId target);
     ~ButtonTracker() override;
 
     MG_MAKE_NON_MOVABLE(ButtonTracker);
@@ -39,8 +39,10 @@ public:
 
     // Implementation of IButtonEventHandler.
     // The input source calls these functions to notify ButtonTracker of button events.
-    void handle_key_event(Key key, InputEvent event) override;
-    void handle_mouse_button_event(MouseButton button, InputEvent event) override;
+    void handle_key_event(InputTargetId target, Key key, InputEvent event) override;
+
+    void
+    handle_mouse_button_event(InputTargetId target, MouseButton button, InputEvent event) override;
 
     void bind(Identifier button_action_id, Key key);
     void bind(Identifier button_action_id, MouseButton button);
@@ -63,11 +65,12 @@ private:
     ButtonStates m_states;
     FlatMap<MouseButton, std::vector<Identifier>> m_mouse_button_bindings;
     FlatMap<Key, std::vector<Identifier>> m_key_bindings;
+    InputTargetId m_target;
 };
 
 class MouseMovementTracker : public IMouseMovementEventHandler {
 public:
-    explicit MouseMovementTracker(IInputSource& input_source);
+    explicit MouseMovementTracker(IInputSource& input_source, InputTargetId target);
     ~MouseMovementTracker() override;
 
     MG_MAKE_NON_MOVABLE(MouseMovementTracker);
@@ -76,7 +79,10 @@ public:
     /** Implementation of IMouseMovementEventHandler.
      * The input source calls this function to notify MouseMovementTracker of input events.
      */
-    void handle_mouse_move_event(float x, float y, bool ignore_deltas) override;
+    void handle_mouse_move_event(InputTargetId target,
+                                 bool is_cursor_locked_to_window,
+                                 float x,
+                                 float y) override;
 
     /** Get mouse cursor position in screen coordinates, relative to upper left corner of the
      * window.
@@ -92,11 +98,12 @@ private:
     IInputSource& m_input_source;
     glm::vec2 m_cursor_position = { 0.0f, 0.0f };
     glm::vec2 m_cursor_delta = { 0.0f, 0.0f };
+    InputTargetId m_target;
 };
 
 class ScrollTracker : public IScrollEventHandler {
 public:
-    explicit ScrollTracker(IInputSource& input_source);
+    explicit ScrollTracker(IInputSource& input_source, InputTargetId target);
     ~ScrollTracker() override;
 
     MG_MAKE_NON_MOVABLE(ScrollTracker);
@@ -104,7 +111,7 @@ public:
 
     // Implementation of IScrollEeventHandler.
     // The input source calls this function to notify ScrollTracker of input events.
-    void handle_scroll_event(float xoffset, float yoffset) override;
+    void handle_scroll_event(InputTargetId target, float xoffset, float yoffset) override;
 
     /** Get scroll offset last call to this function. */
     glm::vec2 scroll_delta() { return std::exchange(m_scroll_delta, { 0.0f, 0.0f }); }
@@ -112,6 +119,7 @@ public:
 private:
     IInputSource& m_input_source;
     glm::vec2 m_scroll_delta = { 0.0f, 0.0f };
+    InputTargetId m_target;
 };
 
 } // namespace Mg::input

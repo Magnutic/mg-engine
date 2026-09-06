@@ -80,23 +80,32 @@ TestScene::TestScene()
                                                                 renderer_config,
                                                                 m_renderer_data);
 
-    sample_control_button_tracker = std::make_shared<Mg::input::ButtonTracker>(window());
+    sample_control_button_tracker =
+        std::make_shared<Mg::input::ButtonTracker>(window(), Mg::input::InputTargetId_game);
     sample_control_button_tracker->bind("swap_movement_mode", Mg::input::Key::E);
     sample_control_button_tracker->bind("fullscreen", Mg::input::Key::F4);
     sample_control_button_tracker->bind("exit", Mg::input::Key::Esc);
     sample_control_button_tracker->bind("next_debug_visualization", Mg::input::Key::F);
     sample_control_button_tracker->bind("reset", Mg::input::Key::R);
     sample_control_button_tracker->bind("toggle_animation", Mg::input::Key::T);
-    sample_control_button_tracker->bind("toggle_imgui_overlay", Mg::input::Key::Tab);
 
-    auto mouse_tracker = std::make_shared<Mg::input::MouseMovementTracker>(window());
 
-    player_controller =
-        std::make_unique<Mg::PlayerController>(std::make_shared<Mg::input::ButtonTracker>(window()),
-                                               mouse_tracker);
-    editor_controller =
-        std::make_unique<Mg::EditorController>(std::make_shared<Mg::input::ButtonTracker>(window()),
-                                               mouse_tracker);
+    gui_overlay_control_button_tracker =
+        std::make_shared<Mg::input::ButtonTracker>(window(), Mg::input::InputTargetId_receive_all);
+
+    gui_overlay_control_button_tracker->bind("toggle_imgui_overlay", Mg::input::Key::Tab);
+
+    auto mouse_tracker =
+        std::make_shared<Mg::input::MouseMovementTracker>(window(), Mg::input::InputTargetId_game);
+
+    player_controller = std::make_unique<Mg::PlayerController>(
+        std::make_shared<Mg::input::ButtonTracker>(window(), Mg::input::InputTargetId_game),
+        mouse_tracker);
+
+    editor_controller = std::make_unique<Mg::EditorController>(
+        std::make_shared<Mg::input::ButtonTracker>(window(), Mg::input::InputTargetId_game),
+        mouse_tracker);
+
     current_controller = player_controller.get();
 
     character_controller =
@@ -193,9 +202,10 @@ void TestScene::on_simulation_step(const Mg::ApplicationTimeInfo& /*time_info*/)
         make_block_scene_entity();
     }
 
-    if (button_states["toggle_imgui_overlay"].was_pressed) {
-        show_imgui_overlay = !show_imgui_overlay;
-        if (show_imgui_overlay) {
+    if (gui_overlay_control_button_tracker->get_button_events()["toggle_imgui_overlay"]
+            .was_pressed) {
+        show_gui_overlay = !show_gui_overlay;
+        if (show_gui_overlay) {
             window().set_cursor_lock_mode(Mg::CursorLockMode::UNLOCKED);
             window().release_cursor();
         }
@@ -205,10 +215,7 @@ void TestScene::on_simulation_step(const Mg::ApplicationTimeInfo& /*time_info*/)
         }
     }
 
-    if (show_imgui_overlay) {
-        // TODO: refactor console to a class that uses some callback from log to handle updates
-        // better than the ad-hoc state tracking done here.
-
+    if (show_gui_overlay) {
         // Track whether we were scrolled to bottom in the last frame. This is to avoid scrolling
         // down for new messages when the user has manually scrolled up.
         static bool last_frame_was_scrolled_to_bottom = true;
@@ -225,9 +232,6 @@ void TestScene::on_simulation_step(const Mg::ApplicationTimeInfo& /*time_info*/)
         std::vector<std::string> history = Mg::log.get_history();
         const bool has_new_messages = last_num_messages != history.size();
         last_num_messages = history.size();
-
-        // ImGui::ShowDemoWindow();
-        // return;
 
         constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoSavedSettings |
                                                   ImGuiWindowFlags_NoTitleBar |
@@ -266,8 +270,9 @@ void TestScene::on_simulation_step(const Mg::ApplicationTimeInfo& /*time_info*/)
             ImGui::SetScrollY(ImGui::GetScrollMaxY());
         }
 
-        should_scroll_to_bottom = has_new_messages && last_frame_was_scrolled_to_bottom;
-        last_frame_was_scrolled_to_bottom = ImGui::GetScrollY() == ImGui::GetScrollMaxY();
+        should_scroll_to_bottom = has_new_messages;// && last_frame_was_scrolled_to_bottom;
+        last_frame_was_scrolled_to_bottom = std::abs(ImGui::GetScrollY() - ImGui::GetScrollMaxY()) <
+                                            10.0f;
 
         ImGui::End();
 

@@ -11,8 +11,8 @@ void input_sample()
 
     Window window{ {}, "Input" };
 
-    input::ButtonTracker button_tracker{ window };
-    input::MouseMovementTracker mouse_movement_tracker{ window };
+    input::ButtonTracker button_tracker{ window, input::InputTargetId_receive_all };
+    input::MouseMovementTracker mouse_movement_tracker{ window, input::InputTargetId_receive_all };
 
     auto bind_key = [&](const input::Key key) {
         auto command = Identifier::from_runtime_string(input::localized_key_name(key));

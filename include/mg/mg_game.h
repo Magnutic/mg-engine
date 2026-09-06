@@ -24,6 +24,7 @@
 #include "mg/core/gfx/mg_scene_renderer.h"
 #include "mg/core/gfx/mg_texture_pool.h"
 #include "mg/core/gfx/render_passes/mg_mesh_pass.h"
+#include "mg/core/input/mg_input_source.h"
 #include "mg/core/mg_application_context.h"
 #include "mg/core/mg_config.h"
 #include "mg/core/mg_file_loader.h"
@@ -87,11 +88,12 @@ public:
 
         update_dynamic_body_transforms(m_entities);
 
-        // Ignore input events if ImguiOverlay wants to capture input.
         {
-            const auto imgui_input_capture = m_imgui_overlay->input_capture();
-            m_window.set_ignore_mouse_events(imgui_input_capture.mouse);
-            m_window.set_ignore_keyboard_events(imgui_input_capture.keyboard);
+            const auto gui_capture = m_imgui_overlay->input_capture();
+            m_window.set_input_event_target(gui_capture.mouse ? input::InputTargetId_gui_overlay
+                                                              : input::InputTargetId_game,
+                                            gui_capture.keyboard ? input::InputTargetId_gui_overlay
+                                                                 : input::InputTargetId_game);
         }
 
         m_window.poll_input_events();

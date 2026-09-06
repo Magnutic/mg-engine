@@ -12,9 +12,10 @@
 #include "mg/core/gfx/render_passes/mg_ui_pass.h"
 #include "mg/core/input/mg_input.h"
 
-#include "block_scene_editor/mg_edit_mode_render_common.h"
 #include "block_scene_editor/mg_edit_mode_add.h"
 #include "block_scene_editor/mg_edit_mode_edit.h"
+#include "block_scene_editor/mg_edit_mode_render_common.h"
+#include "mg/core/input/mg_input_source.h"
 
 namespace Mg {
 
@@ -25,8 +26,8 @@ struct BlockSceneEditor::Impl {
          input::IInputSource& input_source,
          std::shared_ptr<gfx::BitmapFont> font_)
         : scene{ scene_ }
-        , button_tracker{ input_source }
-        , scroll_tracker{ input_source }
+        , button_tracker{ input_source, input::InputTargetId_editor }
+        , scroll_tracker{ input_source, input::InputTargetId_editor }
         , font{ std::move(font_) }
     {
         edit_modes[Mode::Add] = std::make_unique<EditModeAdd>();
