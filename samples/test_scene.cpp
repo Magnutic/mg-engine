@@ -204,10 +204,6 @@ void TestScene::on_simulation_step(const Mg::ApplicationTimeInfo& /*time_info*/)
             window().grab_cursor();
         }
     }
-
-    if (show_imgui_overlay) {
-        m_editor.update(curve);
-    }
 }
 
 void TestScene::on_render(const double lerp_factor, const Mg::ApplicationTimeInfo& time_info)
