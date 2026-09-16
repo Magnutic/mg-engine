@@ -7,14 +7,16 @@ of mg-engine's build options.
 
 ## Usage
 
+Note that dependencies must be available before proceeding.
+Refer to the README in the repository root for information on preparing dependencies.
+
 First, run `configure.sh` with your compiler(s) of choice, e.g.:
 
     ./configure.sh clang_debug clang clang++ --debug
     ./configure.sh gcc_release gcc g++
 
 This will create two build configurations, titled `clang_debug` in `out/clang_debug/` and
-`gcc_release`. The first time it is run, it will also compile all dependencies at put them in
-`out/mg_dependencies`.
+`gcc_release`.
 
 Run `configure.sh` without any arguments for information on available options.
 
